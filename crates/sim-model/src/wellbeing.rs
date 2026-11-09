@@ -22,6 +22,26 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         } else {
             0.0
         };
+        // Local pollution: a home within a few tiles of a fossil plant or a goods factory.
+        let local = match h.home.and_then(|id| s.home(id)) {
+            Some(home) if wp.w_local_pollution > 0.0 => {
+                let near = |t: Tile| home.tile.chebyshev(t) <= wp.pollution_radius;
+                let plants = s
+                    .plants
+                    .iter()
+                    .any(|pl| pl.kind == PlantKind::Fossil && near(pl.tile));
+                let factory = s
+                    .firms
+                    .iter()
+                    .any(|f| f.active && f.sector == Sector::Goods && near(f.tile));
+                if plants || factory {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            _ => 0.0,
+        };
         let mut sum = 0.0;
         for m in &h.members {
             let x = s.person(*m);
@@ -34,11 +54,16 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             } else {
                 1.0
             };
+            // Commute: time above the free minutes costs wellbeing, up to w_commute.
+            let commute = (x.commute_minutes as f64 - p.space.free_minutes).max(0.0)
+                / wp.commute_scale_minutes;
             let target = wp.w_consumption * consumption
                 + wp.w_employment * employment
                 + wp.w_housing * housed
                 + wp.w_environment * environment
-                + wp.w_security * security;
+                + wp.w_security * security
+                - wp.w_commute * commute.min(1.0)
+                - wp.w_local_pollution * local;
             let wb = ((1.0 - wp.smoothing) * x.wellbeing.0 + wp.smoothing * target).clamp(0.0, 1.0);
             sum += wb;
             d.changes.push(Delta::Person(

@@ -864,3 +864,413 @@ fn government_spending_cannot_vanish_silently() {
         .any(|e| matches!(e, Event::SpendingCut { .. })));
     assert!(sim.state.gov.unfunded_total > Cents::ZERO);
 }
+
+// ---------- space: tiles, roads, commutes ----------
+
+fn place(kind: InfraKind, x: u8, y: u8) -> Command {
+    Command::Place {
+        kind,
+        tile: Tile::new(x, y),
+    }
+}
+
+#[test]
+fn preview_reports_tile_validity_without_changing_state() {
+    let sim = new_sim(1);
+    let before = serde_json::to_string(&sim.state).unwrap();
+    let cases = [
+        // (command, tile valid, reason)
+        (place(InfraKind::Road, 11, 11), true, None),
+        (
+            place(InfraKind::Road, 3, 2),
+            false,
+            Some(BlockReason::TileOccupied),
+        ), // a home
+        (
+            place(InfraKind::Road, 9, 3),
+            false,
+            Some(BlockReason::TileOccupied),
+        ), // the Factory
+        (
+            place(InfraKind::Road, 5, 6),
+            false,
+            Some(BlockReason::TileOccupied),
+        ), // a road
+        (
+            place(InfraKind::PublicHousing, 0, 0),
+            false,
+            Some(BlockReason::TileInvalid),
+        ), // forest
+        (
+            place(InfraKind::PublicHousing, 9, 9),
+            false,
+            Some(BlockReason::TileInvalid),
+        ), // commons
+        (
+            place(InfraKind::Road, 12, 0),
+            false,
+            Some(BlockReason::TileInvalid),
+        ), // off the map
+        (
+            Command::Remove {
+                tile: Tile::new(11, 11),
+            },
+            false,
+            Some(BlockReason::NothingToRemove),
+        ),
+        (
+            Command::Remove {
+                tile: Tile::new(3, 2),
+            },
+            false,
+            Some(BlockReason::TileInvalid),
+        ), // private home
+        (
+            Command::Remove {
+                tile: Tile::new(10, 2),
+            },
+            true,
+            None,
+        ), // fossil plant
+        (
+            Command::Remove {
+                tile: Tile::new(5, 6),
+            },
+            true,
+            None,
+        ), // road
+    ];
+    for (c, ok, reason) in cases {
+        let cost = &sim_engine::preview(&sim, &[c])[0];
+        assert_eq!(cost.tile_valid, ok, "{c:?}");
+        assert_eq!(cost.tile_reason, reason, "{c:?}");
+        if !ok {
+            assert!(cost.blocked.is_some(), "{c:?} must be blocked");
+        }
+    }
+    assert_eq!(before, serde_json::to_string(&sim.state).unwrap());
+    // valid_tiles lists exactly the empty tiles.
+    let valid = sim_engine::turn::valid_tiles(&sim, InfraKind::Road);
+    assert!(valid.contains(&Tile::new(11, 11)) && !valid.contains(&Tile::new(3, 2)));
+    let empties = sim
+        .state
+        .map
+        .cells
+        .iter()
+        .filter(|c| c.kind == TileKind::Empty)
+        .count();
+    assert_eq!(valid.len(), empties);
+}
+
+#[test]
+fn a_second_order_on_the_same_tile_is_rejected_and_rejections_are_reported() {
+    let mut sim = new_sim(1);
+    let out = sim_engine::submit_turn(
+        &mut sim,
+        &[
+            place(InfraKind::Road, 11, 11),
+            place(InfraKind::RenewablePlant, 11, 11),
+            place(InfraKind::Road, 3, 2),
+        ],
+    )
+    .unwrap();
+    assert_eq!(out.accepted.len(), 1);
+    assert_eq!(out.rejected.len(), 2);
+    assert!(out
+        .rejected
+        .iter()
+        .all(|r| r.reason == BlockReason::TileOccupied));
+}
+
+#[test]
+fn roads_are_built_on_their_tile_cost_money_and_need_upkeep() {
+    let mut sim = new_sim(1);
+    let tile = Tile::new(11, 11);
+    let cost = sim_engine::preview(&sim, &[place(InfraKind::Road, 11, 11)])[0];
+    assert_eq!(
+        cost.money,
+        Cents::from_dollars(sim.params.government.road_cost_usd)
+    );
+    sim_engine::submit_turn(&mut sim, &[place(InfraKind::Road, 11, 11)]).unwrap();
+    assert_eq!(
+        sim.state.map.kind_at(tile),
+        Some(TileKind::Empty),
+        "not built before its lead time"
+    );
+    let lead = sim.params.turn.lever("place_road").lead_time;
+    let mut built = false;
+    for _ in 0..=lead + 1 {
+        let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+        built |= out.events.contains(&Event::Built {
+            kind: InfraKind::Road,
+            tile,
+        });
+    }
+    assert!(built);
+    assert_eq!(sim.state.map.kind_at(tile), Some(TileKind::Road));
+    // The tile is now occupied for the next order.
+    assert_eq!(
+        sim_engine::preview(&sim, &[place(InfraKind::Road, 11, 11)])[0].tile_reason,
+        Some(BlockReason::TileOccupied)
+    );
+}
+
+#[test]
+fn a_road_shortens_a_commute_and_raises_effective_hours() {
+    let mut sim = new_sim(1);
+    // The Factory worker who lives at (2, 6): roads along row 6 and up column 9 shorten the route.
+    let worker = sim
+        .state
+        .persons
+        .iter()
+        .find(|x| {
+            x.job == Some(FirmId(0))
+                && sim.state.households[x.household.idx()].home == Some(HomeId(3))
+        })
+        .expect("someone at the Factory lives in the home at (2, 6)");
+    let (id, before) = (
+        worker.id,
+        (worker.commute_minutes, worker.effective_hours.0),
+    );
+    let roads = [(3, 6), (4, 6), (9, 6), (9, 5), (9, 4)];
+    let cmds: Vec<Command> = roads
+        .iter()
+        .map(|&(x, y)| place(InfraKind::Road, x, y))
+        .collect();
+    sim_engine::submit_turn(&mut sim, &cmds).unwrap();
+    for _ in 0..4 {
+        sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    }
+    for &(x, y) in &roads {
+        assert_eq!(sim.state.map.kind_at(Tile::new(x, y)), Some(TileKind::Road));
+    }
+    let after = sim.state.person(id);
+    assert!(
+        after.commute_minutes < before.0,
+        "commute {} -> {} minutes",
+        before.0,
+        after.commute_minutes
+    );
+    assert!(after.effective_hours.0 > before.1);
+    assert_eq!(
+        after.commute_tiles, 10,
+        "same distance in tiles, fewer minutes"
+    );
+}
+
+#[test]
+fn commutes_are_reported_per_person_each_month() {
+    let mut sim = new_sim(1);
+    let out = sim_engine::step(&mut sim).unwrap();
+    let commuters = out
+        .events
+        .iter()
+        .filter(|e| matches!(e, Event::Commuted { .. }))
+        .count();
+    let jobs = sim.state.persons.iter().filter(|x| x.job.is_some()).count();
+    assert_eq!(commuters, jobs);
+    assert!(out
+        .events
+        .iter()
+        .any(|e| matches!(e, Event::Commuted { minutes, tiles, .. } if *minutes >= *tiles)));
+}
+
+#[test]
+fn public_housing_is_built_on_the_tile_and_the_unhoused_move_in() {
+    let mut sim = new_sim(1);
+    assert!(sim.state.households[7].home.is_none());
+    let tile = Tile::new(4, 5);
+    sim_engine::submit_turn(&mut sim, &[place(InfraKind::PublicHousing, 4, 5)]).unwrap();
+    let mut moved = false;
+    for _ in 0..8 {
+        let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+        moved |= out
+            .events
+            .iter()
+            .any(|e| matches!(e, Event::HouseholdMoved { household, .. } if *household == HouseholdId(7)));
+    }
+    assert_eq!(sim.state.map.kind_at(tile), Some(TileKind::PublicHousing));
+    let home = sim
+        .state
+        .homes
+        .iter()
+        .find(|h| h.tile == tile)
+        .expect("home exists");
+    assert_eq!(home.owner, HomeOwner::Public);
+    assert!(moved, "the destitute household takes the new home");
+    assert_eq!(sim.state.households[7].home, Some(home.id));
+    assert_eq!(sim.state.housing.unhoused_households, 0);
+}
+
+#[test]
+fn removing_public_housing_evicts_its_household_and_clears_the_tile() {
+    let mut sim = new_sim(1);
+    sim_engine::submit_turn(&mut sim, &[place(InfraKind::PublicHousing, 4, 5)]).unwrap();
+    for _ in 0..8 {
+        sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    }
+    assert!(sim.state.households[7].home.is_some());
+    sim_engine::submit_turn(
+        &mut sim,
+        &[Command::Remove {
+            tile: Tile::new(4, 5),
+        }],
+    )
+    .unwrap();
+    let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert_eq!(
+        sim.state.map.kind_at(Tile::new(4, 5)),
+        Some(TileKind::Empty)
+    );
+    assert!(sim.state.homes.iter().all(|h| h.tile != Tile::new(4, 5)));
+    assert!(sim.state.households[7].home.is_none());
+    let _ = out;
+}
+
+// ---------- plants: direct emissions, attribution, rationing ----------
+
+#[test]
+fn emissions_are_counted_once_and_attributed_to_plants() {
+    let mut sim = new_sim(1);
+    let out = sim_engine::step(&mut sim).unwrap();
+    let s = &sim.state;
+    let firms: f64 = s.firms.iter().map(|f| f.emissions.0).sum();
+    let hh: f64 = s.households.len() as f64 * 0.0
+        + s.persons.len() as f64 * sim.params.nature.household_footprint_base;
+    let plants: f64 = s.plants.iter().map(|p| p.emissions.0).sum();
+    assert!(plants > 0.0, "fossil plants emit");
+    assert!(
+        (s.nature.gross_emissions.0 - (firms + hh + plants)).abs() < 1e-9,
+        "no double counting"
+    );
+    // The trace names every plant and its tonnes.
+    let traced: f64 = out
+        .trace
+        .iter()
+        .filter_map(|t| match t {
+            TraceRecord::Emissions {
+                source: EmissionSource::Plant(_),
+                tonnes,
+            } => Some(tonnes.0),
+            _ => None,
+        })
+        .sum();
+    assert!((traced - plants).abs() < 1e-9);
+    // Fossil emissions equal the energy delivered times the fossil share times the factor.
+    let delivered = s.energy.delivered.0;
+    assert!((plants - delivered * s.energy.grid_intensity.0).abs() < 1e-9);
+}
+
+#[test]
+fn renewable_plants_emit_nothing_and_a_cleaner_mix_cuts_emissions() {
+    let mut p = params();
+    p.run.warmup_ticks = 0;
+    let mut dirty = sim_engine::init(p.clone(), 1).unwrap();
+    let mut clean = sim_engine::init(p, 1).unwrap();
+    // Swap both fossil plants for renewable ones (the same capacity, so no shortage).
+    for pl in &mut clean.state.plants {
+        pl.kind = PlantKind::Renewable;
+    }
+    for t in [Tile::new(10, 2), Tile::new(10, 4)] {
+        clean.state.map.set(
+            t,
+            MapTile {
+                kind: TileKind::RenewablePlant,
+                id: clean.state.map.get(t).unwrap().id,
+            },
+        );
+    }
+    clean.state.energy.grid_intensity = Rate(0.0);
+    let d = collect(&mut dirty, 6, &Plan::default(), gross_emissions);
+    let c = collect(&mut clean, 6, &Plan::default(), gross_emissions);
+    assert!(clean.state.plants.iter().all(|p| p.emissions.0 == 0.0));
+    assert!(
+        mean(&c) < 0.6 * mean(&d),
+        "clean {} vs dirty {}",
+        mean(&c),
+        mean(&d)
+    );
+}
+
+#[test]
+fn removing_the_power_plants_rations_output() {
+    let mut sim = new_sim(1);
+    let supply0 = sim.state.energy.supply.0;
+    assert!(
+        sim.state.energy.demand.0 <= supply0,
+        "no shortage at the start"
+    );
+    let rationed = |s: &Sim| s.state.energy.served.0;
+    // Remove one of the two fossil plants: supply halves and demand exceeds it.
+    sim_engine::submit_turn(
+        &mut sim,
+        &[Command::Remove {
+            tile: Tile::new(10, 2),
+        }],
+    )
+    .unwrap();
+    let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert_eq!(sim.state.plants.len(), 1);
+    assert!(sim.state.energy.supply.0 < supply0);
+    if sim.state.energy.demand.0 > sim.state.energy.supply.0 {
+        assert!(rationed(&sim) < 1.0);
+        assert!(out
+            .events
+            .iter()
+            .any(|e| matches!(e, Event::ElectricityRationed { .. })));
+    }
+    // With both gone nothing can be produced.
+    sim_engine::submit_turn(
+        &mut sim,
+        &[Command::Remove {
+            tile: Tile::new(10, 4),
+        }],
+    )
+    .unwrap();
+    sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert!(sim.state.plants.is_empty());
+    assert_eq!(sim.state.energy.served, Rate(0.0));
+    assert!(sim
+        .state
+        .firms
+        .iter()
+        .filter(|f| f.active)
+        .all(|f| f.output.0 == 0.0));
+}
+
+#[test]
+fn living_next_to_a_fossil_plant_or_the_factory_costs_wellbeing() {
+    // Worker A lives at (8, 4), next to the Factory and a fossil plant; the effect is a param.
+    let wb = |penalty: f64| {
+        let mut p = params();
+        p.wellbeing.w_local_pollution = penalty;
+        let mut sim = sim_engine::init(p, 1).unwrap();
+        for _ in 0..12 {
+            sim_engine::step(&mut sim).unwrap();
+        }
+        sim.state.households[4].wellbeing.0
+    };
+    let (with, without) = (wb(0.04), wb(0.0));
+    assert!(with < without, "with {with} vs without {without}");
+}
+
+#[test]
+fn long_commutes_cost_wellbeing() {
+    let mut p = params();
+    p.run.warmup_ticks = 0;
+    let mut near = sim_engine::init(p.clone(), 1).unwrap();
+    let mut far = sim_engine::init(p, 1).unwrap();
+    // Make every worker commute a long time by turning the free minutes and speed up or down.
+    far.params.space.slow_minutes = 12;
+    for _ in 0..8 {
+        sim_engine::step(&mut near).unwrap();
+        sim_engine::step(&mut far).unwrap();
+    }
+    let avg = |s: &Sim| s.state.persons.iter().map(|x| x.wellbeing.0).sum::<f64>();
+    assert!(avg(&far) < avg(&near));
+    let out = |s: &Sim| s.state.firms[0].output.0 + s.state.firms[1].output.0;
+    assert!(
+        out(&far) <= out(&near),
+        "slower commutes never raise output"
+    );
+}

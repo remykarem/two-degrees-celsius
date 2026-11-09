@@ -180,6 +180,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         }
     }
 
+    // Commutes follow the final jobs: the cheapest route from home to workplace over the map.
+    let commute = crate::space::commutes(s, p, &job);
+
     // Person updates: jobs, guarantee, skill drift (employment builds skill, idleness erodes it).
     for x in &s.persons {
         let i = x.id.idx();
@@ -190,6 +193,29 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         }
         if in_jg[i] != x.jg {
             patch.jg = Some(in_jg[i]);
+        }
+        let (tiles, minutes) = commute[i];
+        if tiles != x.commute_tiles {
+            patch.commute_tiles = Some(tiles);
+        }
+        if minutes != x.commute_minutes {
+            patch.commute_minutes = Some(minutes);
+        }
+        let hours = if job[i].is_some() {
+            crate::space::effective_hours(&p.space, minutes)
+        } else {
+            1.0
+        };
+        if hours != x.effective_hours.0 {
+            patch.effective_hours = Some(Rate(hours));
+        }
+        if let Some(f) = job[i] {
+            d.events.push(Event::Commuted {
+                person: x.id,
+                firm: f,
+                tiles,
+                minutes,
+            });
         }
         if x.in_labour_force {
             let skill = x.skill.0

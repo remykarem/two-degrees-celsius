@@ -332,6 +332,22 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
     let occupied = s.homes.iter().filter(|h| h.household.is_some()).count() as f64;
     s.housing.occupancy = Rate(safe_div(occupied, s.homes.len() as f64, 1.0));
     s.housing.unhoused_households = s.households.iter().filter(|h| h.home.is_none()).count() as u32;
+    // Commutes at the start: the cheapest routes from the homes to the workplaces.
+    let jobs: Vec<Option<FirmId>> = s.persons.iter().map(|x| x.job).collect();
+    for (x, (tiles, minutes)) in sim_model::space::commutes(&s, p, &jobs)
+        .into_iter()
+        .enumerate()
+    {
+        let hours = if jobs[x].is_some() {
+            sim_model::space::effective_hours(&p.space, minutes)
+        } else {
+            1.0
+        };
+        let person = &mut s.persons[x];
+        person.commute_tiles = tiles;
+        person.commute_minutes = minutes;
+        person.effective_hours = Rate(hours);
+    }
     // TFP and the price markup are derived from the start: output and price are given.
     for fi in 0..s.firms.len() {
         let f = &s.firms[fi];
