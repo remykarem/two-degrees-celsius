@@ -232,7 +232,7 @@
   },
   "energy": {
     "factor_fossil": 1.0,
-    "plant_capacity": 6.0,
+    "plant_capacity": 5.0,
     "hh_energy_base_pc": 0.1,
     "hh_energy_consumption_pc": 0.15,
     "hh_ref_consumption_usd": 2000.0
@@ -343,7 +343,7 @@
     "startup_hurdle_floor": 0.0,
     "skilled_wage_ratio": 1.5,
     "history_months": 6,
-    "startup_min_excess_demand": 0.05
+    "startup_min_excess_demand": 0.2
   },
   "lobby": {
     "spend_rate": 0.02,

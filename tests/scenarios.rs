@@ -2,7 +2,7 @@
 //! Town v2: 20 people in 8 households, a 12 x 12 map owned by the simulation.
 
 use sim_checks::check_state;
-use sim_engine::{Plan, Sim};
+use sim_engine::{series, Plan, Sim};
 use sim_model::class::classify;
 use sim_params::{ContentJson, Params};
 use sim_types::*;
@@ -1045,6 +1045,10 @@ fn a_road_shortens_a_commute_and_raises_effective_hours() {
         assert_eq!(sim.state.map.kind_at(Tile::new(x, y)), Some(TileKind::Road));
     }
     let after = sim.state.person(id);
+    println!(
+        "road example: commute {} -> {} minutes, effective hours {:.3} -> {:.3}",
+        before.0, after.commute_minutes, before.1, after.effective_hours.0
+    );
     assert!(
         after.commute_minutes < before.0,
         "commute {} -> {} minutes",
@@ -1273,4 +1277,220 @@ fn long_commutes_cost_wellbeing() {
         out(&far) <= out(&near),
         "slower commutes never raise output"
     );
+}
+
+// ---------- baselines over many seeds (causal model section 9, Town v2) ----------
+
+const SCENARIO_B: &str = include_str!("../content/scenarios/baseline_b_sensible.json");
+const SCENARIO_C: &str = include_str!("../content/scenarios/baseline_c_neglect.json");
+const SCENARIO_D: &str = include_str!("../content/scenarios/baseline_d_carbon_only.json");
+const SEEDS: std::ops::RangeInclusive<u64> = 1..=20;
+
+struct Run {
+    outcome: Outcome,
+    /// Tick of the first loss, if any.
+    loss_tick: Option<u32>,
+    /// Tick at which the cumulative emissions passed the budget, if they did.
+    exhausted_tick: Option<u32>,
+    legitimacy_min: f64,
+    budget_left_share: f64,
+    gini_start: f64,
+}
+
+fn play(script: &Plan, seed: u64) -> Run {
+    let mut sim = new_sim(seed);
+    let gini_start = sim.state.indicators.gini.0;
+    let mut exhausted = None;
+    let mut legit_min = 1.0f64;
+    sim_engine::run(&mut sim, 160, script, |s, _| {
+        legit_min = legit_min.min(s.state.gov.legitimacy.0);
+        if exhausted.is_none() && s.state.nature.cumulative.0 >= s.params.nature.budget_b0 {
+            exhausted = Some(s.state.tick);
+        }
+    })
+    .unwrap_or_else(|e| panic!("seed {seed}: {e}"));
+    Run {
+        outcome: sim_engine::final_outcome(&sim),
+        loss_tick: sim.state.outcome.map(|(t, _)| t),
+        exhausted_tick: exhausted,
+        legitimacy_min: legit_min,
+        budget_left_share: sim.state.indicators.remaining_budget.0 / sim.params.nature.budget_b0,
+        gini_start,
+    }
+}
+
+fn runs(script: &Plan) -> Vec<Run> {
+    SEEDS.map(|seed| play(script, seed)).collect()
+}
+
+fn share(rs: &[Run], f: impl Fn(&Run) -> bool) -> f64 {
+    rs.iter().filter(|r| f(r)).count() as f64 / rs.len() as f64
+}
+
+fn median(mut v: Vec<f64>) -> f64 {
+    v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    v[v.len() / 2]
+}
+
+/// Baseline A: no action. It degrades, never crashes or breaks an invariant (every run completes
+/// the strict checks), the carbon budget runs out between turns 90 and 140, and the start is as
+/// unequal as the design asks.
+#[test]
+fn baseline_a_no_action_degrades_and_runs_the_budget_out() {
+    let rs = runs(&Plan::default());
+    let turns: Vec<f64> = rs
+        .iter()
+        .filter_map(|r| r.exhausted_tick)
+        .map(|t| t as f64 / 3.0)
+        .collect();
+    println!(
+        "A: exhausted turns {turns:?}, outcomes {:?}",
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>()
+    );
+    assert!(
+        share(&rs, |r| r.gini_start > 0.65 && r.gini_start < 0.78) >= 1.0,
+        "start gini"
+    );
+    assert!(turns.len() >= 18, "the budget runs out in nearly every run");
+    assert!(
+        share(&rs, |r| r
+            .exhausted_tick
+            .is_some_and(|t| (270..=420).contains(&t)))
+            >= 0.8
+    );
+    let m = median(turns);
+    assert!(m > 100.0 && m < 140.0, "median turn {m}");
+    assert!(
+        share(&rs, |r| r.legitimacy_min < 0.2) >= 0.8,
+        "inequality eats legitimacy when nothing is done"
+    );
+}
+
+/// Baseline B: sensible play survives most seeds with budget left and legitimacy above 0.3.
+#[test]
+fn baseline_b_sensible_play_survives_most_seeds_with_budget_left() {
+    let rs = runs(&Plan::from_json(SCENARIO_B).unwrap());
+    println!(
+        "B: survived {:.0}%, median budget left {:.2}, median legitimacy min {:.2}",
+        100.0 * share(&rs, |r| matches!(r.outcome, Outcome::Survived)),
+        median(rs.iter().map(|r| r.budget_left_share).collect()),
+        median(rs.iter().map(|r| r.legitimacy_min).collect())
+    );
+    assert!(share(&rs, |r| matches!(r.outcome, Outcome::Survived)) >= 0.8);
+    assert!(
+        share(&rs, |r| r.exhausted_tick.is_none()
+            && r.budget_left_share > 0.2)
+            >= 0.8
+    );
+    assert!(median(rs.iter().map(|r| r.legitimacy_min).collect()) > 0.3);
+}
+
+/// Baseline C: neglect and extraction fails by about year 30 (tick 360) in most seeds.
+#[test]
+fn baseline_c_neglect_fails_by_year_30_in_most_seeds() {
+    let rs = runs(&Plan::from_json(SCENARIO_C).unwrap());
+    println!(
+        "C: loss ticks {:?}",
+        rs.iter().map(|r| r.loss_tick).collect::<Vec<_>>()
+    );
+    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 360)) >= 0.7);
+    let a = runs(&Plan::default());
+    let a_exh = median(
+        a.iter()
+            .filter_map(|r| r.exhausted_tick)
+            .map(|t| t as f64)
+            .collect(),
+    );
+    let c_exh = rs
+        .iter()
+        .filter_map(|r| r.exhausted_tick)
+        .map(|t| t as f64)
+        .collect::<Vec<_>>();
+    // Extraction burns the budget no more slowly than doing nothing.
+    assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 36.0);
+}
+
+/// Baseline D: one tool (a carbon tax) is not enough.
+#[test]
+fn baseline_d_carbon_tax_alone_fails_in_most_seeds() {
+    let rs = runs(&Plan::from_json(SCENARIO_D).unwrap());
+    println!(
+        "D: outcomes {:?}, median budget left {:.2}",
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
+        median(rs.iter().map(|r| r.budget_left_share).collect())
+    );
+    assert!(share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.7);
+}
+
+#[test]
+fn start_gini_and_top_share_are_in_range_in_every_seed() {
+    for seed in SEEDS {
+        let i = new_sim(seed).state.indicators;
+        assert!(
+            (0.65..=0.78).contains(&i.gini.0),
+            "seed {seed}: gini {}",
+            i.gini.0
+        );
+        assert!(
+            (0.55..=0.72).contains(&i.top_wealth_share.0),
+            "seed {seed}: top share {}",
+            i.top_wealth_share.0
+        );
+    }
+}
+
+#[test]
+fn regulated_scenario_emits_less_than_market() {
+    let reg = Plan::from_json(SCENARIO_REGULATED).unwrap();
+    let (mut m, mut r) = (vec![], vec![]);
+    for seed in 1..=4 {
+        let (mut a, mut b) = (new_sim(seed), new_sim(seed));
+        sim_engine::run(&mut a, 160, &Plan::default(), |_, _| {}).unwrap();
+        sim_engine::run(&mut b, 160, &reg, |_, _| {}).unwrap();
+        m.push(a.state.nature.cumulative.0);
+        r.push(b.state.nature.cumulative.0);
+    }
+    assert!(
+        mean(&r) < mean(&m),
+        "regulated {} vs market {}",
+        mean(&r),
+        mean(&m)
+    );
+}
+
+#[test]
+fn coop_scenario_has_lower_inequality_than_market() {
+    let coop = Plan::from_json(SCENARIO_COOP).unwrap();
+    let (mut m, mut c) = (vec![], vec![]);
+    for seed in 1..=4 {
+        let (mut a, mut b) = (new_sim(seed), new_sim(seed));
+        sim_engine::run(&mut a, 160, &Plan::default(), |_, _| {}).unwrap();
+        sim_engine::run(&mut b, 160, &coop, |_, _| {}).unwrap();
+        m.push(a.state.indicators.gini.0);
+        c.push(b.state.indicators.gini.0);
+    }
+    assert!(
+        mean(&c) < mean(&m),
+        "coop gini {} vs market {}",
+        mean(&c),
+        mean(&m)
+    );
+}
+
+// ---------- golden snapshot ----------
+
+#[test]
+fn golden_snapshot_seed_42() {
+    let mut sim = new_sim(42);
+    let mut out = String::new();
+    out.push_str(series::CSV_HEADER);
+    out.push('\n');
+    sim_engine::run(&mut sim, 160, &Plan::default(), |s, o| {
+        if s.state.tick % 24 == 0 {
+            out.push_str(&series::csv_row(s, &o.trace));
+            out.push('\n');
+        }
+    })
+    .unwrap();
+    insta::assert_snapshot!("market_seed_42", out);
 }

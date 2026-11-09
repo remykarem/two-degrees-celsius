@@ -81,3 +81,31 @@ Baselines at the end of Phase 2 (years 1, 6, 11, ... in the CLI table):
 - B: survives, budget 50% left, unemployment 5% to 25% (92% of ticks below 15%, the peak is the carbon-price shock in years 3 to 6), Gini 0.40 to 0.45, debt/GDP 1.35, legitimacy at least 0.7.
 - C: budget exhausted year 23.7 (turn 95), Gini 0.57, price index doubles (wage-price spiral after tax cuts).
 - D (carbon tax 100 to 400): budget exhausted year 33.5 (turn 134); emissions cut by 20% to 25% only, unemployment up to 21%.
+
+## Town v2 (Rust model builder)
+Seed 42 unless a range is given. Method: one-parameter changes and small grids through the release CLI (`--set`), judged on the yearly table and on 8 to 20 seeds, never on a search score. Baseline plans are in `content/scenarios/`.
+
+Start: the town is hand-built, not a fixed point; `run.warmup_ticks` stays 48. The numbers below are the **settled** start (turn 1, after warm-up): Gini 0.72, top household 61% of wealth, average income per person 1,727 dollars a month, median 1,204, one of eight households unhoused, 2 of 10 labour-force people without work. Before warm-up (the file as written): Gini 0.742, top household 60.5%. Destitute household net worth about -1,300 dollars.
+
+| Parameter | From | To | Why |
+|---|---|---|---|
+| all extensive quantities | Phase 2 | divided by 50 | 1,000 to 20 people (deviation T1). `B0` 4,400 t was **not** recalibrated: baseline A exhausts it at turn 123 in the median of 20 seeds, inside the 90 to 140 target. |
+| `goods.wealth_consumption_rate` | 0.01 | 0.005 | 0.004 gave a recession (rich households saved ~3,600 dollars a month, a tenth of GDP, nothing recycled it); 0.01 drained the Owner family's savings in warm-up and pulled the top share from 61% to 56%. 0.005 is a compromise, not a fixed point. |
+| `labour.fire_after_months` | 1 | 3 | One layoff is 25 to 33% of a 3-person firm. |
+| `labour` hire/fire (new) | caps as shares | 1 hire and 1 fire a month, slacks 0.1 and 1.0, min 1 worker | flip-flopping (Goods 4,3,2,1 workers in 10 months, 60% unemployment) |
+| `metrics.unemployment_smoothing` (new) | n/a | 0.05 | see T3 |
+| `goods.services_share` (new), Shop price and output | n/a | 0.45; price 70, output 140 (first guess 60 and 200) | Shop revenue was 8k against a 9k wage bill: it defaulted in year 2 and the town collapsed to 87% unemployment |
+| Goods start output | 160 | 130 | the Factory over-produced and piled up inventory, then cut staff in a spiral |
+| `class.startup_*` (new) | n/a | cost 30,000, buffer 5,000, capital share 0.8, `mobility_rate` 0.03, `startup_min_excess_demand` 0.2 | with 0.05 a transient excess demand let a second Shop in; both Shops failed (3 to 7 of 20 seeds collapsed in A and B). At 0.2 founding is rare (it did not occur in the 20-seed runs reported below). |
+| `government.legit_gini` | 0.02 | 0.012 | at 0.02 and a Gini of 0.72 legitimacy reached 0 in year 12 in baseline A, before the budget mattered |
+| `energy.plant_capacity`, plant capacities | n/a | 5 per plant, two fossil plants at the start (supply 10 against a demand of 8 to 9.5) | capacity close to demand so that removing a plant rations output |
+| `goods.rent_*`, `rent_burden_cap` | rent +1% a month while full | +-0.5% a month, burden cap 0.2 | rent must stop rising while one household is always unhoused |
+| `labour.skill_wage_slope` etc. (new) | cohort premiums | 2.3, ref 0.5, floor 0.6 | T11 |
+
+Tried and rejected: wealth consumption 0.004 (recession); Goods output 160 and Shop price 60 (Shop insolvency cascade); `startup_min_excess_demand` 0.05 (destructive founding); tier rounding that counted skilled workers only as skilled (over-hired the general tier, a bug, fixed); minimum wage 1,700 to 2,000 (unemployment 43% to 89%); G 10,000 to 16,000 (gov debt grows faster, unemployment mean 11% to 13%, no better).
+
+### Baselines at the end of Town v2, 20 seeds (1 to 20), 160 turns
+- **A (no action):** budget exhausted in 20 of 20 runs, turn 122.7 to 126.7 (median 122.7); legitimacy reaches 0 near the same time in most runs; unemployment mean 12% (the labour force is 10 people). Gini does **not** rise: seed 42 goes 0.72 to 0.63 and the top share from 61% to 41% by year 40 (managers and workers save while the rich spend their savings). The design said "inequality rises"; reported, not forced.
+- **B (sensible play, `baseline_b_sensible.json`):** survives 19 of 20 (95%), median budget left 46%, median minimum legitimacy 0.44, Gini about 0.55 at the end. One seed collapses on mass unemployment after a firm defaults.
+- **C (neglect and extraction):** all 20 runs fail by legitimacy zero at turn 31 to 33 (year 8); Gini rises to about 0.8. It fails earlier than A, which is the design; the cause is the legitimacy rule, not the carbon budget (the budget is exhausted at turn 132 to 135, later than A, because the town collapses first). Fossil plants added in C change nothing: supply already exceeds demand, so a plant only matters when demand outgrows 10 units.
+- **D (carbon tax only):** all 20 runs end in legitimacy zero around turn 154; median budget left 5%. The carbon tax works on firms (green technology cuts their footprint) but the plants stay fossil and inequality keeps eating legitimacy. "Fails" here is marginal (6 turns before the end).

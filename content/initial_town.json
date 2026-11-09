@@ -436,7 +436,7 @@
         10,
         2
       ],
-      "capacity": 6.0
+      "capacity": 5.0
     },
     {
       "kind": "Fossil",
@@ -444,7 +444,7 @@
         10,
         4
       ],
-      "capacity": 6.0
+      "capacity": 5.0
     }
   ],
   "firms": [
