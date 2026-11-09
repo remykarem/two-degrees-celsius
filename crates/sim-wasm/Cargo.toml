@@ -1,0 +1,23 @@
+[package]
+name = "sim-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Thin wasm-bindgen wrapper around sim_api::Api (JSON strings in and out)."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# Not `[lints] workspace = true`: the workspace forbids unsafe code, and the code that
+# wasm-bindgen's macros generate is unsafe. This crate's own code is safe and `deny` keeps it
+# so; the logic crates keep `forbid(unsafe_code)`.
+[lints.rust]
+unsafe_code = "deny"
+
+[dependencies]
+sim-api.workspace = true
+sim-params.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+# Exact pin: must equal the wasm-bindgen CLI version used by web/scripts/build-wasm.mjs.
+wasm-bindgen = "=0.2.130"

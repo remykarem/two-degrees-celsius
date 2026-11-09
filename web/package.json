@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint src tests",
-    "sync-mock": "node scripts/sync-mock.mjs"
+    "sync-mock": "node scripts/sync-mock.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs"
   },
   "dependencies": {
     "three": "^0.187.0"

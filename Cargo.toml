@@ -9,6 +9,7 @@ members = [
   "crates/sim-checks",
   "crates/sim-engine",
   "crates/sim-api",
+  "crates/sim-wasm",
   "crates/sim-cli",
 ]
 
