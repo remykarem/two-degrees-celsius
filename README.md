@@ -15,8 +15,14 @@ npm run dev
 
 Open http://localhost:5173.
 
-The browser currently plays against a **mock** economy. The real simulation is being moved to the
-new "Town v2" model, so `npm run build:wasm` will not work until that port is finished.
+To play against the real Rust simulation in the browser, build it first (needs Rust, the
+`wasm32-unknown-unknown` target and `wasm-bindgen-cli`; the script prints the exact install command):
+
+```
+npm run build:wasm
+```
+
+Without it the app falls back to a mock economy and shows a "Mock data" badge.
 
 ## Run the simulation (no graphics)
 
@@ -39,3 +45,8 @@ cd web && npm test              # front end
 - `content/`: all game numbers (JSON)
 - `web/`: the browser app
 - `docs/`: design docs. Start with `SPEC.md`, then `docs/town-v2.md`
+
+## Deploy
+
+Pushing to `main` builds and publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
+In the repo, set Settings > Pages > Source to **GitHub Actions** once.
