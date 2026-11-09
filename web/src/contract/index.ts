@@ -56,7 +56,7 @@ export interface ActionInfo {
   key: ActionKey;
   label: string;
   baseCostPc: number;
-  /** Optional (section 10 only gives LeverInfo a cost model; the real wire omits it for actions). When absent, cost = baseCostPc exactly (unit 1, min size 1). */
+  /** The real wire now sends it (base, unit, min size from params). Kept optional for older saves and the mock. When absent, cost = baseCostPc exactly (unit 1, min size 1). */
   costModel?: CostModel;
   leadTime: number;
   /** Estimated dollars; 0 if none. preview() is the authority on actual cost. */
@@ -123,7 +123,11 @@ export interface GovernmentView {
   cash: number; debt: number; debtToGdp: number; legitimacy: number; receipts: number; spending: number;
 }
 export interface NatureView {
-  forest: number; commons: number; commonsAccess: 'open' | 'community' | 'enclosed';
+  /** Shares of the maximum stock (nature.forest_max / commons_max in params), 0..1. The wire layer divides; see docs/integration-notes.md. */
+  forest: number; commons: number;
+  /** Raw stocks in the model's unit. Real wire only. */
+  forestStock?: number; commonsStock?: number;
+  commonsAccess: 'open' | 'community' | 'enclosed';
   cumulativeTonnes: number; netEmissionsMonthly: number; grossEmissionsMonthly: number; sinkMonthly: number;
 }
 export interface HousingView {

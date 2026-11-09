@@ -383,8 +383,10 @@
     "spending": 122800.0
   },
   "nature": {
-    "forest": 71009.374469548,
-    "commons": 39392.94943500072,
+    "forest": 0.71009374469548,
+    "commons": 0.7878589887000145,
+    "forestStock": 71009.374469548,
+    "commonsStock": 39392.94943500072,
     "commonsAccess": "open",
     "cumulativeTonnes": 0.0,
     "netEmissionsMonthly": 633.7443351270683,

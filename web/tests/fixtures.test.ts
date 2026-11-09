@@ -112,10 +112,21 @@ describe.skipIf(!present)('real fixtures from docs/fixtures/ against the TypeScr
     expect(turn.policyGaps.map((g) => g.lever).sort()).toEqual(['carbon_price', 'emissions_cap', 'tax_profit', 'wealth_tax']);
     expect(lobbyLines(turn, levers, actions).filter((l) => l.kind === 'weakened').length).toBeLessThan(turn.policyGaps.length);
   });
-  it('KNOWN MISMATCH: nature.forest and nature.commons are raw stocks, the UI treats them as 0..1 shares', () => {
-    // docs/web-notes-align.md "Contract issues". When the wire sends shares (or the maxima), flip this expectation.
-    expect(snap.nature.forest).toBeGreaterThan(1);
-    expect(snap.nature.commons).toBeGreaterThan(1);
+  it('nature.forest and nature.commons are 0..1 shares, with the raw stocks beside them', () => {
+    for (const n of [snap.nature, turn.snapshot.nature]) {
+      expect(n.forest).toBeGreaterThanOrEqual(0);
+      expect(n.forest).toBeLessThanOrEqual(1);
+      expect(n.commons).toBeGreaterThanOrEqual(0);
+      expect(n.commons).toBeLessThanOrEqual(1);
+      expect(n.forestStock).toBeGreaterThan(1);
+      expect(n.commonsStock).toBeGreaterThan(1);
+    }
+    expect(snap.nature.forest).toBeCloseTo(snap.nature.forestStock! / 100000, 12); // params nature.forest_max
+    expect(snap.nature.commons).toBeCloseTo(snap.nature.commonsStock! / 50000, 12); // params nature.commons_max
+  });
+  it('the real levers and actions carry what the UI needs', () => {
+    expect(levers.find((l) => l.key === 'commons_access')!.optionAvailableIn).toEqual({ community: ['regulated', 'coop'] });
+    for (const a of actions) expect(a.costModel!.base).toBe(a.baseCostPc);
   });
 });
 

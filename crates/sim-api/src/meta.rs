@@ -64,6 +64,9 @@ pub struct LeverInfo {
     pub available_in: Vec<SystemKey>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<Vec<String>>,
+    /// Enum options that exist only in some systems (from `content/levers.json`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub option_available_in: Option<BTreeMap<String, Vec<SystemKey>>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,6 +77,7 @@ pub struct ActionInfo {
     pub label: String,
     pub base_cost_pc: f64,
     pub lead_time: u32,
+    pub cost_model: CostModel,
     /// Estimated dollars charged on activation; 0 if none. `preview` is the authority.
     pub money_cost: f64,
     pub available_in: Vec<SystemKey>,
@@ -112,6 +116,8 @@ struct LeverEntry {
     available_in: Vec<SystemKey>,
     #[serde(default)]
     options: Option<Vec<String>>,
+    #[serde(default)]
+    option_available_in: Option<BTreeMap<String, Vec<SystemKey>>>,
 }
 
 #[derive(Deserialize)]
@@ -211,6 +217,7 @@ impl Meta {
                 arrows: e.arrows.clone(),
                 available_in: e.available_in.clone(),
                 options: e.options.clone(),
+                option_available_in: e.option_available_in.clone(),
             });
         }
         let mut actions = Vec::new();
@@ -235,6 +242,11 @@ impl Meta {
                 label: e.label.clone(),
                 base_cost_pc: cfg.base_cost,
                 lead_time: cfg.lead_time,
+                cost_model: CostModel {
+                    base: cfg.base_cost,
+                    unit: cfg.unit,
+                    min_size: cfg.min_size,
+                },
                 money_cost: money,
                 available_in: e.available_in.clone(),
             });

@@ -255,7 +255,13 @@
       "options": [
         "open",
         "community"
-      ]
+      ],
+      "optionAvailableIn": {
+        "community": [
+          "regulated",
+          "coop"
+        ]
+      }
     },
     "bank_capital_ratio": {
       "label": "Bank capital ratio",

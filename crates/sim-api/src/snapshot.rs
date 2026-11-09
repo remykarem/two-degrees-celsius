@@ -174,11 +174,26 @@ pub enum CommonsAccessKey {
     Enclosed,
 }
 
+/// A stock as a share of its maximum, clamped to 0..=1 (0 if the maximum is not positive).
+fn share(stock: f64, max: f64) -> f64 {
+    if max > 0.0 {
+        (stock / max).clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NatureView {
+    /// Forest stock as a share of `nature.forest_max`, 0..=1 (`stock / forest_max`, clamped).
     pub forest: f64,
+    /// Commons stock as a share of `nature.commons_max`, 0..=1 (`stock / commons_max`, clamped).
     pub commons: f64,
+    /// Raw forest stock (the model's unit).
+    pub forest_stock: f64,
+    /// Raw commons stock (the model's unit).
+    pub commons_stock: f64,
     pub commons_access: CommonsAccessKey,
     pub cumulative_tonnes: f64,
     pub net_emissions_monthly: f64,
@@ -495,8 +510,10 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
             spending: s.gov.spending.dollars(),
         },
         nature: NatureView {
-            forest: s.nature.forest.0,
-            commons: s.nature.commons.0,
+            forest: share(s.nature.forest.0, sim.params.nature.forest_max),
+            commons: share(s.nature.commons.0, sim.params.nature.commons_max),
+            forest_stock: s.nature.forest.0,
+            commons_stock: s.nature.commons.0,
             commons_access: match s.nature.commons_access {
                 st::CommonsAccess::Open => CommonsAccessKey::Open,
                 st::CommonsAccess::Community { .. } => CommonsAccessKey::Community,
@@ -527,6 +544,14 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stocks_become_shares_of_their_maximum() {
+        assert_eq!(share(50_000.0, 100_000.0), 0.5);
+        assert_eq!(share(150_000.0, 100_000.0), 1.0);
+        assert_eq!(share(-1.0, 100_000.0), 0.0);
+        assert_eq!(share(1.0, 0.0), 0.0);
+    }
 
     #[test]
     fn building_counts_round_from_capacity() {

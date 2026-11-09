@@ -371,7 +371,13 @@
     "options": [
       "open",
       "community"
-    ]
+    ],
+    "optionAvailableIn": {
+      "community": [
+        "regulated",
+        "coop"
+      ]
+    }
   },
   {
     "key": "bank_capital_ratio",
