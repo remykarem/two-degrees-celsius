@@ -2,12 +2,13 @@
   import { quarterLabel, type Game } from '../store';
   import { briefingLines } from './format';
   import { Button } from '../ui-kit';
+  import { ui } from './ui';
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   let dismissedTurn = $state(0);
   const turn = $derived($gs.snapshot?.turn ?? 0);
-  const show = $derived($gs.phase === 'review' && dismissedTurn !== turn);
+  const show = $derived($gs.phase === 'review' && dismissedTurn !== turn && !$ui.drawerOpen);
   const lines = $derived(briefingLines($gs.lastResult, $gs.levers, $gs.actions));
 </script>
 

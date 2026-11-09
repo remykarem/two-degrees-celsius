@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { BriefingCard, BuildPalette, EndScreen, Inspector, MetricsPanel, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, ResultsScreen, TopBar, ViewBar } from '../panels';
+  import { BriefingCard, BuildPalette, CrisisBanner, EndScreen, Inspector, MetricsPanel, Onboarding, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, ResultsScreen, SystemModal, TopBar, ViewBar, WhyModal } from '../panels';
   import type { Game } from '../store';
   import { attachKeys } from './keys';
   import { attachPlayback } from './playback';
@@ -18,6 +18,7 @@
 
 <div class="app" data-phase={$gs.phase}>
   <TopBar {game} />
+  <CrisisBanner {game} />
   <BuildPalette {game} />
   <main>
     <SceneHost {game} />
@@ -26,9 +27,12 @@
     <PolicyDrawer {game} />
     <BriefingCard {game} />
     <PlaybackTicker {game} />
-    <ResultsScreen {game} />
-    <EndScreen {game} />
+    <Onboarding {game} />
   </main>
+  <ResultsScreen {game} />
+  <EndScreen {game} />
+  <SystemModal {game} />
+  <WhyModal {game} />
   <MetricsPanel {game} />
   <div class="bottom">
     {#if showTray}<PlanTray {game} />{/if}
@@ -37,7 +41,8 @@
 </div>
 
 <style>
-  .app { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: 180px minmax(0, 1fr) 310px; }
+  .app { height: 100vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-columns: 180px minmax(0, 1fr) 310px; }
+  @media (max-width: 1200px) { .app { grid-template-columns: 150px minmax(0, 1fr) 280px; } }
   :global(header) { grid-column: 1 / -1; }
   main { position: relative; overflow: hidden; }
   .bottom { grid-column: 1 / -1; }

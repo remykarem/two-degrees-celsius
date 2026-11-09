@@ -10,12 +10,12 @@
 </script>
 
 {#if $gs.phase === 'playback'}
-  <section class="ticker" aria-label="Quarter playback" aria-live="polite">
+  <section class="ticker" aria-label="Quarter playback">
     <div class="head">
-      <strong>{$gs.playback.month < 0 ? 'Starting…' : `Month ${$gs.playback.month + 1} of 3`}</strong>
+      <strong role="status">{$gs.playback.month < 0 ? 'Starting…' : `Month ${$gs.playback.month + 1} of 3`}</strong>
       <Button onclick={() => game.finishPlayback()}>Skip ▸▸</Button>
     </div>
-    <ul>{#each lines as l, i (i)}<li class:big={l.importance >= 2}><span class="m">M{l.month + 1}</span> {l.text}</li>{/each}</ul>
+    <ul role="log" aria-live="polite" aria-relevant="additions">{#each lines as l, i (i)}<li class:big={l.importance >= 2}><span class="m">M{l.month + 1}</span> {l.text}</li>{/each}</ul>
   </section>
 {/if}
 

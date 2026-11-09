@@ -10,3 +10,7 @@ export { default as ResultsScreen } from './ResultsScreen.svelte';
 export { default as EndScreen } from './EndScreen.svelte';
 export { default as ViewBar } from './ViewBar.svelte';
 export { default as Inspector } from './Inspector.svelte';
+export { default as CrisisBanner } from './CrisisBanner.svelte';
+export { default as SystemModal } from './SystemModal.svelte';
+export { default as WhyModal } from './WhyModal.svelte';
+export { default as Onboarding } from './Onboarding.svelte';
