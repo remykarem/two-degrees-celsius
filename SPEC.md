@@ -469,3 +469,18 @@ The main risk is that the model produces boring or degenerate behaviour (everyth
 2. Settle the remaining open questions in section 15.
 3. ~~Confirm decisions D1 to D3~~ Confirmed: cohort households, 2 dormant firm slots, closed economy (see `docs/causal-model.md`).
 4. Start milestone 1: the headless model as a Rust workspace, following the rules in 13.1. Not started; no code has been written yet.
+
+
+---
+
+## 17. Town v2 amendment (approved, supersedes earlier sections where they conflict)
+
+Full design: `docs/town-v2.md`. Summary of what changes in this spec:
+- **Agents (sections 2, 5, 6):** 20 **individual people in 8 households** (2 to 4 people), not 6 cohorts and not 1,000 people. The cohort decision D1 in `docs/causal-model.md` is withdrawn. Class is still derived, now per household. Households can move or lose their home; people never leave town; no births or deaths.
+- **Firms (section 5):** Factory, Farm and **Shop (services)**, plus one dormant slot. `Sector` gains `Services`.
+- **Space (sections 12, 13.1):** the **simulation owns the 12 x 12 map**. Placement commands carry a tile and position has gameplay effects (commutes, local pollution). This reverses the "map is cosmetic" decision.
+- **Buildables:** public housing, fossil plant, renewable plant and **roads** (roads shorten commutes; cost plus maintenance only).
+- **Plants emit directly:** fossil plants emit, renewables do not; the old `grid_factor` multiplier is replaced by energy emissions attributed to plants.
+- **Start (section 1, 10):** very unequal (Gini about 0.65 to 0.75). Names are abstract labels.
+- **Metrics (section 9):** add average and median income per person and the top-household wealth share.
+- **Milestones (section 14):** a "Town v2" milestone sits before further balancing; earlier balance numbers (Phase 2, cohort model) are provisional.

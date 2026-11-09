@@ -1,6 +1,6 @@
 # Town v2 design (draft for review)
 
-Status: **draft, nothing implemented.** Replaces the cohort model (decision D1 in `docs/causal-model.md`) with **individual people living in households**, puts the **map inside the simulation**, and adds **roads**, **plants that emit directly**, a **services firm**, and a much harsher **starting inequality**. Every number is a placeholder to tune. Items marked **[DECIDED]** came from the user; **[PROPOSED]** are my choices for you to confirm or change.
+Status: **APPROVED by the user; implementation starting.** Replaces the cohort model (decision D1 in `docs/causal-model.md`) with **individual people living in households**, puts the **map inside the simulation**, and adds **roads**, **plants that emit directly**, a **services firm**, and a much harsher **starting inequality**. Every number is a placeholder to tune. Items marked **[DECIDED]** came from the user; **[PROPOSED]** are my choices for you to confirm or change.
 
 ## 1. What changes and why
 
@@ -138,8 +138,9 @@ Steps 2 and 3 are sequential (the wire needs the model). The web agent can start
 6. **Local pollution** near plants and the factory is included as an optional small effect.
 7. **Roads are only tiles that speed up commutes**, with build cost and maintenance.
 
-## 13. Open questions
+## 13. Resolved questions (user answers)
 
-1. Should a household be able to **move** (rent a different home, lose its home)? Proposed: yes, evictions and moves happen in the monthly tick, but nobody is ever added or removed.
-2. Should **people leave town** when wellbeing is very low? Proposed: not in v1.
-3. How visible should **names** be? The spec chose abstract labels, so people are "Worker A, adult 2".
+1. **Households can move or lose their home.** Evictions and moves happen in the monthly tick (a household that cannot pay rent for 3 months loses its home; a household with spare income and a vacant, affordable home may move). Nobody is ever added to or removed from the town.
+2. **People do not leave town**, however low wellbeing falls.
+3. **Names:** abstract labels only. Households are "Owner family", "Landlord", "Manager A" and so on; people are "Adult 1", "Child 1" within their household. No personal names.
+4. The seven proposed defaults in section 12 are **approved**, including Factory + Farm + Shop and the map moving into the simulation.

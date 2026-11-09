@@ -76,3 +76,16 @@ web/src/
 3. **Review** (1 independent reviewer).
 4. **Later:** WASM glue replaces the mock (after the Phase 2 balancing in `docs/balance-backlog.md`).
 Builders take browser screenshots as they go. Never more than 2 agents at once.
+
+
+---
+
+## Town v2 amendment (approved)
+
+See `docs/town-v2.md`. Changes to this document:
+- **Map ownership is withdrawn:** the simulation owns the 12 x 12 grid. The UI renders `tiles` from the snapshot; it no longer stores a layout. Tile validity for placement comes from `preview()`.
+- **Palette:** public housing, fossil plant, renewable plant and **road**.
+- **Inspector:** a **person view** (job, wage, skill, commute, wellbeing) and a **household view** (members, money, assets, class, home) replace the cohort inspector. A household list makes people easy to find.
+- **Metrics:** add average income per person, median income, top-household wealth share; unemployment shown as "N of M".
+- **Look:** grass-green ground and soft sky gradient, a raised island plot, dirt paths where there are no roads and asphalt where there are. One figure per person.
+- **Animation:** purchases are real flows (household to firm); commutes follow roads.

@@ -231,3 +231,28 @@ From the independent review of the web app (mock vs the real Rust crates). Where
 10. **Collapse outcomes** `mass_unemployment` and `bank_failure_cascade` are real and must be reachable in the mock.
 11. **Mock sync.** The mock's numbers (PC start/cap/regen, per-lever costs and lead times, build costs, building capacity per unit, starting policy, transition lengths, carbon budget, calendar) are generated from `content/*.json` by a script (`web`: `npm run sync-mock`), and a test fails if the generated file is stale.
 12. **Fixtures.** The Rust wire layer writes sample JSON to `docs/fixtures/` (`snapshot-turn1.json`, `turn-result.json`, `levers.json`, `actions.json`) so the web side can test its types against real output.
+
+## 11. Contract v1.0: Town v2 (breaking; supersedes sections 5 and 7 and any `households` cohort shape)
+
+Approved design: `docs/town-v2.md`. The map is now owned by the simulation. Types below extend the TypeScript sketch in section 4; where they conflict, **this section wins**. The exact wire shapes will be finalised by the `sim-api` agent, with fixtures in `docs/fixtures/`, and any difference recorded in `docs/sim-api-notes.md`.
+
+- **Removed:** cohort-style `HouseholdView` (class, `people` count, per-cohort income) and the "UI owns the layout" rule (section 5). `Snapshot.buildings` counts remain as a summary.
+- **New snapshot fields:** `map: { width: 12; height: 12; tiles: Tile[] }`, `people: PersonView[]`, `households: HouseholdView[]` (new shape), `homes: HomeView[]`.
+```ts
+type TileKind = 'empty' | 'home' | 'public_housing' | 'firm' | 'bank' | 'town_hall'
+  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons';
+interface Tile { x: number; y: number; kind: TileKind; ref?: number /* home/firm id */; buildable: boolean }
+interface PersonView { id: number; label: string; household: number; ageBand: 'child'|'adult'|'retired';
+  skill: number; job: { firm: number } | null; wage: number; commuteTiles: number; commuteMinutes: number; wellbeing: number }
+interface HouseholdView { id: number; label: string; members: number[]; home: number | null; class: ClassKey;
+  savings: number; debt: number; netWorth: number; income: { wages: number; dividends: number; rent: number; interest: number; benefits: number; taxPaid: number; rentPaid: number; loanPayments: number; spending: number };
+  politicalPower: number; arrearsMonths: number }
+interface HomeView { id: number; tile: { x: number; y: number }; owner: number /* household id */ | 'public'; household: number | null; rent: number }
+```
+- **Commands:** `place { kind: 'public_housing'|'fossil_plant'|'renewable_plant'|'road'; tile: {x,y} }` (tile now required and honoured), `remove { tile: {x,y} }`. `BlockReason` gains `tile_occupied`, `tile_invalid`. `CommandPreview` gains `tileValid: boolean` and `tileReason?: string`; the UI may also call a `validTiles(kind): {x,y}[]` helper to shade the grid.
+- **Sector:** `'goods' | 'food' | 'services'`. **MetricKey** gains `avg_income`, `median_income`, `top_wealth_share`.
+- **Indicators** gain `avgIncomePerPerson`, `medianIncomePerPerson`, `topHouseholdWealthShare`. `HistoryPoint` gains the same three.
+- **Events** gain `household_moved{household, to}`, `household_evicted{household}`, `person_hired{person, firm}`, `person_fired{person, firm}`, `purchase{household, firm, amount}`; `commuted` carries `person`.
+- **MonthFrame.flows:** `commutes` are per person (with a tile path), `purchases` are real (household to firm).
+- **Nature:** each plant tile reports `emissionsMonthly`; `TraceRecord.emissions` source adds `'plant'` with the tile.
+- **Versioning:** `schemaVersion` becomes 2. Old saves are refused with a clear message.

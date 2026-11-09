@@ -340,3 +340,21 @@ Because the player steers every turn, the model does not need to be stable on it
 **Soft targets for run A (informal):** GDP growth around 1% to 2% a year when not in recession; Gini starting near 0.40 and rising to 0.50 to 0.60. If these cannot be reached without implausible rules, say so rather than forcing it.
 
 **Winnable but not trivial:** at least one plausible strategy (for example, only a carbon tax and nothing else) should *fail*, so the player has to combine tools.
+
+
+---
+
+## 10. Town v2 amendment (supersedes D1 and the cohort assumptions in sections 0 to 3)
+
+Approved design: `docs/town-v2.md`. Where this section conflicts with earlier text, this section wins.
+- **D1 withdrawn.** There are no cohorts. 20 persons live in 8 households. Money, spending, saving, rent and loans are household-level; employment, skill, commuting and wellbeing are person-level. Class is derived per household with the same S9 function applied to household income and ownership.
+- **S1 Labour:** individual matching: each unemployed adult applies to firms with vacancies; wage offers per firm as before; skill and commute affect the effective hours of each worker. Firing and hiring act on named jobs.
+- **S2 Production:** effective labour = sum over workers of `skill x effective_hours`, where `effective_hours = 1 - k_commute x max(0, commute_minutes - free_minutes)`.
+- **S3 Housing:** each home houses at most one household. Rent is paid per home. A household with no home pays no rent but suffers a wellbeing and security penalty. Moves and evictions are processed monthly (3 months of unpaid rent loses the home; a household with spare income may move to a vacant affordable home).
+- **S3 Goods:** households buy food (need), goods and services (discretionary). The Shop sells services; purchases flow household to firm and are recorded as events.
+- **S7 Plants:** `emissions_plant = fossil_output x factor_fossil`; renewables 0. Firm and household emissions are split into direct emissions and energy emissions; energy emissions are attributed to plants by capacity share. `grid_factor` as a multiplier is removed. If electricity demand exceeds supply, output is rationed proportionally.
+- **Roads:** `commute_minutes = tiles_without_road x slow + tiles_on_road x fast` along the cheapest path. Maintenance is paid by the government per road tile per month. No traffic or congestion.
+- **S10 Wellbeing:** per person, with added terms for commute time, being unhoused, and (optional) local pollution within 2 tiles of a fossil plant or the Factory.
+- **Systems S4, S5, S6, S8, S9b** carry over, applied per household; lobbying power derives from household wealth.
+- **Kept from Phase 2:** the wage and price rules, green-investment smoothing and the demand levers, as rules. All calibrated numbers must be redone.
+- **Baselines (section 9)** are re-established over many seeds (distributions, not single runs), plus a single-seed golden test.
