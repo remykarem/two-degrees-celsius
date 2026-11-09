@@ -180,7 +180,11 @@ The simulation has no space. So:
 ## 6. Save and load
 Save file = `{ schemaVersion, simState: <opaque string from exportState>, layout, uiPrefs }`. A mismatched `schemaVersion` is detected and refused with a clear message.
 
-## 7. Open decisions for the user
+## 7. Decisions
+
+**Confirmed:** A (the UI owns the layout; position is cosmetic and the UI says so) and B option 1 (v1 ships with the three real build commands; firms, homes and forest are fixed scenery). C (derived names) is accepted as the working default.
+
+Original options, kept for the record:
 - **A. Map ownership:** UI-owned layout, position cosmetic (recommended), or a spatial model in the sim (large scope, not for v1).
 - **B. Build palette scope for v1:** only `public_housing`, `fossil_plant`, `renewable_plant` are real commands. Options: (1) ship with those three and show firms, homes and forest as fixed scenery; (2) add roads, clinic/school and forest planting to the simulation as new commands, which means new model rules.
 - **C. Names:** firm names derived from sector ("Factory", "Farm") and cohort labels as already set, or richer labels. (The spec chose abstract labels, so derived names are fine.)

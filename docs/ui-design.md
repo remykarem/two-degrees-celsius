@@ -5,6 +5,8 @@ Companion to `SPEC.md` sections 4.1, 12, 12.1 and 13. The game is turn-based (1 
 ## Decisions
 - **Playback** after End turn lasts about 6 to 10 seconds and is **skippable**.
 - **Map** is a **12 x 12** tile grid (144 tiles), rotatable in 90 degree steps.
+- **Map ownership:** the UI owns the tile layout; the simulation has no space, so position is cosmetic and the UI says so (`docs/snapshot-contract.md` section 5).
+- **Build palette v1:** only the three real commands, public housing, fossil plant and renewable plant. Firms, homes and forest are fixed scenery. Roads, clinics, schools and forest planting are out of scope until the simulation supports them.
 - **Predicted effects** show **direction arrows only**, not numeric ranges. Ranges may be added later if playtesting shows the preview is too opaque; they would need a forecast run on a copy of the town and must never be wrong enough to feel like a lie.
 
 ## The turn loop (UI phases)
