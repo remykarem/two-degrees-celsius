@@ -69,6 +69,10 @@ export interface ActionInfo {
   /** Estimated dollars; 0 if none. preview() is the authority on actual cost. */
   moneyCost: number;
   availableIn: SystemKey[];
+  /** True for place and remove actions. Real wire only. */
+  needsTile?: boolean;
+  /** Plain-text rule for which tiles are valid. Real wire only. */
+  tileRule?: string;
 }
 
 export interface CommandPreview {
@@ -123,6 +127,8 @@ export type AgeBand = 'child' | 'adult' | 'retired';
 export interface PersonView {
   id: number; label: string; household: number; ageBand: AgeBand; skill: number;
   job: { firm: number } | null; wage: number; commuteTiles: number; commuteMinutes: number; wellbeing: number;
+  /** Extras on the real wire (docs/sim-api-notes.md). */
+  inLabourForce: boolean; jobGuarantee: boolean; effectiveHours: number;
 }
 
 export interface HouseholdView {
@@ -133,6 +139,8 @@ export interface HouseholdView {
     taxPaid: number; rentPaid: number; loanPayments: number; spending: number;
   };
   politicalPower: number; arrearsMonths: number;
+  /** Extras on the real wire (docs/sim-api-notes.md). */
+  wellbeing: number; footprintTonnes: number; foodMet: number;
 }
 
 export interface HomeView {
@@ -141,7 +149,12 @@ export interface HomeView {
   owner: number | 'public';
   household: number | null;
   rent: number;
+  /** Extra on the real wire. */
+  value: number;
 }
+
+/** Extra on the real wire: one entry per plant (also on its tile as `emissionsMonthly`). */
+export interface PlantView { id: number; kind: 'fossil' | 'renewable'; tile: TileRef; capacity: number; output: number; emissionsMonthly: number }
 
 export type Sector = 'goods' | 'food' | 'services';
 
@@ -152,7 +165,7 @@ export type FirmOwner =
   | { kind: 'bank' };
 
 export interface FirmView {
-  id: number; active: boolean; sector: Sector; name: string;
+  id: number; active: boolean; sector: Sector; name: string; tile: TileRef;
   owner: FirmOwner;
   workers: number; wage: number; price: number; output: number; emissions: number;
   revenue: number; profit: number; capital: number; debt: number; greenTech: number;
@@ -170,10 +183,11 @@ export interface NatureView {
   commonsAccess: 'open' | 'community' | 'enclosed';
   cumulativeTonnes: number; netEmissionsMonthly: number; grossEmissionsMonthly: number; sinkMonthly: number;
 }
-export interface HousingView {
-  privateCap: number; publicCap: number; rentPrivate: number; rentPublic: number; occupancy: number; housedShare: number;
+export interface HousingView { homes: number; rentPrivate: number; rentPublic: number; occupancy: number; unhousedHouseholds: number }
+export interface EnergyView {
+  fossilCap: number; renewableCap: number; fossilShare: number;
+  demand: number; supply: number; delivered: number; served: number; gridIntensity: number;
 }
-export interface EnergyView { fossilCap: number; renewableCap: number; fossilShare: number }
 
 export interface HistoryPoint {
   turn: number; gdpRealAnnual: number; unemployment: number; gini: number;
@@ -184,7 +198,7 @@ export interface HistoryPoint {
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
 
 /** Summary counts (the tiles are the truth). */
-export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number; road?: number }
+export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number }
 
 export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
 
@@ -210,6 +224,7 @@ export interface Snapshot {
   people: PersonView[];
   households: HouseholdView[];
   homes: HomeView[];
+  plants: PlantView[];
   firms: FirmView[];
   bank: BankView;
   government: GovernmentView;
@@ -235,12 +250,12 @@ export interface TurnResult {
   snapshot: Snapshot;
 }
 
-/** Any array may be missing or empty. Commutes are per person with a tile path; purchases are real (household to firm). */
+/** Any array may be missing or empty. Commutes are per person (from/to tiles, tiles and minutes; the route is not exposed); purchases are real (household to firm). */
 export interface MonthFlows {
-  commutes?: { person: number; household: number; firm: number; path: TileRef[] }[];
+  commutes?: { person: number; household: number; firm: number; from: TileRef | null; to: TileRef; tiles: number; minutes: number }[];
   purchases?: { household: number; firm: number; sector: Sector; amount: number }[];
-  rent?: { household: number; amount: number }[];
-  wages?: { household: number; firm: number; amount: number }[];
+  rent?: { household: number; home: number; amount: number }[];
+  wages?: { person: number; household: number; firm: number; amount: number }[];
   emissions?: { source: 'firm' | 'households' | 'sink' | 'plant'; id?: number; tile?: TileRef; tonnes: number }[];
 }
 
@@ -255,7 +270,10 @@ type Importance = { importance: 1 | 2 | 3 };
 
 /** Type + importance + payload. No display text: the UI formats it. */
 export type SimEvent = Importance & (
-  | { type: 'commuted'; person: number; household: number; firm: number }
+  | { type: 'commuted'; person: number; firm: number; tiles: number; minutes: number }
+  | { type: 'built'; kind: InfraKind; tile: TileRef }
+  | { type: 'removed'; tile: TileRef }
+  | { type: 'electricity_rationed'; served: number }
   | { type: 'person_hired'; person: number; firm: number }
   | { type: 'person_fired'; person: number; firm: number }
   | { type: 'household_moved'; household: number; to: number }

@@ -3,10 +3,10 @@ import type { Lens, MapLayout } from '../store';
 import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
 import type { EntityDesc } from './entities';
-import { CLASS_COLOR, CLASS_LABEL, GROUND, hex, mix, PATH } from './palette';
+import { ASPHALT, CLASS_COLOR, CLASS_LABEL, GROUND, hex, mix, PATH } from './palette';
 
 /** Map lenses as pure colour functions: snapshot in, hex colours out. No Three.js. */
-export interface LensCtx { descs: EntityDesc[]; snapshot: Snapshot | null; layout: MapLayout; roads: Set<string> }
+export interface LensCtx { descs: EntityDesc[]; snapshot: Snapshot | null; layout: MapLayout; roads: Set<string>; /** Built roads (tile keys), drawn as asphalt. */ asphalt: Set<string> }
 
 export const RAMP = {
   emissions: [0xfff3c4, 0xf6a54a, 0xd55e00, 0x8a3a22],
@@ -28,7 +28,7 @@ const dim = (base: number) => mix(base, NEUTRAL, 0.55);
 
 export interface Extremes { maxFirmEmissions: number; wealthLo: number; wealthHi: number; maxWorkers: number }
 export function extremes(s: Snapshot | null): Extremes {
-  const w = s?.households.map((h) => h.wealthPerCapita) ?? [0];
+  const w = s?.households.map((h) => h.netWorth / Math.max(1, h.members.length)) ?? [0];
   return {
     maxFirmEmissions: Math.max(1e-9, ...(s?.firms.map((f) => (f.active ? f.emissions : 0)) ?? [0])),
     wealthLo: Math.min(...w), wealthHi: Math.max(...w),
@@ -41,6 +41,12 @@ const logT = (v: number, lo: number, hi: number) => {
   return hi > lo ? (f(v) - f(lo)) / (f(hi) - f(lo)) : 0.5;
 };
 export const employmentShare = (h: { employed: number; labourForce: number }) => (h.labourForce > 0 ? h.employed / h.labourForce : 1);
+/** Employed adults over adults. PersonView has no labour-force flag (docs/web-notes-v2.md), so owners and landlords count as fully employed. */
+export function householdEmployment(s: Snapshot | null, h: { id: number; class: string }): number {
+  if (!s || h.class === 'capitalist' || h.class === 'rentier') return 1;
+  const adults = s.people.filter((p) => p.household === h.id && p.ageBand === 'adult');
+  return employmentShare({ employed: adults.filter((p) => p.job).length, labourForce: adults.length });
+}
 export const netMoney = (h: { income: { wages: number; dividends: number; rent: number; interest: number; benefits: number; taxPaid: number; rentPaid: number; loanPayments: number; spending: number } }) => {
   const i = h.income;
   return i.wages + i.dividends + i.rent + i.interest + i.benefits - i.taxPaid - i.rentPaid - i.loanPayments - i.spending;
@@ -75,9 +81,9 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
     } else if (lens === 'class') {
       c = h ? CLASS_COLOR[h.class] : dim(d.tint);
     } else if (lens === 'wealth') {
-      c = h ? ramp(RAMP.wealth, logT(h.wealthPerCapita, ex.wealthLo, ex.wealthHi)) : dim(d.tint);
+      c = h ? ramp(RAMP.wealth, logT(h.netWorth / Math.max(1, h.members.length), ex.wealthLo, ex.wealthHi)) : dim(d.tint);
     } else if (lens === 'employment') {
-      if (h) c = ramp(RAMP.employment, (employmentShare(h) - 0.5) / 0.5);
+      if (h) c = ramp(RAMP.employment, (householdEmployment(ctx.snapshot, h) - 0.5) / 0.5);
       else if (d.firm?.active) c = ramp(RAMP.wealth, d.firm.workers / ex.maxWorkers);
       else c = dim(d.tint);
     } else if (lens === 'flows') {
@@ -96,7 +102,7 @@ export function tileTints(lens: Lens, ctx: LensCtx): number[] {
   const out: number[] = [];
   const em = lens === 'emissions' ? emitterWeights(ctx) : [];
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const base = ctx.roads.has(tileKey({ x, y })) ? PATH : GROUND[(x + y) % 2]!;
+    const base = ctx.asphalt.has(tileKey({ x, y })) ? ASPHALT : ctx.roads.has(tileKey({ x, y })) ? PATH : GROUND[(x + y) % 2]!;
     if (lens !== 'emissions') { out.push(base); continue; }
     const [cx, cz] = centreOf({ x, y }, n);
     let heat = 0;

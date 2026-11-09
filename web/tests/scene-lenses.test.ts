@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
 import { LENSES } from '../src/store';
-import { reconcileLayout } from '../src/store/layout';
+import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { planEntities } from '../src/scene/entities';
 import { entityTints, legendFor, ramp, RAMP, tileTints, emitterWeights, employmentShare, type LensCtx } from '../src/scene/lenses';
@@ -9,9 +9,9 @@ import { CLASS_COLOR, hex } from '../src/scene/palette';
 import { pathTiles } from '../src/scene/paths';
 
 const snapshot = ok(createSimPort().init(3));
-const layout = reconcileLayout(null, snapshot);
+const layout = layoutOf(snapshot);
 const descs = planEntities(layout, snapshot);
-const ctx: LensCtx = { descs, snapshot, layout, roads: pathTiles(layout) };
+const ctx: LensCtx = { descs, snapshot, layout, roads: pathTiles(layout), asphalt: new Set(layout.roads.map((t) => `${t.x},${t.y}`)) };
 
 describe('lens colours', () => {
   it('ramp hits its end stops and is monotone in between', () => {
@@ -43,7 +43,7 @@ describe('lens colours', () => {
   });
   it('wealth lens ranks poorer homes lighter than richer homes', () => {
     const t = entityTints('wealth', ctx);
-    const homes = descs.filter((d) => d.household).sort((a, b) => a.household!.wealthPerCapita - b.household!.wealthPerCapita);
+    const homes = descs.filter((d) => d.household).sort((a, b) => a.household!.netWorth / a.household!.members.length - b.household!.netWorth / b.household!.members.length);
     const lum = (c: number) => ((c >> 16) & 255) + ((c >> 8) & 255) + (c & 255);
     expect(lum(t.get(homes[0]!.key)!)).toBeGreaterThanOrEqual(lum(t.get(homes.at(-1)!.key)!));
   });

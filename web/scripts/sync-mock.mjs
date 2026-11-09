@@ -81,7 +81,7 @@ export function generate() {
   const deposits = sum(households.map((h) => h.savings)) + sum(firms.map((f) => f.cash)) + town.gov_cash_usd;
   const equity = loans - deposits;
   const kappa = Math.max(town.policy.bank_capital_ratio, 1e-9);
-  const plantCap = g.plant_capacity;
+  const plantCap = params.energy.plant_capacity;
   const wageBill = sum(active.map((f) => f.wage * f.workers));
 
   return {
@@ -94,7 +94,7 @@ export function generate() {
     systems,
     space: {
       slowMinutes: params.space.slow_minutes, fastMinutes: params.space.fast_minutes, freeMinutes: params.space.free_minutes,
-      unhousedTiles: params.space.unhoused_commute_tiles, unhousedMinutes: params.space.unhoused_commute_minutes,
+      kCommute: params.space.k_commute, minEffectiveHours: params.space.min_effective_hours, unhousedTiles: params.space.unhoused_commute_tiles, unhousedMinutes: params.space.unhoused_commute_minutes,
     },
     build: {
       plantCapacity: plantCap, publicHousingCostUsd: g.public_housing_cost_usd, plantCostUsd: g.plant_cost_usd, roadCostUsd: g.road_cost_usd, roadUpkeepUsd: g.road_upkeep_usd,

@@ -36,6 +36,8 @@ export const PANEL = 0x2d4f7a;
 
 export const GROUND = [0xdbe6c4, 0xd2dfb9];
 export const PATH = 0xece3cc;
+/** Real (built) roads: darker than the footpaths. */
+export const ASPHALT = 0x6d7078;
 export const SOIL = 0xb59b78;
 export const BACKGROUND = 0xf6f0e3;
 export const EDGE = 0x5a4636;

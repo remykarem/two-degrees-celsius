@@ -1,25 +1,26 @@
 <script lang="ts">
-  import type { Game } from '../store';
+  import { layoutOf, type Game, type Selection } from '../store';
   import { Button } from '../ui-kit';
-  import { INFRA_LABEL, resolveInspect } from './inspect';
-  import { REASON_TEXT } from './format';
+  import { INFRA_LABEL, resolveSelection, resolveTile } from './inspect';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const pinned = $derived($gs.selection);
   const hovering = $derived(!pinned && !$gs.buildKind ? $gs.hover : null);
-  const tile = $derived(pinned ?? hovering);
-  const model = $derived($gs.snapshot && tile ? resolveInspect($gs.snapshot, $gs.layout, tile, $gs.draft) : null);
+  const layout = $derived(layoutOf($gs.snapshot));
+  const model = $derived(!$gs.snapshot ? null : pinned ? resolveSelection($gs.snapshot, layout, pinned, $gs.draft) : hovering ? resolveTile($gs.snapshot, layout, hovering, $gs.draft) : null);
   const hoverErr = $derived($gs.buildKind && $gs.hover ? game.tileError($gs.hover) : null);
   const canEdit = $derived($gs.phase === 'review' || $gs.phase === 'plan');
   const maxIncome = $derived(Math.max(1, ...(model?.income ?? []).map((p) => p.value)));
 
+  const open = (s: Selection) => game.select(s);
   function queueRemoval() {
-    if (model?.removable) game.draftCommand({ type: 'remove', kind: model.removable.kind, count: 1 });
+    if (model?.removable) game.removeAt(model.removable.tile);
   }
   function undoRemoval() {
-    const d = $gs.draft.find((x) => x.command.type === 'remove' && model?.removable && x.command.kind === model.removable.kind);
+    const r = model?.removable;
+    const d = $gs.draft.find((x) => r && x.command.type === 'remove' && x.command.tile.x === r.tile.x && x.command.tile.y === r.tile.y);
     if (d) game.removeDraft(d.id);
   }
 </script>
@@ -34,7 +35,7 @@
       {#if pinned}<button class="close" aria-label="Close inspector" onclick={() => game.select(null)}>✕</button>{:else}<span class="chip">hover</span>{/if}
     </header>
     <p class="sub">{model.subtitle}</p>
-    <p class="ro">Read-only. Click a tile to keep this open.</p>
+    {#if !pinned}<p class="ro">Click a tile to keep this open.</p>{/if}
 
     {#each model.sections as sec (sec.heading)}
       <section>
@@ -42,6 +43,16 @@
         <dl>{#each sec.rows as r (r.label)}<dt>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
       </section>
     {/each}
+
+    {#if model.household}
+      <p class="link"><button class="lnk" onclick={() => open(model.household!.selection)}>{model.household.label} ({model.household.detail})</button></p>
+    {/if}
+    {#if model.members}
+      <section>
+        <h4>People</h4>
+        <ul class="ppl">{#each model.members as m (m.label)}<li><button class="lnk" onclick={() => open(m.selection)}>{m.label}</button> <span>{m.detail}</span></li>{/each}</ul>
+      </section>
+    {/if}
 
     {#if model.income}
       <section>
@@ -57,12 +68,11 @@
     {#if model.removable}
       <section class="rm">
         {#if model.removable.already}
-          <p>Removal of one {INFRA_LABEL[model.removable.kind].toLowerCase()} is in your plan.</p>
+          <p>Removal of this {INFRA_LABEL[model.removable.kind].toLowerCase()} is in your plan.</p>
           <Button onclick={undoRemoval} disabled={!canEdit}>Undo removal</Button>
         {:else}
-          <Button onclick={queueRemoval} disabled={!canEdit || !!model.removable.reason}
-            title={model.removable.reason ?? 'Queue removal of one of this kind'}>Remove {INFRA_LABEL[model.removable.kind].toLowerCase()}…</Button>
-          {#if !canEdit}<p class="hint">Removal can be queued in Review or Plan.</p>{:else if model.removable.reason}<p class="hint">{REASON_TEXT.nothing_to_remove}</p>{/if}
+          <Button onclick={queueRemoval} disabled={!canEdit} title="Queue removal of this tile's building">Remove {INFRA_LABEL[model.removable.kind].toLowerCase()}…</Button>
+          {#if !canEdit}<p class="hint">Removal can be queued in Review or Plan.</p>{/if}
         {/if}
       </section>
     {/if}
@@ -89,5 +99,10 @@
   .bar { display: block; height: 100%; background: var(--series-1); }
   .v { text-align: right; font-family: var(--font-mono); }
   .rm { margin-top: 8px; }
+  .ppl { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .ppl span { color: var(--text-dim); font-size: 12px; }
+  .lnk { border: 0; background: transparent; color: var(--series-1); cursor: pointer; text-decoration: underline; padding: 0; font: inherit; }
+  .link { margin: 4px 0; font-size: 13px; }
+  aside:not(.hover) { pointer-events: auto; }
   .tip { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 12; background: var(--text); color: var(--bg); padding: 4px 10px; border-radius: var(--radius); }
 </style>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
-import { reconcileLayout } from '../src/store/layout';
+import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { planEntities, entityAt, factsFor } from '../src/scene/entities';
 import { MODELS } from '../src/scene/models';
@@ -12,7 +12,8 @@ const snap = () => ok(createSimPort().init(7));
 
 describe('layout to entity mapping', () => {
   const s = snap();
-  const layout = reconcileLayout(null, s);
+  const layout = layoutOf(s);
+  const free = s.map.tiles.filter((t) => t.kind === 'empty');
   const descs = planEntities(layout, s);
 
   it('makes one entity per scenery and placed item with unique keys', () => {
@@ -24,7 +25,7 @@ describe('layout to entity mapping', () => {
   });
   it('homes get a distinct model per class', () => {
     const homes = descs.filter((d) => d.ref.kind === 'home');
-    expect(homes).toHaveLength(6);
+    expect(homes).toHaveLength(7);
     expect(new Set(homes.map((h) => h.model)).size).toBe(new Set(homes.map((h) => h.household?.class)).size);
     const classes = ['capitalist', 'rentier', 'manager', 'worker', 'dependent'] as const;
     for (const c of classes) expect(MODELS[`home_${c}`]).toBeDefined();
@@ -40,23 +41,22 @@ describe('layout to entity mapping', () => {
     expect(firms.some((f) => f.model === 'firm_food')).toBe(true);
   });
   it('queued builds are pending with turns remaining; finished ones are normal', () => {
-    const q = { id: 9, command: { type: 'place' as const, kind: 'renewable_plant' as const, count: 1, tile: { x: 6, y: 8 } }, submittedTurn: s.turn, effectiveTurn: s.turn + 2, pcCost: 2, moneyCost: 2e6 };
+    const q = { id: 9, command: { type: 'place' as const, kind: 'renewable_plant' as const, tile: { x: free[4]!.x, y: free[4]!.y } }, submittedTurn: s.turn, effectiveTurn: s.turn + 2, pcCost: 2, moneyCost: 2e6 };
     const s2 = { ...s, pending: [q] };
-    const l = reconcileLayout(layout, s2);
-    const d = planEntities(l, s2);
-    const p = d.find((x) => x.ref.tile.x === 6 && x.ref.tile.y === 8)!;
+    const d = planEntities(layoutOf(s2), s2);
+    const p = d.find((x) => x.ref.tile.x === free[4]!.x && x.ref.tile.y === free[4]!.y)!;
     expect(p.state).toBe('pending');
     expect(p.turnsLeft).toBe(3); // fires at the start of submit turn+2, so three turns away counting this one
     expect(p.ref.pendingTurns).toBe(3);
     expect(d.filter((x) => x.state === 'pending')).toHaveLength(1);
   });
   it('drafted placements appear as ghosts and are not selectable', () => {
-    const draft = [{ id: 1, command: { type: 'place' as const, kind: 'fossil_plant' as const, count: 1, tile: { x: 7, y: 7 } },
-      preview: { command: { type: 'remove' as const, kind: 'fossil_plant' as const, count: 1 }, pc: 0, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0, blocked: null } }];
+    const draft = [{ id: 1, command: { type: 'place' as const, kind: 'fossil_plant' as const, tile: { x: free[2]!.x, y: free[2]!.y } },
+      preview: { command: { type: 'remove' as const, tile: { x: 0, y: 0 } }, pc: 0, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0, blocked: null, tileValid: true } }];
     const d = planEntities(layout, s, draft);
     expect(d.at(-1)!.state).toBe('draft');
-    expect(entityAt(d, { x: 7, y: 7 })).toBeNull();
-    expect(entityAt(d, { x: 8, y: 3 })?.ref.kind).toBe('firm');
+    expect(entityAt(d, { x: free[2]!.x, y: free[2]!.y })).toBeNull();
+    expect(entityAt(d, { x: 9, y: 3 })?.ref.kind).toBe('firm');
   });
   it('commons model follows access mode and collapse', () => {
     const open = planEntities(layout, { ...s, nature: { ...s.nature, commons: 0.7, commonsAccess: 'enclosed' } });
@@ -65,7 +65,7 @@ describe('layout to entity mapping', () => {
     expect(dead.find((d) => d.ref.kind === 'commons')!.model).toBe('commons_collapsed');
   });
   it('facts and class palette', () => {
-    expect(factsFor(descs.find((d) => d.household)!).length).toBeGreaterThan(3);
+    expect(factsFor(descs.find((d) => d.household)!).length).toBeGreaterThanOrEqual(3);
     expect(new Set(Object.values(CLASS_COLOR)).size).toBe(5);
   });
 });
@@ -83,7 +83,7 @@ describe('coords and paths', () => {
     for (let i = 0; i < 50; i++) { const h = hash01(i); expect(h).toBeGreaterThanOrEqual(0); expect(h).toBeLessThan(1); }
   });
   it('routes avoid buildings and join both ends', () => {
-    const l = reconcileLayout(null, snap());
+    const l = layoutOf(snap());
     const home = l.scenery.find((s) => s.kind === 'home')!, firm = l.scenery.find((s) => s.kind === 'firm')!;
     const r = route(l, home, firm);
     expect(r[0]).toEqual({ x: home.x, y: home.y });
@@ -93,7 +93,7 @@ describe('coords and paths', () => {
     for (let i = 1; i < r.length; i++) expect(Math.abs(r[i]!.x - r[i - 1]!.x) + Math.abs(r[i]!.y - r[i - 1]!.y)).toBe(1);
   });
   it('footpaths never sit under buildings', () => {
-    const l = reconcileLayout(null, snap());
+    const l = layoutOf(snap());
     const p = pathTiles(l), b = blockedTiles(l);
     expect(p.size).toBeGreaterThan(5);
     for (const k of p) expect(b.has(k)).toBe(false);

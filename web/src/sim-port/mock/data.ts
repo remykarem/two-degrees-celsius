@@ -12,7 +12,7 @@ export interface Generated {
   turnCosts: Record<string, { baseCost: number; leadTime: number; unit: number; minSize: number }>;
   policyStart: Record<string, number | boolean | string>;
   systems: Record<SystemKey, { name: string; transitionMonths: number; outputPenalty: number; lambdaMax: number }>;
-  space: { slowMinutes: number; fastMinutes: number; freeMinutes: number; unhousedTiles: number; unhousedMinutes: number };
+  space: { slowMinutes: number; fastMinutes: number; freeMinutes: number; kCommute: number; minEffectiveHours: number; unhousedTiles: number; unhousedMinutes: number };
   build: {
     plantCapacity: number; publicHousingCostUsd: number; plantCostUsd: number; roadCostUsd: number; roadUpkeepUsd: number;
     start: { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number };

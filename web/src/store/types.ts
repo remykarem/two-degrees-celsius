@@ -1,5 +1,5 @@
 import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Snapshot, TurnResult } from '../contract';
-import type { MapLayout, Tile } from './layout';
+import type { Selection, Tile } from './map';
 import type { Phase } from './phase';
 
 export type Lens = 'none' | 'emissions' | 'class' | 'wealth' | 'employment' | 'flows';
@@ -27,10 +27,11 @@ export interface GameState {
   /** Snapshot from before the last turn, for result deltas. */
   previous: Snapshot | null;
   playback: Playback;
-  layout: MapLayout;
-  selection: Tile | null;
+  selection: Selection | null;
   hover: Tile | null;
   buildKind: InfraKind | null;
+  /** Tiles that can take `buildKind` right now, from the simulation's validTiles() (null when not building). Keys are "x,y". */
+  validTiles: { kind: InfraKind; keys: Set<string> } | null;
   lens: Lens;
   camera: CameraAngle;
   error: UiError | null;

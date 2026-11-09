@@ -10,7 +10,9 @@ describe('contract types', () => {
     const snap = ok(sim.init(1));
     expectTypeOf(snap).toEqualTypeOf<Snapshot>();
     expectTypeOf(sim.submitTurn([])).toEqualTypeOf<Result<TurnResult>>();
-    const cmd: Command = { type: 'place', kind: 'fossil_plant', count: 1, tile: { x: 1, y: 2 } };
+    const cmd: Command = { type: 'place', kind: 'road', tile: { x: 1, y: 2 } };
+    const rm: Command = { type: 'remove', tile: { x: 1, y: 2 } };
+    expect(rm.type).toBe('remove');
     expect(cmd.type).toBe('place');
   });
   it('snapshot has an entry for every lever and levers() agrees', () => {
@@ -20,10 +22,11 @@ describe('contract types', () => {
     expect(Object.keys(snap.policy).sort()).toEqual(keys);
     expectTypeOf<keyof Snapshot['policy']>().toEqualTypeOf<LeverKey>();
   });
-  it('v0.3 fields: buildings, costModel, units, zeroMeansNone', () => {
+  it('v1.0 fields: buildings, map, costModel, units, zeroMeansNone', () => {
     const sim = createSimPort();
     const snap = ok(sim.init(1));
-    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 5, renewablePlant: 0 });
+    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+    expect(snap.map.tiles).toHaveLength(snap.map.width * snap.map.height);
     const ls = sim.levers();
     for (const l of ls) {
       expect(l.costModel.base).toBeGreaterThan(0);
@@ -35,9 +38,9 @@ describe('contract types', () => {
     expect(ls.find((l) => l.key === 'public_spending')!.unit).toBe('usd_per_month');
     expect(ls.find((l) => l.key === 'job_guarantee')!.unit).toBe('fraction');
   });
-  it('schemaVersion is present and 3 month frames per turn', () => {
+  it('schemaVersion is 2 and there are 3 month frames per turn', () => {
     const sim = createSimPort();
-    expect(ok(sim.init(1)).schemaVersion).toBeGreaterThan(0);
+    expect(ok(sim.init(1)).schemaVersion).toBe(2);
     expect(ok(sim.submitTurn([])).months).toHaveLength(3);
   });
   it('a failing call is a result, never a thrown exception', () => {

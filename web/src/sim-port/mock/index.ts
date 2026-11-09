@@ -25,6 +25,8 @@ export function createMockSim(): SimPort {
       out.push(p);
       if (blocked) events.push({ type: 'policy_blocked', importance: 2, reason: blocked });
       else if (p.command.type === 'switch_system') events.push({ type: 'system_switch_started', importance: 3, to: p.command.to });
+      else if (p.command.type === 'place') events.push({ type: 'built', importance: 2, kind: p.command.kind, tile: { ...p.command.tile } });
+      else if (p.command.type === 'remove') events.push({ type: 'removed', importance: 2, tile: { ...p.command.tile } });
       events.push({ type: 'command_activated', importance: 2, id: p.id });
     }
   }
@@ -109,7 +111,7 @@ export function createMockSim(): SimPort {
       });
       const trace: TraceRecord[] = [
         ...policyGaps.map((g) => ({ type: 'policy_gap' as const, ...g, netLobby: s.netLobby })),
-        ...(months[2]!.flows.emissions ?? months[1]!.flows.emissions ?? []).map((e) => ({ type: 'emissions' as const, source: e.source, ...(e.id !== undefined ? { id: e.id } : {}), tonnes: e.tonnes })),
+        ...(months[2]!.flows.emissions ?? months[1]!.flows.emissions ?? []).map((e) => ({ type: 'emissions' as const, source: e.source, ...(e.id !== undefined ? { id: e.id } : {}), ...(e.tile ? { tile: e.tile } : {}), tonnes: e.tonnes })),
         ...(months[2]!.flows.wages ?? months[1]!.flows.wages ?? []).map((w) => ({ type: 'income' as const, household: w.household, kind: 'wages' as const, amount: w.amount })),
       ];
 

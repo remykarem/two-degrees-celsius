@@ -7,11 +7,11 @@ import { arrowsShown, groupLevers, leverStatus, lobbyNote, toCommandValue, toNum
 import { comingNextTurn, eventLines, lobbyLines, mergeEvents, metricDeltas, rankEvents } from '../src/panels/results';
 import { generateStory } from '../src/panels/story';
 import { emissionsBars, incomeByType, lobbyingBars, whyData } from '../src/panels/why';
-import { resolveInspect, builtCount } from '../src/panels/inspect';
+import { resolveSelection, resolveTile, builtCount } from '../src/panels/inspect';
 import { switchOptions } from '../src/panels/systemSwitch';
 import { SYSTEMS } from '../src/panels/content/systems';
 import { createSimPort } from '../src/sim-port';
-import { createGame, quarterLabel, reconcileLayout, shownTurn, type Game } from '../src/store';
+import { createGame, layoutOf, quarterLabel, shownTurn, type Game } from '../src/store';
 
 function playTurns(g: Game, n: number, cmd?: () => void) {
   for (let i = 0; i < n && !g.state.get().snapshot!.gameOver; i++) {
@@ -62,7 +62,7 @@ describe('crisis derivation', () => {
 
 describe('event ranking', () => {
   it('ranks by importance then order, hides noise and merges hires', () => {
-    const events = [ev({ type: 'commuted', household: 1, firm: 1, people: 3 }), ev({ type: 'hired', firm: 1, people: 2 }, 1), ev({ type: 'bank_failed' }, 3),
+    const events = [ev({ type: 'commuted', person: 1, firm: 1, tiles: 3, minutes: 18 }), ev({ type: 'hired', firm: 1, people: 2 }, 1), ev({ type: 'bank_failed' }, 3),
       ev({ type: 'hired', firm: 1, people: 5 }, 2), ev({ type: 'command_activated', id: 1 }, 2), ev({ type: 'firm_closed', firm: 2 }, 2)];
     const ranked = rankEvents(events);
     expect(ranked.map((e) => e.type)).toEqual(['bank_failed', 'hired', 'firm_closed']);
@@ -117,7 +117,7 @@ describe('results sections', () => {
   });
   it('coming next turn splits pending by effective turn', () => {
     const s = structuredClone(fresh().state.get().snapshot!);
-    const item = (id: number, t: number) => ({ id, command: { type: 'remove' as const, kind: 'fossil_plant' as const, count: 1 }, submittedTurn: 1, effectiveTurn: t, pcCost: 1, moneyCost: 0 });
+    const item = (id: number, t: number) => ({ id, command: { type: 'remove' as const, tile: { x: 10, y: 2 } }, submittedTurn: 1, effectiveTurn: t, pcCost: 1, moneyCost: 0 });
     // Items fire at the START of the next submit: effectiveTurn == snapshot.turn is "coming next turn".
     s.pending = [item(1, s.turn), item(2, s.turn + 2)];
     const c = comingNextTurn(s);
@@ -213,7 +213,7 @@ describe('policy logic', () => {
   });
   it('lobby note states what you set and what to expect', () => {
     const cp = levers.find((l) => l.key === 'carbon_price')!;
-    const pv = { command: { type: 'set_policy' as const, lever: 'carbon_price' as const, value: 50 }, pc: 14, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0.38, blocked: null };
+    const pv = { command: { type: 'set_policy' as const, lever: 'carbon_price' as const, value: 50 }, pc: 14, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0.38, blocked: null, tileValid: true };
     expect(lobbyNote(cp, 0, 50, pv)).toBe('You set $50/t; expect about $31/t in force (lobbying opposes this).');
     expect(lobbyNote(cp, 0, 50, { ...pv, opposition: 0 })).toBeNull();
     expect(lobbyNote(levers.find((l) => l.key === 'tax_wage')!, 0, 0.3, pv)).toBeNull();
@@ -242,43 +242,59 @@ describe('system switch', () => {
 });
 
 describe('inspector model', () => {
-  it('resolves cohorts, firms, scenery and buildings, and offers removal only for built ones', () => {
+  it('resolves people, households, homes, firms, scenery and buildings, and offers removal per tile', () => {
     const g = fresh();
-    const { snapshot, layout } = g.state.get();
+    const { snapshot } = g.state.get();
+    const snap = snapshot!;
+    const layout = layoutOf(snap);
     const home = layout.scenery.find((s) => s.kind === 'home')!;
-    const hm = resolveInspect(snapshot!, layout, home, []);
+    const hm = resolveTile(snap, layout, home, []);
     expect(hm.kind).toBe('household');
     expect(hm.income!.map((p) => p.label)).toEqual(['Wages', 'Dividends', 'Rent', 'Interest', 'Benefits']);
+    expect(hm.members!.length).toBeGreaterThanOrEqual(2);
+    const person = resolveSelection(snap, layout, hm.members![0]!.selection, [])!;
+    expect(person.kind).toBe('person');
+    expect(person.household!.selection).toEqual({ kind: 'household', id: 0 });
+    const worker = snap.people.find((p) => p.job)!;
+    const wm = resolveSelection(snap, layout, { kind: 'person', id: worker.id }, [])!;
+    expect(wm.sections.map((x) => x.heading)).toEqual(['Work', 'Commute', 'Life']);
+    expect(wm.sections[1]!.rows[1]!.value).toMatch(/minutes/);
+    const unhoused = resolveSelection(snap, layout, { kind: 'household', id: 7 }, [])!;
+    expect(unhoused.sections[0]!.rows[0]!.value).toMatch(/unhoused/);
     const firm = layout.scenery.find((s) => s.kind === 'firm')!;
-    expect(resolveInspect(snapshot!, layout, firm, []).sections.length).toBeGreaterThan(0);
-    const dormant = layout.scenery.filter((s) => s.kind === 'firm').map((f) => resolveInspect(snapshot!, layout, f, [])).find((m) => m.note?.includes('No firm'));
+    expect(resolveTile(snap, layout, firm, []).sections.length).toBeGreaterThan(0);
+    const dormant = layout.scenery.filter((s) => s.kind === 'firm').map((f) => resolveTile(snap, layout, f, [])).find((m) => m.note?.includes('No firm'));
     expect(dormant).toBeDefined();
-    for (const k of ['bank', 'government', 'forest', 'commons'] as const) expect(resolveInspect(snapshot!, layout, layout.scenery.find((s) => s.kind === k)!, []).kind).toBe(k);
+    for (const k of ['bank', 'government', 'forest', 'commons'] as const) expect(resolveTile(snap, layout, layout.scenery.find((s) => s.kind === k)!, []).kind).toBe(k);
     const fossil = layout.placed.find((p) => p.kind === 'fossil_plant')!;
-    const bm = resolveInspect(snapshot!, layout, fossil, []);
-    expect(bm.removable).toEqual({ kind: 'fossil_plant', already: false, reason: null });
-    expect(builtCount(snapshot, 'fossil_plant')).toBe(5);
-    const queued = resolveInspect(snapshot!, layout, fossil, [{ id: 1, command: { type: 'remove', kind: 'fossil_plant', count: 1 }, preview: {} as never }]);
+    const bm = resolveTile(snap, layout, fossil, []);
+    expect(bm.removable).toEqual({ kind: 'fossil_plant', tile: { x: fossil.x, y: fossil.y }, already: false });
+    expect(builtCount(snap, 'fossil_plant')).toBe(2);
+    expect(builtCount(snap, 'road')).toBe(4);
+    const queued = resolveTile(snap, layout, fossil, [{ id: 1, command: { type: 'remove', tile: { x: fossil.x, y: fossil.y } }, preview: {} as never }]);
     expect(queued.removable!.already).toBe(true);
-    const q = { id: 4, command: { type: 'place' as const, kind: 'renewable_plant' as const, count: 1, tile: { x: 7, y: 9 } }, submittedTurn: snapshot!.turn, effectiveTurn: snapshot!.turn + 2, pcCost: 2, moneyCost: 2e6 };
-    const withQ = { ...snapshot!, pending: [q] };
-    const under = resolveInspect(withQ, reconcileLayout(layout, withQ), { x: 7, y: 9 }, []);
+    const road = layout.roads[0]!;
+    expect(resolveTile(snap, layout, road, []).removable).toMatchObject({ kind: 'road', already: false });
+    const free = snap.map.tiles.find((t) => t.kind === 'empty')!;
+    const q = { id: 4, command: { type: 'place' as const, kind: 'renewable_plant' as const, tile: { x: free.x, y: free.y } }, submittedTurn: snap.turn, effectiveTurn: snap.turn + 2, pcCost: 2, moneyCost: 2e6 };
+    const withQ = { ...snap, pending: [q] };
+    const under = resolveTile(withQ, layoutOf(withQ), free, []);
     expect(under.removable).toBeUndefined();
     expect(under.title).toMatch(/Under construction/);
     expect(under.sections[0]!.rows[0]!.value).toBe('in 3 turns');
-    expect(resolveInspect(snapshot!, layout, { x: 7, y: 9 }, []).kind).toBe('empty');
+    expect(resolveTile(snap, layout, free, []).kind).toBe('empty');
   });
-  it('a queued removal goes through the store as a draft', () => {
+  it('a queued removal goes through the store as a draft and takes effect', () => {
     const g = fresh();
-    g.draftCommand({ type: 'remove', kind: 'fossil_plant', count: 1 });
+    const plant = layoutOf(g.state.get().snapshot).placed.find((p) => p.kind === 'fossil_plant')!;
+    expect(g.removeAt(plant)).toBeNull();
     const d = g.state.get().draft[0]!;
     expect(d.preview.blocked).toBeNull();
-    const before = g.state.get().layout.placed.length;
     g.endTurn();
     g.finishPlayback();
     g.continueFromResults();
     playTurns(g, 4);
-    expect(g.state.get().layout.placed.length).toBeLessThan(before);
+    expect(layoutOf(g.state.get().snapshot).placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(1);
   });
 });
 

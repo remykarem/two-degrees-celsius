@@ -1,4 +1,4 @@
-import type { ClassKey, FirmView, HouseholdView, InfraKind, Snapshot } from '../contract';
+import type { ClassKey, FirmView, HouseholdView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Tile } from '../store';
 import type { EntityRef } from '../store/scene-bus';
 import { tileKey, worldOf } from './coords';
@@ -29,10 +29,11 @@ const KIND_TINT: Record<string, number> = {
   public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc,
 };
 
-const INFRA_MODEL: Record<InfraKind, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant' };
-const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
+type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant';
+const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant' };
+const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
 
-export const infraModel = (k: InfraKind): ModelId => INFRA_MODEL[k];
+export const infraModel = (k: Building): ModelId => INFRA_MODEL[k];
 
 /** Turns until a queued item takes effect: it fires at the start of the submit of turn `effectiveTurn`, so effectiveTurn == turn is "next turn". */
 export function turnsLeft(effectiveTurn: number, turn: number): number {
@@ -54,14 +55,14 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     const ref = (label = sc.label): EntityRef => ({ kind: sc.kind, id: sc.ref ?? null, tile: { x: sc.x, y: sc.y }, label });
     switch (sc.kind) {
       case 'home': {
-        const hh = snap?.households.find((h) => h.id === sc.ref);
+        const hh = snap ? snap.households.find((h) => h.id === snap.homes.find((x) => x.id === sc.ref)?.household) : undefined;
         const cls: ClassKey = hh?.class ?? 'worker';
         out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: `home_${cls}` as ModelId, tint: homeTint(cls), household: hh });
         break;
       }
       case 'firm': {
         const f = snap?.firms.find((x) => x.id === sc.ref);
-        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : 'firm_goods';
+        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : 'firm_goods'; // services share the goods model for now
         const label = f && f.active ? f.name : f ? `${f.name} (closed)` : sc.label;
         out.push({ ...base, ref: ref(label), model, tint: KIND_TINT.firm!, firm: f });
         break;
@@ -88,7 +89,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
   }
   for (const q of snap?.pending ?? []) {
     const tile = layout.pendingTiles[q.id];
-    if (q.command.type !== 'place' || !tile) continue;
+    if (q.command.type !== 'place' || !tile || q.command.kind === 'road') continue;
     const tl = turnsLeft(q.effectiveTurn, turn);
     out.push({
       key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: INFRA_MODEL[q.command.kind], tint: KIND_TINT[q.command.kind]!,
@@ -98,7 +99,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
 
   for (const d of draft) {
     const c = d.command;
-    if (c.type !== 'place' || !c.tile) continue;
+    if (c.type !== 'place' || c.kind === 'road') continue;
     out.push({
       key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
       ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL[c.kind]} (planned)`, pendingTurns: d.preview.leadTime },
@@ -120,7 +121,7 @@ export function factsFor(d: EntityDesc): { label: string; value: string }[] {
   const f: { label: string; value: string }[] = [];
   if (d.state !== 'normal') f.push({ label: d.state === 'pending' ? 'Under construction' : 'Planned', value: `${d.turnsLeft} turn${d.turnsLeft === 1 ? '' : 's'} left` });
   const h = d.household;
-  if (h) f.push({ label: 'Class', value: h.class }, { label: 'People', value: String(h.people) }, { label: 'Employed', value: `${h.employed} of ${h.labourForce}` }, { label: 'Savings per person', value: `$${num(h.wealthPerCapita)}` }, { label: 'Wellbeing', value: pct(h.wellbeing) });
+  if (h) f.push({ label: 'Class', value: h.class }, { label: 'People', value: String(h.members.length) }, { label: 'Net worth', value: `$${num(h.netWorth)}` });
   const fm = d.firm;
   if (fm) f.push({ label: 'Sector', value: fm.sector }, { label: 'Status', value: fm.active ? 'trading' : 'closed' }, ...(fm.active ? [{ label: 'Workers', value: String(fm.workers) }, { label: 'Emissions', value: `${num(fm.emissions)} t/month` }] : []));
   if (d.stock !== undefined) f.push({ label: d.ref.kind === 'forest' ? 'Forest stock' : 'Commons stock', value: pct(d.stock) });

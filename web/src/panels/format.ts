@@ -4,6 +4,7 @@ export const METRIC_LABEL: Record<MetricKey, string> = {
   gdp: 'GDP', gpi: 'GPI', unemployment: 'Unemployment', gini: 'Inequality', wage_share: 'Wage share', profit_share: 'Profit share',
   wellbeing: 'Wellbeing', emissions: 'Emissions', budget: 'Carbon budget', temperature: 'Temperature', legitimacy: 'Legitimacy',
   debt: 'Public debt', money: 'Money supply', prices: 'Prices', housing: 'Housing', forest: 'Forest', commons: 'Commons',
+  avg_income: 'Average income', median_income: 'Median income', top_wealth_share: 'Top household wealth',
 };
 
 export const REASON_TEXT: Record<string, string> = {
@@ -14,6 +15,8 @@ export const REASON_TEXT: Record<string, string> = {
   insufficient_political_capital: 'Not enough political capital',
   insufficient_funds: 'Not enough money',
   invalid_command: 'Invalid value',
+  tile_occupied: 'Something is already built (or queued) on that tile',
+  tile_invalid: 'Nothing can be built on that tile',
 };
 
 export const SYSTEM_NAME = { market: 'Market capitalism', regulated: 'Regulated capitalism', coop: 'Worker cooperatives' } as const;
@@ -66,8 +69,8 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
       return `${l?.label ?? c.lever} → ${l && typeof v !== 'string' ? formatLever(l, v) : String(v)}`;
     }
     case 'switch_system': return `Switch system to ${SYSTEM_NAME[c.to]}`;
-    case 'place': return `${actionLabel(actions, `place:${c.kind}`)}${c.tile ? ` @ (${c.tile.x},${c.tile.y})` : ''}`;
-    case 'remove': return actionLabel(actions, `remove:${c.kind}`);
+    case 'place': return `${actionLabel(actions, `place:${c.kind}`)} @ (${c.tile.x},${c.tile.y})`;
+    case 'remove': return `Remove what stands at (${c.tile.x},${c.tile.y})`;
   }
 }
 
@@ -77,9 +80,18 @@ const n = (v: number) => String(Math.round(v * 10) / 10);
 /** All event wording lives here: the contract carries payloads only. */
 export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
   const hh = (id: number) => snap?.households.find((h) => h.id === id)?.label ?? `household ${id}`;
+  const person = (id: number) => { const p = snap?.people.find((x) => x.id === id); return p ? `${hh(p.household)} ${p.label}` : `person ${id}`; };
   const firm = (id: number) => snap?.firms.find((f) => f.id === id)?.name ?? `firm ${id}`;
   switch (e.type) {
-    case 'commuted': return `${n(e.people)} ${hh(e.household)} commute to ${firm(e.firm)}`;
+    case 'commuted': return `${person(e.person)} commutes to ${firm(e.firm)}`;
+    case 'person_hired': return `${firm(e.firm)} hired ${person(e.person)}`;
+    case 'person_fired': return `${firm(e.firm)} laid off ${person(e.person)}`;
+    case 'household_moved': return `${hh(e.household)} moved to home ${e.to}`;
+    case 'household_evicted': return `${hh(e.household)} lost their home`;
+    case 'built': return `A ${e.kind.replaceAll('_', ' ')} was built at (${e.tile.x},${e.tile.y})`;
+    case 'removed': return `Something was removed at (${e.tile.x},${e.tile.y})`;
+    case 'electricity_rationed': return `Electricity was rationed (${pct(e.served)} of demand served)`;
+    case 'purchase': return `${hh(e.household)} spent ${money(e.amount)} at ${firm(e.firm)}`;
     case 'hired': return `${firm(e.firm)} hired ${n(e.people)}`;
     case 'fired': return `${firm(e.firm)} laid off ${n(e.people)}`;
     case 'loan_defaulted': return `${firm(e.firm)} defaulted on a loan`;

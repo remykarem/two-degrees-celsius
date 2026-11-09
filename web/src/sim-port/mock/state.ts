@@ -35,7 +35,7 @@ export interface MockState {
   gdp: number; unemployment: number; legitimacy: number; gini: number; gini0: number; wellbeing: number;
   cash: number; debt: number; netLobby: number; forest: number; commons: number;
   bank: { equity: number; loans: number; failed: boolean };
-  cumulativeTonnes: number; lastMonthlyEmissions: number; prices: number; wage: number;
+  cumulativeTonnes: number; lastMonthlyEmissions: number; lastPlantEmissions: number; prices: number; wage: number;
   firmActive: boolean[];
   history: HistoryPoint[];
   gameOver: null | { turn: number; outcome: GameOutcome };
@@ -82,13 +82,14 @@ export function initialState(seed: number): MockState {
     gdp: GEN.derived.monthlyOutputValue * 12, unemployment: t.unemployment, legitimacy: t.legitimacy, gini: 0.7, gini0: 0.7, wellbeing: 0.6,
     cash: t.govCash, debt: t.govDebt, netLobby: MOCK.extra.startingNetLobby!, forest: t.forest / t.forestMax, commons: t.commons / t.commonsMax,
     bank: { equity: t.bank.equity, loans: t.bank.loans, failed: false },
-    cumulativeTonnes: 0, lastMonthlyEmissions: baseEmissions(), prices: 1, wage: GEN.firms[0]!.wage,
+    cumulativeTonnes: 0, lastMonthlyEmissions: baseEmissions(), lastPlantEmissions: GEN.build.start.fossilPlant * MOCK.extra.plantEmissionPerFossil!, prices: 1, wage: GEN.firms[0]!.wage,
     firmActive: GEN.firms.map((f) => f.active), history: [], gameOver: null,
   };
   return s;
 }
 
-/** Firm emissions from content plus a mock household share. */
-export function baseEmissions(): number {
+/** Firm emissions from content plus a mock household share (the plants' part is separate: see plantEmissions in dynamics.ts). */
+export function baseNonPlant(): number {
   return GEN.derived.monthlyFirmEmissions * (1 + MOCK.extra.householdEmissionShare!);
 }
+export const baseEmissions = (): number => baseNonPlant() + GEN.build.start.fossilPlant * MOCK.extra.plantEmissionPerFossil!;

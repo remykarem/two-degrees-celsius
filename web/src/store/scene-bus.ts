@@ -1,5 +1,5 @@
 import type { InfraKind } from '../contract';
-import type { SceneryKind, Tile } from './layout';
+import type { SceneryKind, Tile } from './map';
 import { writable, type Readable, type Writable } from './readable';
 import type { CameraAngle, Lens } from './types';
 
@@ -10,7 +10,7 @@ import type { CameraAngle, Lens } from './types';
 export type EntityKind = SceneryKind | InfraKind;
 export interface EntityRef {
   kind: EntityKind;
-  /** Household id for homes, firm id for firms, else null. */
+  /** Home id for homes, firm id for firms, else null. */
   id: number | null;
   tile: Tile;
   label: string;

@@ -3,14 +3,13 @@ import type { DraftItem } from './types';
 
 /**
  * Key that identifies "the same slot" in a plan: one draft per lever, one per tile, one per system switch.
- * A tile-less `place` never shares a slot: `unique` (the draft id) keeps two of them apart.
+ * `unique` is unused now that every place and remove names a tile; kept so callers need not change.
  */
-export function slotKey(c: Command, unique: number | string = ''): string {
+export function slotKey(c: Command, _unique: number | string = ''): string {
   switch (c.type) {
     case 'set_policy': return `policy:${c.lever}`;
     case 'switch_system': return 'system';
-    case 'place': return c.tile ? `place:${c.tile.x},${c.tile.y}` : `place:${c.kind}#${unique}`;
-    case 'remove': return `remove:${c.kind}`;
+    case 'place': case 'remove': return `tile:${c.tile.x},${c.tile.y}`; // one change per tile per plan (a later one replaces an earlier one)
   }
 }
 
@@ -29,7 +28,7 @@ export function withPreviews(draft: DraftItem[], previews: CommandPreview[]): Dr
 }
 
 function placeholderPreview(command: Command): CommandPreview {
-  return { command, pc: 0, money: 0, leadTime: 0, effectiveTurn: 0, opposition: 0, blocked: null };
+  return { command, pc: 0, money: 0, leadTime: 0, effectiveTurn: 0, opposition: 0, blocked: null, tileValid: true };
 }
 
 export const totalPc = (draft: DraftItem[]) => draft.filter((d) => !d.preview.blocked).reduce((a, d) => a + d.preview.pc, 0);

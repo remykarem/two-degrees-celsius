@@ -1,4 +1,4 @@
-import type { ClassKey, MonthFlows, MonthFrame, SimEvent, Snapshot } from '../contract';
+import type { ClassKey, MonthFlows, MonthFrame, Sector, SimEvent, Snapshot } from '../contract';
 import type { MapLayout, Tile } from '../store';
 import { centreOf, hash01, type Pt } from './coords';
 import { route } from './paths';
@@ -26,8 +26,8 @@ export interface FramePlan { tracks: Track[]; emitters: Emitter[]; fx: Fx[] }
 
 export interface PlanCtx {
   layout: MapLayout;
-  households: { id: number; class: ClassKey }[];
-  firms: { id: number; sector: 'goods' | 'food'; active: boolean }[];
+  households: { id: number; class: ClassKey; home: number | null }[];
+  firms: { id: number; sector: Sector; active: boolean }[];
   fossilShare: number;
   turn: number;
 }
@@ -35,7 +35,7 @@ export interface PlanCtx {
 export function ctxFromSnapshot(layout: MapLayout, s: Snapshot): PlanCtx {
   return {
     layout, turn: s.turn, fossilShare: s.energy.fossilShare,
-    households: s.households.map((h) => ({ id: h.id, class: h.class })),
+    households: s.households.map((h) => ({ id: h.id, class: h.class, home: h.home })),
     firms: s.firms.map((f) => ({ id: f.id, sector: f.sector, active: f.active })),
   };
 }
@@ -77,10 +77,13 @@ export function allocate(weights: number[], cap: number, maxEach = 8): number[] 
   return counts;
 }
 
-const homeTile = (c: PlanCtx, id: number): Tile | undefined => c.layout.scenery.find((s) => s.kind === 'home' && s.ref === id);
+/** The tile of a household's home (undefined when it has none: the unhoused). */
+const homeTile = (c: PlanCtx, household: number): Tile | undefined => {
+  const home = c.households.find((h) => h.id === household)?.home;
+  return home == null ? undefined : c.layout.scenery.find((s) => s.kind === 'home' && s.ref === home);
+};
 const firmTile = (c: PlanCtx, id: number): Tile | undefined => c.layout.scenery.find((s) => s.kind === 'firm' && s.ref === id);
 const firstOf = (c: PlanCtx, kind: 'bank' | 'government'): Tile | undefined => c.layout.scenery.find((s) => s.kind === kind);
-const manhattan = (a: Tile, b: Tile) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
 function pathBetween(c: PlanCtx, a: Tile, b: Tile, seed: number): Pt[] {
   const n = c.layout.gridSize;
@@ -124,23 +127,23 @@ export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [
 
 /** Emissions as a flow list straight from a snapshot, used for ambient smoke outside playback. */
 export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emissions']> {
-  const sum = s.households.reduce((a, h) => a + h.footprintTonnes, 0);
+  const sum = s.nature.grossEmissionsMonthly * 0.1; // mock/real both split households off the gross total; a rough ambient share
   return [
     ...s.firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: f.active ? f.emissions : 0 })),
-    { source: 'households' as const, tonnes: sum / 12 },
+    { source: 'households' as const, tonnes: sum },
     { source: 'sink' as const, tonnes: -s.nature.sinkMonthly },
   ];
 }
 
 const FX_OF: Partial<Record<SimEvent['type'], FxType>> = {
-  firm_closed: 'closed', firm_founded: 'founded', hired: 'hired', fired: 'fired', forest_shrank: 'forest', commons_collapsed: 'commons',
+  firm_closed: 'closed', firm_founded: 'founded', hired: 'hired', fired: 'fired', person_hired: 'hired', person_fired: 'fired', household_evicted: 'shortfall', forest_shrank: 'forest', commons_collapsed: 'commons',
   commons_enclosed: 'enclosed', bank_failed: 'bank', class_changed: 'class', rent_shortfall: 'shortfall', loan_defaulted: 'default',
 };
 
 function fxTile(e: SimEvent, c: PlanCtx): Tile | undefined {
   switch (e.type) {
-    case 'firm_closed': case 'firm_founded': case 'hired': case 'fired': case 'loan_defaulted': return firmTile(c, e.firm);
-    case 'class_changed': case 'rent_shortfall': return homeTile(c, e.household);
+    case 'firm_closed': case 'firm_founded': case 'hired': case 'fired': case 'person_hired': case 'person_fired': case 'loan_defaulted': return firmTile(c, e.firm);
+    case 'class_changed': case 'rent_shortfall': case 'household_evicted': return homeTile(c, e.household);
     case 'bank_failed': return firstOf(c, 'bank');
     case 'forest_shrank': return c.layout.scenery.find((s) => s.kind === 'forest');
     case 'commons_collapsed': case 'commons_enclosed': return c.layout.scenery.find((s) => s.kind === 'commons');
@@ -169,7 +172,7 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
 
   // Commuters: small figures home -> workplace -> home.
   const commutes = f.commutes.filter((x) => homeTile(c, x.household) && firmTile(c, x.firm));
-  allocate(commutes.map((x) => x.people), CAPS.figures, 6).forEach((cnt, i) => {
+  allocate(commutes.map(() => 1), CAPS.figures, 6).forEach((cnt, i) => {
     const x = commutes[i]!;
     for (let k = 0; k < cnt; k++) {
       const seed = seed0 + i * 53 + k, [t0, t1] = window01(seed);
@@ -181,7 +184,7 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
   const buys = f.purchases.flatMap((p) => {
     const h = homeTile(c, p.household);
     if (!h) return [];
-    const firm = c.firms.filter((q) => q.active && q.sector === p.sector && firmTile(c, q.id)).sort((a, b) => manhattan(firmTile(c, a.id)!, h) - manhattan(firmTile(c, b.id)!, h))[0];
+    const firm = c.firms.find((q) => q.id === p.firm && q.active && firmTile(c, q.id));
     return firm ? [{ p, h, ft: firmTile(c, firm.id)! }] : [];
   });
   allocate(buys.map((b) => b.p.amount), CAPS.goods, 3).forEach((cnt, i) => {

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { MonthFrame } from '../src/contract';
 import { createSimPort } from '../src/sim-port';
-import { reconcileLayout } from '../src/store/layout';
+import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { allocate, CAPS, commuteFraction, ctxFromSnapshot, emissionsFromSnapshot, planEmitters, planFlowLoop, planFrame, pointAt, smokeCounts, smokeParticle, trackProgress } from '../src/scene/flows';
 
 const sim = createSimPort();
 const s0 = ok(sim.init(11));
 const result = ok(sim.submitTurn([]));
-const layout = reconcileLayout(null, result.snapshot);
+const layout = layoutOf(result.snapshot);
 const ctx = ctxFromSnapshot(layout, result.snapshot);
 const frame = result.months[0]!;
 
@@ -41,10 +41,10 @@ describe('frame planner', () => {
     const big: MonthFrame = {
       month: 1, events: [],
       flows: {
-        commutes: Array.from({ length: 50 }, (_, i) => ({ household: (i % 5) + 1, firm: (i % 2) + 1, people: 1000 + i })),
-        purchases: Array.from({ length: 80 }, (_, i) => ({ household: (i % 5) + 1, sector: i % 2 ? 'goods' as const : 'food' as const, amount: 100 })),
-        rent: Array.from({ length: 40 }, (_, i) => ({ household: (i % 5) + 1, amount: 50 })),
-        wages: Array.from({ length: 40 }, (_, i) => ({ household: (i % 5) + 1, firm: 1, amount: 99 })),
+        commutes: Array.from({ length: 50 }, (_, i) => ({ person: i, household: (i % 5) + 1, firm: (i % 2) + 1, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 })),
+        purchases: Array.from({ length: 80 }, (_, i) => ({ household: (i % 5) + 1, firm: i % 2, sector: i % 2 ? 'goods' as const : 'food' as const, amount: 100 })),
+        rent: Array.from({ length: 40 }, (_, i) => ({ household: (i % 5) + 1, home: i % 5, amount: 50 })),
+        wages: Array.from({ length: 40 }, (_, i) => ({ person: i, household: (i % 5) + 1, firm: 1, amount: 99 })),
         emissions: [],
       },
     };
@@ -62,7 +62,7 @@ describe('frame planner', () => {
     }
   });
   it('skips flows that name homes or firms the map does not have', () => {
-    const odd: MonthFrame = { month: 0, events: [], flows: { commutes: [{ household: 99, firm: 99, people: 5 }], purchases: [], rent: [], wages: [], emissions: [] } };
+    const odd: MonthFrame = { month: 0, events: [], flows: { commutes: [{ person: 99, household: 99, firm: 99, from: null, to: { x: 0, y: 0 }, tiles: 1, minutes: 6 }], purchases: [], rent: [], wages: [], emissions: [] } };
     expect(planFrame(odd, ctx).tracks).toHaveLength(0);
   });
   it('maps events to effects at the right tile', () => {
@@ -70,7 +70,7 @@ describe('frame planner', () => {
       events: [{ type: 'firm_closed', importance: 3, firm: 0 }, { type: 'bank_failed', importance: 3 }, { type: 'policy_blocked', importance: 1, reason: 'invalid_command' }] };
     const fx = planFrame(f, ctx).fx;
     expect(fx.map((x) => x.type).sort()).toEqual(['bank', 'closed']);
-    expect(fx.find((x) => x.type === 'closed')!.tile).toMatchObject({ x: 8, y: 3 });
+    expect(fx.find((x) => x.type === 'closed')!.tile).toMatchObject({ x: 9, y: 3 });
   });
   it('flow loop keeps only money tokens', () => {
     const loop = planFlowLoop(result.months, ctx);
@@ -92,7 +92,7 @@ describe('emitters and smoke', () => {
   it('fossil plants smoke more with a higher fossil share; pending ones do not', () => {
     const lo = planEmitters([], { ...ctx, fossilShare: 0 }).filter((e) => e.id.startsWith('p'));
     const hi = planEmitters([], { ...ctx, fossilShare: 1 }).filter((e) => e.id.startsWith('p'));
-    expect(lo).toHaveLength(5); // the five starting fossil plants
+    expect(lo).toHaveLength(2); // the two starting fossil plants
     expect(hi[0]!.rate).toBeGreaterThan(lo[0]!.rate);
     const none = { ...ctx, layout: { ...layout, placed: [] } };
     expect(planEmitters([], none)).toHaveLength(0);
@@ -140,7 +140,7 @@ describe('empty and partial flows (contract v0.3 section 10.8)', () => {
   });
   it('plans a frame with only commutes and emissions', () => {
     const h = ctx.households[0]!.id, f = ctx.firms.find((x) => x.active)!.id;
-    const partial: MonthFrame = { month: 1, events: [], flows: { commutes: [{ household: h, firm: f, people: 5 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
+    const partial: MonthFrame = { month: 1, events: [], flows: { commutes: [{ person: 4, household: h, firm: f, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
     const plan = planFrame(partial, ctx);
     expect(plan.tracks.every((t) => t.kind === 'figure')).toBe(true);
     expect(plan.tracks.length).toBeGreaterThan(0);

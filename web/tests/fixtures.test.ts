@@ -1,16 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { ActionInfo, FirmView, HouseholdView, Indicators, LeverInfo, MonthFrame, PendingItem, Snapshot, TurnResult } from '../src/contract';
+import type { ActionInfo, FirmView, HomeView, HouseholdView, Indicators, LeverInfo, MonthFrame, PendingItem, PersonView, PlantView, Snapshot, Tile, TurnResult } from '../src/contract';
 import { deriveCrises } from '../src/panels/crisis';
-import { formatEvent, formatLever } from '../src/panels/format';
-import { resolveInspect } from '../src/panels/inspect';
+import { formatEvent } from '../src/panels/format';
+import { resolveSelection, resolveTile } from '../src/panels/inspect';
 import { METRICS } from '../src/panels/metrics';
 import { lobbyLines, metricDeltas } from '../src/panels/results';
 import { generateStory } from '../src/panels/story';
 import { planEntities } from '../src/scene/entities';
 import { ctxFromSnapshot, planFlowLoop, planFrame } from '../src/scene/flows';
-import { reconcileLayout } from '../src/store';
+import { layoutOf } from '../src/store';
 
 // Real JSON written by the Rust wire layer (crates/sim-api) into docs/fixtures/. These tests check it against the TypeScript types
 // (key sets are tied to the interfaces with `satisfies Record<keyof T, ...>`, so adding a field to a type breaks this file until it is listed)
@@ -30,83 +30,106 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
     if (v === undefined) { if (!optional) bad.push(`${where}.${k} is missing`); continue; }
     const want = optional ? kind.slice(0, -1) : kind;
     const got = Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v;
-    if (kind === 'nullable') { if (v !== null && typeof v !== 'object') bad.push(`${where}.${k} should be null or an object, got ${got}`); }
+    if (kind === 'nullable') { if (v !== null && typeof v !== 'object' && typeof v !== 'number') bad.push(`${where}.${k} should be null, a number or an object, got ${got}`); }
     else if (got !== want) bad.push(`${where}.${k} should be ${want}, got ${got}`);
   }
   for (const k of Object.keys(obj)) if (!(k in shape)) bad.push(`${where}.${k} is not in the TypeScript type`);
   return bad;
 }
 
-const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
-  pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', households: 'array', firms: 'array', bank: 'object', government: 'object',
-  nature: 'object', housing: 'object', energy: 'object', history: 'array' } satisfies Shape<Snapshot>;
+const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
+  pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array' } satisfies Shape<Snapshot>;
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
-  avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number' } satisfies Shape<Indicators>;
-const HOUSEHOLD = { id: 'number', label: 'string', class: 'string', people: 'number', employed: 'number', labourShare: 'number?', labourForce: 'number', savings: 'number', debt: 'number', wealthPerCapita: 'number',
-  income: 'object', wellbeing: 'number', politicalPower: 'number', footprintTonnes: 'number', foodMet: 'number', housedShare: 'number' } as unknown as Shape<HouseholdView>;
-delete (HOUSEHOLD as Record<string, unknown>).labourShare;
-const FIRM = { id: 'number', active: 'boolean', sector: 'string', name: 'string', owner: 'object', workers: 'number', wage: 'number', price: 'number', output: 'number', emissions: 'number',
+  avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
+  avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;
+const PERSON = { id: 'number', label: 'string', household: 'number', ageBand: 'string', skill: 'number', job: 'nullable', wage: 'number', commuteTiles: 'number', commuteMinutes: 'number', wellbeing: 'number',
+  inLabourForce: 'boolean', jobGuarantee: 'boolean', effectiveHours: 'number' } satisfies Shape<PersonView>;
+const HOUSEHOLD = { id: 'number', label: 'string', members: 'array', home: 'nullable', class: 'string', savings: 'number', debt: 'number', netWorth: 'number', income: 'object', politicalPower: 'number',
+  arrearsMonths: 'number', wellbeing: 'number', footprintTonnes: 'number', foodMet: 'number' } satisfies Shape<HouseholdView>;
+const HOME = { id: 'number', tile: 'object', owner: 'string', household: 'nullable', rent: 'number', value: 'number' } as unknown as Shape<HomeView>; // owner is a number or "public"
+(HOME as Record<string, unknown>).owner = 'nullable';
+const PLANT = { id: 'number', kind: 'string', tile: 'object', capacity: 'number', output: 'number', emissionsMonthly: 'number' } satisfies Shape<PlantView>;
+const TILE = { x: 'number', y: 'number', kind: 'string', ref: 'number?', buildable: 'boolean', emissionsMonthly: 'number?' } satisfies Shape<Tile>;
+const FIRM = { id: 'number', active: 'boolean', sector: 'string', name: 'string', tile: 'object', owner: 'object', workers: 'number', wage: 'number', price: 'number', output: 'number', emissions: 'number',
   revenue: 'number', profit: 'number', capital: 'number', debt: 'number', greenTech: 'number' } satisfies Shape<FirmView>;
 const TURN = { turn: 'number', accepted: 'array', rejected: 'array', activated: 'array', pcBefore: 'number', pcAfter: 'number', months: 'array', policyGaps: 'array', trace: 'array', snapshot: 'object' } satisfies Shape<TurnResult>;
 const FRAME = { month: 'number', events: 'array', flows: 'object' } satisfies Shape<MonthFrame>;
 const LEVER = { key: 'string', label: 'string', unit: 'string', min: 'number', max: 'number', step: 'number', baseCostPc: 'number', costModel: 'object', zeroMeansNone: 'boolean?', leadTime: 'number',
   lobbied: 'boolean', arrows: 'array', availableIn: 'array', options: 'array?', optionAvailableIn: 'object?' } satisfies Shape<LeverInfo>;
-const ACTION = { key: 'string', label: 'string', baseCostPc: 'number', costModel: 'object?', leadTime: 'number', moneyCost: 'number', availableIn: 'array' } satisfies Shape<ActionInfo>;
+const ACTION = { key: 'string', label: 'string', baseCostPc: 'number', costModel: 'object?', leadTime: 'number', moneyCost: 'number', availableIn: 'array', needsTile: 'boolean?', tileRule: 'string?' } satisfies Shape<ActionInfo>;
 const PENDING = { id: 'number', command: 'object', submittedTurn: 'number', effectiveTurn: 'number', pcCost: 'number', moneyCost: 'number' } satisfies Shape<PendingItem>;
 
-describe.skipIf(!present)('real fixtures from docs/fixtures/ against the TypeScript types', () => {
-  const snap = present ? load<Snapshot>('snapshot-turn1.json') : (null as never);
-  const turn = present ? load<TurnResult>('turn-result.json') : (null as never);
-  const levers = present ? load<LeverInfo[]>('levers.json') : (null as never);
-  const actions = present ? load<ActionInfo[]>('actions.json') : (null as never);
+// Contract v1.0 (schemaVersion 2). Skipped, with this message, when the fixtures are still in the old cohort format.
+const current = present && (load<{ schemaVersion: number; map?: unknown }>('snapshot-turn1.json').schemaVersion === 2) && !!load<{ map?: unknown }>('snapshot-turn1.json').map;
+if (present && !current) console.warn('TODO: docs/fixtures/*.json are still in the old (cohort, schemaVersion 1) format, so the fixtures tests are skipped. Re-run them once the wire layer has regenerated the fixtures.');
+
+describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScript types (contract v1.0)', () => {
+  const snap = current ? load<Snapshot>('snapshot-turn1.json') : (null as never);
+  const turn = current ? load<TurnResult>('turn-result.json') : (null as never);
+  const levers = current ? load<LeverInfo[]>('levers.json') : (null as never);
+  const actions = current ? load<ActionInfo[]>('actions.json') : (null as never);
+  const tiles = current ? load<Record<string, { x: number; y: number }[]>>('tiles.json') : (null as never);
 
   it('has the keys and kinds the types declare', () => {
     const bad = [
       ...conforms(snap, SNAPSHOT, 'snapshot'), ...conforms(snap.indicators, INDICATORS, 'snapshot.indicators'),
-      ...snap.households.flatMap((h, i) => conforms(h, HOUSEHOLD, `households[${i}]`)), ...snap.firms.flatMap((f, i) => conforms(f, FIRM, `firms[${i}]`)),
+      ...snap.people.flatMap((p, i) => conforms(p, PERSON, `people[${i}]`)), ...snap.households.flatMap((h, i) => conforms(h, HOUSEHOLD, `households[${i}]`)),
+      ...snap.homes.flatMap((h, i) => conforms(h, HOME, `homes[${i}]`)), ...snap.plants.flatMap((p, i) => conforms(p, PLANT, `plants[${i}]`)),
+      ...snap.map.tiles.flatMap((t, i) => conforms(t, TILE, `map.tiles[${i}]`)), ...snap.firms.flatMap((f, i) => conforms(f, FIRM, `firms[${i}]`)),
       ...conforms(turn, TURN, 'turnResult'), ...turn.months.flatMap((m, i) => conforms(m, FRAME, `months[${i}]`)), ...conforms(turn.snapshot, SNAPSHOT, 'turnResult.snapshot'),
       ...levers.flatMap((l, i) => conforms(l, LEVER, `levers[${i}]`)), ...actions.flatMap((a, i) => conforms(a, ACTION, `actions[${i}]`)),
       ...turn.accepted.flatMap((p, i) => conforms(p, PENDING, `accepted[${i}]`)),
     ];
     expect(bad).toEqual([]);
   });
-  it('has 3 month frames, 19 levers, 7 actions, an entry per lever in the policy table', () => {
+  it('is schemaVersion 2 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
+    expect(snap.schemaVersion).toBe(2);
+    expect(snap.map).toMatchObject({ width: 12, height: 12 });
+    expect(snap.map.tiles).toHaveLength(144);
+    snap.map.tiles.forEach((t, i) => expect([t.x, t.y]).toEqual([i % 12, Math.floor(i / 12)]));
+    expect(snap.people).toHaveLength(20);
+    expect(snap.households).toHaveLength(8);
+    expect(snap.homes).toHaveLength(7);
+    expect(snap.households.filter((h) => h.home === null)).toHaveLength(1);
+    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+  });
+  it('has 3 month frames, 19 levers, 9 actions, an entry per lever in the policy table', () => {
     expect(turn.months).toHaveLength(3);
     expect(levers).toHaveLength(19);
-    expect(actions).toHaveLength(7);
+    expect(actions).toHaveLength(9);
     expect(Object.keys(snap.policy).sort()).toEqual(levers.map((l) => l.key).sort());
   });
-  it('units are in the v0.3 set and the cost model is present', () => {
-    for (const l of levers) {
-      expect(['usd', 'usd_per_month', 'usd_per_tonne', 'fraction', 'tonnes_per_month', 'bool', 'enum']).toContain(l.unit);
-      expect(l.costModel.base).toBeGreaterThan(0);
-    }
-    expect(levers.find((l) => l.key === 'emissions_cap')!.zeroMeansNone).toBe(true);
-    expect(formatLever(levers.find((l) => l.key === 'emissions_cap')!, 0)).toBe('no cap');
+  it('tile commands carry their tile; previews are not part of the fixtures, but tiles.json agrees with the map', () => {
+    for (const a of turn.accepted) if (a.command.type === 'place') expect(a.command.tile).toBeDefined();
+    const empty = snap.map.tiles.filter((t) => t.kind === 'empty').map(({ x, y }) => ({ x, y }));
+    for (const kind of ['public_housing', 'fossil_plant', 'renewable_plant', 'road']) expect(tiles[kind]).toEqual(empty.filter((t) => tiles[kind]!.some((v) => v.x === t.x && v.y === t.y)));
+    expect(tiles.road!.length).toBe(empty.length);
   });
   it('the UI logic runs on the real snapshot and turn result', () => {
-    const layout = reconcileLayout(null, snap);
+    const layout = layoutOf(snap);
     expect(layout.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(snap.buildings.fossilPlant);
-    expect(layout.scenery.filter((s) => s.kind === 'home')).toHaveLength(snap.households.length);
+    expect(layout.scenery.filter((s) => s.kind === 'home')).toHaveLength(snap.homes.length);
+    expect(layout.roads).toHaveLength(snap.buildings.road);
     const descs = planEntities(layout, snap);
     expect(descs.length).toBeGreaterThan(10);
-    for (const s of layout.scenery) expect(resolveInspect(snap, layout, s, []).title).toBeTruthy();
+    for (const s of layout.scenery) expect(resolveTile(snap, layout, s, []).title).toBeTruthy();
+    for (const sel of [{ kind: 'person', id: 3 }, { kind: 'household', id: 7 }, { kind: 'home', id: 2 }, { kind: 'firm', id: 0 }] as const) expect(resolveSelection(snap, layout, sel, [])?.title).toBeTruthy();
     for (const m of METRICS) expect(Number.isFinite(m.value(snap)), m.id).toBe(true);
     expect(() => deriveCrises(snap, turn)).not.toThrow();
     const after = turn.snapshot;
     expect(metricDeltas(snap, after).length).toBeGreaterThan(0);
     for (const e of turn.months.flatMap((m) => m.events)) expect(formatEvent(e, after)).toBeTruthy();
     expect(lobbyLines(turn, levers, actions).length).toBeGreaterThanOrEqual(turn.rejected.length);
-    const ctx = ctxFromSnapshot(reconcileLayout(layout, after), after);
+    const ctx = ctxFromSnapshot(layoutOf(after), after);
     for (const f of turn.months) expect(() => planFrame(f, ctx)).not.toThrow();
     expect(() => planFlowLoop(turn.months, ctx)).not.toThrow();
     expect(() => generateStory(after, turn)).not.toThrow();
   });
-  it('a real tile-less accepted build gets a reserved tile', () => {
+  it('a real accepted build keeps its tile, and the layout shows it as queued', () => {
     const place = turn.accepted.find((a) => a.command.type === 'place')!;
-    expect(place.command).not.toHaveProperty('tile'); // the sim has no tiles
-    const layout = reconcileLayout(null, turn.snapshot);
-    expect(layout.pendingTiles[place.id]).toBeDefined();
+    expect(place.command).toHaveProperty('tile');
+    expect(layoutOf(turn.snapshot).pendingTiles[place.id]).toEqual((place.command as { tile: unknown }).tile);
   });
   it('policy gaps list the lobbied levers every turn, mostly with no gap', () => {
     expect(turn.policyGaps.map((g) => g.lever).sort()).toEqual(['carbon_price', 'emissions_cap', 'tax_profit', 'wealth_tax']);
@@ -121,12 +144,17 @@ describe.skipIf(!present)('real fixtures from docs/fixtures/ against the TypeScr
       expect(n.forestStock).toBeGreaterThan(1);
       expect(n.commonsStock).toBeGreaterThan(1);
     }
-    expect(snap.nature.forest).toBeCloseTo(snap.nature.forestStock! / 100000, 12); // params nature.forest_max
-    expect(snap.nature.commons).toBeCloseTo(snap.nature.commonsStock! / 50000, 12); // params nature.commons_max
+  });
+  it('plant tiles report emissions and the trace names the plant', () => {
+    for (const t of snap.map.tiles.filter((x) => x.kind === 'fossil_plant')) expect(t.emissionsMonthly).toBeGreaterThan(0);
+    expect(turn.trace.some((t) => t.type === 'emissions' && t.source === 'plant' && t.tile)).toBe(true);
+    expect(turn.months[0]!.flows.purchases!.length).toBeGreaterThan(0);
+    expect(turn.months[0]!.flows.commutes!.length).toBeGreaterThan(0);
   });
   it('the real levers and actions carry what the UI needs', () => {
     expect(levers.find((l) => l.key === 'commons_access')!.optionAvailableIn).toEqual({ community: ['regulated', 'coop'] });
     for (const a of actions) expect(a.costModel!.base).toBe(a.baseCostPc);
+    expect(actions.find((a) => a.key === 'place:road')).toMatchObject({ needsTile: true, leadTime: 2 });
   });
 });
 

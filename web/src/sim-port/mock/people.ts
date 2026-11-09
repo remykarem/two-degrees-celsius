@@ -40,6 +40,8 @@ export function peopleViews(s: MockState): PersonView[] {
     return {
       id: p.id, label: p.label, household: p.household, ageBand: p.ageBand, skill: p.skill, job: p.job === null ? null : { firm: p.job },
       wage: personWage(s, p), commuteTiles: r?.tiles ?? 0, commuteMinutes: r?.minutes ?? 0, wellbeing: wellbeingOf(s, p, r),
+      inLabourForce: p.labourForce, jobGuarantee: false,
+      effectiveHours: r ? Math.max(GEN.space.minEffectiveHours, 1 - GEN.space.kCommute * Math.max(0, r.minutes - GEN.space.freeMinutes)) : 1,
     };
   });
 }
@@ -83,9 +85,12 @@ export function netWorth(s: MockState, h: HouseholdState): number {
 
 export function householdViews(s: MockState): HouseholdView[] {
   const e = economy(s);
+  const people = peopleViews(s);
   return s.households.map((h) => {
+    const mine = people.filter((p) => p.household === h.id);
     const power = h.class === 'capitalist' ? 0.4 : h.class === 'rentier' ? 0.3 : h.class === 'manager' ? 0.1 : 0.03;
-    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: netWorth(s, h), income: householdIncome(s, h, e), politicalPower: power, arrearsMonths: h.arrears };
+    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: netWorth(s, h), income: householdIncome(s, h, e), politicalPower: power, arrearsMonths: h.arrears,
+      wellbeing: mine.reduce((a, p) => a + p.wellbeing, 0) / Math.max(1, mine.length), footprintTonnes: 0.1 * (s.lastMonthlyEmissions / s.households.length), foodMet: h.savings > 0 || h.home !== null ? 1 : 0.7 };
   });
 }
 

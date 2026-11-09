@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
 import { attachPlayback, type Scheduler } from '../src/app/playback';
-import { createGame, paletteActions, quarterLabel, reconcileLayout } from '../src/store';
-import { ok } from './helpers';
+import { createGame, layoutOf, paletteActions, quarterLabel, selectionAt, selectionTile, type Game } from '../src/store';
+
+/** Empty tiles of the current snapshot, row-major. */
+const empties = (g: Game) => g.state.get().snapshot!.map.tiles.filter((t) => t.kind === 'empty').map(({ x, y }) => ({ x, y }));
 
 const newGame = () => {
   const g = createGame(createSimPort());
@@ -21,36 +23,46 @@ describe('game store', () => {
     g.removeDraft(g.state.get().draft[0]!.id);
     expect(g.state.get().draft).toHaveLength(0);
   });
-  it('places on free tiles only', () => {
+  it('places on free tiles only, with the sim\'s validTiles deciding', () => {
     const g = newGame();
+    const [a] = empties(g);
+    expect(g.tileError(a!)).toBeNull(); // not building yet: nothing to say
     g.setBuildKind('renewable_plant');
-    expect(g.clickTile({ x: 6, y: 4 })).toMatch(/Bank/);
-    expect(g.clickTile({ x: 7, y: 9 })).toBeNull();
-    expect(g.clickTile({ x: 7, y: 9 })).toMatch(/plan/);
+    expect(g.state.get().validTiles?.keys.size).toBe(empties(g).length);
+    expect(g.clickTile({ x: 6, y: 5 })).toMatch(/already built/); // the bank
+    expect(g.clickTile({ x: 0, y: 0 })).toMatch(/Nothing can be built/); // forest
+    expect(g.clickTile({ x: 12, y: 0 })).toMatch(/Outside/);
+    expect(g.clickTile(a!)).toBeNull();
+    expect(g.clickTile(a!)).toMatch(/plan/);
     expect(g.state.get().draft).toHaveLength(1);
+    expect(g.state.get().draft[0]!.command).toEqual({ type: 'place', kind: 'renewable_plant', tile: a });
+    expect(g.state.get().draft[0]!.preview.tileValid).toBe(true);
   });
-  it('runs the full loop; a queued build reserves its tile and becomes a finished tile when it takes effect', () => {
+  it('runs the full loop; a queued build keeps its tile and shows on the map when it takes effect', () => {
     const g = newGame();
+    const tile = empties(g)[5]!;
     g.setBuildKind('renewable_plant');
-    g.clickTile({ x: 7, y: 9 });
-    const before = g.state.get().layout.placed.length;
+    g.clickTile(tile);
     g.endTurn();
     expect(g.state.get().phase).toBe('playback');
-    expect(g.state.get().layout.placed).toHaveLength(before); // not built yet
-    const id = g.state.get().snapshot!.pending[0]!.id;
-    expect(g.state.get().layout.pendingTiles[id]).toEqual({ x: 7, y: 9 });
-    expect(g.tileError({ x: 7, y: 9 })).toMatch(/under construction/);
+    expect(g.state.get().validTiles).toBeNull(); // build mode ends with the turn
+    const snap = g.state.get().snapshot!;
+    expect(snap.buildings.renewablePlant).toBe(0); // not built yet
+    const id = snap.pending[0]!.id;
+    expect(layoutOf(snap).pendingTiles[id]).toEqual(tile);
+    g.setBuildKind('road'); // ignored in playback
     g.finishPlayback();
     expect(g.state.get().phase).toBe('results');
     g.continueFromResults();
     expect(g.state.get().phase).toBe('review');
-    expect(g.state.get().snapshot!.turn).toBe(2);
+    g.setBuildKind('road');
+    expect(g.tileError(tile)).toMatch(/already built/); // the queued tile is no longer valid
+    g.setBuildKind(null);
     for (let i = 0; i < 6 && g.state.get().snapshot!.buildings.renewablePlant === 0; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); }
     const s = g.state.get();
     expect(s.snapshot!.buildings.renewablePlant).toBe(1);
-    expect(s.layout.placed).toHaveLength(before + 1);
-    expect(s.layout.placed.find((p) => p.kind === 'renewable_plant')).toMatchObject({ x: 7, y: 9 });
-    expect(s.layout.pendingTiles).toEqual({});
+    expect(layoutOf(s.snapshot).placed.find((p) => p.kind === 'renewable_plant')).toMatchObject(tile);
+    expect(layoutOf(s.snapshot).pendingTiles).toEqual({});
   });
   it('rotates the camera through 4 snaps', () => {
     const g = newGame();
@@ -103,7 +115,7 @@ describe('playback driver', () => {
 describe('v0.2 store behaviour', () => {
   it('builds the palette from actions() and the calendar label from the snapshot', () => {
     const g = newGame();
-    expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant']);
+    expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant', 'road']);
     const game = g.state.get().snapshot!.game;
     expect(quarterLabel(1, game)).toBe('Q1 2031');
     expect(quarterLabel(6, game)).toBe('Q2 2032');
@@ -111,62 +123,62 @@ describe('v0.2 store behaviour', () => {
 });
 
 describe('v0.3 store behaviour', () => {
-  it('keeps the clicked tile when the sim drops `tile` from accepted commands (the real wire does)', () => {
-    const base = createSimPort();
-    const stripping = {
-      ...base,
-      submitTurn: (cmds: Parameters<typeof base.submitTurn>[0]) => {
-        const r = base.submitTurn(cmds);
-        if (!r.ok) return r;
-        const strip = (p: (typeof r.value.accepted)[number]) => (p.command.type === 'place' ? { ...p, command: { type: 'place' as const, kind: p.command.kind, count: p.command.count } } : p);
-        return { ok: true as const, value: { ...r.value, accepted: r.value.accepted.map(strip), snapshot: { ...r.value.snapshot, pending: r.value.snapshot.pending.map(strip) } } };
-      },
-    };
-    const g = createGame(stripping);
-    g.newGame(1);
-    g.draftCommand({ type: 'set_policy', lever: 'carbon_price', value: 50 });
-    g.setBuildKind('renewable_plant');
-    g.clickTile({ x: 3, y: 9 });
-    g.endTurn();
-    const id = g.state.get().snapshot!.pending.find((p) => p.command.type === 'place')!.id;
-    expect(g.state.get().layout.pendingTiles[id]).toEqual({ x: 3, y: 9 });
-  });
-  it('derives the layout from households, firms and building counts, deterministically', () => {
+  it('the map comes from the snapshot: scenery, plants and roads are derived, deterministic and memoised', () => {
     const g = newGame();
-    const s = g.state.get();
-    const homes = s.layout.scenery.filter((x) => x.kind === 'home');
-    const firms = s.layout.scenery.filter((x) => x.kind === 'firm');
-    expect(homes).toHaveLength(s.snapshot!.households.length);
-    expect(firms).toHaveLength(s.snapshot!.firms.length);
-    expect(s.layout.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(5);
-    const again = reconcileLayout(null, s.snapshot!);
-    expect(again).toEqual(s.layout);
-    expect(reconcileLayout(s.layout, s.snapshot!)).toBe(s.layout); // unchanged -> same object
-    const tiles = [...s.layout.scenery, ...s.layout.placed].map((t) => `${t.x},${t.y}`);
+    const snap = g.state.get().snapshot!;
+    const l = layoutOf(snap);
+    expect(l.scenery.filter((x) => x.kind === 'home')).toHaveLength(snap.homes.length);
+    expect(l.scenery.filter((x) => x.kind === 'firm')).toHaveLength(snap.firms.length);
+    expect(l.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(2);
+    expect(l.roads).toHaveLength(4);
+    expect(layoutOf(snap)).toBe(l);
+    expect(layoutOf(null).scenery).toEqual([]);
+    const tiles = [...l.scenery, ...l.placed, ...l.roads].map((t) => `${t.x},${t.y}`);
     expect(new Set(tiles).size).toBe(tiles.length);
+    expect(g.state.get()).not.toHaveProperty('layout');
   });
-  it('adds and removes tiles when the counts change (last placed goes first)', () => {
-    const snap = ok(createSimPort().init(1));
-    const l0 = reconcileLayout(null, snap);
-    const more = reconcileLayout(l0, { ...snap, buildings: { ...snap.buildings, fossilPlant: 7, publicHousing: 2 } });
-    expect(more.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(7);
-    expect(more.placed.filter((p) => p.kind === 'public_housing')).toHaveLength(2);
-    expect(more.placed.filter((p) => p.kind === 'fossil_plant').slice(0, 5)).toEqual(l0.placed.filter((p) => p.kind === 'fossil_plant'));
-    const fewer = reconcileLayout(more, { ...snap, buildings: { ...snap.buildings, fossilPlant: 3 } });
-    expect(fewer.placed.filter((p) => p.kind === 'fossil_plant')).toEqual(more.placed.filter((p) => p.kind === 'fossil_plant').slice(0, 3));
-    expect(fewer.placed.some((p) => p.kind === 'public_housing')).toBe(false);
-    const tiles = fewer.placed.map((t) => `${t.x},${t.y}`);
-    expect(new Set(tiles).size).toBe(tiles.length);
-  });
-  it('tile-less place drafts do not merge into one draft', () => {
+  it('place and remove drafts share a slot per tile; different tiles do not merge', () => {
     const g = newGame();
-    g.draftCommand({ type: 'place', kind: 'renewable_plant', count: 1 });
-    g.draftCommand({ type: 'place', kind: 'renewable_plant', count: 1 });
-    g.draftCommand({ type: 'place', kind: 'fossil_plant', count: 1 });
+    const [a, b] = empties(g);
+    g.draftCommand({ type: 'place', kind: 'renewable_plant', tile: a! });
+    g.draftCommand({ type: 'place', kind: 'fossil_plant', tile: a! }); // same tile replaces
+    g.draftCommand({ type: 'place', kind: 'road', tile: b! });
+    expect(g.state.get().draft.map((d) => d.command)).toEqual([{ type: 'place', kind: 'fossil_plant', tile: a }, { type: 'place', kind: 'road', tile: b }]);
+    const road = g.state.get().snapshot!.map.tiles.find((t) => t.kind === 'road')!;
+    expect(g.removeAt(road)).toBeNull();
+    expect(g.removeAt(a!)).toMatch(/nothing to remove/i);
     expect(g.state.get().draft).toHaveLength(3);
-    g.draftCommand({ type: 'place', kind: 'renewable_plant', count: 1, tile: { x: 1, y: 7 } });
-    g.draftCommand({ type: 'place', kind: 'renewable_plant', count: 1, tile: { x: 1, y: 7 } });
-    expect(g.state.get().draft).toHaveLength(4); // same tile replaces
+    const rm = g.state.get().draft[2]!;
+    expect(rm.preview).toMatchObject({ blocked: null, tileValid: true, leadTime: 1 });
+  });
+  it('a blocked tile in the draft previews as invalid with the sim\'s reason', () => {
+    const g = newGame();
+    g.draftCommand({ type: 'place', kind: 'road', tile: { x: 3, y: 2 } }); // a home
+    expect(g.state.get().draft[0]!.preview).toMatchObject({ blocked: 'tile_occupied', tileValid: false, tileReason: 'tile_occupied' });
+    g.draftCommand({ type: 'place', kind: 'road', tile: { x: 0, y: 0 } }); // forest
+    expect(g.state.get().draft[1]!.preview).toMatchObject({ blocked: 'tile_invalid', tileValid: false });
+  });
+  it('the selection model: person, household, home, firm and tile; clicking a tile picks the right one', () => {
+    const g = newGame();
+    const snap = g.state.get().snapshot!;
+    const home = snap.homes[2]!;
+    g.clickTile(home.tile);
+    expect(g.state.get().selection).toEqual({ kind: 'home', id: home.id });
+    expect(selectionTile(snap, g.state.get().selection)).toEqual(home.tile);
+    const firm = snap.map.tiles.find((t) => t.kind === 'firm')!;
+    g.clickTile(firm);
+    expect(g.state.get().selection).toEqual({ kind: 'firm', id: firm.ref });
+    g.clickTile({ x: 6, y: 5 });
+    expect(g.state.get().selection).toEqual({ kind: 'tile', x: 6, y: 5 });
+    const person = snap.people.find((p) => p.job)!;
+    g.select({ kind: 'person', id: person.id });
+    const hh = snap.households[person.household]!;
+    expect(selectionTile(snap, g.state.get().selection)).toEqual(snap.homes.find((h) => h.id === hh.home)!.tile);
+    g.select({ kind: 'household', id: 7 }); // the unhoused household has no tile
+    expect(selectionTile(snap, g.state.get().selection)).toBeNull();
+    expect(selectionAt(snap, { x: 0, y: 0 })).toEqual({ kind: 'tile', x: 0, y: 0 });
+    g.select(null);
+    expect(g.state.get().selection).toBeNull();
   });
   it('endTurn makes ONE store update and does not throw when the sim refuses', () => {
     const g = newGame();
@@ -206,28 +218,29 @@ describe('v0.3 store behaviour', () => {
     g.newGame(2);
     expect(g.state.get().dismissedCrises).toEqual({});
   });
-  it('save and load round trip: sim state, layout, last result and previous snapshot', () => {
+  it('save and load round trip: sim state, last result and previous snapshot (no layout in the file)', () => {
     const g = newGame();
     g.setBuildKind('renewable_plant');
-    g.clickTile({ x: 7, y: 9 });
-    g.draftCommand({ type: 'set_policy', lever: 'tax_wage', value: 0.3 });
+    g.clickTile(empties(g)[7]!);
+    g.draftCommand({ type: 'set_policy', lever: 'tax_wage', value: 0.4 });
     g.endTurn(); g.finishPlayback(); g.continueFromResults();
     g.setLens('wealth');
     const text = g.exportSave()!;
     const file = JSON.parse(text);
-    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 1 });
-    expect(Object.keys(file)).toEqual(expect.arrayContaining(['schemaVersion', 'simState', 'layout', 'lastResult', 'previous', 'uiPrefs']));
+    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 2 });
+    expect(Object.keys(file)).toEqual(expect.arrayContaining(['schemaVersion', 'simState', 'lastResult', 'previous', 'uiPrefs']));
+    expect(file).not.toHaveProperty('layout');
 
     const h = createGame(createSimPort());
     h.newGame(99);
     expect(h.importSave(text)).toBeNull();
     const a = g.state.get(), b = h.state.get();
     expect(b.snapshot).toEqual(a.snapshot);
-    expect(b.layout).toEqual(a.layout);
     expect(b.lastResult).toEqual(a.lastResult);
     expect(b.previous).toEqual(a.previous);
     expect(b.lens).toBe('wealth');
     expect(b.phase).toBe('review');
+    expect(b.selection).toBeNull();
     // and the loaded game continues exactly like the original
     g.endTurn(); h.endTurn();
     expect(h.state.get().snapshot).toEqual(g.state.get().snapshot);
@@ -238,7 +251,8 @@ describe('v0.3 store behaviour', () => {
     expect(g.importSave('{"hello":1}')).toMatch(/not a saved game from this app/);
     const file = JSON.parse(g.exportSave()!);
     expect(g.importSave(JSON.stringify({ ...file, saveVersion: 7 }))).toMatch(/file version 7/);
-    expect(g.importSave(JSON.stringify({ ...file, layout: null }))).toMatch(/damaged map layout/);
+    expect(g.importSave(JSON.stringify({ ...file, lastResult: 5 }))).toMatch(/damaged last result/);
+    expect(g.importSave(JSON.stringify({ ...file, saveVersion: 1 }))).toMatch(/file version 1/); // an old save with a layout is refused
     expect(g.importSave(JSON.stringify({ ...file, simState: file.simState.replace(/"schemaVersion":\d+/, '"schemaVersion":99') }))).toMatch(/different version/);
     expect(g.state.get().snapshot!.turn).toBe(1); // a failed load changes nothing
   });

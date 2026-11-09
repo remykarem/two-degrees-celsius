@@ -232,10 +232,13 @@
     "slowMinutes": 6,
     "fastMinutes": 2,
     "freeMinutes": 10,
+    "kCommute": 0.004,
+    "minEffectiveHours": 0.5,
     "unhousedTiles": 6,
     "unhousedMinutes": 36
   },
   "build": {
+    "plantCapacity": 5,
     "publicHousingCostUsd": 40000,
     "plantCostUsd": 40000,
     "roadCostUsd": 2500,

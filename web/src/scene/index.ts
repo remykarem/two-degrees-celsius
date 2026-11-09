@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Game, GameState, Tile } from '../store';
+import { GRID_SIZE, layoutOf, selectionTile, tileKey, type Game, type GameState, type Tile } from '../store';
 import { sceneBus, type SceneBus } from '../store/scene-bus';
 import { createRig } from './camera';
 import { rotateDelta, wheelFactor, ZOOM_MAX, ZOOM_MIN } from './cameraMath';
@@ -12,7 +12,7 @@ import { entityTints, legendFor, tileTints, type LensCtx } from './lenses';
 import { FxLayer } from './fx';
 import { MODELS } from './models';
 import { pathTiles } from './paths';
-import { BACKGROUND, GROUND, HOVER_BAD, HOVER_OK, mix, SELECT, SOIL } from './palette';
+import { ASPHALT, BACKGROUND, GROUND, HOVER_BAD, HOVER_OK, mix, SELECT, SOIL } from './palette';
 import { TIMING } from './timing';
 
 export { TIMING } from './timing';
@@ -62,7 +62,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   el.tabIndex = 0;
   el.dataset.focus = 'map';
 
-  const size = game.state.get().layout.gridSize;
+  const size = GRID_SIZE;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BACKGROUND);
   scene.add(new THREE.HemisphereLight(0xfff6e6, 0xc9bda5, 1.35));
@@ -116,6 +116,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   // ---- State -> scene ----------------------------------------------------------------------------------------
   let descs: EntityDesc[] = [];
   let roads = new Set<string>();
+  let asphalt = new Set<string>();
   let last: GameState | null = null;
   let dirty = true;
   let flowLoop: Track[] = [];
@@ -125,13 +126,14 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   let monthStart = 0;
   const tileColors: THREE.Color = new THREE.Color();
 
-  const lensCtx = (s: GameState): LensCtx => ({ descs, snapshot: s.snapshot, layout: s.layout, roads });
+  const lensCtx = (s: GameState): LensCtx => ({ descs, snapshot: s.snapshot, layout: layoutOf(s.snapshot), roads, asphalt });
 
   function paintTiles(s: GameState) {
     const base = tileTints(s.lens, lensCtx(s));
     const building = !!s.buildKind && s.phase === 'plan';
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       let c = base[y * size + x]!;
+      if (s.draft.some((d) => d.command.type === 'place' && d.command.kind === 'road' && d.command.tile.x === x && d.command.tile.y === y)) c = mix(c, ASPHALT, 0.5);
       if (building) c = mix(c, game.tileError({ x, y }) ? HOVER_BAD : HOVER_OK, game.tileError({ x, y }) ? 0.22 : 0.2);
       tilesMesh.setColorAt(y * size + x, tileColors.setHex(c));
     }
@@ -140,8 +142,10 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   function rebuildEntities(s: GameState) {
     const prev = new Map(descs.map((d) => [d.key, d]));
-    descs = planEntities(s.layout, s.snapshot, s.draft);
-    roads = pathTiles(s.layout);
+    const layout = layoutOf(s.snapshot);
+    descs = planEntities(layout, s.snapshot, s.draft);
+    roads = pathTiles(layout);
+    asphalt = new Set([...layout.roads, ...layout.pendingRoads].map(tileKey));
     const pops = new Map<string, number>();
     for (const d of descs) {
       const p = prev.get(d.key);
@@ -149,8 +153,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     }
     layer.rebuild(descs, pops);
     if (reducedMotion()) layer.finishPops();
-    ambient = s.snapshot ? planEmitters(emissionsFromSnapshot(s.snapshot), ctxFromSnapshot(s.layout, s.snapshot)) : [];
-    flowLoop = s.snapshot && s.lastResult && s.lastResult.months.length ? planFlowLoop(s.lastResult.months, ctxFromSnapshot(s.layout, s.snapshot)) : [];
+    ambient = s.snapshot ? planEmitters(emissionsFromSnapshot(s.snapshot), ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
+    flowLoop = s.snapshot && s.lastResult && s.lastResult.months.length ? planFlowLoop(s.lastResult.months, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
   }
 
   function applyLens(s: GameState) {
@@ -180,23 +184,24 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       planMonth = s.playback.month;
       monthStart = performance.now();
       const frame = s.lastResult!.months[planMonth];
-      plan = frame ? planFrame(frame, ctxFromSnapshot(s.layout, s.snapshot!)) : null;
+      plan = frame ? planFrame(frame, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!)) : null;
     }
   }
 
   const unsub = game.state.subscribe((s) => {
-    const rebuilt = !last || last.layout !== s.layout || last.draft !== s.draft || last.snapshot !== s.snapshot;
+    const rebuilt = !last || last.draft !== s.draft || last.snapshot !== s.snapshot;
     if (rebuilt) rebuildEntities(s);
     if (rebuilt || last?.lens !== s.lens || last?.buildKind !== s.buildKind || last?.phase !== s.phase) applyLens(s);
     if (!last || last.camera !== s.camera) rig.setView(s.camera);
     if (last && last.phase === 'playback' && s.phase !== 'playback') layer.finishPops();
     syncPlayback(s);
 
-    selectLine.visible = selectFill.visible = !!s.selection;
-    if (s.selection) { place(selectLine, s.selection, 0.07); place(selectFill, s.selection, 0.065); }
-    layer.setSelected(keyAt(s.selection));
-    const ent = s.selection ? entityAt(descs, s.selection) : null;
-    bus.selection.set(s.selection ? { tile: s.selection, entity: ent?.ref ?? null, facts: ent ? factsFor(ent) : [] } : null);
+    const selTile = selectionTile(s.snapshot, s.selection);
+    selectLine.visible = selectFill.visible = !!selTile;
+    if (selTile) { place(selectLine, selTile, 0.07); place(selectFill, selTile, 0.065); }
+    layer.setSelected(keyAt(selTile));
+    const ent = selTile ? entityAt(descs, selTile) : null;
+    bus.selection.set(selTile ? { tile: selTile, entity: ent?.ref ?? null, facts: ent ? factsFor(ent) : [] } : null);
 
     const showHover = !!s.hover && s.phase !== 'playback';
     hoverLine.visible = hoverFill.visible = showHover;
@@ -205,7 +210,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     if (showHover && s.hover) {
       const reason = s.buildKind ? game.tileError(s.hover) : null;
       for (const m of [hoverFill, hoverLine]) { place(m, s.hover, 0.075); ((m as THREE.Mesh | THREE.LineSegments).material as THREE.MeshBasicMaterial).color.setHex(reason ? HOVER_BAD : HOVER_OK); }
-      if (s.buildKind && !reason) {
+      if (s.buildKind && s.buildKind !== 'road' && !reason) {
         const b = ghostFor(s.buildKind);
         ghost.geometry = b.geometry;
         setTint(ghostMat, 0xcfe8c8);
@@ -320,13 +325,13 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     if (arrow !== undefined) {
       e.preventDefault();
       const d = AXES[(arrow - s.camera + 4) % 4]!;
-      const cur = s.hover ?? s.selection ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) };
+      const cur = s.hover ?? selectionTile(s.snapshot, s.selection) ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) };
       const t = { x: Math.min(size - 1, Math.max(0, cur.x + d.x)), y: Math.min(size - 1, Math.max(0, cur.y + d.y)) };
       game.hover(t);
       bus.announce.set(describeTile(t));
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      const t = s.hover ?? s.selection;
+      const t = s.hover ?? selectionTile(s.snapshot, s.selection);
       if (!t) { bus.announce.set('Move the cursor with the arrow keys first.'); return; }
       const err = game.clickTile(t);
       bus.announce.set(err ? `Cannot build at ${t.x}, ${t.y}: ${err}` : s.buildKind ? `Added to the plan at ${t.x}, ${t.y}` : describeTile(t));
@@ -337,7 +342,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     else if (e.key === '-' || e.key === '_') { rig.zoomBy(0.8); dirty = true; }
     else if (e.key === '0') { bus.requestReset(); }
   };
-  const onFocus = () => { const s = game.state.get(); if (!s.hover) game.hover(s.selection ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) }); };
+  const onFocus = () => { const s = game.state.get(); if (!s.hover) game.hover(selectionTile(s.snapshot, s.selection) ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) }); };
   const onBlur = () => { if (pointers.size === 0) game.hover(null); };
   el.addEventListener('keydown', onKey);
   el.addEventListener('focus', onFocus);

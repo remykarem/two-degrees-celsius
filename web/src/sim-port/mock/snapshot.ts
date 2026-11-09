@@ -1,7 +1,7 @@
 import type { LeverKey, Snapshot, Tile } from '../../contract';
 import { GEN, LEVERS, MOCK } from './data';
 import { effectiveValue, remainingBudget } from './dynamics';
-import { PLANT_SHARE, plantTiles } from './frames';
+import { plantTiles } from './frames';
 import { economy, householdViews, median, peopleViews, personIncomes, topWealthShare } from './people';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
 
@@ -15,7 +15,7 @@ export function mapTiles(s: MockState): Tile[] {
       const c = cellAt(s, x, y)!;
       const t: Tile = { x, y, kind: c.kind, buildable: c.kind === 'empty' };
       if (c.ref !== undefined) t.ref = c.ref;
-      if (c.kind === 'fossil_plant') t.emissionsMonthly = plants ? (s.lastMonthlyEmissions * PLANT_SHARE) / plants : 0;
+      if (c.kind === 'fossil_plant') t.emissionsMonthly = plants ? s.lastPlantEmissions / plants : 0;
       if (c.kind === 'renewable_plant') t.emissionsMonthly = 0;
       tiles.push(t);
     }
@@ -45,11 +45,8 @@ export function buildSnapshot(s: MockState): Snapshot {
   const incomes = personIncomes(s);
   const activeFirms = GEN.firms.filter((f) => s.firmActive[f.id]);
   const intensitySum = activeFirms.reduce((a, f) => a + f.output * f.intensity, 0) || 1;
-  const firmEmissions = (s.lastMonthlyEmissions * (1 - (fossilCap > 0 ? PLANT_SHARE : 0))) / (1 + MOCK.extra.householdEmissionShare!);
+  const firmEmissions = (s.lastMonthlyEmissions - s.lastPlantEmissions) / (1 + MOCK.extra.householdEmissionShare!);
   const wellbeing = people.length ? people.reduce((a, p) => a + p.wellbeing, 0) / people.length : 0;
-  const publicHomes = s.homes.filter((h) => h.owner === 'public').length;
-  const housed = s.households.filter((h) => h.home !== null).reduce((a, h) => a + h.members.length, 0);
-  const housedShare = housed / Math.max(1, s.people.length);
   return {
     schemaVersion: SCHEMA_VERSION as 2, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
     map: { width: 12, height: 12, tiles: mapTiles(s) },
@@ -68,14 +65,15 @@ export function buildSnapshot(s: MockState): Snapshot {
     },
     people,
     households: householdViews(s),
-    homes: s.homes.map((h) => ({ id: h.id, tile: { x: h.x, y: h.y }, owner: h.owner, household: h.household, rent: h.owner === 'public' ? GEN.town.rentPublic : GEN.town.rentPrivate })),
+    homes: s.homes.map((h) => ({ id: h.id, tile: { x: h.x, y: h.y }, owner: h.owner, household: h.household, rent: h.owner === 'public' ? GEN.town.rentPublic : GEN.town.rentPrivate, value: h.owner === 'public' ? GEN.build.publicHousingCostUsd : GEN.homes[0]!.valueUsd })),
+    plants: plantTiles(s).map((tile, id) => ({ id, kind: 'fossil' as const, tile, capacity: GEN.build.plantCapacity, output: 0, emissionsMonthly: s.lastPlantEmissions / Math.max(1, plantTiles(s).length) })),
     firms: GEN.firms.map((f) => {
       const on = s.firmActive[f.id] ?? false;
       const workers = s.people.filter((p) => p.job === f.id).length;
       const output = on ? (f.output > 0 ? f.output : (GEN.firms.find((x) => x.sector === f.sector && x.output > 0)?.output ?? 0) * 0.5) * idx : 0;
       const em = on ? firmEmissions * ((f.output || 1) * f.intensity / intensitySum) : 0;
       return {
-        id: f.id, active: on, sector: f.sector, name: f.name, owner: { kind: 'household' as const, id: f.founder }, workers, wage: s.wage, price: f.price * s.prices,
+        id: f.id, active: on, sector: f.sector, name: f.name, tile: { ...f.tile }, owner: { kind: 'household' as const, id: f.founder }, workers, wage: s.wage, price: f.price * s.prices,
         output, emissions: em, revenue: output * f.price * s.prices, profit: on ? e.profitFirms / Math.max(1, activeFirms.length) * 0.6 : 0, capital: f.capital * 1500, debt: f.debt, greenTech: 0,
       };
     }),
@@ -86,10 +84,10 @@ export function buildSnapshot(s: MockState): Snapshot {
       netEmissionsMonthly: s.lastMonthlyEmissions - s.lastMonthlyEmissions * 0.1 * s.forest, grossEmissionsMonthly: s.lastMonthlyEmissions, sinkMonthly: s.lastMonthlyEmissions * 0.1 * s.forest,
     },
     housing: {
-      privateCap: s.homes.length - publicHomes, publicCap: publicHomes, rentPrivate: GEN.town.rentPrivate, rentPublic: GEN.town.rentPublic,
-      occupancy: s.homes.filter((h) => h.household !== null).length / Math.max(1, s.homes.length), housedShare,
+      homes: s.homes.length, rentPrivate: GEN.town.rentPrivate, rentPublic: GEN.town.rentPublic,
+      occupancy: s.homes.filter((h) => h.household !== null).length / Math.max(1, s.homes.length), unhousedHouseholds: s.households.filter((h) => h.home === null).length,
     },
-    energy: { fossilCap, renewableCap, fossilShare: fossilCap / Math.max(1, fossilCap + renewableCap) },
+    energy: { fossilCap, renewableCap, fossilShare: fossilCap / Math.max(1, fossilCap + renewableCap), demand: fossilCap + renewableCap, supply: fossilCap + renewableCap, delivered: fossilCap + renewableCap, served: 1, gridIntensity: fossilCap / Math.max(1, fossilCap + renewableCap) },
     history: s.history.map((h) => ({ ...h })),
   };
 }

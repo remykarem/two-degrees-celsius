@@ -3,7 +3,7 @@ import { GEN, INFRA_KINDS, LEVERS, LEVER_BY_KEY, MOCK } from './data';
 import { noise } from './rng';
 import { activeNumeric, spend } from './rules';
 import { gini, netWorth } from './people';
-import { baseEmissions, buildingCounts, type MockState } from './state';
+import { baseNonPlant, buildingCounts, type MockState } from './state';
 
 // MOCK ONLY. Everything in this file other than the rule hooks (lobbying gap, outcome checks) is an invented toy economy.
 const D = MOCK.dynamics;
@@ -67,8 +67,13 @@ export function stepMonth(s: MockState): MonthOut {
   s.forest = clamp(s.forest - D.forestDecayMonthly! * (open ? 1 : 0.3) + noise(s.rng, 0.0003), 0, 1);
   s.commons = clamp(s.commons + (open ? -1 : 1) * 0.0004 * (Number(s.policy.commons_harvest) > 1 ? 2 : 0.5) + noise(s.rng, 0.0003), 0, 1);
   spend(s, -((s.gdp / 12) * (0.004 + noise(s.rng, 0.003)))); // negative spend = receipts
-  const emissions = Math.max(0, baseEmissions() * (s.gdp / (GEN.derived.monthlyOutputValue * 12)) * (1 + t.emissions));
+  // Mock: fossil plants emit in proportion to how many there are and how large their share of the plants is; renewables emit nothing.
+  const { fossil_plant: fossil, renewable_plant: renewable } = buildingCounts(s);
+  const scale = (s.gdp / (GEN.derived.monthlyOutputValue * 12)) * (1 + t.emissions);
+  const plant = Math.max(0, X.plantEmissionPerFossil! * fossil * (fossil / Math.max(1, fossil + renewable)) * scale);
+  const emissions = Math.max(0, baseNonPlant() * scale) + plant;
   s.lastMonthlyEmissions = emissions;
+  s.lastPlantEmissions = plant;
   s.cumulativeTonnes += emissions;
 
   // Bank (mock): loses equity to defaults that rise with unemployment and the base rate, earns a small margin.

@@ -489,7 +489,7 @@
   "lobbyWander": 0.004
  },
  "extra": {
-  "householdEmissionShare": 0.25,
+  "householdEmissionShare": 0.6,
   "gdpToMoney": 0.5,
   "bankStress": 0.002,
   "capStrictnessEmissions": -0.35,
@@ -499,18 +499,17 @@
   "lobbyUnionWeight": 0.3,
   "lobbySmoothing": 0.15,
   "bankFailureUnemployment": 0.15,
-  "gdpToWageShare": 1
+  "gdpToWageShare": 1,
+  "plantEmissionPerFossil": 2.6
  },
  "infraEffect": {
   "public_housing": {
    "wellbeing": 0.01
   },
   "fossil_plant": {
-   "emissions": 0.04,
    "gdp": 0.003
   },
   "renewable_plant": {
-   "emissions": -0.07,
    "gdp": 0.002
   },
   "road": {

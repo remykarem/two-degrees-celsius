@@ -22,7 +22,7 @@ describe('component smoke (server render)', () => {
     expect(m).toContain('GDP');
     expect(m).toContain('GPI');
     expect(m).toContain('Unemployment');
-    expect(html(BuildPalette, { game: g })).toContain('Fossil plant');
+    expect(html(BuildPalette, { game: g })).toContain('Build fossil power plant');
     expect(html(PendingList, { game: g })).toContain('Nothing scheduled');
     expect(html(PlanTray, { game: g })).toContain('Nothing queued');
   });
@@ -39,8 +39,14 @@ describe('component smoke (server render)', () => {
   it('shows an inspector for a selected tile, and nothing for no selection', () => {
     const g = game();
     expect(html(Inspector, { game: g })).not.toContain('Read-only');
-    g.select({ x: 6, y: 4 });
+    g.select({ kind: 'tile', x: 6, y: 5 });
     expect(html(Inspector, { game: g })).toContain('Bank');
+    g.select({ kind: 'person', id: 4 });
+    const p = html(Inspector, { game: g });
+    expect(p).toContain('Manager A');
+    expect(p).toContain('Commute');
+    g.select({ kind: 'household', id: 7 });
+    expect(html(Inspector, { game: g })).toContain('unhoused');
   });
   it('results screen only renders in the results phase', () => {
     const g = game();
@@ -69,12 +75,12 @@ describe('component smoke (server render)', () => {
 });
 
 describe('v0.3 component behaviour', () => {
-  it('offers "Remove one" only for kinds with a built count above zero', () => {
+  it('the build palette offers the four buildable kinds with built counts, and road is one of them', () => {
     const b = html(BuildPalette, { game: game() });
-    expect(b).toContain('Fossil plant ×5');
-    expect(b).not.toContain('Public housing ×0');
-    expect(b).not.toContain('Renewable plant ×0');
-    expect(b.match(/Remove one/g)).toHaveLength(1);
+    for (const label of ['Build public housing', 'Build fossil power plant', 'Build renewable power plant', 'Build road']) expect(b).toContain(label);
+    expect(b).toContain('Built 2'); // two fossil plants
+    expect(b).toContain('Built 4'); // four roads
+    expect(b).toContain('select it on the map');
   });
   it('shows cost estimates from the cost model, then the authoritative preview once drafted', () => {
     const g = game();

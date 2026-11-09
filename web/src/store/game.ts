@@ -1,7 +1,7 @@
 import type { Command, InfraKind, Result, TurnResult } from '../contract';
 import type { SimPort } from '../sim-port/port';
 import { withCommand, withoutItem, withPreviews } from './draft';
-import { emptyLayout, reconcileLayout, sameTile, tileBlock, type BuildHint, type Tile } from './layout';
+import { describeTileReason, inBounds, layoutOf, pendingAt, sameTile, selectionAt, tileAt, tileKey, type Selection, type Tile } from './map';
 import { nextPhase, type PhaseEvent } from './phase';
 import { writable, type Readable } from './readable';
 import { parseSave, SAVE_FORMAT, SAVE_VERSION, type SaveFile } from './save';
@@ -23,12 +23,15 @@ export interface Game {
   continueFromResults(): void;
   rotate(dir: 1 | -1): void;
   setLens(l: Lens): void;
-  select(t: Tile | null): void;
+  select(sel: Selection | null): void;
   hover(t: Tile | null): void;
   setBuildKind(k: InfraKind | null): void;
   /** Tile click handler: places a draft when in build mode, otherwise selects. Returns an error text if invalid. */
   clickTile(t: Tile): string | null;
+  /** Why the tile cannot take the current build kind (from the sim's validTiles plus this plan), or null. Null when not building. */
   tileError(t: Tile): string | null;
+  /** Drafts removing what stands on the tile (public housing, plant or road). Returns an error text when the tile has nothing removable. */
+  removeAt(t: Tile): string | null;
   dismissError(): void;
   dismissCrisis(id: string): void;
   /** The save file as text, or null (with `state.error` set) when the sim cannot export. */
@@ -45,8 +48,8 @@ function safe<T>(f: () => Result<T>): Result<T> {
 export function createGame(port: SimPort): Game {
   const store = writable<GameState>({
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
-    playback: { month: -1, skipped: false }, layout: emptyLayout(), selection: null, hover: null,
-    buildKind: null, lens: 'none', camera: 0, error: null, dismissedCrises: {},
+    playback: { month: -1, skipped: false }, selection: null, hover: null,
+    buildKind: null, validTiles: null, lens: 'none', camera: 0, error: null, dismissedCrises: {},
   });
   const get = store.get;
   const patch = (p: Partial<GameState>) => store.set({ ...get(), ...p });
@@ -62,7 +65,13 @@ export function createGame(port: SimPort): Game {
     return res.ok ? { draft: withPreviews(draft, res.value) } : { draft, error: { ...res.error, where: 'preview' } };
   }
 
-  const draftedTiles = () => get().draft.flatMap((d) => (d.command.type === 'place' && d.command.tile ? [d.command.tile] : []));
+  const draftedTiles = () => get().draft.flatMap((d) => (d.command.type === 'place' ? [d.command.tile] : []));
+
+  /** The simulation's list of tiles that can take `kind` now (a partial state, so callers can merge it into one patch). */
+  function validFor(kind: GameState['buildKind']): Pick<GameState, 'validTiles'> {
+    if (!kind) return { validTiles: null };
+    try { return { validTiles: { kind, keys: new Set(port.validTiles(kind).map(tileKey)) } }; } catch { return { validTiles: null }; }
+  }
 
   return {
     state: { get, subscribe: store.subscribe },
@@ -73,8 +82,8 @@ export function createGame(port: SimPort): Game {
       const snapshot = res.value;
       store.set({
         ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
-        playback: { month: -1, skipped: false }, layout: reconcileLayout(null, snapshot), selection: null, hover: null,
-        buildKind: null, error: null, dismissedCrises: {},
+        playback: { month: -1, skipped: false }, selection: null, hover: null,
+        buildKind: null, validTiles: null, error: null, dismissedCrises: {},
       });
     },
 
@@ -95,40 +104,23 @@ export function createGame(port: SimPort): Game {
     clearDraft: () => patch({ draft: [] }),
 
     cancelPending(id) {
-      const { phase, layout } = get();
+      const { phase } = get();
       if (phase !== 'review' && phase !== 'plan') return;
       const res = safe(() => port.cancelPending(id));
       if (!res.ok) return fail('cancel', res.error);
-      const next = reconcileLayout(layout, res.value.snapshot);
-      patch({ snapshot: res.value.snapshot, layout: next, ...previewsFor(get().draft) });
+      patch({ snapshot: res.value.snapshot, ...previewsFor(get().draft), ...validFor(get().buildKind) });
     },
 
     endTurn() {
-      const { phase, draft, layout, snapshot: before } = get();
+      const { phase, draft, snapshot: before } = get();
       if (phase !== 'review' && phase !== 'plan') return null;
       const res = safe(() => port.submitTurn(draft.map((d) => d.command)));
       if (!res.ok) { fail('end_turn', res.error); return null; }
       const result = res.value;
-      // Tiles that queued builds were reserved on become their finished tiles.
-      const hints: BuildHint[] = result.activated.flatMap((a) => {
-        if (a.command.type !== 'place') return [];
-        const tile = layout.pendingTiles[a.id] ?? a.command.tile;
-        return tile ? [{ kind: a.command.kind, tile }] : [];
-      });
-      // The real sim has no tiles and drops `tile` from accepted commands: match accepted items to the drafts that produced them (same order,
-      // skipping rejected indexes) to keep the tile the player clicked.
-      const rejectedAt = new Set(result.rejected.map((x) => x.index));
-      const sent = draft.filter((_, i) => !rejectedAt.has(i));
-      const claims: Record<number, Tile> = {};
-      result.accepted.forEach((a, i) => {
-        const c = sent[i]?.command;
-        if (a.command.type === 'place' && c?.type === 'place' && c.tile) claims[a.id] = c.tile;
-      });
-      // ONE store update for the whole turn (snapshot, result, layout, draft and phase together).
+      // ONE store update for the whole turn (snapshot, result, draft and phase together).
       store.set({
-        ...get(), lastResult: result, previous: before, snapshot: result.snapshot, draft: [], buildKind: null,
-        playback: { month: -1, skipped: false }, layout: reconcileLayout(layout, result.snapshot, hints, claims),
-        phase: nextPhase(phase, 'endTurn'), error: null,
+        ...get(), lastResult: result, previous: before, snapshot: result.snapshot, draft: [], buildKind: null, validTiles: null,
+        playback: { month: -1, skipped: false }, phase: nextPhase(phase, 'endTurn'), error: null,
       });
       return result;
     },
@@ -154,19 +146,36 @@ export function createGame(port: SimPort): Game {
     setBuildKind(k) {
       if (k && get().phase === 'review') fire('startPlan');
       if (k && get().phase !== 'plan') return;
-      patch({ buildKind: k });
+      patch({ buildKind: k, ...validFor(k) });
     },
 
-    tileError: (t) => tileBlock(get().layout, t, draftedTiles()),
+    tileError(t) {
+      const { buildKind, validTiles, snapshot } = get();
+      if (!buildKind) return null;
+      if (!inBounds(t)) return 'Outside the map';
+      if (draftedTiles().some((d) => sameTile(d, t))) return 'Already in this turn\'s plan';
+      if (validTiles && validTiles.kind === buildKind && validTiles.keys.has(tileKey(t))) return null;
+      const kind = tileAt(snapshot, t)?.kind;
+      if (kind === 'forest' || kind === 'commons') return describeTileReason('tile_invalid');
+      if (kind && kind !== 'empty') return describeTileReason('tile_occupied');
+      if (snapshot && pendingAt(layoutOf(snapshot), t) !== null) return describeTileReason('tile_occupied');
+      return describeTileReason(undefined);
+    },
     clickTile(t) {
-      const { buildKind } = get();
+      const { buildKind, snapshot } = get();
       if (!buildKind) {
-        patch({ selection: t });
+        patch({ selection: selectionAt(snapshot, t) });
         return null;
       }
-      const err = tileBlock(get().layout, t, draftedTiles());
+      const err = this.tileError(t);
       if (err) return err;
-      this.draftCommand({ type: 'place', kind: buildKind, count: 1, tile: t });
+      this.draftCommand({ type: 'place', kind: buildKind, tile: { x: t.x, y: t.y } });
+      return null;
+    },
+    removeAt(t) {
+      const kind = tileAt(get().snapshot, t)?.kind;
+      if (kind !== 'public_housing' && kind !== 'fossil_plant' && kind !== 'renewable_plant' && kind !== 'road') return describeTileReason('nothing_to_remove');
+      this.draftCommand({ type: 'remove', tile: { x: t.x, y: t.y } });
       return null;
     },
 
@@ -182,7 +191,7 @@ export function createGame(port: SimPort): Game {
       const res = safe(() => port.exportState());
       if (!res.ok) { fail('save', res.error); return null; }
       const file: SaveFile = {
-        format: SAVE_FORMAT, saveVersion: SAVE_VERSION, schemaVersion: s.snapshot.schemaVersion, simState: res.value, layout: s.layout,
+        format: SAVE_FORMAT, saveVersion: SAVE_VERSION, schemaVersion: s.snapshot.schemaVersion, simState: res.value,
         lastResult: s.lastResult, previous: s.previous, uiPrefs: { lens: s.lens, camera: s.camera }, savedAt: new Date().toISOString(),
       };
       return JSON.stringify(file);
@@ -196,8 +205,8 @@ export function createGame(port: SimPort): Game {
       const snapshot = res.value;
       store.set({
         ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [],
-        lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false }, layout: reconcileLayout(f.layout, snapshot),
-        selection: null, hover: null, buildKind: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
+        lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false },
+        selection: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
       });
       return null;
     },

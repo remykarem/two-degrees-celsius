@@ -60,7 +60,8 @@ describe.skipIf(!present)('wasm build against the native golden run', () => {
     expect(snap.ok).toBe(true);
     if (snap.ok) expect(snap.value.nature.forest).toBeLessThanOrEqual(1);
     expect(port.levers()).toHaveLength(19);
-    expect(port.actions()).toHaveLength(7);
+    expect(port.actions()).toHaveLength(9);
+    expect(port.validTiles('road').length).toBeGreaterThan(50);
     expect(port.init(-5).ok).toBe(false);
   });
 });
