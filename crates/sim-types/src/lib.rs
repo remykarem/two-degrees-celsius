@@ -17,6 +17,6 @@ pub use turn::*;
 pub use units::*;
 
 /// Version of the serialised state layout.
-pub const SCHEMA_VERSION: u32 = 1;
-/// Hard cap on agents: 6 households, 4 firm slots (2 dormant), bank, government = 12.
+pub const SCHEMA_VERSION: u32 = 2;
+/// Firm slots: Factory, Farm, Shop and one dormant slot.
 pub const MAX_FIRMS: usize = 4;

@@ -30,52 +30,147 @@ impl IncomeFlows {
     }
 }
 
+/// One of the 20 people. Work, skill, commuting and wellbeing live here.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Person {
+    pub id: PersonId,
+    pub label: String,
+    pub household: HouseholdId,
+    pub age_band: AgeBand,
+    pub skill: Rate,
+    /// Adults who look for work. Owners and the like are adults outside the labour force.
+    pub in_labour_force: bool,
+    /// Wage this person asks for; the cheapest are hired first.
+    pub reservation: Cents,
+    pub job: Option<FirmId>,
+    /// In the government job guarantee (employed, paid the minimum wage).
+    pub jg: bool,
+    /// Monthly pay actually received this tick.
+    pub wage: Cents,
+    pub commute_tiles: u32,
+    pub commute_minutes: u32,
+    /// Share of a full working month actually productive, after commute losses.
+    pub effective_hours: Rate,
+    pub wellbeing: Rate,
+}
+
+impl Person {
+    /// In work: a firm job or the job guarantee.
+    pub fn employed(&self) -> bool {
+        self.job.is_some() || self.jg
+    }
+    pub fn unemployed(&self) -> bool {
+        self.in_labour_force && !self.employed()
+    }
+}
+
+/// A household of 2 to 4 people. Money, spending, saving, rent and loans live here.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Household {
     pub id: HouseholdId,
     pub label: String,
+    pub members: Vec<PersonId>,
+    /// `None`: the household has no home.
+    pub home: Option<HomeId>,
     pub class: Class,
-    /// People this cohort stands for.
-    pub weight: People,
-    pub labour_share: Rate,
-    pub reservation: Cents,
-    pub wage_premium: Rate,
-    /// Non-labour members (children, retired) receive benefits.
-    pub nonlabour_benefit: bool,
-    pub renter_share: Rate,
-    pub home_value: Cents,
     pub savings: Cents,
     pub debt: Cents,
-    pub skill: Rate,
-    /// Employed people per firm slot.
-    pub employment: Vec<People>,
-    /// People in the government job guarantee.
-    pub jg: People,
     pub income: IncomeFlows,
     /// Last six months of (capital income, gross income).
     pub income_hist: Vec<(Cents, Cents)>,
     pub last_disposable: Cents,
     pub food_met: Rate,
-    pub housed_share: Rate,
     pub consumption: Cents,
+    /// Mean wellbeing of the members.
     pub wellbeing: Rate,
     pub political_power: Rate,
+    /// Direct emissions plus the energy emissions attributed to the household's electricity.
     pub footprint: Tonnes,
-    pub wealth_pc: Cents,
+    /// Electricity used this month.
+    pub energy_use: Units,
+    /// Net worth: savings, homes owned, firm and bank equity, minus debt.
+    pub wealth: Cents,
     pub arrears: bool,
+    /// Consecutive months in which the rent was not paid in full.
+    pub arrears_months: u32,
 }
 
-impl Household {
-    /// All people in work: in firms or in the job guarantee.
-    pub fn employed(&self) -> People {
-        People(self.employment.iter().map(|p| p.0).sum::<f64>() + self.jg.0)
+/// A home on the map. Each home holds at most one household.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Home {
+    pub id: HomeId,
+    pub tile: Tile,
+    pub owner: HomeOwner,
+    pub household: Option<HouseholdId>,
+    /// Monthly rent charged to a household that does not own the home.
+    pub rent: Cents,
+    pub value: Cents,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Plant {
+    pub id: PlantId,
+    pub kind: PlantKind,
+    pub tile: Tile,
+    /// Energy units per month the plant can deliver.
+    pub capacity: Units,
+    pub output: Units,
+    /// Monthly emissions (zero for renewables).
+    pub emissions: Tonnes,
+}
+
+/// One cell of the map: what stands there and the id of that thing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MapTile {
+    pub kind: TileKind,
+    /// Home, firm or plant id; `None` for empty, scenery and roads.
+    pub id: Option<u32>,
+}
+
+impl MapTile {
+    pub const EMPTY: MapTile = MapTile {
+        kind: TileKind::Empty,
+        id: None,
+    };
+}
+
+/// The simulation's map: row-major cells, at most one thing per tile.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Map {
+    pub width: u8,
+    pub height: u8,
+    pub cells: Vec<MapTile>,
+}
+
+impl Map {
+    pub fn new(width: u8, height: u8) -> Map {
+        Map {
+            width,
+            height,
+            cells: vec![MapTile::EMPTY; width as usize * height as usize],
+        }
     }
-    /// People employed by firms.
-    pub fn employed_in_firms(&self) -> People {
-        People(self.employment.iter().map(|p| p.0).sum())
+    pub fn in_bounds(&self, t: Tile) -> bool {
+        t.x < self.width && t.y < self.height
     }
-    pub fn labour_force(&self) -> People {
-        self.weight * self.labour_share.0
+    pub fn idx(&self, t: Tile) -> usize {
+        t.y as usize * self.width as usize + t.x as usize
+    }
+    pub fn get(&self, t: Tile) -> Option<MapTile> {
+        self.in_bounds(t).then(|| self.cells[self.idx(t)])
+    }
+    pub fn kind_at(&self, t: Tile) -> Option<TileKind> {
+        self.get(t).map(|c| c.kind)
+    }
+    pub fn set(&mut self, t: Tile, c: MapTile) {
+        if self.in_bounds(t) {
+            let i = self.idx(t);
+            self.cells[i] = c;
+        }
+    }
+    /// All tiles in row-major order.
+    pub fn tiles(&self) -> impl Iterator<Item = Tile> + '_ {
+        (0..self.height).flat_map(move |y| (0..self.width).map(move |x| Tile { x, y }))
     }
 }
 
@@ -84,6 +179,7 @@ pub struct Firm {
     pub id: FirmId,
     pub active: bool,
     pub sector: Sector,
+    pub tile: Tile,
     pub owner: Owner,
     /// The household who founded the firm; owner when the system is private.
     pub founder: HouseholdId,
@@ -96,11 +192,20 @@ pub struct Firm {
     pub wage: Cents,
     pub price: Cents,
     pub inventory: Units,
+    /// Process (direct) emissions per unit of output, before green technology.
     pub intensity_base: Rate,
+    /// Electricity per unit of output, before green technology (energy efficiency).
+    pub energy_per_unit: Rate,
     pub green_tech: Rate,
     pub tfp: Rate,
     pub output: Units,
+    /// Direct (process) emissions this month.
     pub emissions: Tonnes,
+    /// Emissions the firm answers for: direct plus the energy emissions of the electricity it
+    /// uses, at the grid's average intensity. This is the basis of the carbon price. The energy
+    /// part is physically emitted by plants and counted once, there.
+    pub footprint: Tonnes,
+    pub energy_use: Units,
     pub sales_units: Units,
     /// Units sold in each of the last three months.
     pub sales_hist: [f64; 3],
@@ -156,7 +261,7 @@ pub struct Government {
     pub unfunded_total: Cents,
     /// Real receipts this tick (taxes and carbon revenue).
     pub receipts: Cents,
-    pub pending_build: Vec<(InfraKind, u32)>,
+    pub pending_build: Vec<(InfraKind, Tile)>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -180,30 +285,26 @@ pub struct Nature {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Housing {
-    pub owner: HouseholdId,
-    pub private_cap: Units,
-    pub public_cap: Units,
+    /// Market rent of a privately owned home that is rented out.
     pub rent_private: Cents,
     pub rent_public: Cents,
+    /// Occupied homes over all homes.
     pub occupancy: Rate,
-    pub housed_share: Rate,
+    pub unhoused_households: u32,
 }
 
+/// The power system this month.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Energy {
-    pub fossil_cap: Units,
-    pub renewable_cap: Units,
-}
-
-impl Energy {
-    /// Fossil share of the power mix.
-    pub fn grid_factor(&self) -> f64 {
-        safe_div(
-            self.fossil_cap.0,
-            self.fossil_cap.0 + self.renewable_cap.0,
-            1.0,
-        )
-    }
+    /// Electricity firms and households want.
+    pub demand: Units,
+    /// Total plant capacity.
+    pub supply: Units,
+    pub delivered: Units,
+    /// Share of demand that is served (1 when supply is enough).
+    pub served: Rate,
+    /// Tonnes of CO2 per energy unit delivered (fossil share of capacity x the fossil factor).
+    pub grid_intensity: Rate,
 }
 
 /// Policy levers set by the player (nominal values).
@@ -256,6 +357,11 @@ pub struct Indicators {
     pub employed: People,
     pub labour_force: People,
     pub gini: Rate,
+    /// Mean monthly income per person (household gross income shared over its members).
+    pub avg_income_pp: Cents,
+    pub median_income_pp: Cents,
+    /// Wealth of the wealthiest household over the positive wealth of all households.
+    pub top_wealth_share: Rate,
     pub wage_share: Rate,
     pub profit_share: Rate,
     pub avg_wellbeing: Rate,
@@ -299,8 +405,14 @@ pub struct State {
     pub transition: Option<Transition>,
     /// Temporary productivity penalty during a system transition.
     pub output_penalty: Rate,
+    pub persons: Vec<Person>,
     pub households: Vec<Household>,
     pub firms: Vec<Firm>,
+    pub homes: Vec<Home>,
+    pub plants: Vec<Plant>,
+    pub next_home_id: u32,
+    pub next_plant_id: u32,
+    pub map: Map,
     pub bank: Bank,
     pub gov: Government,
     pub nature: Nature,
@@ -317,7 +429,34 @@ pub struct State {
 
 impl State {
     pub fn total_people(&self) -> People {
-        People(self.households.iter().map(|h| h.weight.0).sum())
+        People(self.persons.len() as f64)
+    }
+    pub fn person(&self, id: PersonId) -> &Person {
+        &self.persons[id.idx()]
+    }
+    pub fn home(&self, id: HomeId) -> Option<&Home> {
+        self.homes.iter().find(|h| h.id == id)
+    }
+    pub fn plant(&self, id: PlantId) -> Option<&Plant> {
+        self.plants.iter().find(|p| p.id == id)
+    }
+    /// Capacity of all plants of a kind.
+    pub fn capacity(&self, kind: PlantKind) -> f64 {
+        self.plants
+            .iter()
+            .filter(|p| p.kind == kind)
+            .map(|p| p.capacity.0)
+            .sum()
+    }
+    /// Labour force and the number of those in work (firm job or job guarantee).
+    pub fn labour_force(&self) -> (f64, f64) {
+        let lf = self.persons.iter().filter(|p| p.in_labour_force).count();
+        let emp = self
+            .persons
+            .iter()
+            .filter(|p| p.in_labour_force && p.employed())
+            .count();
+        (emp as f64, lf as f64)
     }
     /// Money in circulation: every non-bank deposit.
     pub fn total_deposits(&self) -> Cents {

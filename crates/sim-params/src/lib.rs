@@ -6,7 +6,7 @@
 #![forbid(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
-use sim_types::{Class, EconomicSystem, Sector};
+use sim_types::{AgeBand, Class, EconomicSystem, PlantKind, Sector};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -64,17 +64,20 @@ pub struct LabourParams {
     /// Expected sales growth aspiration per month.
     pub growth_aspiration: f64,
     pub fire_after_months: u32,
-    pub max_fire_share: f64,
-    /// Largest share of its current workforce a firm can add in one month.
-    pub max_hire_share: f64,
+    /// Most people a firm can fire in one month.
+    pub max_fire_per_month: u32,
+    /// Most people a firm can hire in one month.
+    pub max_hire_per_month: u32,
     pub skill_gain: f64,
     pub skill_loss: f64,
-    /// Share of a firm's jobs that are skilled (filled by premium cohorts).
+    /// Share of a firm's jobs that are skilled (filled by skilled people first).
     pub skilled_share: f64,
-    /// Months of sales held as target inventory cover.
+    /// Months of sales held as target inventory cover (goods and food).
     pub inventory_cover: f64,
+    /// Services cannot be stored, so the target cover is normally zero.
+    pub services_inventory_cover: f64,
     pub inventory_adjust: f64,
-    /// Output per worker assumed for a firm with no workers.
+    /// Workers assumed when sizing the output per worker of an empty firm.
     pub min_workers: f64,
     /// Wage change per month = `wage_k * (u_ref - unemployment)`, capped at `wage_cap`.
     pub wage_k: f64,
@@ -88,10 +91,14 @@ pub struct LabourParams {
     pub inflation_anchor: f64,
     /// Weight of the newest month in expected sales (exponential average).
     pub expected_smoothing: f64,
-    /// A firm can always hire at least this many people in a month.
-    pub min_hire: f64,
     pub skill_min: f64,
     pub skill_max: f64,
+    /// Pay of a person = firm wage x (1 + slope x (skill - ref)), never below the floor multiple.
+    pub skill_wage_slope: f64,
+    pub skill_wage_ref: f64,
+    pub skill_wage_floor: f64,
+    /// Effective labour per worker assumed when a firm has no workers to measure it from.
+    pub default_effective_per_worker: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -104,6 +111,41 @@ pub struct ProductionParams {
     /// Monthly TFP growth by sector.
     pub tfp_growth_goods: f64,
     pub tfp_growth_food: f64,
+    pub tfp_growth_services: f64,
+}
+
+/// Roads, commutes and where people live (docs/town-v2.md sections 4 and 5).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpaceParams {
+    /// Minutes to cross a tile without a road.
+    pub slow_minutes: u32,
+    /// Minutes to cross a road tile.
+    pub fast_minutes: u32,
+    /// Commute minutes that cost no productivity.
+    pub free_minutes: f64,
+    /// Share of working time lost per commute minute above the free minutes.
+    pub k_commute: f64,
+    /// Effective hours never fall below this.
+    pub min_effective_hours: f64,
+    /// Commute assumed for a worker whose household has no home.
+    pub unhoused_commute_tiles: u32,
+    pub unhoused_commute_minutes: u32,
+}
+
+/// Power plants and electricity.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EnergyParams {
+    /// Tonnes of CO2 per energy unit from fossil plants (renewables emit nothing).
+    pub factor_fossil: f64,
+    /// Capacity of a newly built plant, energy units a month.
+    pub plant_capacity: f64,
+    /// Electricity per person per month before the consumption term.
+    pub hh_energy_base_pc: f64,
+    /// Extra electricity per person at the reference consumption.
+    pub hh_energy_consumption_pc: f64,
+    pub hh_ref_consumption_usd: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -136,17 +178,30 @@ pub struct GoodsParams {
     /// Smallest price (dollars), a guard against dividing by zero.
     pub min_price_usd: f64,
     pub holding_cost: f64,
+    /// Services spoil at once: the share of unsold services that is lost each month.
+    pub services_holding_cost: f64,
     pub price_elasticity: f64,
     /// Propensity to consume out of last month's disposable income, by class.
     pub propensity: ClassShares,
     pub food_need_units_pc: f64,
     /// Monthly consumption out of net wealth by the capitalist and rentier classes.
     pub wealth_consumption_rate: f64,
+    /// Share of discretionary household spending that goes to services (the rest to goods).
+    pub services_share: f64,
+    /// Share of the government's purchases (the G lever) that goes to services.
+    pub gov_services_share: f64,
     pub rent_up: f64,
     pub rent_down: f64,
+    /// Rents rise only while all homes are taken (occupancy at least this).
     pub occupancy_trigger: f64,
+    /// Rents stop rising when the average renter pays this share of income in rent.
+    pub rent_burden_cap: f64,
     pub min_rent_usd: f64,
-    pub housing_depreciation: f64,
+    /// A household loses its home after this many months of unpaid rent.
+    pub evict_after_months: u32,
+    /// A household without a home moves into a vacant home whose rent is at most this share
+    /// of its last disposable income.
+    pub move_rent_share: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -190,8 +245,6 @@ pub struct InvestParams {
     pub accelerator: f64,
     /// Expansion investment is at most this share of capital value per month.
     pub max_invest_share: f64,
-    /// Share of the landlord's savings that can go to new housing in a month.
-    pub housing_budget_share: f64,
     pub depreciation: f64,
     pub capital_price_usd: f64,
     pub green_step: f64,
@@ -203,9 +256,6 @@ pub struct InvestParams {
     pub green_max: f64,
     /// Only invest in capital if the firm's cash is above this many months of payroll.
     pub min_cash_months: f64,
-    pub housing_cost_usd: f64,
-    pub housing_hurdle: f64,
-    pub housing_target_occupancy: f64,
     /// Excess return over the hurdle at which investment reaches its maximum.
     pub return_scale: f64,
     /// Weight of the newest month in smoothed profit and in the investment plan.
@@ -226,10 +276,8 @@ pub struct NatureParams {
     pub enclosure_fee_usd: f64,
     pub community_coord_cost: f64,
     pub forest_clear_per_build: f64,
+    /// Direct emissions per person per month (heating, transport); electricity comes on top.
     pub household_footprint_base: f64,
-    pub household_footprint_consumption: f64,
-    /// Consumption per capita (dollars) at which the consumption term is scaled.
-    pub footprint_ref_consumption_usd: f64,
     /// Carbon budget B0 in tonnes for the whole run.
     pub budget_b0: f64,
     pub t0: f64,
@@ -244,9 +292,10 @@ pub struct GovParams {
     pub repay_share: f64,
     pub housing_upkeep_usd: f64,
     pub plant_upkeep_usd: f64,
+    pub road_upkeep_usd: f64,
     pub public_housing_cost_usd: f64,
     pub plant_cost_usd: f64,
-    pub plant_capacity: f64,
+    pub road_cost_usd: f64,
     pub legit_wellbeing: f64,
     pub legit_unemployment: f64,
     pub legit_unemployment_threshold: f64,
@@ -265,17 +314,14 @@ pub struct ClassParams {
     pub skill_threshold: f64,
     /// Managers earn more than this multiple of the average base wage.
     pub skilled_wage_ratio: f64,
-    /// A cohort counts as employed when at least this share of its labour force works.
-    pub employed_share_min: f64,
     /// Months of income history the class function averages over.
     pub history_months: usize,
+    /// Savings a household needs (startup cost plus buffer) to found a firm.
     pub startup_cost_usd: f64,
     pub startup_buffer_usd: f64,
     pub startup_capital_share: f64,
-    pub founders_per_firm: f64,
+    /// Monthly probability of founding = `mobility_rate` x (sector return - loan rate).
     pub mobility_rate: f64,
-    pub fall_fraction: f64,
-    pub min_cohort_weight: f64,
     pub startup_hurdle_floor: f64,
 }
 
@@ -304,8 +350,15 @@ pub struct WellbeingParams {
     pub w_security: f64,
     pub security_months: f64,
     pub smoothing: f64,
-    /// Monthly gross emissions (tonnes) at which local pollution is total.
+    /// Monthly gross emissions (tonnes) at which pollution is total.
     pub pollution_scale: f64,
+    /// Wellbeing lost by a person whose commute is `commute_scale_minutes` above the free minutes.
+    pub w_commute: f64,
+    pub commute_scale_minutes: f64,
+    /// Wellbeing lost by living within `pollution_radius` tiles of a fossil plant or the Factory.
+    /// Zero switches the effect off.
+    pub w_local_pollution: f64,
+    pub pollution_radius: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -379,22 +432,59 @@ impl SystemsParams {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct CohortInit {
+pub struct PersonInit {
+    pub label: String,
+    pub age_band: AgeBand,
+    pub skill: f64,
+    /// Adults who look for work.
+    pub labour_force: bool,
+    pub reservation_usd: f64,
+    /// Index of the firm slot the person works in at the start.
+    pub job: Option<usize>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HouseholdInit {
     pub label: String,
     pub class: Class,
-    pub weight: f64,
-    pub labour_share: f64,
-    pub reservation_usd: f64,
-    pub wage_premium: f64,
-    pub nonlabour_benefit: bool,
-    pub renter_share: f64,
-    pub skill: f64,
     pub savings_usd: f64,
     pub debt_usd: f64,
-    /// Owner-occupied housing value (counts as wealth only).
-    pub home_value_usd: f64,
+    /// Index into `homes` of the home the household lives in; `None` for an unhoused household.
+    pub home: Option<usize>,
     /// Disposable income per month assumed for the month before the run starts.
     pub initial_income_usd: f64,
+    pub people: Vec<PersonInit>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HomeInit {
+    /// `[x, y]`.
+    pub tile: [u8; 2],
+    /// Index of the owning household; `None` for public housing.
+    pub owner: Option<usize>,
+    pub value_usd: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PlantInit {
+    pub kind: PlantKind,
+    pub tile: [u8; 2],
+    pub capacity: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MapInit {
+    pub width: u8,
+    pub height: u8,
+    pub roads: Vec<[u8; 2]>,
+    pub forest: Vec<[u8; 2]>,
+    pub commons: Vec<[u8; 2]>,
+    pub town_hall: [u8; 2],
+    pub bank: [u8; 2],
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -403,19 +493,22 @@ pub struct FirmInit {
     pub sector: Sector,
     pub active: bool,
     pub founder: usize,
+    /// Where the firm stands (a dormant slot's reserved site).
+    pub tile: [u8; 2],
     pub capital_units: f64,
     pub cash_usd: f64,
     pub debt_usd: f64,
     pub wage_usd: f64,
     pub price_usd: f64,
     pub inventory_units: f64,
+    /// Process (direct) tonnes of CO2 per unit of output.
     pub intensity_base: f64,
+    /// Electricity units per unit of output.
+    pub energy_per_unit: f64,
     /// Output the firm should produce at the initial state; TFP is derived from it.
     pub initial_output: f64,
     /// Capital investment planned for the first month.
     pub plan_invest_usd: f64,
-    /// Employment per cohort index.
-    pub employment: Vec<f64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -444,20 +537,20 @@ pub struct PolicyInit {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InitialTown {
-    pub cohorts: Vec<CohortInit>,
+    pub map: MapInit,
+    pub households: Vec<HouseholdInit>,
+    pub homes: Vec<HomeInit>,
+    pub plants: Vec<PlantInit>,
     pub firms: Vec<FirmInit>,
+    /// Household that owns the bank.
     pub bank_owner: usize,
     pub gov_cash_usd: f64,
     pub gov_debt_usd: f64,
     pub legitimacy: f64,
     pub forest: f64,
     pub commons: f64,
-    pub private_housing: f64,
-    pub public_housing: f64,
     pub rent_private_usd: f64,
     pub rent_public_usd: f64,
-    pub fossil_capacity: f64,
-    pub renewable_capacity: f64,
     pub union_density: f64,
     pub policy: PolicyInit,
 }
@@ -469,6 +562,8 @@ pub struct Params {
     pub turn: TurnParams,
     pub labour: LabourParams,
     pub production: ProductionParams,
+    pub space: SpaceParams,
+    pub energy: EnergyParams,
     pub goods: GoodsParams,
     pub income: IncomeParams,
     pub credit: CreditParams,
@@ -499,6 +594,8 @@ struct CoreParams {
     turn: TurnParams,
     labour: LabourParams,
     production: ProductionParams,
+    space: SpaceParams,
+    energy: EnergyParams,
     goods: GoodsParams,
     income: IncomeParams,
     credit: CreditParams,
@@ -529,6 +626,8 @@ impl Params {
             turn: core.turn,
             labour: core.labour,
             production: core.production,
+            space: core.space,
+            energy: core.energy,
             goods: core.goods,
             income: core.income,
             credit: core.credit,
@@ -550,7 +649,8 @@ impl Params {
         Ok(p)
     }
 
-    /// Check ranges and internal consistency of the initial town.
+    /// Check ranges and internal consistency of the initial town: every home holds at most one
+    /// household, every person has a valid job, and every tile holds at most one thing.
     pub fn validate(&self) -> Result<(), String> {
         let mut errs: Vec<String> = Vec::new();
         for k in sim_types::LEVER_KEYS {
@@ -581,7 +681,9 @@ impl Params {
         pos("nature.budget_b0", self.nature.budget_b0);
         pos("invest.capital_price_usd", self.invest.capital_price_usd);
         pos("credit.firm_term_months", self.credit.firm_term_months);
-        pos("class.founders_per_firm", self.class.founders_per_firm);
+        pos("space.slow_minutes", self.space.slow_minutes as f64);
+        pos("space.fast_minutes", self.space.fast_minutes as f64);
+        pos("energy.plant_capacity", self.energy.plant_capacity);
         let mut share = |name: &str, v: f64| {
             if !(0.0..=1.0).contains(&v) {
                 errs.push(format!("{name} must be in [0, 1] (got {v})"));
@@ -594,6 +696,12 @@ impl Params {
             self.class.capital_share_threshold,
         );
         share("labour.skilled_share", self.labour.skilled_share);
+        share("goods.services_share", self.goods.services_share);
+        share("goods.gov_services_share", self.goods.gov_services_share);
+        share("space.min_effective_hours", self.space.min_effective_hours);
+        if self.space.fast_minutes > self.space.slow_minutes {
+            errs.push("space.fast_minutes must not exceed space.slow_minutes".into());
+        }
         for (n, s) in [
             ("market", &self.systems.market),
             ("regulated", &self.systems.regulated),
@@ -606,10 +714,19 @@ impl Params {
                 errs.push(format!("systems.{n}.lambda_max out of range"));
             }
         }
+        self.validate_town(&mut errs);
+        if errs.is_empty() {
+            Ok(())
+        } else {
+            Err(errs.join("; "))
+        }
+    }
+
+    fn validate_town(&self, errs: &mut Vec<String>) {
         let t = &self.initial;
-        let n = t.cohorts.len();
+        let n = t.households.len();
         if n == 0 {
-            errs.push("initial.cohorts is empty".into());
+            errs.push("initial.households is empty".into());
         }
         if t.firms.len() != sim_types::MAX_FIRMS {
             errs.push(format!(
@@ -620,33 +737,77 @@ impl Params {
         if t.bank_owner >= n {
             errs.push("initial.bank_owner out of range".into());
         }
-        for (i, f) in t.firms.iter().enumerate() {
+        let (w, h) = (t.map.width, t.map.height);
+        // One thing per tile, all inside the map.
+        let mut seen: Vec<([u8; 2], &str)> = Vec::new();
+        let mut put = |pos: [u8; 2], what: &'static str, errs: &mut Vec<String>| {
+            if pos[0] >= w || pos[1] >= h {
+                errs.push(format!("{what} at {pos:?} is outside the {w}x{h} map"));
+            } else if let Some((_, other)) = seen.iter().find(|(p, _)| *p == pos) {
+                errs.push(format!("tile {pos:?} holds both {other} and {what}"));
+            } else {
+                seen.push((pos, what));
+            }
+        };
+        for r in &t.map.roads {
+            put(*r, "a road", errs);
+        }
+        for r in &t.map.forest {
+            put(*r, "forest", errs);
+        }
+        for r in &t.map.commons {
+            put(*r, "commons", errs);
+        }
+        put(t.map.town_hall, "the town hall", errs);
+        put(t.map.bank, "the bank", errs);
+        for hm in &t.homes {
+            put(hm.tile, "a home", errs);
+            if matches!(hm.owner, Some(o) if o >= n) {
+                errs.push("a home has an owner out of range".into());
+            }
+        }
+        for pl in &t.plants {
+            put(pl.tile, "a plant", errs);
+        }
+        for f in &t.firms {
+            put(f.tile, "a firm site", errs);
             if f.founder >= n {
-                errs.push(format!("firm {i}: founder out of range"));
-            }
-            if f.employment.len() != n {
-                errs.push(format!(
-                    "firm {i}: employment must have one entry per cohort"
-                ));
+                errs.push("a firm's founder is out of range".into());
             }
         }
-        for (i, c) in t.cohorts.iter().enumerate() {
-            if c.weight <= 0.0 {
-                errs.push(format!("cohort {i}: weight must be positive"));
+        // One household per home; every job refers to an active firm slot.
+        let mut occupant: Vec<Option<usize>> = vec![None; t.homes.len()];
+        for (i, hh) in t.households.iter().enumerate() {
+            if !(2..=4).contains(&hh.people.len()) {
+                errs.push(format!("household {i} must have 2 to 4 people"));
             }
-            let emp: f64 = t
-                .firms
-                .iter()
-                .map(|f| f.employment.get(i).copied().unwrap_or(0.0))
-                .sum();
-            if emp > c.weight * c.labour_share + 1e-9 {
-                errs.push(format!("cohort {i}: employment exceeds labour force"));
+            if let Some(home) = hh.home {
+                match occupant.get_mut(home) {
+                    None => errs.push(format!("household {i}: home {home} does not exist")),
+                    Some(slot) => {
+                        if let Some(other) = *slot {
+                            errs.push(format!("home {home} holds households {other} and {i}"));
+                        }
+                        *slot = Some(i);
+                    }
+                }
             }
-        }
-        if errs.is_empty() {
-            Ok(())
-        } else {
-            Err(errs.join("; "))
+            for p in &hh.people {
+                if let Some(f) = p.job {
+                    if !t.firms.get(f).is_some_and(|x| x.active) {
+                        errs.push(format!(
+                            "household {i}: {} works in an inactive or missing firm",
+                            p.label
+                        ));
+                    }
+                    if !p.labour_force {
+                        errs.push(format!(
+                            "household {i}: {} has a job but is outside the labour force",
+                            p.label
+                        ));
+                    }
+                }
+            }
         }
     }
 }

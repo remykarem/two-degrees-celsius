@@ -42,23 +42,22 @@ pub fn may_change_money(system: SystemId) -> bool {
 pub fn all_floats(s: &State) -> Vec<(String, f64)> {
     let mut v: Vec<(String, f64)> = Vec::new();
     let mut add = |name: String, x: f64| v.push((name, x));
+    for x in &s.persons {
+        let i = x.id.0;
+        add(format!("person {i} skill"), x.skill.0);
+        add(format!("person {i} effective_hours"), x.effective_hours.0);
+        add(format!("person {i} wellbeing"), x.wellbeing.0);
+    }
     for h in &s.households {
         let i = h.id.0;
-        add(format!("household {i} weight"), h.weight.0);
-        add(format!("household {i} labour_share"), h.labour_share.0);
-        add(format!("household {i} skill"), h.skill.0);
         add(format!("household {i} wellbeing"), h.wellbeing.0);
         add(
             format!("household {i} political_power"),
             h.political_power.0,
         );
         add(format!("household {i} food_met"), h.food_met.0);
-        add(format!("household {i} housed_share"), h.housed_share.0);
         add(format!("household {i} footprint"), h.footprint.0);
-        add(format!("household {i} jg"), h.jg.0);
-        for (f, e) in h.employment.iter().enumerate() {
-            add(format!("household {i} employment[{f}]"), e.0);
-        }
+        add(format!("household {i} energy_use"), h.energy_use.0);
     }
     for f in &s.firms {
         let i = f.id.0;
@@ -67,9 +66,12 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
         add(format!("firm {i} inventory"), f.inventory.0);
         add(format!("firm {i} output"), f.output.0);
         add(format!("firm {i} emissions"), f.emissions.0);
+        add(format!("firm {i} footprint"), f.footprint.0);
+        add(format!("firm {i} energy_use"), f.energy_use.0);
         add(format!("firm {i} green_tech"), f.green_tech.0);
         add(format!("firm {i} tfp"), f.tfp.0);
         add(format!("firm {i} intensity_base"), f.intensity_base.0);
+        add(format!("firm {i} energy_per_unit"), f.energy_per_unit.0);
         add(format!("firm {i} loan_rate"), f.loan_rate.0);
         add(format!("firm {i} excess_demand"), f.excess_demand.0);
         add(format!("firm {i} expected_sales"), f.expected_sales.0);
@@ -77,6 +79,12 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
         for (k, x) in f.sales_hist.iter().enumerate() {
             add(format!("firm {i} sales_hist[{k}]"), *x);
         }
+    }
+    for p in &s.plants {
+        let i = p.id.0;
+        add(format!("plant {i} capacity"), p.capacity.0);
+        add(format!("plant {i} output"), p.output.0);
+        add(format!("plant {i} emissions"), p.emissions.0);
     }
     let n = &s.nature;
     add("nature forest".into(), n.forest.0);
@@ -87,11 +95,12 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
     add("nature sink".into(), n.sink.0);
     add("nature atmosphere".into(), n.atmosphere.0);
     add("nature depletion".into(), n.depletion.0);
-    add("housing private_cap".into(), s.housing.private_cap.0);
-    add("housing public_cap".into(), s.housing.public_cap.0);
     add("housing occupancy".into(), s.housing.occupancy.0);
-    add("energy fossil".into(), s.energy.fossil_cap.0);
-    add("energy renewable".into(), s.energy.renewable_cap.0);
+    add("energy demand".into(), s.energy.demand.0);
+    add("energy supply".into(), s.energy.supply.0);
+    add("energy delivered".into(), s.energy.delivered.0);
+    add("energy served".into(), s.energy.served.0);
+    add("energy grid_intensity".into(), s.energy.grid_intensity.0);
     add("gov legitimacy".into(), s.gov.legitimacy.0);
     add("bank default_rate".into(), s.bank.default_rate.0);
     add("union_density".into(), s.union_density.0);
@@ -103,6 +112,10 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
         s.indicators.unemployment.0,
     );
     add("indicators gini".into(), s.indicators.gini.0);
+    add(
+        "indicators top_wealth_share".into(),
+        s.indicators.top_wealth_share.0,
+    );
     add("indicators wellbeing".into(), s.indicators.avg_wellbeing.0);
     add("indicators temperature".into(), s.indicators.temperature);
     add("indicators gpi".into(), s.indicators.gpi_annual);
@@ -192,12 +205,10 @@ pub fn check_state(
             return fail(tick, system, format!("{name} is not finite ({x})"));
         }
     }
-    let stocks: [(&str, f64); 6] = [
+    let stocks: [(&str, f64); 4] = [
         ("forest", s.nature.forest.0),
         ("commons", s.nature.commons.0),
         ("cumulative emissions", s.nature.cumulative.0),
-        ("private housing", s.housing.private_cap.0),
-        ("public housing", s.housing.public_cap.0),
         ("legitimacy", s.gov.legitimacy.0),
     ];
     for (name, x) in stocks {
@@ -213,28 +224,8 @@ pub fn check_state(
                 format!("household {} has negative savings or debt", h.id.0),
             );
         }
-        if h.weight.0 <= 0.0 {
-            return fail(
-                tick,
-                system,
-                format!("household {} weight not positive", h.id.0),
-            );
-        }
-        if h.employment.iter().any(|e| e.0 < -1e-9) {
-            return fail(
-                tick,
-                system,
-                format!("household {} negative employment", h.id.0),
-            );
-        }
-        if h.employed().0 > h.labour_force().0 + 1e-6 {
-            return fail(
-                tick,
-                system,
-                format!("household {} employed exceeds labour force", h.id.0),
-            );
-        }
     }
+    check_people_homes_tiles(s, tick, system)?;
     for f in &s.firms {
         if f.cash.is_negative() || f.debt.is_negative() {
             return fail(
@@ -261,8 +252,8 @@ pub fn check_state(
     if s.gov.cash.is_negative() || s.gov.debt.is_negative() {
         return fail(tick, system, "government cash or debt negative".into());
     }
-    let pop: f64 = s.households.iter().map(|h| h.weight.0).sum();
-    if (pop - expected_population).abs() > 1e-6 * expected_population.max(1.0) {
+    let pop = s.persons.len() as f64;
+    if (pop - expected_population).abs() > 1e-6 {
         return fail(
             tick,
             system,
@@ -317,6 +308,227 @@ pub fn check_state(
     );
     if resolved_by_now && s.bank.equity.is_negative() {
         return fail(tick, system, "bank equity negative and unresolved".into());
+    }
+    Ok(())
+}
+
+/// Structural invariants of Town v2: every person is in exactly one household, every home holds
+/// at most one household (and the two sides agree), jobs refer to active firms and match the
+/// firms' headcounts, and the map holds at most one thing per tile with every thing on its tile.
+pub fn check_people_homes_tiles(s: &State, tick: u32, system: SystemId) -> Result<(), Violation> {
+    // People and households.
+    let mut count = vec![0u32; s.persons.len()];
+    for h in &s.households {
+        for m in &h.members {
+            match count.get_mut(m.idx()) {
+                Some(c) => *c += 1,
+                None => {
+                    return fail(
+                        tick,
+                        system,
+                        format!("household {} lists unknown person {}", h.id.0, m.0),
+                    )
+                }
+            }
+            if s.persons[m.idx()].household != h.id {
+                return fail(
+                    tick,
+                    system,
+                    format!(
+                        "person {} is listed by household {} but belongs to {}",
+                        m.0,
+                        h.id.0,
+                        s.persons[m.idx()].household.0
+                    ),
+                );
+            }
+        }
+    }
+    if let Some(i) = count.iter().position(|c| *c != 1) {
+        return fail(
+            tick,
+            system,
+            format!("person {i} is in {} households, not exactly one", count[i]),
+        );
+    }
+    // Jobs.
+    for x in &s.persons {
+        if let Some(f) = x.job {
+            if !s.firms.get(f.idx()).is_some_and(|f| f.active) {
+                return fail(
+                    tick,
+                    system,
+                    format!(
+                        "person {} works in inactive or missing firm {}",
+                        x.id.0, f.0
+                    ),
+                );
+            }
+            if x.jg {
+                return fail(
+                    tick,
+                    system,
+                    format!("person {} has a firm job and a guarantee job", x.id.0),
+                );
+            }
+        }
+        if (x.job.is_some() || x.jg) && !x.in_labour_force {
+            return fail(
+                tick,
+                system,
+                format!("person {} works but is outside the labour force", x.id.0),
+            );
+        }
+    }
+    for f in &s.firms {
+        let n = s.persons.iter().filter(|x| x.job == Some(f.id)).count() as f64;
+        if (n - f.workers.0).abs() > 1e-9 {
+            return fail(
+                tick,
+                system,
+                format!(
+                    "firm {} headcount {} != {} workers by job",
+                    f.id.0, f.workers.0, n
+                ),
+            );
+        }
+    }
+    // Homes.
+    for (i, home) in s.homes.iter().enumerate() {
+        if s.homes[..i].iter().any(|o| o.id == home.id) {
+            return fail(tick, system, format!("duplicate home id {}", home.id.0));
+        }
+        if let Some(hh) = home.household {
+            let ok = s
+                .households
+                .get(hh.idx())
+                .is_some_and(|h| h.home == Some(home.id));
+            if !ok {
+                return fail(
+                    tick,
+                    system,
+                    format!(
+                        "home {} holds household {} which lives elsewhere",
+                        home.id.0, hh.0
+                    ),
+                );
+            }
+        }
+    }
+    for h in &s.households {
+        if let Some(hid) = h.home {
+            match s.home(hid) {
+                Some(home) if home.household == Some(h.id) => {}
+                _ => {
+                    return fail(
+                        tick,
+                        system,
+                        format!(
+                            "household {} claims home {} that does not hold it",
+                            h.id.0, hid.0
+                        ),
+                    )
+                }
+            }
+        }
+    }
+    // Map: one thing per tile, and every thing sits on a tile that says so.
+    let m = &s.map;
+    if m.cells.len() != m.width as usize * m.height as usize {
+        return fail(tick, system, "map size does not match its cells".into());
+    }
+    let mut owner_of_tile: Vec<Option<String>> = vec![None; m.cells.len()];
+    let mut claim = |t: Tile, kind_ok: &[TileKind], id: Option<u32>, what: String| {
+        let Some(c) = m.get(t) else {
+            return Err(format!(
+                "{what} stands outside the map at ({}, {})",
+                t.x, t.y
+            ));
+        };
+        let slot = &mut owner_of_tile[m.idx(t)];
+        if let Some(other) = slot {
+            return Err(format!(
+                "tile ({}, {}) holds both {other} and {what}",
+                t.x, t.y
+            ));
+        }
+        *slot = Some(what.clone());
+        if !kind_ok.contains(&c.kind) || c.id != id {
+            return Err(format!(
+                "{what} at ({}, {}) but the map shows {:?} {:?}",
+                t.x, t.y, c.kind, c.id
+            ));
+        }
+        Ok(())
+    };
+    for home in &s.homes {
+        let kind = match home.owner {
+            HomeOwner::Public => TileKind::PublicHousing,
+            HomeOwner::Household(_) => TileKind::Home,
+        };
+        claim(
+            home.tile,
+            &[kind],
+            Some(home.id.0),
+            format!("home {}", home.id.0),
+        )
+        .or_else(|e| fail(tick, system, e))?;
+    }
+    for f in &s.firms {
+        if f.active {
+            claim(
+                f.tile,
+                &[TileKind::Firm],
+                Some(f.id.0),
+                format!("firm {}", f.id.0),
+            )
+            .or_else(|e| fail(tick, system, e))?;
+        }
+    }
+    for pl in &s.plants {
+        let kind = match pl.kind {
+            PlantKind::Fossil => TileKind::FossilPlant,
+            PlantKind::Renewable => TileKind::RenewablePlant,
+        };
+        claim(
+            pl.tile,
+            &[kind],
+            Some(pl.id.0),
+            format!("plant {}", pl.id.0),
+        )
+        .or_else(|e| fail(tick, system, e))?;
+    }
+    // Everything else on the map is scenery or a road and carries no id.
+    for (i, c) in m.cells.iter().enumerate() {
+        let known = owner_of_tile[i].is_some();
+        let expects_entity = matches!(
+            c.kind,
+            TileKind::Home
+                | TileKind::PublicHousing
+                | TileKind::FossilPlant
+                | TileKind::RenewablePlant
+        );
+        if expects_entity && !known {
+            return fail(
+                tick,
+                system,
+                format!("map shows {:?} at cell {i} with nothing behind it", c.kind),
+            );
+        }
+        if c.kind == TileKind::Firm && !known {
+            // A closed firm keeps its building; it must still be a firm slot's own tile.
+            let t = Tile {
+                x: (i % m.width as usize) as u8,
+                y: (i / m.width as usize) as u8,
+            };
+            if !s.firms.iter().any(|f| f.tile == t) {
+                return fail(
+                    tick,
+                    system,
+                    format!("map shows a firm at cell {i} with no firm"),
+                );
+            }
+        }
     }
     Ok(())
 }

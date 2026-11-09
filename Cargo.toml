@@ -8,8 +8,9 @@ members = [
   "crates/sim-metrics",
   "crates/sim-checks",
   "crates/sim-engine",
-  "crates/sim-api",
-  "crates/sim-wasm",
+  # restored by the wire-layer agent after Town v2:
+  # "crates/sim-api",
+  # "crates/sim-wasm",
   "crates/sim-cli",
 ]
 

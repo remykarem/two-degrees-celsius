@@ -110,11 +110,14 @@ fn summary_line(sim: &Sim) -> String {
     let s = &sim.state;
     let i = &s.indicators;
     format!(
-        "{:>5.1} {:>12.0} {:>7.1}% {:>6.3} {:>9.0} {:>6.1}% {:>12.0} {:>13.0} {:>6.3}  {:?}",
+        "{:>5.1} {:>12.0} {:>7.1}% {:>6.3} {:>5.1}% {:>7.0} {:>7.0} {:>9.0} {:>6.1}% {:>12.0} {:>13.0} {:>6.3}  {:?}",
         s.tick as f64 / 12.0,
         i.gdp_real_annual,
         i.unemployment.0 * 100.0,
         i.gini.0,
+        i.top_wealth_share.0 * 100.0,
+        i.avg_income_pp.dollars(),
+        i.median_income_pp.dollars(),
         s.nature.gross_emissions.0 * 12.0,
         100.0 * i.remaining_budget.0 / sim.params.nature.budget_b0,
         s.bank.equity.dollars(),
@@ -149,11 +152,14 @@ fn run(args: Args) -> Result<(), String> {
             }
         );
         println!(
-            "{:>5} {:>12} {:>8} {:>6} {:>9} {:>7} {:>12} {:>13} {:>6}  system",
+            "{:>5} {:>12} {:>8} {:>6} {:>6} {:>7} {:>7} {:>9} {:>7} {:>12} {:>13} {:>6}  system",
             "year",
             "real GDP/yr",
             "unemp",
             "gini",
+            "top1",
+            "avg inc",
+            "med inc",
             "tCO2/yr",
             "budget",
             "bank equity",
@@ -209,8 +215,18 @@ fn run(args: Args) -> Result<(), String> {
         );
     }
     println!(
-        "unemployment {:.1}%  gini {:.3}  wage share {:.1}%  wellbeing {:.2}  legitimacy {:.2}",
+        "income per person: average ${:.0}, median ${:.0} a month; top household holds {:.1}% of wealth; {} of {} households unhoused",
+        i.avg_income_pp.dollars(),
+        i.median_income_pp.dollars(),
+        i.top_wealth_share.0 * 100.0,
+        s.housing.unhoused_households,
+        s.households.len()
+    );
+    println!(
+        "unemployment {:.1}% ({:.0} of {:.0} in the labour force without work)  gini {:.3}  wage share {:.1}%  wellbeing {:.2}  legitimacy {:.2}",
         i.unemployment.0 * 100.0,
+        i.labour_force.0 - i.employed.0,
+        i.labour_force.0,
         i.gini.0,
         i.wage_share.0 * 100.0,
         i.avg_wellbeing.0,

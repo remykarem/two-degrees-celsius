@@ -34,12 +34,6 @@ pub enum MoneyOp {
     CapitalizeInterest { amount: Cents },
     /// Savers lose `rate` of every deposit after a bank failure. Destroys money.
     Haircut { rate: Rate },
-    /// Debt moves with people between cohorts. Money unchanged.
-    MoveDebt {
-        from: HouseholdId,
-        to: HouseholdId,
-        amount: Cents,
-    },
 }
 
 /// Partial update of a firm. `None` means unchanged.
@@ -54,6 +48,9 @@ pub struct FirmPatch {
     pub inventory: Option<Units>,
     pub output: Option<Units>,
     pub emissions: Option<Tonnes>,
+    pub footprint: Option<Tonnes>,
+    pub energy_use: Option<Units>,
+    pub tile: Option<Tile>,
     pub green_tech: Option<Rate>,
     pub tfp: Option<Rate>,
     pub sales_hist: Option<[f64; 3]>,
@@ -80,23 +77,42 @@ pub struct FirmPatch {
     pub profit_ema: Option<Cents>,
 }
 
-/// Partial update of a household cohort. `None` means unchanged.
+/// Partial update of a person. `None` means unchanged.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct PersonPatch {
+    pub skill: Option<Rate>,
+    pub job: Option<Option<FirmId>>,
+    pub jg: Option<bool>,
+    pub wage: Option<Cents>,
+    pub commute_tiles: Option<u32>,
+    pub commute_minutes: Option<u32>,
+    pub effective_hours: Option<Rate>,
+    pub wellbeing: Option<Rate>,
+}
+
+/// Partial update of a household. `None` means unchanged.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct HouseholdPatch {
-    pub weight: Option<People>,
-    pub skill: Option<Rate>,
+    pub home: Option<Option<HomeId>>,
     pub class: Option<Class>,
     pub wellbeing: Option<Rate>,
     pub political_power: Option<Rate>,
     pub last_disposable: Option<Cents>,
     pub push_income_hist: Option<(Cents, Cents)>,
     pub food_met: Option<Rate>,
-    pub housed_share: Option<Rate>,
     pub consumption: Option<Cents>,
     pub footprint: Option<Tonnes>,
-    pub wealth_pc: Option<Cents>,
+    pub energy_use: Option<Units>,
+    pub wealth: Option<Cents>,
     pub arrears: Option<bool>,
-    pub jg: Option<People>,
+    pub arrears_months: Option<u32>,
+}
+
+/// Partial update of a home.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct HomePatch {
+    pub household: Option<Option<HouseholdId>>,
+    pub rent: Option<Cents>,
 }
 
 /// Partial update of the bank's statistics (stocks change only through `MoneyOp`).
@@ -117,19 +133,26 @@ pub struct GovPatch {
     pub receipts: Option<Cents>,
     pub tax_revenue: Option<Cents>,
     pub spending: Option<Cents>,
-    pub pending_build: Option<Vec<(InfraKind, u32)>>,
+    pub pending_build: Option<Vec<(InfraKind, Tile)>>,
 }
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Delta {
-    Employment {
-        h: HouseholdId,
-        f: FirmId,
-        n: People,
-    },
+    Person(PersonId, PersonPatch),
     Firm(FirmId, FirmPatch),
     Household(HouseholdId, HouseholdPatch),
+    Home(HomeId, HomePatch),
+    /// A new home or plant, and the tile it occupies. The map is updated by `SetTile`.
+    AddHome(Home),
+    AddPlant(Plant),
+    SetTile(Tile, MapTile),
+    /// New output and emissions of a plant.
+    PlantOutput {
+        id: PlantId,
+        output: Units,
+        emissions: Tonnes,
+    },
     Bank(BankPatch),
     Gov(GovPatch),
     Nature(Nature),

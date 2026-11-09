@@ -47,37 +47,36 @@ pub fn apply_commands(s: &mut State, p: &Params, cmds: &[Command], events: &mut 
                     events.push(Event::SystemSwitchStarted { to });
                 }
             }
-            Command::Place { kind, count } => {
-                if count > 0 {
-                    s.gov.pending_build.push((kind, count));
-                }
-            }
-            Command::Remove { kind, count } => {
-                let removed = match kind {
-                    InfraKind::PublicHousing => {
-                        let r = (count as f64).min(s.housing.public_cap.0);
-                        s.housing.public_cap -= Units(r);
-                        r
-                    }
-                    InfraKind::FossilPlant => {
-                        let r =
-                            (count as f64 * p.government.plant_capacity).min(s.energy.fossil_cap.0);
-                        s.energy.fossil_cap -= Units(r);
-                        r
-                    }
-                    InfraKind::RenewablePlant => {
-                        let r = (count as f64 * p.government.plant_capacity)
-                            .min(s.energy.renewable_cap.0);
-                        s.energy.renewable_cap -= Units(r);
-                        r
-                    }
-                };
-                if removed <= 0.0 {
-                    events.push(Event::PolicyBlocked {
-                        reason: BlockReason::NothingToRemove,
-                    });
+            Command::Place { kind, tile } => match crate::turn::tile_problem(s, &[], c) {
+                // The tile was valid when queued; it may have been taken since.
+                Some(reason) => events.push(Event::PolicyBlocked { reason }),
+                None => s.gov.pending_build.push((kind, tile)),
+            },
+            Command::Remove { tile } => match crate::turn::tile_problem(s, &[], c) {
+                Some(reason) => events.push(Event::PolicyBlocked { reason }),
+                None => remove_tile(s, tile, events),
+            },
+        }
+    }
+}
+
+/// Remove the building on `tile` (public housing, plant or road). Callers have validated it.
+fn remove_tile(s: &mut State, tile: Tile, events: &mut Vec<Event>) {
+    match s.map.kind_at(tile) {
+        Some(TileKind::PublicHousing) => {
+            if let Some(i) = s.homes.iter().position(|h| h.tile == tile) {
+                let home = s.homes.remove(i);
+                if let Some(hh) = home.household {
+                    s.households[hh.idx()].home = None;
+                    events.push(Event::HouseholdEvicted { household: hh });
                 }
             }
         }
+        Some(TileKind::FossilPlant | TileKind::RenewablePlant) => {
+            s.plants.retain(|p| p.tile != tile);
+        }
+        _ => {}
     }
+    s.map.set(tile, MapTile::EMPTY);
+    events.push(Event::Removed { tile });
 }

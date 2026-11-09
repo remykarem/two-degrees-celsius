@@ -208,11 +208,6 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             s.bank.deposits -= total;
             l.destroyed += total;
         }
-        MoneyOp::MoveDebt { from, to, amount } => {
-            let amt = amount.min(s.households[from.idx()].debt).max(Cents::ZERO);
-            s.households[from.idx()].debt -= amt;
-            s.households[to.idx()].debt += amt;
-        }
     }
 }
 
@@ -255,24 +250,53 @@ fn record_flow(s: &mut State, from: Account, to: Account, amt: Cents, kind: Flow
 
 fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
     match c {
-        Delta::Employment { h, f, n } => s.households[h.idx()].employment[f.idx()] = n,
+        Delta::Person(id, p) => {
+            let x = &mut s.persons[id.idx()];
+            set_fields!(x, p; skill, job, jg, wage, commute_tiles, commute_minutes,
+                effective_hours, wellbeing);
+        }
         Delta::Firm(id, p) => {
             let f = &mut s.firms[id.idx()];
             set_fields!(f, p; active, owner, capital, workers, wage, price, inventory, output,
-                emissions, green_tech, tfp, sales_hist, sales_units, revenue, profit, unfilled,
-                over_target_months, distress_months, wage_shortfall, plan_invest, loan_request,
-                loan_rate, amort, green_plan, closed_tick, excess_demand, carbon_cost, profit_ema,
-                expected_sales, capex, tax_paid, markup, capital_per_sale);
+                emissions, footprint, energy_use, tile, green_tech, tfp, sales_hist, sales_units,
+                revenue, profit, unfilled, over_target_months, distress_months, wage_shortfall,
+                plan_invest, loan_request, loan_rate, amort, green_plan, closed_tick,
+                excess_demand, carbon_cost, profit_ema, expected_sales, capex, tax_paid, markup,
+                capital_per_sale);
         }
         Delta::Household(id, p) => {
             let h = &mut s.households[id.idx()];
-            set_fields!(h, p; weight, skill, class, wellbeing, political_power, last_disposable,
-                food_met, housed_share, consumption, footprint, wealth_pc, arrears, jg);
+            set_fields!(h, p; home, class, wellbeing, political_power, last_disposable,
+                food_met, consumption, footprint, energy_use, wealth, arrears, arrears_months);
             if let Some(x) = p.push_income_hist {
                 h.income_hist.push(x);
                 if h.income_hist.len() > hist_len {
                     h.income_hist.remove(0);
                 }
+            }
+        }
+        Delta::Home(id, p) => {
+            if let Some(h) = s.homes.iter_mut().find(|h| h.id == id) {
+                set_fields!(h, p; household, rent);
+            }
+        }
+        Delta::AddHome(h) => {
+            s.next_home_id = s.next_home_id.max(h.id.0 + 1);
+            s.homes.push(h);
+        }
+        Delta::AddPlant(p) => {
+            s.next_plant_id = s.next_plant_id.max(p.id.0 + 1);
+            s.plants.push(p);
+        }
+        Delta::SetTile(t, c) => s.map.set(t, c),
+        Delta::PlantOutput {
+            id,
+            output,
+            emissions,
+        } => {
+            if let Some(p) = s.plants.iter_mut().find(|p| p.id == id) {
+                p.output = output;
+                p.emissions = emissions;
             }
         }
         Delta::Bank(p) => {
@@ -303,6 +327,9 @@ fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
         Delta::ResetFlows => {
             for h in &mut s.households {
                 h.income = IncomeFlows::default();
+            }
+            for x in &mut s.persons {
+                x.wage = Cents::ZERO;
             }
             s.gdp_parts = GdpParts::default();
             s.bank.bailout_this_tick = false;

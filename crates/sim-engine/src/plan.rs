@@ -4,11 +4,18 @@ use serde::{Deserialize, Serialize};
 use sim_types::*;
 use std::collections::BTreeMap;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PlaceSpec {
-    pub kind: Option<InfraKind>,
-    pub count: Option<u32>,
+    pub kind: InfraKind,
+    /// `[x, y]`.
+    pub tile: [u8; 2],
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RemoveSpec {
+    pub tile: [u8; 2],
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -22,9 +29,9 @@ pub struct PlanTurn {
     #[serde(default)]
     pub switch: Option<EconomicSystem>,
     #[serde(default)]
-    pub place: Option<PlaceSpec>,
+    pub place: Vec<PlaceSpec>,
     #[serde(default)]
-    pub remove: Option<PlaceSpec>,
+    pub remove: Vec<RemoveSpec>,
     /// A raw command, exactly as the engine's `Command` type serialises.
     #[serde(default)]
     pub command: Option<Command>,
@@ -93,24 +100,15 @@ impl Plan {
             if let Some(sys) = a.switch {
                 out.push(Command::SwitchSystem(sys));
             }
-            if let Some(PlaceSpec {
-                kind: Some(kind),
-                count,
-            }) = &a.place
-            {
+            for pl in &a.place {
                 out.push(Command::Place {
-                    kind: *kind,
-                    count: count.unwrap_or(1),
+                    kind: pl.kind,
+                    tile: Tile::new(pl.tile[0], pl.tile[1]),
                 });
             }
-            if let Some(PlaceSpec {
-                kind: Some(kind),
-                count,
-            }) = &a.remove
-            {
+            for r in &a.remove {
                 out.push(Command::Remove {
-                    kind: *kind,
-                    count: count.unwrap_or(1),
+                    tile: Tile::new(r.tile[0], r.tile[1]),
                 });
             }
             if let Some(c) = a.command {

@@ -7,78 +7,180 @@ fn rate_f(p: &Params) -> f64 {
     p.initial.policy.base_rate + p.credit.spread_base
 }
 
+fn tile(p: [u8; 2]) -> Tile {
+    Tile { x: p[0], y: p[1] }
+}
+
+/// Fraction of the grid's fossil capacity in total capacity times the fossil factor.
+fn grid_intensity(plants: &[Plant], factor: f64) -> f64 {
+    let total: f64 = plants.iter().map(|p| p.capacity.0).sum();
+    let fossil: f64 = plants
+        .iter()
+        .filter(|p| p.kind == PlantKind::Fossil)
+        .map(|p| p.capacity.0)
+        .sum();
+    safe_div(fossil, total, 0.0) * factor
+}
+
 pub fn initial_state(p: &Params) -> Result<State, String> {
     let t = &p.initial;
     let nf = t.firms.len();
-    let households: Vec<Household> = t
-        .cohorts
-        .iter()
-        .enumerate()
-        .map(|(i, c)| Household {
-            id: HouseholdId(i as u32),
+
+    // People and households.
+    let mut persons: Vec<Person> = Vec::new();
+    let mut households: Vec<Household> = Vec::new();
+    for (i, c) in t.households.iter().enumerate() {
+        let hid = HouseholdId(i as u32);
+        let mut members = Vec::new();
+        for pi in &c.people {
+            let id = PersonId(persons.len() as u32);
+            members.push(id);
+            persons.push(Person {
+                id,
+                label: pi.label.clone(),
+                household: hid,
+                age_band: pi.age_band,
+                skill: Rate(pi.skill),
+                in_labour_force: pi.labour_force,
+                reservation: Cents::from_dollars(pi.reservation_usd),
+                job: pi.job.map(|f| FirmId(f as u32)),
+                jg: false,
+                wage: Cents::ZERO,
+                commute_tiles: 0,
+                commute_minutes: 0,
+                effective_hours: Rate(1.0),
+                wellbeing: Rate(0.6),
+            });
+        }
+        households.push(Household {
+            id: hid,
             label: c.label.clone(),
+            members,
+            home: c.home.map(|h| HomeId(h as u32)),
             class: c.class,
-            weight: People(c.weight),
-            labour_share: Rate(c.labour_share),
-            reservation: Cents::from_dollars(c.reservation_usd),
-            wage_premium: Rate(c.wage_premium),
-            nonlabour_benefit: c.nonlabour_benefit,
-            renter_share: Rate(c.renter_share),
-            home_value: Cents::from_dollars(c.home_value_usd),
             savings: Cents::from_dollars(c.savings_usd),
             debt: Cents::from_dollars(c.debt_usd),
-            skill: Rate(c.skill),
-            employment: t.firms.iter().map(|f| People(f.employment[i])).collect(),
             income: IncomeFlows::default(),
             income_hist: Vec::new(),
             last_disposable: Cents::from_dollars(c.initial_income_usd),
             food_met: Rate(1.0),
-            housed_share: Rate(1.0),
             consumption: Cents::ZERO,
             wellbeing: Rate(0.6),
             political_power: Rate(0.0),
             footprint: Tonnes::ZERO,
-            wealth_pc: Cents::ZERO,
+            energy_use: Units::ZERO,
+            wealth: Cents::ZERO,
             arrears: false,
-            jg: People::ZERO,
+            arrears_months: 0,
+        });
+    }
+
+    // Homes, plants and the map.
+    let mut occupant: Vec<Option<HouseholdId>> = vec![None; t.homes.len()];
+    for (i, c) in t.households.iter().enumerate() {
+        if let Some(h) = c.home {
+            occupant[h] = Some(HouseholdId(i as u32));
+        }
+    }
+    let homes: Vec<Home> = t
+        .homes
+        .iter()
+        .enumerate()
+        .map(|(i, h)| {
+            let owner = match h.owner {
+                Some(o) => HomeOwner::Household(HouseholdId(o as u32)),
+                None => HomeOwner::Public,
+            };
+            let rent = match owner {
+                HomeOwner::Public => Cents::from_dollars(t.rent_public_usd),
+                HomeOwner::Household(_) => Cents::from_dollars(t.rent_private_usd),
+            };
+            Home {
+                id: HomeId(i as u32),
+                tile: tile(h.tile),
+                owner,
+                household: occupant[i],
+                rent,
+                value: Cents::from_dollars(h.value_usd),
+            }
         })
         .collect();
-    let forest_health = p.initial.forest / p.nature.forest_max;
-    let commons_health = p.initial.commons / p.nature.commons_max;
-    let health = 0.5 * (forest_health + commons_health);
+    let plants: Vec<Plant> = t
+        .plants
+        .iter()
+        .enumerate()
+        .map(|(i, pl)| Plant {
+            id: PlantId(i as u32),
+            kind: pl.kind,
+            tile: tile(pl.tile),
+            capacity: Units(pl.capacity),
+            output: Units::ZERO,
+            emissions: Tonnes::ZERO,
+        })
+        .collect();
+    let mut map = Map::new(t.map.width, t.map.height);
+    let scenery = |map: &mut Map, kind: TileKind, tiles: &[[u8; 2]]| {
+        for q in tiles {
+            map.set(tile(*q), MapTile { kind, id: None });
+        }
+    };
+    scenery(&mut map, TileKind::Road, &t.map.roads);
+    scenery(&mut map, TileKind::Forest, &t.map.forest);
+    scenery(&mut map, TileKind::Commons, &t.map.commons);
+    scenery(&mut map, TileKind::TownHall, &[t.map.town_hall]);
+    scenery(&mut map, TileKind::Bank, &[t.map.bank]);
+    for h in &homes {
+        let kind = match h.owner {
+            HomeOwner::Public => TileKind::PublicHousing,
+            HomeOwner::Household(_) => TileKind::Home,
+        };
+        map.set(
+            h.tile,
+            MapTile {
+                kind,
+                id: Some(h.id.0),
+            },
+        );
+    }
+    for pl in &plants {
+        let kind = match pl.kind {
+            PlantKind::Fossil => TileKind::FossilPlant,
+            PlantKind::Renewable => TileKind::RenewablePlant,
+        };
+        map.set(
+            pl.tile,
+            MapTile {
+                kind,
+                id: Some(pl.id.0),
+            },
+        );
+    }
+    for (i, f) in t.firms.iter().enumerate() {
+        if f.active {
+            map.set(
+                tile(f.tile),
+                MapTile {
+                    kind: TileKind::Firm,
+                    id: Some(i as u32),
+                },
+            );
+        }
+    }
+
+    // Firms. TFP and the markup are set below, once the state exists to read pay from.
     let mut firms = Vec::with_capacity(nf);
     for (i, f) in t.firms.iter().enumerate() {
-        let n: f64 = f.employment.iter().sum();
+        let n = persons
+            .iter()
+            .filter(|x| x.job == Some(FirmId(i as u32)))
+            .count() as f64;
         let price = Cents::from_dollars(f.price_usd);
-        let tfp = if f.active && n > 0.0 && f.capital_units > 0.0 {
-            let mut denom = libm::pow(f.capital_units, p.production.alpha_k)
-                * libm::pow(n, p.production.beta_n);
-            if f.sector == Sector::Food {
-                denom *= libm::pow(health, p.production.farm_health_exp);
-            }
-            f.initial_output / denom
-        } else {
-            // Dormant slots use the sector's first active firm's productivity when founded.
-            0.0
-        };
-        let wage_bill: f64 = f.wage_usd
-            * t.cohorts
-                .iter()
-                .enumerate()
-                .map(|(h, c)| f.employment[h] * c.wage_premium)
-                .sum::<f64>();
-        let unit_cost = safe_div(wage_bill, f.initial_output, 0.0);
-        let markup = if f.active && unit_cost > 0.0 {
-            f.price_usd / unit_cost - 1.0
-        } else {
-            0.0
-        };
-        let loan_rate = rate_f(p);
         let debt = Cents::from_dollars(f.debt_usd);
         firms.push(Firm {
             id: FirmId(i as u32),
             active: f.active,
             sector: f.sector,
+            tile: tile(f.tile),
             owner: Owner::Household(HouseholdId(f.founder as u32)),
             founder: HouseholdId(f.founder as u32),
             capital: Units(f.capital_units),
@@ -90,10 +192,13 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             price,
             inventory: Units(f.inventory_units),
             intensity_base: Rate(f.intensity_base),
+            energy_per_unit: Rate(f.energy_per_unit),
             green_tech: Rate(0.0),
-            tfp: Rate(tfp),
+            tfp: Rate(0.0),
             output: Units(f.initial_output),
             emissions: Tonnes::ZERO,
+            footprint: Tonnes::ZERO,
+            energy_use: Units::ZERO,
             sales_units: Units(f.initial_output),
             sales_hist: [f.initial_output; 3],
             revenue: price.scale(f.initial_output),
@@ -106,17 +211,20 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             wage_shortfall: false,
             plan_invest: Cents::from_dollars(f.plan_invest_usd),
             loan_request: Cents::ZERO,
-            loan_rate: Rate(loan_rate),
+            loan_rate: Rate(rate_f(p)),
             green_plan: false,
             excess_demand: Rate::ZERO,
             expected_sales: Units(f.initial_output),
-            markup: Rate(markup),
+            markup: Rate(0.0),
             capital_per_sale: safe_div(f.capital_units, f.initial_output, 0.0),
             capex: Cents::ZERO,
             tax_paid: Cents::ZERO,
             closed_tick: None,
         });
     }
+    let forest_health = p.initial.forest / p.nature.forest_max;
+    let commons_health = p.initial.commons / p.nature.commons_max;
+    let health = 0.5 * (forest_health + commons_health);
     let pol = &t.policy;
     let policy = Policy {
         carbon_price: Cents::from_dollars(pol.carbon_price_usd),
@@ -154,8 +262,14 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         system: EconomicSystem::Market,
         transition: None,
         output_penalty: Rate::ZERO,
+        persons,
         households,
         firms,
+        homes,
+        plants,
+        next_home_id: t.homes.len() as u32,
+        next_plant_id: t.plants.len() as u32,
+        map,
         bank: Bank {
             owner: HouseholdId(t.bank_owner as u32),
             equity: Cents::ZERO,
@@ -192,17 +306,17 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             pending_clearing: Units::ZERO,
         },
         housing: Housing {
-            owner: HouseholdId(1.min(t.cohorts.len() as u32 - 1)),
-            private_cap: Units(t.private_housing),
-            public_cap: Units(t.public_housing),
             rent_private: Cents::from_dollars(t.rent_private_usd),
             rent_public: Cents::from_dollars(t.rent_public_usd),
             occupancy: Rate::ZERO,
-            housed_share: Rate(1.0),
+            unhoused_households: 0,
         },
         energy: Energy {
-            fossil_cap: Units(t.fossil_capacity),
-            renewable_cap: Units(t.renewable_capacity),
+            demand: Units::ZERO,
+            supply: Units::ZERO,
+            delivered: Units::ZERO,
+            served: Rate(1.0),
+            grid_intensity: Rate::ZERO,
         },
         policy,
         effective,
@@ -212,19 +326,44 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         gdp_parts: GdpParts::default(),
         outcome: None,
     };
-    // Housing owner: the first cohort whose initial class is Rentier, else cohort 0.
-    if let Some(h) = s.households.iter().find(|h| h.class == Class::Rentier) {
-        s.housing.owner = h.id;
-    } else {
-        s.housing.owner = HouseholdId(0);
+    let gi = grid_intensity(&s.plants, p.energy.factor_fossil);
+    s.energy.supply = Units(s.plants.iter().map(|x| x.capacity.0).sum());
+    s.energy.grid_intensity = Rate(gi);
+    let occupied = s.homes.iter().filter(|h| h.household.is_some()).count() as f64;
+    s.housing.occupancy = Rate(safe_div(occupied, s.homes.len() as f64, 1.0));
+    s.housing.unhoused_households = s.households.iter().filter(|h| h.home.is_none()).count() as u32;
+    // TFP and the price markup are derived from the start: output and price are given.
+    for fi in 0..s.firms.len() {
+        let f = &s.firms[fi];
+        if !f.active {
+            continue;
+        }
+        let l0: f64 = s
+            .persons
+            .iter()
+            .filter(|x| x.job == Some(f.id))
+            .map(|x| x.skill.0 * x.effective_hours.0)
+            .sum();
+        let mut denom =
+            libm::pow(f.capital.0, p.production.alpha_k) * libm::pow(l0, p.production.beta_n);
+        if f.sector == Sector::Food {
+            denom *= libm::pow(health, p.production.farm_health_exp);
+        }
+        let tfp = if l0 > 0.0 && f.capital.0 > 0.0 {
+            t.firms[fi].initial_output / denom
+        } else {
+            0.0
+        };
+        let bill = sim_model::util::wage_bill(&s, p, f).as_f64();
+        let unit_cost = safe_div(bill, t.firms[fi].initial_output, 0.0);
+        let markup = if unit_cost > 0.0 {
+            t.firms[fi].price_usd * 100.0 / unit_cost - 1.0
+        } else {
+            0.0
+        };
+        s.firms[fi].tfp = Rate(tfp);
+        s.firms[fi].markup = Rate(markup);
     }
-    let renters: f64 = s
-        .households
-        .iter()
-        .map(|h| h.weight.0 * h.renter_share.0)
-        .sum();
-    let rental_cap = s.housing.private_cap.0 + s.housing.public_cap.0;
-    s.housing.occupancy = Rate(sim_types::safe_div(renters, rental_cap, 1.0));
     // The bank holds only loans: equity = loans - deposits.
     s.bank.loans = s.total_debts();
     s.bank.deposits = s.total_deposits();

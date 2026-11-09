@@ -16,6 +16,10 @@ pub struct CommandCost {
     pub opposition: f64,
     /// `None` if the command can be queued, else why not.
     pub blocked: Option<BlockReason>,
+    /// For place and remove commands: can the tile take the command? True for other commands.
+    pub tile_valid: bool,
+    /// Why not (`TileOccupied`, `TileInvalid` or `NothingToRemove`), when `tile_valid` is false.
+    pub tile_reason: Option<BlockReason>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

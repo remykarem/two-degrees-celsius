@@ -33,13 +33,11 @@ fn active_value(p: &Policy, c: &PolicyChange) -> Option<f64> {
 
 fn build_cost(p: &Params, c: &Command) -> Cents {
     match *c {
-        Command::Place { kind, count } => {
-            let each = match kind {
-                InfraKind::PublicHousing => p.government.public_housing_cost_usd,
-                InfraKind::FossilPlant | InfraKind::RenewablePlant => p.government.plant_cost_usd,
-            };
-            Cents::from_dollars(each * count as f64)
-        }
+        Command::Place { kind, .. } => Cents::from_dollars(match kind {
+            InfraKind::PublicHousing => p.government.public_housing_cost_usd,
+            InfraKind::FossilPlant | InfraKind::RenewablePlant => p.government.plant_cost_usd,
+            InfraKind::Road => p.government.road_cost_usd,
+        }),
         _ => Cents::ZERO,
     }
 }
@@ -82,26 +80,49 @@ pub fn validate(s: &State, pending: &[PendingCommand], c: &Command) -> Option<Bl
                 None
             }
         }
-        Command::Place { count, .. } => (count == 0).then_some(BlockReason::InvalidCommand),
-        Command::Remove { kind, count } => {
-            let stock = match kind {
-                InfraKind::PublicHousing => s.housing.public_cap.0,
-                InfraKind::FossilPlant => s.energy.fossil_cap.0,
-                InfraKind::RenewablePlant => s.energy.renewable_cap.0,
-            };
-            if count == 0 {
-                Some(BlockReason::InvalidCommand)
-            } else if stock <= 0.0 {
-                Some(BlockReason::NothingToRemove)
-            } else {
-                None
-            }
-        }
+        Command::Place { .. } | Command::Remove { .. } => tile_problem(s, pending, c),
     }
 }
 
+/// Why a tile command cannot be carried out, if it cannot: the tile is off the map or not
+/// buildable (`TileInvalid`), already holds something or has something queued on it
+/// (`TileOccupied`), or has nothing to remove (`NothingToRemove`). `None` for other commands.
+pub fn tile_problem(s: &State, pending: &[PendingCommand], c: &Command) -> Option<BlockReason> {
+    match *c {
+        Command::Place { tile, .. } => match s.map.kind_at(tile) {
+            None | Some(TileKind::Forest | TileKind::Commons) => Some(BlockReason::TileInvalid),
+            Some(TileKind::Empty) => pending
+                .iter()
+                .any(|x| matches!(x.command, Command::Place { tile: t, .. } if t == tile))
+                .then_some(BlockReason::TileOccupied),
+            Some(_) => Some(BlockReason::TileOccupied),
+        },
+        Command::Remove { tile } => match s.map.kind_at(tile) {
+            None => Some(BlockReason::TileInvalid),
+            Some(TileKind::Empty) => Some(BlockReason::NothingToRemove),
+            Some(
+                TileKind::PublicHousing
+                | TileKind::FossilPlant
+                | TileKind::RenewablePlant
+                | TileKind::Road,
+            ) => None,
+            Some(_) => Some(BlockReason::TileInvalid),
+        },
+        _ => None,
+    }
+}
+
+/// Tiles where `kind` could be placed now: empty and with nothing queued on them.
+pub fn valid_tiles(sim: &crate::Sim, kind: InfraKind) -> Vec<Tile> {
+    let s = &sim.state;
+    s.map
+        .tiles()
+        .filter(|t| tile_problem(s, &s.pending, &Command::Place { kind, tile: *t }).is_none())
+        .collect()
+}
+
 fn size_of(s: &State, tp: &TurnParams, pending: &[PendingCommand], c: &Command) -> f64 {
-    let cfg = tp.lever(c.lever_key());
+    let cfg = tp.lever(c.lever_key(&s.map));
     let raw = match *c {
         Command::SetPolicy(ch) => match (ch.value(), active_value(&s.policy, &ch)) {
             (Some(new), Some(active)) => {
@@ -118,8 +139,7 @@ fn size_of(s: &State, tp: &TurnParams, pending: &[PendingCommand], c: &Command) 
             }
             _ => 1.0,
         },
-        Command::Place { count, .. } | Command::Remove { count, .. } => count as f64,
-        Command::SwitchSystem(_) => 1.0,
+        Command::Place { .. } | Command::Remove { .. } | Command::SwitchSystem(_) => 1.0,
     };
     raw.max(cfg.min_size)
 }
@@ -133,7 +153,7 @@ fn opposition(s: &State, c: &Command) -> f64 {
 
 /// Cost of one command given the commands already queued.
 fn cost_one(s: &State, p: &Params, pending: &[PendingCommand], c: &Command) -> CommandCost {
-    let cfg = p.turn.lever(c.lever_key());
+    let cfg = p.turn.lever(c.lever_key(&s.map));
     let opp = opposition(s, c);
     CommandCost {
         command: *c,
@@ -143,6 +163,8 @@ fn cost_one(s: &State, p: &Params, pending: &[PendingCommand], c: &Command) -> C
         effective_turn: s.turn + cfg.lead_time,
         opposition: opp,
         blocked: None,
+        tile_valid: true,
+        tile_reason: None,
     }
 }
 
@@ -166,6 +188,9 @@ fn evaluate(s: &State, p: &Params, cmds: &[Command]) -> Evaluation {
     for (index, c) in cmds.iter().enumerate() {
         let mut cost = cost_one(s, p, &ev.pending, c);
         cost.blocked = validate(s, &ev.pending, c);
+        let tile_reason = tile_problem(s, &ev.pending, c);
+        cost.tile_valid = tile_reason.is_none();
+        cost.tile_reason = tile_reason;
         if cost.blocked.is_none() && cost.pc > ev.pc_left + 1e-9 {
             cost.blocked = Some(BlockReason::InsufficientPoliticalCapital);
         }

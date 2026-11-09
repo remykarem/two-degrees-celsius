@@ -12,24 +12,33 @@ pub fn monthly(rate: f64) -> f64 {
     rate / 12.0
 }
 
-/// Is this cohort a skilled (premium wage) tier?
-pub fn is_skilled(h: &Household) -> bool {
-    h.wage_premium.0 > 1.0
+/// Pay multiple of a person with this skill: 1 at the reference skill, rising with skill.
+pub fn skill_mult(p: &Params, skill: f64) -> f64 {
+    let lp = &p.labour;
+    (1.0 + lp.skill_wage_slope * (skill - lp.skill_wage_ref)).max(lp.skill_wage_floor)
 }
 
-/// People on a firm's payroll weighted by their wage premium (the wage bill divided by the base wage).
-pub fn paid_workers(s: &State, f: &Firm) -> f64 {
-    s.households
-        .iter()
-        .map(|h| h.employment[f.id.idx()].0 * h.wage_premium.0)
-        .sum()
+/// Monthly pay of a person employed at a firm paying base wage `wage`: the base wage times the
+/// person's skill multiple, never below the minimum wage.
+pub fn person_pay(s: &State, p: &Params, person: &Person, wage: Cents) -> Cents {
+    let min_wage = s.policy.min_wage.scale(cfg(s, p).min_wage_multiplier);
+    wage.scale(skill_mult(p, person.skill.0)).max(min_wage)
+}
+
+/// Persons employed by a firm, in id order.
+pub fn workers_of(s: &State, f: FirmId) -> impl Iterator<Item = &Person> {
+    s.persons.iter().filter(move |x| x.job == Some(f))
+}
+
+/// The firm's monthly wage bill at current pay.
+pub fn wage_bill(s: &State, p: &Params, f: &Firm) -> Cents {
+    Cents::sum(workers_of(s, f.id).map(|x| person_pay(s, p, x, f.wage)))
 }
 
 /// Cash a firm keeps back for payroll and debt service before it spends on capital.
 pub fn cash_reserve(s: &State, p: &Params, f: &Firm) -> Cents {
-    let wage_bill = f.wage.scale(paid_workers(s, f));
     let service = f.debt.scale(monthly(f.loan_rate.0)) + f.amort.min(f.debt);
-    (wage_bill + service).scale(p.invest.min_cash_months)
+    (wage_bill(s, p, f) + service).scale(p.invest.min_cash_months)
 }
 
 /// Cash a firm can spend on capital goods this tick.
@@ -40,6 +49,20 @@ pub fn capex_available(s: &State, p: &Params, f: &Firm) -> Cents {
     } else {
         avail
     }
+}
+
+/// Weights for paying construction and maintenance work: the labour-force adults of each
+/// household (so every household that supplies labour earns a share).
+pub fn labour_weights(s: &State) -> Vec<f64> {
+    s.households
+        .iter()
+        .map(|h| {
+            h.members
+                .iter()
+                .filter(|m| s.person(**m).in_labour_force)
+                .count() as f64
+        })
+        .collect()
 }
 
 /// Carbon price firms plan with: the effective price, pulled toward a still-pending price

@@ -1,5 +1,5 @@
 use crate::ids::*;
-use crate::state::Policy;
+use crate::state::{Map, Policy};
 use crate::units::*;
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +17,43 @@ pub enum Class {
 pub enum Sector {
     Goods,
     Food,
+    Services,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum AgeBand {
+    Child,
+    Adult,
+    Retired,
+}
+
+/// What stands on a tile of the map.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum TileKind {
+    Empty,
+    Home,
+    PublicHousing,
+    Firm,
+    Bank,
+    TownHall,
+    FossilPlant,
+    RenewablePlant,
+    Road,
+    Forest,
+    Commons,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum PlantKind {
+    Fossil,
+    Renewable,
+}
+
+/// Who owns a home: a household (a landlord, or the occupant) or the state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HomeOwner {
+    Household(HouseholdId),
+    Public,
 }
 
 /// Who owns a firm; decides where dividends go (S4).
@@ -50,6 +87,7 @@ pub enum InfraKind {
     PublicHousing,
     FossilPlant,
     RenewablePlant,
+    Road,
 }
 
 /// One policy lever change. Money levers are in cents, shares in model units.
@@ -153,8 +191,9 @@ impl PolicyChange {
 }
 
 impl Command {
-    /// Key of the lever table in `content/params.json` (`turn.levers`).
-    pub fn lever_key(&self) -> &'static str {
+    /// Key of the lever table in `content/params.json` (`turn.levers`). A removal is priced by
+    /// what stands on its tile, so the map is needed.
+    pub fn lever_key(&self, map: &Map) -> &'static str {
         match self {
             Command::SetPolicy(c) => c.key(),
             Command::SwitchSystem(_) => "switch_system",
@@ -162,18 +201,20 @@ impl Command {
                 InfraKind::PublicHousing => "place_public_housing",
                 InfraKind::FossilPlant => "place_fossil_plant",
                 InfraKind::RenewablePlant => "place_renewable_plant",
+                InfraKind::Road => "place_road",
             },
-            Command::Remove { kind, .. } => match kind {
-                InfraKind::PublicHousing => "remove_public_housing",
-                InfraKind::FossilPlant => "remove_fossil_plant",
-                InfraKind::RenewablePlant => "remove_renewable_plant",
+            Command::Remove { tile } => match map.kind_at(*tile) {
+                Some(TileKind::PublicHousing) => "remove_public_housing",
+                Some(TileKind::FossilPlant) => "remove_fossil_plant",
+                Some(TileKind::RenewablePlant) => "remove_renewable_plant",
+                _ => "remove_road",
             },
         }
     }
 }
 
 /// Every key the lever table must define.
-pub const LEVER_KEYS: [&str; 26] = [
+pub const LEVER_KEYS: [&str; 28] = [
     "carbon_price",
     "tax_wage",
     "tax_profit",
@@ -197,15 +238,24 @@ pub const LEVER_KEYS: [&str; 26] = [
     "place_public_housing",
     "place_fossil_plant",
     "place_renewable_plant",
+    "place_road",
     "remove_public_housing",
     "remove_fossil_plant",
     "remove_renewable_plant",
+    "remove_road",
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Command {
-    Place { kind: InfraKind, count: u32 },
-    Remove { kind: InfraKind, count: u32 },
+    /// Build `kind` on an empty `tile` (the tile is validated when queued and when built).
+    Place {
+        kind: InfraKind,
+        tile: Tile,
+    },
+    /// Remove the removable building (public housing, plant or road) standing on `tile`.
+    Remove {
+        tile: Tile,
+    },
     SetPolicy(PolicyChange),
     SwitchSystem(EconomicSystem),
 }
@@ -266,8 +316,12 @@ impl SystemId {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EmissionSource {
+    /// Direct (process) emissions of a firm.
     Firm(FirmId),
+    /// Direct emissions of households (heating, transport).
     Households,
+    /// Energy emissions, attributed to the power plant that burns the fuel.
+    Plant(PlantId),
     Sink,
 }
 
@@ -301,18 +355,45 @@ pub enum GdpPart {
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Event {
+    /// A person travels to work (one event per employed person per month).
     Commuted {
+        person: PersonId,
+        firm: FirmId,
+        tiles: u32,
+        minutes: u32,
+    },
+    PersonHired {
+        person: PersonId,
+        firm: FirmId,
+    },
+    PersonFired {
+        person: PersonId,
+        firm: FirmId,
+    },
+    /// A household bought from a firm this month.
+    Purchase {
         household: HouseholdId,
         firm: FirmId,
-        people: People,
+        amount: Cents,
     },
-    Hired {
-        firm: FirmId,
-        people: People,
+    HouseholdMoved {
+        household: HouseholdId,
+        home: HomeId,
     },
-    Fired {
-        firm: FirmId,
-        people: People,
+    HouseholdEvicted {
+        household: HouseholdId,
+    },
+    /// Something was built or removed on a tile.
+    Built {
+        kind: InfraKind,
+        tile: Tile,
+    },
+    Removed {
+        tile: Tile,
+    },
+    /// Electricity demand exceeded supply; `served` is the share delivered.
+    ElectricityRationed {
+        served: Rate,
     },
     LoanDefaulted {
         firm: FirmId,
@@ -413,4 +494,6 @@ pub enum BlockReason {
     InsufficientPoliticalCapital,
     InsufficientFunds,
     InvalidCommand,
+    TileOccupied,
+    TileInvalid,
 }
