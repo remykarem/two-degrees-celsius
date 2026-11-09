@@ -99,6 +99,14 @@ pub struct LabourParams {
     pub skill_wage_floor: f64,
     /// Effective labour per worker assumed when a firm has no workers to measure it from.
     pub default_effective_per_worker: f64,
+    /// A firm hires while the workers it needs (in people) exceed its headcount by more than
+    /// this, so a tiny gap does not trigger a hire.
+    pub hire_slack: f64,
+    /// A firm counts as overstaffed only when its headcount exceeds the workers it needs by at
+    /// least this many people (a band, so 3 or 4 workers do not flip-flop).
+    pub fire_slack: f64,
+    /// An active firm always keeps at least this many workers on its books.
+    pub min_target_workers: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -323,6 +331,10 @@ pub struct ClassParams {
     /// Monthly probability of founding = `mobility_rate` x (sector return - loan rate).
     pub mobility_rate: f64,
     pub startup_hurdle_floor: f64,
+    /// A household founds a firm only where demand exceeds supply by at least this share
+    /// (the sector's average excess demand); a second firm in a saturated sector would only
+    /// split the sales of the first.
+    pub startup_min_excess_demand: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -364,6 +376,8 @@ pub struct WellbeingParams {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MetricsParams {
+    /// Weight of the newest month in the smoothed unemployment rate.
+    pub unemployment_smoothing: f64,
     pub scc_usd: f64,
     pub depletion_usd_per_unit: f64,
 }

@@ -136,6 +136,13 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
         .sum();
     let price_index = safe_div(sales_value.as_f64(), real_sales, 1.0).max(1e-6);
     let (employed, labour_force, unemp) = unemployment(s);
+    let prev = s.indicators.unemployment_smooth.0;
+    let a = p.metrics.unemployment_smoothing;
+    let smooth = if s.tick == 0 && prev == 0.0 {
+        unemp.0
+    } else {
+        (1.0 - a) * prev + a * unemp.0
+    };
     let wealth = household_wealth(s, p);
     let g = gini(&person_wealth(s, &wealth));
     let incomes = person_incomes(s);
@@ -160,6 +167,7 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
         gdp_annual,
         gdp_real_annual: annual_usd / price_index,
         unemployment: unemp,
+        unemployment_smooth: Rate(smooth),
         employed,
         labour_force,
         gini: Rate(g),

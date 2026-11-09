@@ -208,6 +208,9 @@ fn run(args: Args) -> Result<(), String> {
         s.tick as f64 / 12.0
     );
     println!("outcome: {:?}", sim_engine::final_outcome(&sim));
+    if let Some((t, _)) = sim.state.outcome {
+        println!("first loss at tick {t} (year {:.1})", t as f64 / 12.0);
+    }
     if let Some(t) = exhausted {
         println!(
             "carbon budget exhausted at tick {t} (year {:.1})",

@@ -1,11 +1,60 @@
 {
-  "name": "Regulated capitalism / green deal from year 1",
-  "turns": [
-    { "turn": 5, "switch": "Regulated" },
-    { "turn": 9, "set": { "carbon_price": 150, "green_subsidy": 0.4, "wealth_tax": 0.01 } },
-    { "turn": 10, "place": { "kind": "RenewablePlant", "count": 2 } },
-    { "turn": 21, "set": { "carbon_price": 250 } },
-    { "turn": 22, "place": { "kind": "RenewablePlant", "count": 2 } },
-    { "turn": 41, "set": { "carbon_price": 350 } }
-  ]
+ "name": "Regulated capitalism / green deal from year 1",
+ "turns": [
+  {
+   "turn": 5,
+   "switch": "Regulated"
+  },
+  {
+   "turn": 9,
+   "set": {
+    "carbon_price": 150,
+    "green_subsidy": 0.4,
+    "wealth_tax": 0.01
+   }
+  },
+  {
+   "turn": 10,
+   "place": [
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      3
+     ]
+    },
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "turn": 21,
+   "set": {
+    "carbon_price": 250
+   }
+  },
+  {
+   "turn": 22,
+   "place": [
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "turn": 41,
+   "set": {
+    "carbon_price": 350
+   }
+  }
+ ]
 }

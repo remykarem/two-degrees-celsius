@@ -1,0 +1,189 @@
+//! S2 production, electricity and emissions. Y = A K^a L^b with L the sum over workers of
+//! skill x effective hours. Firms and households draw electricity; plants supply it by capacity
+//! share and fossil plants emit. If demand exceeds supply, output is rationed in proportion.
+
+use libm::pow;
+use sim_params::Params;
+use sim_rng::Rng;
+use sim_types::*;
+
+/// Resource health of the farm: average of forest and commons relative to capacity.
+pub fn resource_health(s: &State, p: &Params) -> f64 {
+    let f = s.nature.forest.0 / p.nature.forest_max;
+    let c = s.nature.commons.0 / p.nature.commons_max;
+    (0.5 * (f + c)).clamp(0.0, 1.0)
+}
+
+/// Share of farm output lost to climate damage: 0.3 * (CE/B0)^2.
+pub fn climate_factor(s: &State, p: &Params) -> f64 {
+    let ratio = (s.nature.cumulative.0 / p.nature.budget_b0).clamp(0.0, 1.5);
+    1.0 - p.production.climate_damage * ratio * ratio
+}
+
+/// Output the firm would produce with `l` effective labour, before rationing and caps.
+pub fn capacity(s: &State, p: &Params, f: &Firm, l: f64) -> f64 {
+    if l <= 0.0 || f.capital.0 <= 0.0 {
+        return 0.0;
+    }
+    let mut y = f.tfp.0 * pow(f.capital.0, p.production.alpha_k) * pow(l, p.production.beta_n);
+    if f.sector == Sector::Food {
+        y *= pow(
+            resource_health(s, p).max(1e-6),
+            p.production.farm_health_exp,
+        );
+        y *= climate_factor(s, p).max(0.0);
+        if let CommonsAccess::Community { .. } = s.nature.commons_access {
+            y *= 1.0 - p.nature.community_coord_cost;
+        }
+    }
+    y * (1.0 - s.output_penalty.0).max(0.0)
+}
+
+/// Effective labour of a firm: the sum over its workers of skill x effective hours.
+pub fn effective_labour(s: &State, f: &Firm) -> f64 {
+    s.persons
+        .iter()
+        .filter(|x| x.job == Some(f.id))
+        .map(|x| x.skill.0 * x.effective_hours.0)
+        .sum()
+}
+
+/// Tonnes of CO2 per energy unit delivered: the fossil share of capacity times the fossil factor.
+pub fn grid_intensity(s: &State, p: &Params) -> f64 {
+    let supply: f64 = s.plants.iter().map(|x| x.capacity.0).sum();
+    sim_types::safe_div(s.capacity(PlantKind::Fossil), supply, 0.0) * p.energy.factor_fossil
+}
+
+pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
+    let mut d = Deltas::new();
+    let ep = &p.energy;
+    let gi = grid_intensity(s, p);
+
+    // Electricity the households would like, from last month's consumption.
+    let mut hh_use = Vec::with_capacity(s.households.len());
+    for h in &s.households {
+        let n = h.members.len() as f64;
+        let cons_pc = h.consumption.dollars() / n.max(1.0);
+        hh_use.push(
+            n * (ep.hh_energy_base_pc
+                + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd),
+        );
+    }
+
+    // Production before rationing.
+    struct Plan {
+        id: FirmId,
+        y0: f64,
+        e_eff: f64,
+        iota: f64,
+    }
+    let mut plans: Vec<Plan> = Vec::new();
+    for f in s.firms.iter().filter(|f| f.active) {
+        let y0 = capacity(s, p, f, effective_labour(s, f));
+        let green = 1.0 - f.green_tech.0;
+        plans.push(Plan {
+            id: f.id,
+            y0,
+            e_eff: f.energy_per_unit.0 * green,
+            iota: f.intensity_base.0 * green,
+        });
+    }
+    let firm_demand: f64 = plans.iter().map(|x| x.y0 * x.e_eff).sum();
+    let demand = firm_demand + hh_use.iter().sum::<f64>();
+    let supply: f64 = s.plants.iter().map(|x| x.capacity.0).sum();
+    let served = if demand > supply && demand > 0.0 {
+        supply / demand
+    } else {
+        1.0
+    };
+    if served < 0.999 {
+        d.events.push(Event::ElectricityRationed {
+            served: Rate(served),
+        });
+    }
+
+    let mut firm_use = 0.0;
+    for plan in &plans {
+        let f = &s.firms[plan.id.idx()];
+        let mut y = plan.y0 * served;
+        // An emissions cap limits the firm's whole footprint: direct plus its electricity.
+        let per_unit = plan.iota + plan.e_eff * gi;
+        let cap = s.effective.emissions_cap.0;
+        if cap > 0.0 && per_unit > 0.0 {
+            y = y.min(cap / per_unit);
+        }
+        let direct = y * plan.iota;
+        let energy = y * plan.e_eff;
+        firm_use += energy;
+        let growth = match f.sector {
+            Sector::Goods => p.production.tfp_growth_goods,
+            Sector::Food => p.production.tfp_growth_food,
+            Sector::Services => p.production.tfp_growth_services,
+        };
+        let hold = if f.sector == Sector::Services {
+            p.goods.services_holding_cost
+        } else {
+            p.goods.holding_cost
+        };
+        d.firm(
+            f.id,
+            FirmPatch {
+                output: Some(Units(y)),
+                emissions: Some(Tonnes(direct)),
+                footprint: Some(Tonnes(direct + energy * gi)),
+                energy_use: Some(Units(energy)),
+                inventory: Some(Units(f.inventory.0 * (1.0 - hold) + y)),
+                tfp: Some(Rate(f.tfp.0 * (1.0 + growth))),
+                ..FirmPatch::default()
+            },
+        );
+    }
+    for f in s.firms.iter().filter(|f| !f.active) {
+        d.firm(
+            f.id,
+            FirmPatch {
+                output: Some(Units::ZERO),
+                emissions: Some(Tonnes::ZERO),
+                footprint: Some(Tonnes::ZERO),
+                energy_use: Some(Units::ZERO),
+                ..FirmPatch::default()
+            },
+        );
+    }
+
+    // Households use electricity too; they are served in the same proportion.
+    let mut hh_total = 0.0;
+    for (h, u) in s.households.iter().zip(&hh_use) {
+        hh_total += u * served;
+        d.household(
+            h.id,
+            HouseholdPatch {
+                energy_use: Some(Units(u * served)),
+                ..HouseholdPatch::default()
+            },
+        );
+    }
+
+    // Plants deliver by capacity share; only fossil plants emit.
+    let delivered = firm_use + hh_total;
+    for pl in &s.plants {
+        let out = sim_types::safe_div(delivered * pl.capacity.0, supply, 0.0);
+        let em = match pl.kind {
+            PlantKind::Fossil => out * ep.factor_fossil,
+            PlantKind::Renewable => 0.0,
+        };
+        d.changes.push(Delta::PlantOutput {
+            id: pl.id,
+            output: Units(out),
+            emissions: Tonnes(em),
+        });
+    }
+    d.changes.push(Delta::Energy(Energy {
+        demand: Units(demand),
+        supply: Units(supply),
+        delivered: Units(delivered),
+        served: Rate(served),
+        grid_intensity: Rate(gi),
+    }));
+    d
+}

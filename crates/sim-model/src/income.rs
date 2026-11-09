@@ -1,0 +1,188 @@
+//! S4 income distribution: wages, carbon cost, profit tax, dividends by owner type, rents.
+//! This is where the economic system plugs in: `match firm.owner` decides who gets the dividends.
+
+use crate::util::{apportion, monthly, person_pay, workers_of};
+use sim_params::Params;
+use sim_rng::Rng;
+use sim_types::*;
+
+pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
+    let mut d = Deltas::new();
+    let n_h = s.households.len();
+    let payout = crate::util::cfg(s, p).payout_ratio;
+    // What each household receives in this system before it pays rent.
+    let mut incoming = vec![Cents::ZERO; n_h];
+
+    for f in s.firms.iter().filter(|f| f.active) {
+        let firm_acct = Account::Firm(f.id);
+        // Wages: each worker is paid base wage x skill multiple, scaled down if cash is short.
+        let workers: Vec<&Person> = workers_of(s, f.id).collect();
+        let due: Vec<Cents> = workers
+            .iter()
+            .map(|x| person_pay(s, p, x, f.wage))
+            .collect();
+        let total_due = Cents::sum(due.iter().copied());
+        let scale = if total_due > f.cash {
+            f.cash.as_f64() / total_due.as_f64()
+        } else {
+            1.0
+        };
+        let mut wages_paid = Cents::ZERO;
+        let mut per_household = vec![Cents::ZERO; n_h];
+        for (x, amt) in workers.iter().zip(&due) {
+            let pay = Cents((amt.as_f64() * scale).floor() as i64);
+            wages_paid += pay;
+            per_household[x.household.idx()] += pay;
+            d.changes.push(Delta::Person(
+                x.id,
+                PersonPatch {
+                    wage: Some(pay),
+                    ..PersonPatch::default()
+                },
+            ));
+        }
+        for (h, pay) in per_household.iter().enumerate() {
+            d.transfer(
+                firm_acct,
+                Account::Household(HouseholdId(h as u32)),
+                *pay,
+                FlowKind::Wage,
+            );
+            incoming[h] += *pay;
+        }
+        let mut cash = f.cash - wages_paid;
+
+        // Carbon cost, after lobbying: on the firm's footprint (direct emissions plus the energy
+        // emissions of the electricity it uses).
+        let carbon_due = Cents::from_f64(s.effective.carbon_price.as_f64() * f.footprint.0);
+        let carbon = carbon_due.min(cash);
+        d.transfer(firm_acct, Account::Government, carbon, FlowKind::Tax);
+        cash -= carbon;
+
+        // Profit before and after tax.
+        let interest_due = f.debt.scale(monthly(f.loan_rate.0));
+        let amort_due = f.amort.min(f.debt);
+        let pre_tax = f.revenue - wages_paid - interest_due - carbon;
+        let tax_due = pre_tax.max(Cents::ZERO).scale(s.effective.tax_profit.0);
+        let tax = tax_due.min(cash);
+        d.transfer(firm_acct, Account::Government, tax, FlowKind::Tax);
+        cash -= tax;
+        let profit = pre_tax - tax;
+
+        // Dividends: payout ratio of profit, never below the cash reserve for payroll and debt service.
+        let mut reserve =
+            (wages_paid + interest_due + amort_due).scale(p.income.cash_reserve_months);
+        if f.green_plan {
+            // Retained cash for the planned green investment.
+            reserve += f
+                .revenue
+                .scale(p.invest.green_spend_share * (1.0 - s.policy.green_subsidy.0));
+        }
+        let regular = profit
+            .max(Cents::ZERO)
+            .scale(payout)
+            .min((cash - reserve).max(Cents::ZERO));
+        // Idle cash well above what payroll and debt service need is distributed too.
+        let idle_line =
+            reserve + (wages_paid + interest_due + amort_due).scale(p.income.excess_cash_months);
+        let excess = (cash - regular - idle_line)
+            .max(Cents::ZERO)
+            .scale(p.income.excess_payout_rate);
+        let dividends = regular + excess;
+        match f.owner {
+            Owner::Household(h) => {
+                d.transfer(
+                    firm_acct,
+                    Account::Household(h),
+                    dividends,
+                    FlowKind::Dividend,
+                );
+                incoming[h.idx()] += dividends;
+            }
+            Owner::Bank => {
+                d.transfer(
+                    firm_acct,
+                    Account::Household(s.bank.owner),
+                    dividends,
+                    FlowKind::Dividend,
+                );
+                incoming[s.bank.owner.idx()] += dividends;
+            }
+            Owner::State => d.transfer(
+                firm_acct,
+                Account::Government,
+                dividends,
+                FlowKind::Dividend,
+            ),
+            Owner::Workers => {
+                let mut w = vec![0.0; n_h];
+                for x in &workers {
+                    w[x.household.idx()] += 1.0;
+                }
+                let parts = apportion(dividends, &w);
+                for (h, part) in parts.into_iter().enumerate() {
+                    d.transfer(
+                        firm_acct,
+                        Account::Household(HouseholdId(h as u32)),
+                        part,
+                        FlowKind::Dividend,
+                    );
+                    incoming[h] += part;
+                }
+            }
+        }
+        d.firm(
+            f.id,
+            FirmPatch {
+                profit: Some(profit),
+                carbon_cost: Some(carbon),
+                tax_paid: Some(tax),
+                wage_shortfall: Some(scale < 1.0),
+                ..FirmPatch::default()
+            },
+        );
+    }
+
+    // Rents: a household that lives in a home it does not own pays the home's rent to the owner
+    // (a landlord household, or the government for public housing), out of its savings plus what
+    // it earned this tick. Unpaid rent is arrears; the landlord bears the shortfall. A household
+    // without a home pays nothing.
+    for h in &s.households {
+        let Some(home) = h.home.and_then(|id| s.home(id)) else {
+            continue;
+        };
+        if home.owner == HomeOwner::Household(h.id) {
+            continue;
+        }
+        let me = Account::Household(h.id);
+        let available = h.savings.max(Cents::ZERO) + incoming[h.id.idx()];
+        let pay = home.rent.min(available);
+        match home.owner {
+            HomeOwner::Household(o) => d.transfer(me, Account::Household(o), pay, FlowKind::Rent),
+            HomeOwner::Public => d.transfer(me, Account::Government, pay, FlowKind::Rent),
+        }
+        let short = home.rent - pay;
+        if short > Cents::ZERO {
+            d.events.push(Event::RentShortfall {
+                household: h.id,
+                amount: short,
+            });
+            d.household(
+                h.id,
+                HouseholdPatch {
+                    arrears_months: Some(h.arrears_months + 1),
+                    ..HouseholdPatch::default()
+                },
+            );
+        } else if h.arrears_months > 0 {
+            d.household(
+                h.id,
+                HouseholdPatch {
+                    arrears_months: Some(0),
+                    ..HouseholdPatch::default()
+                },
+            );
+        }
+    }
+    d
+}

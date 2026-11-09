@@ -13,24 +13,77 @@
    "set": {
     "benefit": 1000
    },
-   "place": {
-    "kind": "PublicHousing",
-    "count": 20
-   }
+   "place": [
+    {
+     "kind": "PublicHousing",
+     "tile": [
+      4,
+      5
+     ]
+    }
+   ]
   },
   {
    "turn": 3,
-   "place": {
-    "kind": "RenewablePlant",
-    "count": 1
-   }
+   "place": [
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      3
+     ]
+    }
+   ]
   },
   {
    "turn": 5,
-   "place": {
-    "kind": "RenewablePlant",
-    "count": 1
-   }
+   "place": [
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "turn": 6,
+   "place": [
+    {
+     "kind": "Road",
+     "tile": [
+      4,
+      6
+     ]
+    },
+    {
+     "kind": "Road",
+     "tile": [
+      9,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "turn": 8,
+   "place": [
+    {
+     "kind": "Road",
+     "tile": [
+      9,
+      5
+     ]
+    },
+    {
+     "kind": "Road",
+     "tile": [
+      9,
+      4
+     ]
+    }
+   ]
   },
   {
    "turn": 9,
@@ -41,46 +94,45 @@
   },
   {
    "turn": 12,
-   "place": {
-    "kind": "RenewablePlant",
-    "count": 1
-   }
-  },
-  {
-   "turn": 14,
-   "place": {
-    "kind": "RenewablePlant",
-    "count": 1
-   }
+   "place": [
+    {
+     "kind": "RenewablePlant",
+     "tile": [
+      11,
+      7
+     ]
+    }
+   ]
   },
   {
    "turn": 16,
-   "remove": {
-    "kind": "FossilPlant",
-    "count": 2
-   }
+   "remove": [
+    {
+     "tile": [
+      10,
+      2
+     ]
+    }
+   ]
   },
   {
    "turn": 17,
    "set": {
     "carbon_price": 150,
-    "wealth_threshold": 30000,
+    "wealth_threshold": 100000,
     "wealth_tax": 0.005
    }
   },
   {
    "turn": 20,
-   "remove": {
-    "kind": "FossilPlant",
-    "count": 1
-   }
-  },
-  {
-   "turn": 24,
-   "remove": {
-    "kind": "FossilPlant",
-    "count": 1
-   }
+   "remove": [
+    {
+     "tile": [
+      10,
+      4
+     ]
+    }
+   ]
   },
   {
    "turn": 25,
@@ -91,17 +143,15 @@
   },
   {
    "turn": 30,
-   "place": {
-    "kind": "PublicHousing",
-    "count": 20
-   }
-  },
-  {
-   "turn": 32,
-   "place": {
-    "kind": "RenewablePlant",
-    "count": 1
-   }
+   "place": [
+    {
+     "kind": "PublicHousing",
+     "tile": [
+      2,
+      5
+     ]
+    }
+   ]
   }
  ]
 }

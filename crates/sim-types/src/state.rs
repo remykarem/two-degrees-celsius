@@ -354,6 +354,9 @@ pub struct Indicators {
     pub gdp_annual: Cents,
     pub gdp_real_annual: f64,
     pub unemployment: Rate,
+    /// Exponentially smoothed unemployment: with 10 people in the labour force one job is ten
+    /// points, so wages, legitimacy and the collapse test read this slower measure.
+    pub unemployment_smooth: Rate,
     pub employed: People,
     pub labour_force: People,
     pub gini: Rate,

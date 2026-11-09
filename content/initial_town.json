@@ -132,7 +132,7 @@
   "households": [
     {
       "label": "Owner family",
-      "savings_usd": 111000.0,
+      "savings_usd": 95000.0,
       "debt_usd": 0,
       "home": 0,
       "initial_income_usd": 7000,
@@ -218,7 +218,7 @@
     },
     {
       "label": "Manager B",
-      "savings_usd": 55000,
+      "savings_usd": 60000,
       "debt_usd": 10000,
       "home": 3,
       "initial_income_usd": 4800,
@@ -252,7 +252,7 @@
     },
     {
       "label": "Worker A",
-      "savings_usd": 14000,
+      "savings_usd": 18000,
       "debt_usd": 4000,
       "home": 4,
       "initial_income_usd": 2800,
@@ -286,7 +286,7 @@
     },
     {
       "label": "Worker B",
-      "savings_usd": 7000,
+      "savings_usd": 11000,
       "debt_usd": 3000,
       "home": 5,
       "initial_income_usd": 2900,
@@ -320,7 +320,7 @@
     },
     {
       "label": "Worker C",
-      "savings_usd": 3000,
+      "savings_usd": 6000,
       "debt_usd": 0,
       "home": 6,
       "initial_income_usd": 1700,
@@ -456,15 +456,15 @@
         9,
         3
       ],
-      "capital_units": 120,
+      "capital_units": 160,
       "cash_usd": 15000,
       "debt_usd": 60000,
       "wage_usd": 1650,
       "price_usd": 100,
-      "inventory_units": 150,
+      "inventory_units": 100,
       "intensity_base": 0.012,
       "energy_per_unit": 0.018,
-      "initial_output": 160,
+      "initial_output": 130,
       "plan_invest_usd": 1500
     },
     {
@@ -475,7 +475,7 @@
         7,
         9
       ],
-      "capital_units": 40,
+      "capital_units": 60,
       "cash_usd": 6000,
       "debt_usd": 25000,
       "wage_usd": 1650,
@@ -498,11 +498,11 @@
       "cash_usd": 5000,
       "debt_usd": 20000,
       "wage_usd": 1650,
-      "price_usd": 60,
+      "price_usd": 70,
       "inventory_units": 0,
       "intensity_base": 0.0,
       "energy_per_unit": 0.002,
-      "initial_output": 200,
+      "initial_output": 140,
       "plan_invest_usd": 400
     },
     {
@@ -517,7 +517,7 @@
       "cash_usd": 0,
       "debt_usd": 0,
       "wage_usd": 1650,
-      "price_usd": 60,
+      "price_usd": 70,
       "inventory_units": 0,
       "intensity_base": 0.0,
       "energy_per_unit": 0.002,
