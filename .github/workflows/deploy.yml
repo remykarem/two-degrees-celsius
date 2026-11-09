@@ -2,36 +2,39 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [deploy]
-  workflow_dispatch:
+    branches:
+      - main
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
+# Allow only one concurrent deployment
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust (with wasm target)
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
 
       - name: Install wasm-bindgen-cli (version pinned in Cargo.lock)
         run: |
           VERSION=$(grep -A1 'name = "wasm-bindgen"$' Cargo.lock | grep version | cut -d'"' -f2)
           cargo install wasm-bindgen-cli --version "$VERSION" --locked
 
-      - uses: actions/setup-node@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
@@ -40,31 +43,30 @@ jobs:
       - name: Test simulation
         run: cargo test --workspace
 
-      - name: Build wasm
+      - name: Install dependencies and build wasm
         working-directory: web
-        run: npm ci && npm run build:wasm
+        run: |
+          npm ci
+          npm run build:wasm
 
       - name: Test web
         working-directory: web
-        run: npm test && npm run typecheck && npm run lint
+        run: |
+          npm test
+          npm run typecheck
+          npm run lint
 
-      - name: Build site
+      - name: Build project
         working-directory: web
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_SIM: wasm
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: web/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web/dist
+          publish_branch: gh-pages
+          force_orphan: true

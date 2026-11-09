@@ -48,5 +48,5 @@ cd web && npm test              # front end
 
 ## Deploy
 
-Pushing to the `deploy` branch builds and publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
-In the repo, set Settings > Pages > Source to **GitHub Actions** once.
+Pushing to `main` builds the site and publishes it to the `gh-pages` branch (`.github/workflows/deploy.yml`).
+In the repo, set Settings > Pages > Source to **Deploy from a branch**, branch `gh-pages`, folder `/ (root)`.
