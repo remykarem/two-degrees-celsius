@@ -1,7 +1,7 @@
 // Generates src/sim-port/mock/data.generated.json from content/params.json, content/initial_town.json and content/systems/*.json.
 // Run: npm run sync-mock. A test (tests/mock-sync.test.ts) fails when the committed file is stale.
 // Everything numeric that the REAL simulation owns (turn costs, lead times, political capital, build costs, starting policy,
-// carbon budget, transition lengths, calendar, cohorts, firms) comes from content/. Nothing here is invented, except the
+// carbon budget, transition lengths, calendar, households, homes, map, firms) comes from content/. Nothing here is invented, except the
 // two constants marked UI_CHOICE below.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -45,30 +45,44 @@ export function generate() {
     systems[key] = { name: s.name, transitionMonths: s.transition_months, outputPenalty: s.transition_output_penalty, lambdaMax: s.lambda_max };
   }
 
-  const households = town.cohorts.map((c, id) => ({
-    id, label: c.label, class: c.class.toLowerCase(), people: c.weight, labourShare: c.labour_share, wagePremium: c.wage_premium,
-    savings: c.savings_usd, debt: c.debt_usd, homeValue: c.home_value_usd, monthlyIncome: c.initial_income_usd, renterShare: c.renter_share,
+  const cls = (c) => c.toLowerCase();
+  const households = town.households.map((h, id) => ({
+    id, label: h.label, class: cls(h.class), savings: h.savings_usd, debt: h.debt_usd, home: h.home, monthlyIncome: h.initial_income_usd,
+    people: h.people.map((p) => ({
+      label: p.label, ageBand: p.age_band.toLowerCase(), skill: p.skill, labourForce: p.labour_force, reservation: p.reservation_usd, job: p.job,
+    })),
   }));
-  const seen = { goods: 0, food: 0 };
+  const homes = town.homes.map((h, id) => ({ id, tile: { x: h.tile[0], y: h.tile[1] }, owner: h.owner, valueUsd: h.value_usd }));
+  const SECTOR = { goods: 'goods', food: 'food', services: 'services' };
+  const seen = { goods: 0, food: 0, services: 0 };
+  const BASE = { goods: 'Factory', food: 'Farm', services: 'Shop' };
   const firms = town.firms.map((f, id) => {
-    const sector = f.sector.toLowerCase();
+    const sector = SECTOR[f.sector.toLowerCase()];
     seen[sector] += 1;
-    const base = sector === 'goods' ? 'Factory' : 'Farm';
+    const workers = sum(households.map((h) => h.people.filter((p) => p.job === id).length));
     return {
-      id, sector, active: f.active, name: seen[sector] === 1 ? base : `${base} ${seen[sector]}`, capital: f.capital_units, cash: f.cash_usd, debt: f.debt_usd,
-      wage: f.wage_usd, price: f.price_usd, output: f.initial_output, intensity: f.intensity_base,
-      workers: sum(f.employment), wageBill: f.wage_usd * sum(f.employment.map((n, h) => n * town.cohorts[h].wage_premium)),
+      id, sector, active: f.active, name: seen[sector] === 1 ? BASE[sector] : `${BASE[sector]} ${seen[sector]}`, founder: f.founder,
+      tile: { x: f.tile[0], y: f.tile[1] }, capital: f.capital_units, cash: f.cash_usd, debt: f.debt_usd,
+      wage: f.wage_usd, price: f.price_usd, output: f.initial_output, intensity: f.intensity_base, workers,
     };
   });
+  const plants = town.plants.map((p) => ({ kind: p.kind.toLowerCase(), tile: { x: p.tile[0], y: p.tile[1] }, capacity: p.capacity }));
+  const m = town.map;
+  const xy = (t) => ({ x: t[0], y: t[1] });
+  const map = {
+    width: m.width, height: m.height, roads: m.roads.map(xy), forest: m.forest.map(xy), commons: m.commons.map(xy), townHall: xy(m.town_hall), bank: xy(m.bank),
+  };
 
   const active = firms.filter((f) => f.active);
-  const labourForce = sum(town.cohorts.map((c) => c.weight * c.labour_share));
-  const employed = sum(active.map((f) => f.workers));
-  const loans = sum(town.cohorts.map((c) => c.debt_usd)) + sum(firms.map((f) => f.debt)) + town.gov_debt_usd;
-  const deposits = sum(town.cohorts.map((c) => c.savings_usd)) + sum(firms.map((f) => f.cash)) + town.gov_cash_usd;
+  const people = households.flatMap((h) => h.people);
+  const labourForce = people.filter((p) => p.labourForce).length;
+  const employed = people.filter((p) => p.job !== null).length;
+  const loans = sum(households.map((h) => h.debt)) + sum(firms.map((f) => f.debt)) + town.gov_debt_usd;
+  const deposits = sum(households.map((h) => h.savings)) + sum(firms.map((f) => f.cash)) + town.gov_cash_usd;
   const equity = loans - deposits;
   const kappa = Math.max(town.policy.bank_capital_ratio, 1e-9);
   const plantCap = g.plant_capacity;
+  const wageBill = sum(active.map((f) => f.wage * f.workers));
 
   return {
     generatedFrom: ['content/params.json', 'content/initial_town.json', 'content/systems/*.json'],
@@ -78,14 +92,20 @@ export function generate() {
     turnCosts,
     policyStart,
     systems,
+    space: {
+      slowMinutes: params.space.slow_minutes, fastMinutes: params.space.fast_minutes, freeMinutes: params.space.free_minutes,
+      unhousedTiles: params.space.unhoused_commute_tiles, unhousedMinutes: params.space.unhoused_commute_minutes,
+    },
     build: {
-      plantCapacity: plantCap, publicHousingCostUsd: g.public_housing_cost_usd, plantCostUsd: g.plant_cost_usd,
-      start: { publicHousing: town.public_housing, fossilPlant: Math.round(town.fossil_capacity / plantCap), renewablePlant: Math.round(town.renewable_capacity / plantCap) },
+      plantCapacity: plantCap, publicHousingCostUsd: g.public_housing_cost_usd, plantCostUsd: g.plant_cost_usd, roadCostUsd: g.road_cost_usd, roadUpkeepUsd: g.road_upkeep_usd,
+      start: {
+        publicHousing: 0, fossilPlant: plants.filter((p) => p.kind === 'fossil').length, renewablePlant: plants.filter((p) => p.kind === 'renewable').length, road: map.roads.length,
+      },
     },
     town: {
       govCash: town.gov_cash_usd, govDebt: town.gov_debt_usd, legitimacy: town.legitimacy, unionDensity: town.union_density,
       forest: town.forest, forestMax: params.nature.forest_max, commons: town.commons, commonsMax: params.nature.commons_max,
-      privateHousing: town.private_housing, publicHousing: town.public_housing, rentPrivate: town.rent_private_usd, rentPublic: town.rent_public_usd,
+      rentPrivate: town.rent_private_usd, rentPublic: town.rent_public_usd, bankOwner: town.bank_owner,
       bank: { loans, deposits, equity, headroom: Math.max(0, equity / kappa - loans) },
       labourForce, employed, unemployment: 1 - employed / labourForce,
     },
@@ -95,8 +115,11 @@ export function generate() {
     derived: {
       monthlyFirmEmissions: sum(active.map((f) => f.output * f.intensity)),
       monthlyOutputValue: sum(active.map((f) => f.output * f.price)),
-      monthlyWageBill: sum(active.map((f) => f.wageBill)),
+      monthlyWageBill: wageBill,
     },
+    map,
+    homes,
+    plants,
     households,
     firms,
   };

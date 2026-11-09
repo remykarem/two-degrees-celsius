@@ -1,6 +1,6 @@
 import type { BlockReason, Command, CommandPreview, InfraKind, LeverKey, PendingItem, SystemKey } from '../../contract';
 import { costKey, costOf, GEN, INFRA_KINDS, LEVER_BY_KEY, moneyFor, type LeverData } from './data';
-import type { MockState } from './state';
+import { cellAt, GRID, type MockState } from './state';
 
 /** Numeric position of a policy value (bool 0/1, enum option index). null when the value has the wrong shape for the lever. */
 export function numericValue(l: LeverData, v: unknown): number | null {
@@ -37,8 +37,37 @@ function reference(s: MockState, pending: PendingItem[], l: LeverData): number {
   return activeNumeric(s, l);
 }
 
-interface Cost { pc: number; money: number; leadTime: number; opposition: number; blocked: BlockReason | null }
-const bad = (blocked: BlockReason): Cost => ({ pc: 0, money: 0, leadTime: 0, opposition: 0, blocked });
+interface Cost { pc: number; money: number; leadTime: number; opposition: number; blocked: BlockReason | null; tileValid: boolean; tileReason?: BlockReason }
+const bad = (blocked: BlockReason): Cost => ({ pc: 0, money: 0, leadTime: 0, opposition: 0, blocked, tileValid: true });
+
+/**
+ * Why a tile command cannot be carried out (turn.rs tile_problem): off the map, forest or commons for a place (`tile_invalid`);
+ * anything already there or something queued on the tile (`tile_occupied`); a remove on an empty tile (`nothing_to_remove`) or on
+ * something that cannot be removed (`tile_invalid`).
+ */
+export function tileProblem(s: MockState, pending: PendingItem[], c: Command): BlockReason | null {
+  if (c.type === 'place') {
+    const cell = cellAt(s, c.tile.x, c.tile.y);
+    if (!cell || cell.kind === 'forest' || cell.kind === 'commons') return 'tile_invalid';
+    if (cell.kind !== 'empty') return 'tile_occupied';
+    return pending.some((p) => p.command.type === 'place' && p.command.tile.x === c.tile.x && p.command.tile.y === c.tile.y) ? 'tile_occupied' : null;
+  }
+  if (c.type === 'remove') {
+    const cell = cellAt(s, c.tile.x, c.tile.y);
+    if (!cell) return 'tile_invalid';
+    if (cell.kind === 'empty') return 'nothing_to_remove';
+    return REMOVABLE.includes(cell.kind) ? null : 'tile_invalid';
+  }
+  return null;
+}
+const REMOVABLE = ['public_housing', 'fossil_plant', 'renewable_plant', 'road'];
+
+/** Tiles that could take a new `kind` now (empty, nothing queued). */
+export function validTiles(s: MockState, kind: InfraKind): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) if (!tileProblem(s, s.pending, { type: 'place', kind, tile: { x, y } })) out.push({ x, y });
+  return out;
+}
 
 const isKind = (k: unknown): k is InfraKind => INFRA_KINDS.includes(k as InfraKind);
 
@@ -55,16 +84,16 @@ function costOne(s: MockState, pending: PendingItem[], c: Command): Cost {
     const cfg = costOf('switch_system');
     if (s.transition || pending.some((p) => p.command.type === 'switch_system')) return bad('transition_in_progress');
     if (c.to === s.system) return bad('same_system');
-    return { pc: cfg.base * Math.max(1, cfg.minSize), money: 0, leadTime: cfg.leadTime, opposition: 0, blocked: null };
+    return { pc: cfg.base * Math.max(1, cfg.minSize), money: 0, leadTime: cfg.leadTime, opposition: 0, blocked: null, tileValid: true };
   }
   if (c.type === 'place' || c.type === 'remove') {
-    if (!isKind(c.kind) || !Number.isInteger(c.count) || c.count <= 0) return bad('invalid_command');
-    const cfg = costOf(costKey(c.type, c.kind));
-    if (c.type === 'remove' && s.buildings[c.kind] <= 0) return bad('nothing_to_remove');
-    return {
-      pc: cfg.base * Math.max(c.count, cfg.minSize), money: c.type === 'place' ? moneyFor(c.kind) * c.count : 0,
-      leadTime: cfg.leadTime, opposition: 0, blocked: null,
-    };
+    if (c.type === 'place' && !isKind(c.kind)) return bad('invalid_command');
+    if (!c.tile || !Number.isInteger(c.tile.x) || !Number.isInteger(c.tile.y)) return bad('invalid_command');
+    const problem = tileProblem(s, pending, c);
+    if (problem) return { pc: 0, money: 0, leadTime: 0, opposition: 0, blocked: problem, tileValid: false, tileReason: problem };
+    const kind = c.type === 'place' ? c.kind : (cellAt(s, c.tile.x, c.tile.y)!.kind as InfraKind);
+    const cfg = costOf(costKey(c.type, kind));
+    return { pc: cfg.base * Math.max(1, cfg.minSize), money: c.type === 'place' ? moneyFor(kind) : 0, leadTime: cfg.leadTime, opposition: 0, blocked: null, tileValid: true };
   }
   const l = LEVER_BY_KEY.get(c.lever);
   if (!l) return bad('invalid_command');
@@ -78,7 +107,7 @@ function costOne(s: MockState, pending: PendingItem[], c: Command): Cost {
   const cfg = costOf(c.lever);
   const size = l.unit === 'bool' || l.unit === 'enum' ? 1 : Math.abs(v - reference(s, pending, l)) / cfg.unit;
   const opp = opposedByCapital(s, l, v) ? s.netLobby : 0;
-  return { pc: cfg.base * Math.max(size, cfg.minSize) * (1 + opp), money: 0, leadTime: cfg.leadTime, opposition: opp, blocked: null };
+  return { pc: cfg.base * Math.max(size, cfg.minSize) * (1 + opp), money: 0, leadTime: cfg.leadTime, opposition: opp, blocked: null, tileValid: true };
 }
 
 export interface Evaluation { previews: CommandPreview[]; accepted: PendingItem[]; pcLeft: number }
@@ -101,7 +130,10 @@ export function evaluate(s: MockState, commands: Command[]): Evaluation {
       pending.push(item);
       accepted.push(item);
     }
-    previews.push({ command, pc: c.pc, money: c.money, leadTime: c.leadTime, effectiveTurn: s.turn + c.leadTime, opposition: c.opposition, blocked });
+    previews.push({
+      command, pc: c.pc, money: c.money, leadTime: c.leadTime, effectiveTurn: s.turn + c.leadTime, opposition: c.opposition, blocked,
+      tileValid: c.tileValid, ...(c.tileReason ? { tileReason: c.tileReason } : {}),
+    });
   }
   return { previews, accepted, pcLeft };
 }
@@ -122,13 +154,29 @@ export function activate(s: MockState, item: PendingItem): BlockReason | null {
     return null;
   }
   if (c.type === 'place') {
+    const problem = tileProblem(s, [], c); // re-validated when built, as the real sim does
+    if (problem) return problem;
     spend(s, item.moneyCost); // mock: charged and built at activation (docs/web-notes-align.md)
-    s.buildings[c.kind] += c.count;
+    const i = c.tile.y * GRID + c.tile.x;
+    if (c.kind === 'public_housing') {
+      const id = s.nextHomeId++;
+      s.homes.push({ id, x: c.tile.x, y: c.tile.y, owner: 'public', household: null });
+      s.grid[i] = { kind: 'public_housing', ref: id };
+    } else s.grid[i] = { kind: c.kind };
     return null;
   }
   if (c.type === 'remove') {
-    if (s.buildings[c.kind] <= 0) return 'nothing_to_remove';
-    s.buildings[c.kind] = Math.max(0, s.buildings[c.kind] - c.count);
+    const problem = tileProblem(s, [], c);
+    if (problem) return problem;
+    const i = c.tile.y * GRID + c.tile.x;
+    const cell = s.grid[i]!;
+    if (cell.kind === 'public_housing') {
+      const home = s.homes.find((x) => x.id === cell.ref);
+      const tenant = s.households.find((h) => h.home === cell.ref);
+      if (tenant) tenant.home = null;
+      s.homes = s.homes.filter((x) => x !== home);
+    }
+    s.grid[i] = { kind: 'empty' };
     return null;
   }
   const l = LEVER_BY_KEY.get(c.lever)!;

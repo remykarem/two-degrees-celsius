@@ -1,11 +1,12 @@
 import type { Command, HistoryPoint, PendingItem, Result, SimEvent, TraceRecord, TurnResult } from '../../contract';
 import type { SimPort } from '../port';
 import { actionList, GEN, LEVERS, MOCK } from './data';
-import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby } from './dynamics';
+import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
 import { frame, makeEvents, makeFlows } from './frames';
-import { activate, evaluate } from './rules';
+import { stepHouseholds, syncJobs } from './people';
+import { activate, evaluate, spend, validTiles } from './rules';
 import { buildSnapshot } from './snapshot';
-import { initialState, SCHEMA_VERSION, type MockState } from './state';
+import { buildingCounts, initialState, SCHEMA_VERSION, type MockState } from './state';
 
 const fail = (code: string, message: string): { ok: false; error: { code: string; message: string } } => ({ ok: false, error: { code, message } });
 const ok = <T>(value: T): Result<T> => ({ ok: true, value });
@@ -29,19 +30,23 @@ export function createMockSim(): SimPort {
   }
 
   function historyPoint(): HistoryPoint {
+    const ind = snap().indicators;
     return {
       turn: s.turn, gdpRealAnnual: s.gdp / s.prices, unemployment: s.unemployment, gini: s.gini,
       // net monthly tonnes at the end of the turn, as the real wire (docs/sim-api-notes.md)
       emissions: s.lastMonthlyEmissions * (1 - 0.1 * s.forest), budgetShare: remainingBudget(s) / GEN.carbon.budget,
-      legitimacy: s.legitimacy, avgWellbeing: s.wellbeing, gpiAnnual: snap().indicators.gpiAnnual, debtToGdp: s.debt / s.gdp,
+      legitimacy: s.legitimacy, avgWellbeing: ind.avgWellbeing, gpiAnnual: ind.gpiAnnual, debtToGdp: s.debt / s.gdp,
+      avgIncomePerPerson: ind.avgIncomePerPerson, medianIncomePerPerson: ind.medianIncomePerPerson, topHouseholdWealthShare: ind.topHouseholdWealthShare,
     };
   }
 
   return {
     init(seed) {
       s = initialState(seed);
+      s.gini = s.gini0 = wealthGini(s);
       return ok(snap());
     },
+    validTiles: (kind) => validTiles(s, kind),
     levers: () => LEVERS.map(({ default: _d, effect: _e, ...info }) => structuredClone(info)),
     actions: actionList,
     preview(commands) {
@@ -75,12 +80,16 @@ export function createMockSim(): SimPort {
         if (halted) return frame(m, [], {});
         const sysBefore = s.system;
         const out = stepMonth(s);
+        spend(s, buildingCounts(s).road * GEN.build.roadUpkeepUsd); // road maintenance, paid by the government
         if (turn === MOCK.dynamics.firmFoundedTurn && m === 0) {
           const i = s.firmActive.findIndex((a) => !a);
           if (i >= 0) { s.firmActive[i] = true; month0.push({ type: 'firm_founded', importance: 2, firm: GEN.firms[i]!.id }); }
         }
+        const jobEvents: SimEvent[] = [];
+        syncJobs(s, jobEvents);
+        stepHouseholds(s, jobEvents);
         const flows = makeFlows(s, out.emissions);
-        const events = makeEvents(s, out.unemploymentDelta, flows, m === 0 ? month0 : []);
+        const events = makeEvents(s, flows, [...(m === 0 ? month0 : []), ...jobEvents]);
         if (out.bankFailedNow) events.push({ type: 'bank_failed', importance: 3 });
         if (out.bailoutAmount > 0) events.push({ type: 'bank_bailout', importance: 3, amount: Math.round(out.bailoutAmount) });
         if (s.system !== sysBefore) events.push({ type: 'system_switch_completed', importance: 3, to: s.system });
@@ -126,7 +135,7 @@ export function createMockSim(): SimPort {
     importState(blob) {
       let parsed: MockState;
       try { parsed = JSON.parse(blob) as MockState; } catch { return fail('bad_save', 'The saved game data is not valid JSON.'); }
-      if (!parsed || typeof parsed !== 'object' || typeof parsed.turn !== 'number' || !parsed.rng || !parsed.policy || !parsed.buildings || !Array.isArray(parsed.pending)) {
+      if (!parsed || typeof parsed !== 'object' || typeof parsed.turn !== 'number' || !parsed.rng || !parsed.policy || !Array.isArray(parsed.grid) || !Array.isArray(parsed.people) || !Array.isArray(parsed.pending)) {
         return fail('bad_save', 'The saved game data is incomplete.');
       }
       if (parsed.schemaVersion !== SCHEMA_VERSION) return fail('schema_mismatch', `The save was made by a different version (schema ${String(parsed.schemaVersion)}, expected ${SCHEMA_VERSION}).`);

@@ -1,6 +1,8 @@
 import generated from './data.generated.json';
 import mockOnly from './mock-only.json';
-import type { ActionInfo, CostModel, InfraKind, LeverInfo, LeverKey, SystemKey } from '../../contract';
+import type { ActionInfo, AgeBand, ClassKey, CostModel, InfraKind, LeverInfo, LeverKey, Sector, SystemKey } from '../../contract';
+
+interface XY { x: number; y: number }
 
 /** Rules and starting numbers generated from content/ (npm run sync-mock). */
 export interface Generated {
@@ -10,20 +12,27 @@ export interface Generated {
   turnCosts: Record<string, { baseCost: number; leadTime: number; unit: number; minSize: number }>;
   policyStart: Record<string, number | boolean | string>;
   systems: Record<SystemKey, { name: string; transitionMonths: number; outputPenalty: number; lambdaMax: number }>;
-  build: { plantCapacity: number; publicHousingCostUsd: number; plantCostUsd: number; start: { publicHousing: number; fossilPlant: number; renewablePlant: number } };
+  space: { slowMinutes: number; fastMinutes: number; freeMinutes: number; unhousedTiles: number; unhousedMinutes: number };
+  build: {
+    plantCapacity: number; publicHousingCostUsd: number; plantCostUsd: number; roadCostUsd: number; roadUpkeepUsd: number;
+    start: { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number };
+  };
   town: {
     govCash: number; govDebt: number; legitimacy: number; unionDensity: number; forest: number; forestMax: number; commons: number; commonsMax: number;
-    privateHousing: number; publicHousing: number; rentPrivate: number; rentPublic: number;
+    rentPrivate: number; rentPublic: number; bankOwner: number;
     bank: { loans: number; deposits: number; equity: number; headroom: number };
     labourForce: number; employed: number; unemployment: number;
   };
   carbon: { budget: number; t0: number; tLimit: number };
   collapseUnemployment: number;
   derived: { monthlyFirmEmissions: number; monthlyOutputValue: number; monthlyWageBill: number };
-  households: { id: number; label: string; class: 'capitalist' | 'rentier' | 'manager' | 'worker' | 'dependent'; people: number; labourShare: number; wagePremium: number;
-    savings: number; debt: number; homeValue: number; monthlyIncome: number; renterShare: number }[];
-  firms: { id: number; sector: 'goods' | 'food'; active: boolean; name: string; capital: number; cash: number; debt: number; wage: number; price: number; output: number;
-    intensity: number; workers: number; wageBill: number }[];
+  map: { width: number; height: number; roads: XY[]; forest: XY[]; commons: XY[]; townHall: XY; bank: XY };
+  homes: { id: number; tile: XY; owner: number; valueUsd: number }[];
+  plants: { kind: 'fossil' | 'renewable'; tile: XY; capacity: number }[];
+  households: { id: number; label: string; class: ClassKey; savings: number; debt: number; home: number | null; monthlyIncome: number;
+    people: { label: string; ageBand: AgeBand; skill: number; labourForce: boolean; reservation: number; job: number | null }[] }[];
+  firms: { id: number; sector: Sector; active: boolean; name: string; founder: number; tile: XY; capital: number; cash: number; debt: number; wage: number; price: number;
+    output: number; intensity: number; workers: number }[];
 }
 export const GEN = generated as unknown as Generated;
 
@@ -34,17 +43,17 @@ export const MOCK = mockOnly as unknown as {
   levers: LeverMeta[];
   dynamics: Record<string, number>;
   extra: Record<string, number>;
-  infraEffect: Record<InfraKind, { emissions?: number; gdp?: number; wellbeing?: number }>;
+  infraEffect: Partial<Record<InfraKind, { emissions?: number; gdp?: number; wellbeing?: number }>>;
 };
 
 export type PolicyValue = number | boolean | string;
 export interface LeverData extends LeverInfo { default: PolicyValue; effect: Effect }
 
-export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant'];
-export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
+export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant', 'road'];
+export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road' };
 /** Action labels as the real wire sends them (docs/fixtures/actions.json). */
-const PLACE_LABEL: Record<InfraKind, string> = { public_housing: 'Build public housing', fossil_plant: 'Build fossil power plant', renewable_plant: 'Build renewable power plant' };
-const REMOVE_LABEL: Record<InfraKind, string> = { public_housing: 'Demolish public housing', fossil_plant: 'Decommission fossil power plant', renewable_plant: 'Decommission renewable power plant' };
+const PLACE_LABEL: Record<InfraKind, string> = { public_housing: 'Build public housing', fossil_plant: 'Build fossil power plant', renewable_plant: 'Build renewable power plant', road: 'Build road' };
+const REMOVE_LABEL: Record<InfraKind, string> = { public_housing: 'Demolish public housing', fossil_plant: 'Decommission fossil power plant', renewable_plant: 'Decommission renewable power plant', road: 'Remove road' };
 
 const cost = (key: string): CostModel & { leadTime: number } => {
   const c = GEN.turnCosts[key];
@@ -63,7 +72,7 @@ export const LEVER_BY_KEY = new Map<LeverKey, LeverData>(LEVERS.map((l) => [l.ke
 
 export const costKey = (type: 'place' | 'remove', kind: InfraKind) => `${type}_${kind}`;
 const ALL: SystemKey[] = ['market', 'regulated', 'coop'];
-const moneyFor = (kind: InfraKind) => (kind === 'public_housing' ? GEN.build.publicHousingCostUsd : GEN.build.plantCostUsd);
+const moneyFor = (kind: InfraKind) => (kind === 'public_housing' ? GEN.build.publicHousingCostUsd : kind === 'road' ? GEN.build.roadCostUsd : GEN.build.plantCostUsd);
 
 export function actionList(): ActionInfo[] {
   const s = cost('switch_system');

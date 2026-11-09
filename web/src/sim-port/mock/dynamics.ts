@@ -2,7 +2,8 @@ import type { CollapseReason, GameOutcome, LeverKey } from '../../contract';
 import { GEN, INFRA_KINDS, LEVERS, LEVER_BY_KEY, MOCK } from './data';
 import { noise } from './rng';
 import { activeNumeric, spend } from './rules';
-import { baseEmissions, type MockState } from './state';
+import { gini, netWorth } from './people';
+import { baseEmissions, buildingCounts, type MockState } from './state';
 
 // MOCK ONLY. Everything in this file other than the rule hooks (lobbying gap, outcome checks) is an invented toy economy.
 const D = MOCK.dynamics;
@@ -32,16 +33,19 @@ export function policyTotals(s: MockState): Totals {
   const strict = cap > 0 ? 1 - Math.min(1, cap / LEVER_BY_KEY.get('emissions_cap')!.max) : 0; // 0 = no cap
   t.emissions += X.capStrictnessEmissions! * strict;
   t.gdp += X.capStrictnessGdp! * strict;
-  const start = { public_housing: GEN.build.start.publicHousing, fossil_plant: GEN.build.start.fossilPlant, renewable_plant: GEN.build.start.renewablePlant };
+  const start = { public_housing: GEN.build.start.publicHousing, fossil_plant: GEN.build.start.fossilPlant, renewable_plant: GEN.build.start.renewablePlant, road: GEN.build.start.road };
+  const counts = buildingCounts(s);
   for (const kind of INFRA_KINDS) {
-    const built = s.buildings[kind] - start[kind];
-    t.emissions += (MOCK.infraEffect[kind].emissions ?? 0) * built;
-    t.gdp += (MOCK.infraEffect[kind].gdp ?? 0) * built;
+    const built = counts[kind] - start[kind];
+    t.emissions += (MOCK.infraEffect[kind]?.emissions ?? 0) * built;
+    t.gdp += (MOCK.infraEffect[kind]?.gdp ?? 0) * built;
   }
   return t;
 }
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
+/** Wealth Gini over people (each member carries an equal share of the household's net worth). */
+export const wealthGini = (s: MockState): number => gini(s.households.flatMap((h) => h.members.map(() => netWorth(s, h) / h.members.length)));
 export const remainingBudget = (s: MockState) => Math.max(0, GEN.carbon.budget - s.cumulativeTonnes);
 
 export interface MonthOut { emissions: number; unemploymentDelta: number; bankFailedNow: boolean; bailoutAmount: number }
@@ -55,7 +59,7 @@ export function stepMonth(s: MockState): MonthOut {
   const target = clamp(u0 + t.unemployment + (s.bank.failed ? X.bankFailureUnemployment! : 0), 0.01, 0.6);
   const prevU = s.unemployment;
   s.unemployment = clamp(prevU + (target - prevU) * D.unemploymentPull! + noise(s.rng, D.noise!), 0.01, 0.7);
-  s.gini = clamp(s.gini + (0.4 + t.gini - s.gini) * 0.1 + noise(s.rng, 0.002), 0.1, 0.8);
+  s.gini = clamp(s.gini + (s.gini0 + t.gini - s.gini) * 0.1 + noise(s.rng, 0.002), 0.1, 0.9);
   s.legitimacy = clamp(s.legitimacy + D.legitimacyBase! + (t.legitimacy / 12) * 0.3 - D.legitimacyUnemploymentWeight! * (s.unemployment - u0) + noise(s.rng, 0.003), 0, 1);
   s.wellbeing = clamp(s.wellbeing + (0.9 - s.unemployment * 2 - s.gini * 0.3 - s.wellbeing) * 0.05 + noise(s.rng, 0.003), 0, 1);
   s.prices *= 1 + 0.0015 + noise(s.rng, 0.0005);

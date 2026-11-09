@@ -6,7 +6,7 @@
    "label": "Carbon price",
    "unit": "usd_per_tonne",
    "min": 0,
-   "max": 200,
+   "max": 500,
    "step": 5,
    "lobbied": true,
    "arrows": [
@@ -79,7 +79,7 @@
    "label": "Capital tax",
    "unit": "fraction",
    "min": 0,
-   "max": 0.8,
+   "max": 0.6,
    "step": 0.01,
    "lobbied": false,
    "arrows": [
@@ -104,7 +104,7 @@
    "unit": "fraction",
    "min": 0,
    "max": 0.05,
-   "step": 0.005,
+   "step": 0.0025,
    "lobbied": true,
    "arrows": [
     {
@@ -182,7 +182,7 @@
    "label": "Minimum wage",
    "unit": "usd_per_month",
    "min": 0,
-   "max": 3000,
+   "max": 5000,
    "step": 50,
    "lobbied": false,
    "arrows": [
@@ -210,7 +210,7 @@
    "label": "Unemployment benefit",
    "unit": "usd_per_month",
    "min": 0,
-   "max": 2000,
+   "max": 3000,
    "step": 50,
    "lobbied": false,
    "arrows": [
@@ -234,7 +234,7 @@
    "label": "Universal basic income",
    "unit": "usd_per_month",
    "min": 0,
-   "max": 1500,
+   "max": 2000,
    "step": 50,
    "lobbied": false,
    "arrows": [
@@ -259,7 +259,7 @@
    "label": "Green subsidy",
    "unit": "fraction",
    "min": 0,
-   "max": 0.8,
+   "max": 1,
    "step": 0.05,
    "lobbied": false,
    "arrows": [
@@ -304,7 +304,7 @@
    "label": "Emissions cap (per firm)",
    "unit": "tonnes_per_month",
    "min": 0,
-   "max": 600,
+   "max": 2000,
    "step": 10,
    "lobbied": true,
    "arrows": [
@@ -326,7 +326,7 @@
    "label": "Commons harvest",
    "unit": "fraction",
    "min": 0,
-   "max": 1.5,
+   "max": 3,
    "step": 0.05,
    "lobbied": false,
    "arrows": [
@@ -379,8 +379,8 @@
    "key": "bank_capital_ratio",
    "label": "Bank capital ratio",
    "unit": "fraction",
-   "min": 0.04,
-   "max": 0.3,
+   "min": 0.02,
+   "max": 0.4,
    "step": 0.01,
    "lobbied": false,
    "arrows": [
@@ -424,7 +424,7 @@
    "label": "Public spending",
    "unit": "usd_per_month",
    "min": 0,
-   "max": 1000000,
+   "max": 2000000,
    "step": 25000,
    "lobbied": false,
    "arrows": [
@@ -512,6 +512,9 @@
   "renewable_plant": {
    "emissions": -0.07,
    "gdp": 0.002
+  },
+  "road": {
+   "gdp": 0.0006
   }
  }
 }

@@ -51,7 +51,7 @@
     "wealth_threshold": {
       "baseCost": 3,
       "leadTime": 1,
-      "unit": 100000,
+      "unit": 20000,
       "minSize": 0.25
     },
     "base_rate": {
@@ -93,7 +93,7 @@
     "emissions_cap": {
       "baseCost": 8,
       "leadTime": 2,
-      "unit": 500,
+      "unit": 10,
       "minSize": 0.25
     },
     "commons_harvest": {
@@ -123,7 +123,7 @@
     "public_spending": {
       "baseCost": 5,
       "leadTime": 1,
-      "unit": 100000,
+      "unit": 2000,
       "minSize": 0.25
     },
     "job_guarantee": {
@@ -139,7 +139,7 @@
       "minSize": 1
     },
     "place_public_housing": {
-      "baseCost": 1,
+      "baseCost": 3,
       "leadTime": 3,
       "unit": 1,
       "minSize": 1
@@ -157,7 +157,7 @@
       "minSize": 1
     },
     "remove_public_housing": {
-      "baseCost": 2,
+      "baseCost": 3,
       "leadTime": 1,
       "unit": 1,
       "minSize": 1
@@ -173,16 +173,28 @@
       "leadTime": 1,
       "unit": 1,
       "minSize": 1
+    },
+    "place_road": {
+      "baseCost": 0.5,
+      "leadTime": 2,
+      "unit": 1,
+      "minSize": 1
+    },
+    "remove_road": {
+      "baseCost": 0.25,
+      "leadTime": 1,
+      "unit": 1,
+      "minSize": 1
     }
   },
   "policyStart": {
     "commons_access": "open",
     "carbon_price": 0,
-    "tax_wage": 0.28,
+    "tax_wage": 0.3,
     "tax_profit": 0.25,
     "tax_capital": 0.4,
     "wealth_tax": 0,
-    "wealth_threshold": 500000,
+    "wealth_threshold": 150000,
     "base_rate": 0.04,
     "min_wage": 1200,
     "benefit": 800,
@@ -194,7 +206,7 @@
     "bank_capital_ratio": 0.1,
     "bailout": false,
     "job_guarantee": 0,
-    "public_spending": 450000
+    "public_spending": 8000
   },
   "systems": {
     "market": {
@@ -216,128 +228,519 @@
       "lambdaMax": 0.2
     }
   },
+  "space": {
+    "slowMinutes": 6,
+    "fastMinutes": 2,
+    "freeMinutes": 10,
+    "unhousedTiles": 6,
+    "unhousedMinutes": 36
+  },
   "build": {
-    "plantCapacity": 20,
-    "publicHousingCostUsd": 14000,
-    "plantCostUsd": 2000000,
+    "publicHousingCostUsd": 40000,
+    "plantCostUsd": 40000,
+    "roadCostUsd": 2500,
+    "roadUpkeepUsd": 10,
     "start": {
       "publicHousing": 0,
-      "fossilPlant": 5,
-      "renewablePlant": 0
+      "fossilPlant": 2,
+      "renewablePlant": 0,
+      "road": 4
     }
   },
   "town": {
-    "govCash": 400000,
-    "govDebt": 3000000,
+    "govCash": 8000,
+    "govDebt": 60000,
     "legitimacy": 0.7,
     "unionDensity": 0.2,
-    "forest": 70000,
-    "forestMax": 100000,
-    "commons": 40000,
-    "commonsMax": 50000,
-    "privateHousing": 700,
-    "publicHousing": 0,
-    "rentPrivate": 80,
-    "rentPublic": 40,
+    "forest": 1400,
+    "forestMax": 2000,
+    "commons": 800,
+    "commonsMax": 1000,
+    "rentPrivate": 270,
+    "rentPublic": 130,
+    "bankOwner": 0,
     "bank": {
-      "loans": 15900000,
-      "deposits": 13920000,
-      "equity": 1980000,
-      "headroom": 3900000
+      "loans": 345000,
+      "deposits": 289000,
+      "equity": 56000,
+      "headroom": 215000
     },
-    "labourForce": 794,
-    "employed": 720,
-    "unemployment": 0.09319899244332497
+    "labourForce": 10,
+    "employed": 9,
+    "unemployment": 0.09999999999999998
   },
   "carbon": {
-    "budget": 400000,
+    "budget": 4400,
     "t0": 1.3,
     "tLimit": 1.5
   },
   "collapseUnemployment": 0.35,
   "derived": {
-    "monthlyFirmEmissions": 478,
-    "monthlyOutputValue": 1860000,
-    "monthlyWageBill": 1317360
+    "monthlyFirmEmissions": 2.56,
+    "monthlyOutputValue": 34800,
+    "monthlyWageBill": 14850
   },
-  "households": [
+  "map": {
+    "width": 12,
+    "height": 12,
+    "roads": [
+      {
+        "x": 5,
+        "y": 6
+      },
+      {
+        "x": 6,
+        "y": 6
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 8,
+        "y": 6
+      }
+    ],
+    "forest": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 1,
+        "y": 0
+      },
+      {
+        "x": 2,
+        "y": 0
+      },
+      {
+        "x": 3,
+        "y": 0
+      },
+      {
+        "x": 4,
+        "y": 0
+      },
+      {
+        "x": 0,
+        "y": 1
+      },
+      {
+        "x": 1,
+        "y": 1
+      },
+      {
+        "x": 0,
+        "y": 2
+      },
+      {
+        "x": 1,
+        "y": 2
+      },
+      {
+        "x": 0,
+        "y": 3
+      },
+      {
+        "x": 1,
+        "y": 3
+      },
+      {
+        "x": 0,
+        "y": 4
+      },
+      {
+        "x": 0,
+        "y": 5
+      },
+      {
+        "x": 0,
+        "y": 6
+      },
+      {
+        "x": 0,
+        "y": 7
+      }
+    ],
+    "commons": [
+      {
+        "x": 8,
+        "y": 8
+      },
+      {
+        "x": 9,
+        "y": 8
+      },
+      {
+        "x": 10,
+        "y": 8
+      },
+      {
+        "x": 8,
+        "y": 9
+      },
+      {
+        "x": 9,
+        "y": 9
+      },
+      {
+        "x": 10,
+        "y": 9
+      },
+      {
+        "x": 9,
+        "y": 10
+      },
+      {
+        "x": 10,
+        "y": 10
+      },
+      {
+        "x": 11,
+        "y": 9
+      }
+    ],
+    "townHall": {
+      "x": 5,
+      "y": 5
+    },
+    "bank": {
+      "x": 6,
+      "y": 5
+    }
+  },
+  "homes": [
     {
       "id": 0,
-      "label": "A (capitalist)",
-      "class": "capitalist",
-      "people": 20,
-      "labourShare": 0,
-      "wagePremium": 1,
-      "savings": 1000000,
-      "debt": 0,
-      "homeValue": 0,
-      "monthlyIncome": 122106,
-      "renterShare": 0
+      "tile": {
+        "x": 3,
+        "y": 2
+      },
+      "owner": 0,
+      "valueUsd": 45000
     },
     {
       "id": 1,
-      "label": "B (landlord)",
-      "class": "rentier",
-      "people": 20,
-      "labourShare": 0,
-      "wagePremium": 1,
-      "savings": 300000,
-      "debt": 4000000,
-      "homeValue": 0,
-      "monthlyIncome": 5203,
-      "renterShare": 0
+      "tile": {
+        "x": 4,
+        "y": 2
+      },
+      "owner": 1,
+      "valueUsd": 45000
     },
     {
       "id": 2,
-      "label": "C (manager)",
-      "class": "manager",
-      "people": 150,
-      "labourShare": 0.8,
-      "wagePremium": 1.8,
-      "savings": 3000000,
-      "debt": 1500000,
-      "homeValue": 12000000,
-      "monthlyIncome": 233719,
-      "renterShare": 0.5
+      "tile": {
+        "x": 3,
+        "y": 4
+      },
+      "owner": 2,
+      "valueUsd": 45000
     },
     {
       "id": 3,
-      "label": "D (worker)",
-      "class": "worker",
-      "people": 350,
-      "labourShare": 0.9,
-      "wagePremium": 1,
-      "savings": 3500000,
-      "debt": 1200000,
-      "homeValue": 14000000,
-      "monthlyIncome": 345114,
-      "renterShare": 0.7
+      "tile": {
+        "x": 2,
+        "y": 6
+      },
+      "owner": 1,
+      "valueUsd": 45000
     },
     {
       "id": 4,
-      "label": "E (worker)",
-      "class": "worker",
-      "people": 350,
-      "labourShare": 0.9,
-      "wagePremium": 1,
-      "savings": 3500000,
-      "debt": 1200000,
-      "homeValue": 14000000,
-      "monthlyIncome": 345114,
-      "renterShare": 0.7
+      "tile": {
+        "x": 8,
+        "y": 4
+      },
+      "owner": 1,
+      "valueUsd": 45000
     },
     {
       "id": 5,
-      "label": "F (dependent)",
-      "class": "dependent",
-      "people": 110,
-      "labourShare": 0.4,
-      "wagePremium": 1,
-      "savings": 220000,
+      "tile": {
+        "x": 3,
+        "y": 7
+      },
+      "owner": 1,
+      "valueUsd": 45000
+    },
+    {
+      "id": 6,
+      "tile": {
+        "x": 5,
+        "y": 8
+      },
+      "owner": 1,
+      "valueUsd": 45000
+    }
+  ],
+  "plants": [
+    {
+      "kind": "fossil",
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "capacity": 5
+    },
+    {
+      "kind": "fossil",
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "capacity": 5
+    }
+  ],
+  "households": [
+    {
+      "id": 0,
+      "label": "Owner family",
+      "class": "capitalist",
+      "savings": 95000,
       "debt": 0,
-      "homeValue": 0,
-      "monthlyIncome": 85060,
-      "renterShare": 0.9
+      "home": 0,
+      "monthlyIncome": 7000,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.6,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        },
+        {
+          "label": "Adult 2",
+          "ageBand": "adult",
+          "skill": 0.6,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "label": "Landlord",
+      "class": "rentier",
+      "savings": 15000,
+      "debt": 130000,
+      "home": 1,
+      "monthlyIncome": 2500,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.6,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        },
+        {
+          "label": "Retired 1",
+          "ageBand": "retired",
+          "skill": 0.4,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Manager A",
+      "class": "manager",
+      "savings": 50000,
+      "debt": 30000,
+      "home": 2,
+      "monthlyIncome": 5200,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.85,
+          "labourForce": true,
+          "reservation": 2900,
+          "job": 0
+        },
+        {
+          "label": "Adult 2",
+          "ageBand": "adult",
+          "skill": 0.85,
+          "labourForce": true,
+          "reservation": 2900,
+          "job": 2
+        },
+        {
+          "label": "Child 1",
+          "ageBand": "child",
+          "skill": 0.3,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Manager B",
+      "class": "manager",
+      "savings": 60000,
+      "debt": 10000,
+      "home": 3,
+      "monthlyIncome": 4800,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.85,
+          "labourForce": true,
+          "reservation": 2900,
+          "job": 0
+        },
+        {
+          "label": "Adult 2",
+          "ageBand": "adult",
+          "skill": 0.85,
+          "labourForce": true,
+          "reservation": 2900,
+          "job": 2
+        },
+        {
+          "label": "Child 1",
+          "ageBand": "child",
+          "skill": 0.3,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Worker A",
+      "class": "worker",
+      "savings": 18000,
+      "debt": 4000,
+      "home": 4,
+      "monthlyIncome": 2800,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.5,
+          "labourForce": true,
+          "reservation": 1300,
+          "job": 0
+        },
+        {
+          "label": "Adult 2",
+          "ageBand": "adult",
+          "skill": 0.5,
+          "labourForce": true,
+          "reservation": 1300,
+          "job": 2
+        },
+        {
+          "label": "Child 1",
+          "ageBand": "child",
+          "skill": 0.3,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Worker B",
+      "class": "worker",
+      "savings": 11000,
+      "debt": 3000,
+      "home": 5,
+      "monthlyIncome": 2900,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.5,
+          "labourForce": true,
+          "reservation": 1300,
+          "job": 1
+        },
+        {
+          "label": "Adult 2",
+          "ageBand": "adult",
+          "skill": 0.5,
+          "labourForce": true,
+          "reservation": 1300,
+          "job": 1
+        },
+        {
+          "label": "Child 1",
+          "ageBand": "child",
+          "skill": 0.3,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "label": "Worker C",
+      "class": "worker",
+      "savings": 6000,
+      "debt": 0,
+      "home": 6,
+      "monthlyIncome": 1700,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.45,
+          "labourForce": true,
+          "reservation": 1200,
+          "job": 1
+        },
+        {
+          "label": "Retired 1",
+          "ageBand": "retired",
+          "skill": 0.4,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "label": "Destitute household",
+      "class": "dependent",
+      "savings": 0,
+      "debt": 3000,
+      "home": null,
+      "monthlyIncome": 1000,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.4,
+          "labourForce": true,
+          "reservation": 900,
+          "job": null
+        },
+        {
+          "label": "Retired 1",
+          "ageBand": "retired",
+          "skill": 0.4,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null
+        }
+      ]
     }
   ],
   "firms": [
@@ -346,60 +749,76 @@
       "sector": "goods",
       "active": true,
       "name": "Factory",
-      "capital": 6000,
-      "cash": 1500000,
-      "debt": 3500000,
+      "founder": 0,
+      "tile": {
+        "x": 9,
+        "y": 3
+      },
+      "capital": 160,
+      "cash": 15000,
+      "debt": 60000,
       "wage": 1650,
       "price": 100,
-      "output": 12600,
-      "intensity": 0.03,
-      "workers": 520,
-      "wageBill": 950400
+      "output": 130,
+      "intensity": 0.012,
+      "workers": 3
     },
     {
       "id": 1,
       "sector": "food",
       "active": true,
       "name": "Farm",
-      "capital": 2000,
-      "cash": 500000,
-      "debt": 1500000,
+      "founder": 0,
+      "tile": {
+        "x": 7,
+        "y": 9
+      },
+      "capital": 60,
+      "cash": 6000,
+      "debt": 25000,
       "wage": 1650,
       "price": 24,
-      "output": 25000,
-      "intensity": 0.004,
-      "workers": 200,
-      "wageBill": 366960
+      "output": 500,
+      "intensity": 0.002,
+      "workers": 3
     },
     {
       "id": 2,
-      "sector": "goods",
-      "active": false,
-      "name": "Factory 2",
-      "capital": 0,
-      "cash": 0,
-      "debt": 0,
+      "sector": "services",
+      "active": true,
+      "name": "Shop",
+      "founder": 1,
+      "tile": {
+        "x": 5,
+        "y": 7
+      },
+      "capital": 30,
+      "cash": 5000,
+      "debt": 20000,
       "wage": 1650,
-      "price": 100,
-      "output": 0,
-      "intensity": 0.03,
-      "workers": 0,
-      "wageBill": 0
+      "price": 70,
+      "output": 140,
+      "intensity": 0,
+      "workers": 3
     },
     {
       "id": 3,
-      "sector": "food",
+      "sector": "services",
       "active": false,
-      "name": "Farm 2",
+      "name": "Shop 2",
+      "founder": 1,
+      "tile": {
+        "x": 7,
+        "y": 7
+      },
       "capital": 0,
       "cash": 0,
       "debt": 0,
       "wage": 1650,
-      "price": 24,
+      "price": 70,
       "output": 0,
-      "intensity": 0.004,
-      "workers": 0,
-      "wageBill": 0
+      "intensity": 0,
+      "workers": 0
     }
   ]
 }
