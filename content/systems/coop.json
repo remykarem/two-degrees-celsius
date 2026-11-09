@@ -1,0 +1,20 @@
+{
+  "name": "Worker cooperatives",
+  "dividend_rule": "Employees",
+  "payout_ratio": 0.5,
+  "wage_down": 1.0,
+  "min_wage_multiplier": 1.15,
+  "invest_hurdle": 0.02,
+  "credit_spread_add": 0.01,
+  "lambda_max": 0.2,
+  "union_floor": 0.40,
+  "commons_rule": "Community",
+  "enclosure_prob": 0.0,
+  "transition_months": 24,
+  "transition_output_penalty": 0.10,
+  "resistance": 0.008,
+  "green_subsidy_floor": 0.0,
+  "green_cash_share": 0.7,
+  "campaign_cap": 1.0,
+  "carbon_price_floor_usd": 0.0
+}

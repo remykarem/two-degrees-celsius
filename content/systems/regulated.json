@@ -1,0 +1,20 @@
+{
+  "name": "Regulated capitalism",
+  "dividend_rule": "Owner",
+  "payout_ratio": 0.6,
+  "wage_down": 0.995,
+  "min_wage_multiplier": 1.25,
+  "invest_hurdle": 0.05,
+  "credit_spread_add": 0.0,
+  "lambda_max": 0.4,
+  "union_floor": 0.10,
+  "commons_rule": "Community",
+  "enclosure_prob": 0.0,
+  "transition_months": 12,
+  "transition_output_penalty": 0.05,
+  "resistance": 0.004,
+  "green_subsidy_floor": 0.3,
+  "green_cash_share": 0.7,
+  "campaign_cap": 0.01,
+  "carbon_price_floor_usd": 0.0
+}

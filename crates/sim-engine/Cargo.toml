@@ -1,0 +1,27 @@
+[package]
+name = "sim-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+libm.workspace = true
+sim-types.workspace = true
+sim-rng.workspace = true
+sim-params.workspace = true
+sim-model.workspace = true
+sim-metrics.workspace = true
+sim-checks.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+proptest.workspace = true
+
+[[test]]
+name = "scenarios"
+path = "../../tests/scenarios.rs"

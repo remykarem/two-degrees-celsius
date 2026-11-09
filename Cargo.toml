@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/sim-types",
+  "crates/sim-rng",
+  "crates/sim-params",
+  "crates/sim-model",
+  "crates/sim-metrics",
+  "crates/sim-checks",
+  "crates/sim-engine",
+  "crates/sim-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libm = "0.2"
+clap = { version = "4", features = ["derive"] }
+insta = { version = "1", features = ["json"] }
+proptest = "1"
+sim-types = { path = "crates/sim-types" }
+sim-rng = { path = "crates/sim-rng" }
+sim-params = { path = "crates/sim-params" }
+sim-model = { path = "crates/sim-model" }
+sim-metrics = { path = "crates/sim-metrics" }
+sim-checks = { path = "crates/sim-checks" }
+sim-engine = { path = "crates/sim-engine" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

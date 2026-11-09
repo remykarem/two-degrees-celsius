@@ -1,0 +1,20 @@
+{
+  "name": "Market capitalism",
+  "dividend_rule": "Owner",
+  "payout_ratio": 0.6,
+  "wage_down": 0.995,
+  "min_wage_multiplier": 1.0,
+  "invest_hurdle": 0.05,
+  "credit_spread_add": 0.0,
+  "lambda_max": 0.6,
+  "union_floor": 0.05,
+  "commons_rule": "Open",
+  "enclosure_prob": 0.002,
+  "transition_months": 0,
+  "transition_output_penalty": 0.0,
+  "resistance": 0.0,
+  "green_subsidy_floor": 0.0,
+  "green_cash_share": 0.5,
+  "campaign_cap": 1.0,
+  "carbon_price_floor_usd": 0.0
+}

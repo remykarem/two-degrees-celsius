@@ -1,0 +1,13 @@
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "non-deterministic iteration; use Vec or BTreeMap" },
+  { path = "std::collections::HashSet", reason = "non-deterministic iteration; use Vec or BTreeSet" },
+  { path = "std::collections::hash_map::HashMap", reason = "non-deterministic iteration; use Vec or BTreeMap" },
+  { path = "std::collections::hash_set::HashSet", reason = "non-deterministic iteration; use Vec or BTreeSet" },
+]
+disallowed-methods = [
+  { path = "f64::powf", reason = "use libm::pow for cross-platform identical results" },
+  { path = "f64::powi", reason = "use libm::pow for cross-platform identical results" },
+  { path = "f64::exp", reason = "use libm::exp" },
+  { path = "f64::ln", reason = "use libm::log" },
+  { path = "f64::sqrt", reason = "use libm::sqrt" },
+]

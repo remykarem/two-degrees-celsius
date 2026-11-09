@@ -1,0 +1,48 @@
+{
+  "cohorts": [
+    { "label": "A (capitalist)", "class": "Capitalist", "weight": 20, "labour_share": 0.0, "reservation_usd": 0, "wage_premium": 1.0, "nonlabour_benefit": false, "renter_share": 0.0, "skill": 0.6, "savings_usd": 1000000, "debt_usd": 0, "home_value_usd": 0, "initial_income_usd": 200000 },
+    { "label": "B (landlord)", "class": "Rentier", "weight": 20, "labour_share": 0.0, "reservation_usd": 0, "wage_premium": 1.0, "nonlabour_benefit": false, "renter_share": 0.0, "skill": 0.6, "savings_usd": 300000, "debt_usd": 4000000, "home_value_usd": 0, "initial_income_usd": 45000 },
+    { "label": "C (manager)", "class": "Manager", "weight": 150, "labour_share": 0.8, "reservation_usd": 3500, "wage_premium": 1.8, "nonlabour_benefit": false, "renter_share": 0.5, "skill": 0.85, "savings_usd": 3000000, "debt_usd": 1500000, "home_value_usd": 9000000, "initial_income_usd": 290000 },
+    { "label": "D (worker)", "class": "Worker", "weight": 350, "labour_share": 0.9, "reservation_usd": 1500, "wage_premium": 1.0, "nonlabour_benefit": false, "renter_share": 0.7, "skill": 0.5, "savings_usd": 3500000, "debt_usd": 1200000, "home_value_usd": 8750000, "initial_income_usd": 470000 },
+    { "label": "E (worker)", "class": "Worker", "weight": 350, "labour_share": 0.9, "reservation_usd": 1500, "wage_premium": 1.0, "nonlabour_benefit": false, "renter_share": 0.7, "skill": 0.5, "savings_usd": 3500000, "debt_usd": 1200000, "home_value_usd": 8750000, "initial_income_usd": 470000 },
+    { "label": "F (dependent)", "class": "Dependent", "weight": 110, "labour_share": 0.4, "reservation_usd": 2000, "wage_premium": 1.0, "nonlabour_benefit": true, "renter_share": 0.9, "skill": 0.4, "savings_usd": 220000, "debt_usd": 0, "home_value_usd": 0, "initial_income_usd": 77000 }
+  ],
+  "firms": [
+    { "sector": "Goods", "active": true, "founder": 0, "capital_units": 6000, "cash_usd": 1500000, "debt_usd": 3500000, "wage_usd": 2000, "price_usd": 100, "inventory_units": 7000, "intensity_base": 0.03, "initial_output": 14500, "employment": [0, 0, 70, 225, 225, 0] },
+    { "sector": "Food", "active": true, "founder": 0, "capital_units": 2000, "cash_usd": 500000, "debt_usd": 1500000, "wage_usd": 2000, "price_usd": 24, "inventory_units": 12000, "intensity_base": 0.004, "initial_output": 25000, "employment": [0, 0, 28, 80, 80, 12] },
+    { "sector": "Goods", "active": false, "founder": 0, "capital_units": 0, "cash_usd": 0, "debt_usd": 0, "wage_usd": 2000, "price_usd": 100, "inventory_units": 0, "intensity_base": 0.03, "initial_output": 0, "employment": [0, 0, 0, 0, 0, 0] },
+    { "sector": "Food", "active": false, "founder": 0, "capital_units": 0, "cash_usd": 0, "debt_usd": 0, "wage_usd": 2000, "price_usd": 24, "inventory_units": 0, "intensity_base": 0.004, "initial_output": 0, "employment": [0, 0, 0, 0, 0, 0] }
+  ],
+  "bank_owner": 0,
+  "gov_cash_usd": 400000,
+  "gov_debt_usd": 3000000,
+  "legitimacy": 0.7,
+  "forest": 70000,
+  "commons": 40000,
+  "private_housing": 700,
+  "public_housing": 0,
+  "rent_private_usd": 80,
+  "rent_public_usd": 40,
+  "fossil_capacity": 100,
+  "renewable_capacity": 0,
+  "union_density": 0.2,
+  "policy": {
+    "carbon_price_usd": 0,
+    "tax_wage": 0.20,
+    "tax_profit": 0.20,
+    "tax_capital": 0.20,
+    "wealth_tax": 0.0,
+    "wealth_threshold_usd": 500000,
+    "base_rate": 0.04,
+    "min_wage_usd": 1200,
+    "benefit_usd": 800,
+    "ubi_usd": 0,
+    "green_subsidy": 0.0,
+    "campaign_cap": 1.0,
+    "emissions_cap": 0.0,
+    "commons_harvest": 1.0,
+    "bank_capital_ratio": 0.10,
+    "bailout": false,
+    "public_spending": 0.15
+  }
+}
