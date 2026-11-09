@@ -33,7 +33,7 @@ const P = (names) => `(^|/)(${names.join('|')})(/|$)`;
 const NOT_SVELTE_THREE = ['three', 'svelte'];
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'test-results'] },
+  { ignores: ['dist', 'node_modules', 'test-results', 'src/sim-port/wasm/pkg'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],

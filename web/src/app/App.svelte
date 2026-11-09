@@ -7,7 +7,8 @@
   import { attachPlayback } from './playback';
   import SceneHost from './SceneHost.svelte';
 
-  let { game }: { game: Game } = $props();
+  let { game, simNotice = undefined }: { game: Game; simNotice?: string } = $props();
+  let noticeOpen = $state(true);
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   onMount(() => {
@@ -22,6 +23,9 @@
   <p>This game needs a window at least 720 pixels wide: the map, the policy drawer and the plan tray do not fit on a phone. Please open it on a computer or a tablet held sideways.</p>
 </div>
 <div class="app" data-phase={$gs.phase}>
+  {#if simNotice && noticeOpen}
+    <div class="simnotice" role="status"><span>{simNotice}</span> <button type="button" onclick={() => (noticeOpen = false)}>Dismiss</button></div>
+  {/if}
   <TopBar {game} />
   <CrisisBanner {game} />
   <BuildPalette {game} />
@@ -47,6 +51,7 @@
 </div>
 
 <style>
+  .simnotice { display: flex; gap: 12px; align-items: center; padding: 6px 14px; background: var(--surface); border-bottom: 1px dashed var(--warn); color: var(--warn); font-size: 13px; }
   .narrow { display: none; }
   @media (max-width: 719px) {
     .narrow { display: block; position: fixed; inset: 0; z-index: 500; background: var(--surface); color: var(--text); padding: 32px 20px; }

@@ -11,7 +11,7 @@
 
 <header>
   {#if snap}
-    <div class="item"><strong>{quarterLabel(shownTurn(snap), snap.game)}</strong> <span class="dim">Turn {shownTurn(snap)}/{snap.game.lastTurn}</span>{#if snap.mock}<span class="mock" title="The numbers on screen come from a web-side mock, not the real simulation. Rules and costs are copied from the real content files, but GDP, unemployment, wage share, profit share, money and the other economy figures are invented toy dynamics.">Mock data</span>{/if}</div>
+    <div class="item"><strong>{quarterLabel(shownTurn(snap), snap.game)}</strong> <span class="dim">Turn {shownTurn(snap)}/{snap.game.lastTurn}</span>{#if snap.mock}<span class="mock" title="The numbers on screen come from a web-side mock, not the real simulation. Rules and costs are copied from the real content files, but GDP, unemployment, wage share, profit share, money and the other economy figures are invented toy dynamics.">Mock data</span>{:else}<span class="real" title="The numbers on screen come from the real Rust simulation, running in your browser as WebAssembly.">Real simulation</span>{/if}</div>
     <div class="item" data-coach="pc" title="Political capital: spent to change policy, regenerates with legitimacy">
       <label for="pc"><span class="long">Political capital</span><span class="short">PC</span></label>
       <meter id="pc" min="0" max={snap.pc.cap} value={snap.pc.current}></meter>
@@ -37,6 +37,7 @@
   .item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
   .spacer { flex: 1; }
   .mock { margin-left: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border: 1px dashed var(--warn); color: var(--warn); border-radius: 8px; cursor: help; }
+  .real { margin-left: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border: 1px solid var(--border); color: var(--text-dim); border-radius: 8px; cursor: help; }
   .dim { color: var(--text-dim); }
   .num { font-family: var(--font-mono); }
   meter { width: 90px; height: 14px; }
