@@ -1,5 +1,8 @@
-import type { CostModel, LeverInfo } from '../contract';
+import type { ActionInfo, CostModel, LeverInfo } from '../contract';
 import { formatLever } from './format';
+
+/** Cost model of an action: the wire may omit it; place, remove and switch all have unit 1 and min size 1, so base cost is the cost. */
+export const actionModel = (a: ActionInfo): CostModel => a.costModel ?? { base: a.baseCostPc, unit: 1, minSize: 1 };
 
 /** Estimated PC for a change of `units` cost units (real rule: base x max(units, minSize) x (1 + opposition)). Opposition is not known here. */
 export const estimatePc = (m: CostModel, units: number) => m.base * Math.max(units, m.minSize);

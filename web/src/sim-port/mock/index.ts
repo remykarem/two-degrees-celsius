@@ -31,7 +31,8 @@ export function createMockSim(): SimPort {
   function historyPoint(): HistoryPoint {
     return {
       turn: s.turn, gdpRealAnnual: s.gdp / s.prices, unemployment: s.unemployment, gini: s.gini,
-      emissions: s.lastMonthlyEmissions * GEN.ticksPerTurn, budgetShare: remainingBudget(s) / GEN.carbon.budget,
+      // net monthly tonnes at the end of the turn, as the real wire (docs/sim-api-notes.md)
+      emissions: s.lastMonthlyEmissions * (1 - 0.1 * s.forest), budgetShare: remainingBudget(s) / GEN.carbon.budget,
       legitimacy: s.legitimacy, avgWellbeing: s.wellbeing, gpiAnnual: snap().indicators.gpiAnnual, debtToGdp: s.debt / s.gdp,
     };
   }
@@ -112,6 +113,7 @@ export function createMockSim(): SimPort {
     },
 
     cancelPending(id) {
+      if (s.gameOver) return fail('game_over', 'The game is over: nothing can be cancelled.');
       const p = s.pending.find((x) => x.id === id);
       if (!p) return fail('unknown_pending', `There is no pending item #${id}.`);
       s.pending = s.pending.filter((x) => x.id !== id);

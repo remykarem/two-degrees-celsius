@@ -1,7 +1,7 @@
 <script lang="ts">
   import { paletteActions, totalPc, type Game } from '../store';
   import { Button } from '../ui-kit';
-  import { estimatePc } from './costs';
+  import { actionModel, estimatePc } from './costs';
   import { leadText, money } from './format';
   import { builtCount, INFRA_LABEL } from './inspect';
 
@@ -27,11 +27,11 @@
 <aside aria-label="Build palette" data-coach="build">
   <h2>Build</h2>
   {#each items as item (item.kind)}
-    {@const why = reasonFor(estimatePc(item.action.costModel, 1))}
+    {@const why = reasonFor(estimatePc(actionModel(item.action), 1))}
     <div class="item">
       <Button pressed={$gs.buildKind === item.kind} disabled={locked || !!why} title={why ?? ''}
         onclick={() => game.setBuildKind($gs.buildKind === item.kind ? null : item.kind)}>{item.action.label}</Button>
-      <div class="cost">About {Math.round(estimatePc(item.action.costModel, 1) * 10) / 10} PC · {item.action.moneyCost > 0 ? `about ${money(item.action.moneyCost)} · ` : ''}ready {leadText(item.action.leadTime)}</div>
+      <div class="cost">About {Math.round(estimatePc(actionModel(item.action), 1) * 10) / 10} PC · {item.action.moneyCost > 0 ? `about ${money(item.action.moneyCost)} · ` : ''}ready {leadText(item.action.leadTime)}</div>
       <div class="cost">Built {builtCount($gs.snapshot, item.kind)}{#if planned(item.kind)}&nbsp;· planned {planned(item.kind)}{/if}</div>
       {#if why}<div class="off">{why}</div>{/if}
     </div>

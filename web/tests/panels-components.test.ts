@@ -4,10 +4,12 @@ import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import { createSimPort } from '../src/sim-port';
 import { createGame, type Game } from '../src/store';
-import { BuildPalette, CrisisBanner, EndScreen, Inspector, MetricsPanel, PendingList, PlanTray, PolicyDrawer, ResultsScreen, TopBar } from '../src/panels';
+import { BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, MetricsPanel, PendingList, PlanTray, PolicyDrawer, ResultsScreen, TopBar } from '../src/panels';
 import BarChart from '../src/panels/BarChart.svelte';
 import Sparkline from '../src/panels/Sparkline.svelte';
 import { setUi } from '../src/panels/ui';
+import PolicyRow from '../src/panels/PolicyRow.svelte';
+import PlaybackTicker from '../src/panels/PlaybackTicker.svelte';
 
 const html = (c: unknown, props: Record<string, unknown>) => render(c as Component<Record<string, unknown>>, { props }).body;
 const game = (): Game => { const g = createGame(createSimPort()); g.newGame(5); return g; };
@@ -65,3 +67,67 @@ describe('component smoke (server render)', () => {
     expect(html(Sparkline, { values: [1, 2, 3], label: 'X' })).toContain('polyline');
   });
 });
+
+describe('v0.3 component behaviour', () => {
+  it('offers "Remove one" only for kinds with a built count above zero', () => {
+    const b = html(BuildPalette, { game: game() });
+    expect(b).toContain('Fossil plant ×5');
+    expect(b).not.toContain('Public housing ×0');
+    expect(b).not.toContain('Renewable plant ×0');
+    expect(b.match(/Remove one/g)).toHaveLength(1);
+  });
+  it('shows cost estimates from the cost model, then the authoritative preview once drafted', () => {
+    const g = game();
+    const lever = g.state.get().levers.find((l) => l.key === 'carbon_price')!;
+    const row = (props: Record<string, unknown>) => html(PolicyRow, { lever, nominal: 0, effective: 0, disabled: null, system: 'market', draftValue: undefined, preview: undefined, onset: () => {}, onreset: () => {}, ...props });
+    expect(row({})).toContain('About 2 PC for a small change');
+    expect(row({})).not.toMatch(/Base \d/);
+    expect(row({})).toContain('If raised:');
+    const down = row({ nominal: 100, draftValue: 20 });
+    expect(down).toContain('Your change (down):');
+  });
+  it('greys the community commons option in Market with the reason', () => {
+    const g = game();
+    const lever = g.state.get().levers.find((l) => l.key === 'commons_access')!;
+    const out = html(PolicyRow, { lever, nominal: 'open', effective: null, disabled: null, system: 'market', draftValue: undefined, preview: undefined, onset: () => {}, onreset: () => {} });
+    expect(out).toContain('Needs Regulated capitalism or Worker cooperatives');
+    const ok = html(PolicyRow, { lever, nominal: 'open', effective: null, disabled: null, system: 'regulated', draftValue: undefined, preview: undefined, onset: () => {}, onreset: () => {} });
+    expect(ok).not.toContain('Needs Regulated capitalism');
+  });
+  it('the top bar flags mock data and shows the same turn as the end screen at game over', () => {
+    const g = game();
+    expect(html(TopBar, { game: g })).toContain('Mock data');
+    for (let i = 0; i < 200 && g.state.get().phase !== 'ended'; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); }
+    const turn = g.state.get().snapshot!.gameOver!.turn;
+    expect(html(TopBar, { game: g })).toContain(`Turn ${turn}/160`);
+    expect(html(EndScreen, { game: g })).toContain(`(turn ${turn})`);
+  });
+  it('the crisis region keeps role=status; only critical banners carry role=alert', () => {
+    const g = game();
+    expect(html(CrisisBanner, { game: g })).toContain('role="status"');
+    expect(html(CrisisBanner, { game: g })).not.toContain('role="alert"');
+  });
+  it('the error screen appears for a failed sim call and not otherwise', () => {
+    const base = createSimPort();
+    const g = createGame({ ...base, submitTurn: () => ({ ok: false, error: { code: 'violation', message: 'money is not conserved' } }) });
+    g.newGame(1);
+    expect(html(ErrorScreen, { game: g })).not.toContain('Something went wrong');
+    g.endTurn();
+    const e = html(ErrorScreen, { game: g });
+    expect(e).toContain('Something went wrong');
+    expect(e).toContain('money is not conserved');
+    expect(e).toContain('playing the turn');
+  });
+  it('the playback live region reads only notable events (importance 2 and 3)', () => {
+    const g = game();
+    g.endTurn();
+    g.setPlaybackMonth(2);
+    const t = html(PlaybackTicker, { game: g });
+    expect(t).toMatch(/role="log"/);
+    const live = t.slice(t.indexOf('role="log"'));
+    const result = g.state.get().lastResult!;
+    const minor = result.months.flatMap((m) => m.events).find((e) => e.importance === 1 && e.type === 'hired');
+    if (minor) expect(live).not.toContain('hired');
+  });
+});
+

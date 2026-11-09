@@ -6,6 +6,14 @@
   let input: HTMLInputElement;
   let message = $state('');
   let bad = $state(false);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  /** The message fades after a while so it does not keep the top bar tall. */
+  function say(text: string, isBad: boolean) {
+    message = text;
+    bad = isBad;
+    clearTimeout(timer);
+    timer = setTimeout(() => (message = ''), isBad ? 9000 : 4000);
+  }
 
   function save() {
     const text = game.exportSave();
@@ -18,16 +26,14 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    bad = false;
-    message = 'Game saved to a file.';
+    say('Game saved to a file.', false);
   }
   async function load(e: Event) {
     const f = (e.currentTarget as HTMLInputElement).files?.[0];
     (e.currentTarget as HTMLInputElement).value = '';
     if (!f) return;
     const err = game.importSave(await f.text());
-    bad = !!err;
-    message = err ? `Could not load that file. ${err}` : 'Saved game loaded.';
+    say(err ? `Could not load that file. ${err}` : 'Saved game loaded.', !!err);
   }
 </script>
 

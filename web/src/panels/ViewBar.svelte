@@ -23,8 +23,10 @@
 </div>
 
 <style>
-  .bar { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; z-index: 10;
+  /* Bottom-left, so the policy drawer (top-right) never covers it; wraps to two rows in a narrow map. */
+  .bar { position: absolute; left: 12px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; z-index: 10; max-width: calc(100% - 24px); width: max-content;
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; box-shadow: var(--shadow); }
   .zoom { display: inline-flex; gap: 4px; }
+  .bar :global(button) { white-space: nowrap; }
   .angle { color: var(--text-dim); font-size: 12px; }
 </style>

@@ -66,7 +66,7 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
       return `${l?.label ?? c.lever} → ${l && typeof v !== 'string' ? formatLever(l, v) : String(v)}`;
     }
     case 'switch_system': return `Switch system to ${SYSTEM_NAME[c.to]}`;
-    case 'place': return `Build ${actionLabel(actions, `place:${c.kind}`)}${c.tile ? ` @ (${c.tile.x},${c.tile.y})` : ''}`;
+    case 'place': return `${actionLabel(actions, `place:${c.kind}`)}${c.tile ? ` @ (${c.tile.x},${c.tile.y})` : ''}`;
     case 'remove': return actionLabel(actions, `remove:${c.kind}`);
   }
 }

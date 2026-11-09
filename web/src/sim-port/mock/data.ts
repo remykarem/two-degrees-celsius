@@ -42,6 +42,9 @@ export interface LeverData extends LeverInfo { default: PolicyValue; effect: Eff
 
 export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant'];
 export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
+/** Action labels as the real wire sends them (docs/fixtures/actions.json). */
+const PLACE_LABEL: Record<InfraKind, string> = { public_housing: 'Build public housing', fossil_plant: 'Build fossil power plant', renewable_plant: 'Build renewable power plant' };
+const REMOVE_LABEL: Record<InfraKind, string> = { public_housing: 'Demolish public housing', fossil_plant: 'Decommission fossil power plant', renewable_plant: 'Decommission renewable power plant' };
 
 const cost = (key: string): CostModel & { leadTime: number } => {
   const c = GEN.turnCosts[key];
@@ -64,14 +67,14 @@ const moneyFor = (kind: InfraKind) => (kind === 'public_housing' ? GEN.build.pub
 
 export function actionList(): ActionInfo[] {
   const s = cost('switch_system');
-  const out: ActionInfo[] = [{ key: 'switch_system', label: 'Switch system', baseCostPc: s.base, costModel: { base: s.base, unit: s.unit, minSize: s.minSize }, leadTime: s.leadTime, moneyCost: 0, availableIn: ALL }];
+  const out: ActionInfo[] = [{ key: 'switch_system', label: 'Switch economic system', baseCostPc: s.base, costModel: { base: s.base, unit: s.unit, minSize: s.minSize }, leadTime: s.leadTime, moneyCost: 0, availableIn: ALL }];
   for (const kind of INFRA_KINDS) {
     const c = cost(costKey('place', kind));
-    out.push({ key: `place:${kind}`, label: INFRA_LABEL[kind], baseCostPc: c.base, costModel: { base: c.base, unit: c.unit, minSize: c.minSize }, leadTime: c.leadTime, moneyCost: moneyFor(kind), availableIn: ALL });
+    out.push({ key: `place:${kind}`, label: PLACE_LABEL[kind], baseCostPc: c.base, costModel: { base: c.base, unit: c.unit, minSize: c.minSize }, leadTime: c.leadTime, moneyCost: moneyFor(kind), availableIn: ALL });
   }
   for (const kind of INFRA_KINDS) {
     const c = cost(costKey('remove', kind));
-    out.push({ key: `remove:${kind}`, label: `Remove ${INFRA_LABEL[kind].toLowerCase()}`, baseCostPc: c.base, costModel: { base: c.base, unit: c.unit, minSize: c.minSize }, leadTime: c.leadTime, moneyCost: 0, availableIn: ALL });
+    out.push({ key: `remove:${kind}`, label: REMOVE_LABEL[kind], baseCostPc: c.base, costModel: { base: c.base, unit: c.unit, minSize: c.minSize }, leadTime: c.leadTime, moneyCost: 0, availableIn: ALL });
   }
   return out;
 }

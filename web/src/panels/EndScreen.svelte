@@ -13,7 +13,7 @@
   const hist = $derived(snap?.history ?? []);
   const story = $derived(snap && over ? generateStory(snap, $gs.lastResult) : null);
   const series = $derived([
-    { label: 'Emissions per turn', v: hist.map((h) => h.emissions), fmt: (x: number) => `${Math.round(x)} t` },
+    { label: 'Emissions per month (net, end of turn)', v: hist.map((h) => h.emissions), fmt: (x: number) => `${Math.round(x)} t` },
     { label: 'Carbon budget left', v: hist.map((h) => h.budgetShare), fmt: (x: number) => pct(x) },
     { label: 'Inequality (Gini)', v: hist.map((h) => h.gini), fmt: (x: number) => x.toFixed(2) },
     { label: 'Unemployment', v: hist.map((h) => h.unemployment), fmt: (x: number) => pct(x, 1) },

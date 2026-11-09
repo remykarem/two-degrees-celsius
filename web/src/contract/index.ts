@@ -56,7 +56,8 @@ export interface ActionInfo {
   key: ActionKey;
   label: string;
   baseCostPc: number;
-  costModel: CostModel;
+  /** Optional (section 10 only gives LeverInfo a cost model; the real wire omits it for actions). When absent, cost = baseCostPc exactly (unit 1, min size 1). */
+  costModel?: CostModel;
   leadTime: number;
   /** Estimated dollars; 0 if none. preview() is the authority on actual cost. */
   moneyCost: number;

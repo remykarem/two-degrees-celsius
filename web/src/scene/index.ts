@@ -52,13 +52,15 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap is deprecated in three r18x
   const el = renderer.domElement;
   container.appendChild(el);
   el.style.display = 'block';
   el.style.touchAction = 'none';
-  el.setAttribute('aria-label', 'Town map, 12 by 12 tiles. Use Q and E to rotate, the mouse wheel to zoom, drag to pan.');
-  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', 'Town map, 12 by 12 tiles. Tab to focus it. Arrow keys move the tile cursor along rows and columns, Enter selects or places, Escape cancels, Q and E rotate, plus and minus zoom.');
+  el.setAttribute('role', 'application');
+  el.tabIndex = 0;
+  el.dataset.focus = 'map';
 
   const size = game.state.get().layout.gridSize;
   const scene = new THREE.Scene();
@@ -301,10 +303,59 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   el.addEventListener('pointerleave', onLeave);
   el.addEventListener('wheel', onWheel, { passive: false });
 
+
+  // ---- Keyboard: a tile cursor (the store's hover tile) for people who do not use a pointer ---------------------
+  const ARROW_DIR: Record<string, number> = { ArrowRight: 0, ArrowDown: 1, ArrowLeft: 2, ArrowUp: 3 };
+  const AXES: Tile[] = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }];
+  const describeTile = (t: Tile) => {
+    const ent = entityAt(descs, t)?.ref;
+    const build = game.state.get().buildKind;
+    const err = build ? game.tileError(t) : null;
+    return `Tile ${t.x}, ${t.y}: ${ent ? ent.label : 'empty'}${build ? (err ? `. Cannot build here: ${err}` : '. You can build here') : ''}`;
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const s = game.state.get();
+    const arrow = ARROW_DIR[e.key];
+    if (arrow !== undefined) {
+      e.preventDefault();
+      const d = AXES[(arrow - s.camera + 4) % 4]!;
+      const cur = s.hover ?? s.selection ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) };
+      const t = { x: Math.min(size - 1, Math.max(0, cur.x + d.x)), y: Math.min(size - 1, Math.max(0, cur.y + d.y)) };
+      game.hover(t);
+      bus.announce.set(describeTile(t));
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const t = s.hover ?? s.selection;
+      if (!t) { bus.announce.set('Move the cursor with the arrow keys first.'); return; }
+      const err = game.clickTile(t);
+      bus.announce.set(err ? `Cannot build at ${t.x}, ${t.y}: ${err}` : s.buildKind ? `Added to the plan at ${t.x}, ${t.y}` : describeTile(t));
+    } else if (e.key === 'Escape') {
+      if (s.buildKind) { game.setBuildKind(null); bus.announce.set('Build mode off'); e.stopPropagation(); }
+      else if (s.selection) { game.select(null); bus.announce.set('Selection cleared'); e.stopPropagation(); }
+    } else if (e.key === '+' || e.key === '=') { rig.zoomBy(1.25); dirty = true; }
+    else if (e.key === '-' || e.key === '_') { rig.zoomBy(0.8); dirty = true; }
+    else if (e.key === '0') { bus.requestReset(); }
+  };
+  const onFocus = () => { const s = game.state.get(); if (!s.hover) game.hover(s.selection ?? { x: Math.floor(size / 2), y: Math.floor(size / 2) }); };
+  const onBlur = () => { if (pointers.size === 0) game.hover(null); };
+  el.addEventListener('keydown', onKey);
+  el.addEventListener('focus', onFocus);
+  el.addEventListener('blur', onBlur);
+
+  let contextLost = false;
+  const onLost = (e: Event) => { e.preventDefault(); contextLost = true; bus.gl.set('lost'); };
+  const onRestored = () => { contextLost = false; bus.gl.set('ok'); resize(); };
+  el.addEventListener('webglcontextlost', onLost);
+  el.addEventListener('webglcontextrestored', onRestored);
+
   const resize = () => {
     const w = container.clientWidth, h = container.clientHeight;
+    if (w < 1 || h < 1) return;
     renderer.setSize(w, h);
     rig.resize(w, h);
+    // Setting the size clears the canvas: draw straight away, or the next animation frame may be skipped and leave a blank view.
+    if (!contextLost) renderer.render(scene, rig.camera);
     dirty = true;
   };
   const ro = new ResizeObserver(resize);
@@ -331,6 +382,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const playing = !!plan;
     const monthT = playing ? (now - monthStart) / TIMING.monthMs : 0;
     const looping = s.lens === 'flows' && flowLoop.length > 0 && !playing;
+    if (contextLost) return;
     const animating = moving || popping || playing || dirty;
     const ambientNeeded = ambient.length > 0 || layer.hasSpinners || looping;
     if (!animating && !(ambientNeeded && now - lastPaint > 40)) return;
@@ -369,6 +421,11 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       el.removeEventListener('pointercancel', onUp);
       el.removeEventListener('pointerleave', onLeave);
       el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('keydown', onKey);
+      el.removeEventListener('focus', onFocus);
+      el.removeEventListener('blur', onBlur);
+      el.removeEventListener('webglcontextlost', onLost);
+      el.removeEventListener('webglcontextrestored', onRestored);
       layer.dispose();
       fx.dispose();
       ghostModels.forEach((b) => b.geometry.dispose());

@@ -111,6 +111,26 @@ describe('v0.2 store behaviour', () => {
 });
 
 describe('v0.3 store behaviour', () => {
+  it('keeps the clicked tile when the sim drops `tile` from accepted commands (the real wire does)', () => {
+    const base = createSimPort();
+    const stripping = {
+      ...base,
+      submitTurn: (cmds: Parameters<typeof base.submitTurn>[0]) => {
+        const r = base.submitTurn(cmds);
+        if (!r.ok) return r;
+        const strip = (p: (typeof r.value.accepted)[number]) => (p.command.type === 'place' ? { ...p, command: { type: 'place' as const, kind: p.command.kind, count: p.command.count } } : p);
+        return { ok: true as const, value: { ...r.value, accepted: r.value.accepted.map(strip), snapshot: { ...r.value.snapshot, pending: r.value.snapshot.pending.map(strip) } } };
+      },
+    };
+    const g = createGame(stripping);
+    g.newGame(1);
+    g.draftCommand({ type: 'set_policy', lever: 'carbon_price', value: 50 });
+    g.setBuildKind('renewable_plant');
+    g.clickTile({ x: 3, y: 9 });
+    g.endTurn();
+    const id = g.state.get().snapshot!.pending.find((p) => p.command.type === 'place')!.id;
+    expect(g.state.get().layout.pendingTiles[id]).toEqual({ x: 3, y: 9 });
+  });
   it('derives the layout from households, firms and building counts, deterministically', () => {
     const g = newGame();
     const s = g.state.get();

@@ -13,6 +13,25 @@ const THREE = ['three', 'three/*'];
 const MOCK = '**/sim-port/mock';
 const MOCK_DEEP = '**/sim-port/mock/*';
 
+// import() is not covered by no-restricted-imports, so the same boundaries are enforced for dynamic imports by this small local rule.
+const dynamicImport = {
+  meta: { type: 'problem', schema: [{ type: 'object' }] },
+  create(ctx) {
+    const { pattern, message } = ctx.options[0];
+    const re = new RegExp(pattern);
+    return {
+      ImportExpression(node) {
+        if (node.source.type !== 'Literal') ctx.report({ node, message: 'Dynamic import() needs a literal path so module boundaries can be checked' });
+        else if (re.test(String(node.source.value))) ctx.report({ node, message });
+      },
+    };
+  },
+};
+const boundary = { rules: { 'dynamic-import': dynamicImport } };
+const dyn = (pattern, message) => ({ 'boundary/dynamic-import': ['error', { pattern, message }] });
+const P = (names) => `(^|/)(${names.join('|')})(/|$)`;
+const NOT_SVELTE_THREE = ['three', 'svelte'];
+
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'test-results'] },
   js.configs.recommended,
@@ -23,6 +42,16 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }] },
   },
   { files: ['**/*.svelte'], languageOptions: { parserOptions: { parser: tseslint.parser } } },
+
+  { plugins: { boundary } },
+  // Dynamic import() may not cross the boundaries either.
+  { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'], rules: dyn(P(['sim-port/mock']), 'Only sim-port may import sim-port/mock') },
+  { files: ['src/contract/**'], rules: dyn('.*', 'contract must not import anything') },
+  { files: ['src/scene/**'], rules: dyn(`${P(['panels', 'ui-kit', 'app', 'sim-port', 'svelte'])}|\\.svelte$`, 'scene is Three.js only: no Svelte, panels, ui-kit, app or sim-port') },
+  { files: ['src/panels/**'], rules: dyn(P(['three', 'scene', 'app', 'sim-port']), 'panels are Svelte only: no Three.js, scene, app or sim-port') },
+  { files: ['src/ui-kit/**'], rules: dyn(P(['three', 'scene', 'panels', 'store', 'sim-port', 'app']), 'ui-kit depends on nothing but Svelte') },
+  { files: ['src/store/**'], rules: dyn(`${P([...NOT_SVELTE_THREE, 'scene', 'panels', 'ui-kit', 'app'])}|(^|/)sim-port(/(?!port$).*)?$`, 'store is framework-agnostic and may only reach sim-port/port') },
+  { files: ['src/sim-port/**'], rules: dyn(P([...NOT_SVELTE_THREE, 'scene', 'panels', 'store', 'app', 'ui-kit']), 'sim-port depends only on contract') },
 
   // Boundary rules (docs/ui-design.md "Rules"). Enforced by tests/boundaries.test.ts.
   // Nothing outside sim-port may import the mock. Applied first; per-folder blocks below add to it.
@@ -42,10 +71,10 @@ export default tseslint.config(
   { files: ['src/store/**'],
     rules: {
       'no-restricted-imports': ['error', {
-        paths: [{ name: '../sim-port', message: 'store may only use the SimPort type: import from ../sim-port/port' },
-                { name: '../sim-port/index', message: 'store may only use the SimPort type: import from ../sim-port/port' }],
-        patterns: [{ group: [MOCK, MOCK_DEEP, ...THREE, ...SVELTE, '**/scene', '**/scene/*', '**/panels', '**/panels/*', '**/ui-kit', '**/ui-kit/*', '**/app', '**/app/*'],
-          message: 'store is framework-agnostic: no DOM frameworks, Three.js, scene, panels or app' }],
+        patterns: [
+          { regex: '(^|/)sim-port(/(?!port$).*)?$', message: 'store may only use the SimPort type: import from ../sim-port/port (no factory, no mock, no other sim-port subpath)' },
+          { group: [...THREE, ...SVELTE, '**/scene', '**/scene/*', '**/panels', '**/panels/*', '**/ui-kit', '**/ui-kit/*', '**/app', '**/app/*'],
+            message: 'store is framework-agnostic: no DOM frameworks, Three.js, scene, panels or app' }],
       }],
     } },
   { files: ['src/sim-port/**'],

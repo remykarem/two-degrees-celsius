@@ -1,11 +1,15 @@
 import type { Game } from '../store';
 
-/** Global keyboard shortcuts: Q/E rotate, Escape leaves build mode or skips playback. */
+/** True while any modal dialog is open: the page behind it must not react to the keyboard. */
+export const modalOpen = () => !!document.querySelector('[aria-modal="true"]');
+
+/** Global keyboard shortcuts: Q/E rotate, Escape leaves build mode or skips playback. None of them act while a modal is open. */
 export function attachKeys(game: Game): () => void {
   const onKey = (e: KeyboardEvent) => {
     const t = e.target as HTMLElement | null;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (modalOpen()) return;
     const k = e.key.toLowerCase();
     if (k === 'q') game.rotate(-1);
     else if (k === 'e') game.rotate(1);

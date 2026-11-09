@@ -115,10 +115,19 @@ export function createGame(port: SimPort): Game {
         const tile = layout.pendingTiles[a.id] ?? a.command.tile;
         return tile ? [{ kind: a.command.kind, tile }] : [];
       });
+      // The real sim has no tiles and drops `tile` from accepted commands: match accepted items to the drafts that produced them (same order,
+      // skipping rejected indexes) to keep the tile the player clicked.
+      const rejectedAt = new Set(result.rejected.map((x) => x.index));
+      const sent = draft.filter((_, i) => !rejectedAt.has(i));
+      const claims: Record<number, Tile> = {};
+      result.accepted.forEach((a, i) => {
+        const c = sent[i]?.command;
+        if (a.command.type === 'place' && c?.type === 'place' && c.tile) claims[a.id] = c.tile;
+      });
       // ONE store update for the whole turn (snapshot, result, layout, draft and phase together).
       store.set({
         ...get(), lastResult: result, previous: before, snapshot: result.snapshot, draft: [], buildKind: null,
-        playback: { month: -1, skipped: false }, layout: reconcileLayout(layout, result.snapshot, hints),
+        playback: { month: -1, skipped: false }, layout: reconcileLayout(layout, result.snapshot, hints, claims),
         phase: nextPhase(phase, 'endTurn'), error: null,
       });
       return result;

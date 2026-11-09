@@ -1,12 +1,12 @@
 <script lang="ts">
   let { label, options, value, disabled = false, onchange }: {
-    label: string; options: { value: string; label: string }[]; value: string; disabled?: boolean; onchange: (v: string) => void;
+    label: string; options: { value: string; label: string; disabled?: boolean; title?: string }[]; value: string; disabled?: boolean; onchange: (v: string) => void;
   } = $props();
 </script>
 
 <div class="seg" role="radiogroup" aria-label={label}>
   {#each options as o (o.value)}
-    <button type="button" role="radio" aria-checked={value === o.value} class:on={value === o.value} {disabled} onclick={() => onchange(o.value)}>
+    <button type="button" role="radio" aria-checked={value === o.value} class:on={value === o.value} disabled={disabled || o.disabled} title={o.title} onclick={() => onchange(o.value)}>
       {#if value === o.value}<span aria-hidden="true">✓ </span>{/if}{o.label}
     </button>
   {/each}

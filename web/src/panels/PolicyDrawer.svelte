@@ -72,7 +72,10 @@
 </div>
 
 <style>
-  .wrap { position: absolute; top: 8px; right: 8px; z-index: 20; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-height: calc(100% - 16px); max-width: calc(100% - 16px); }
+  .wrap { position: absolute; top: 8px; right: 8px; z-index: 20; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-height: calc(100% - 16px); max-width: calc(100% - 16px); width: min(390px, calc(100% - 16px));
+    /* The wrapper is only a layout box: without this it was invisibly wider than the drawer and swallowed map clicks beside it. */
+    pointer-events: none; }
+  .wrap > * { pointer-events: auto; }
   .drawer { width: min(390px, 100%); flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px; }
   @media (max-width: 1200px) { .drawer { width: min(340px, 100%); } }
   .tog { flex: none; }

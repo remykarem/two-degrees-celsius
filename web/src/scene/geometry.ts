@@ -67,7 +67,6 @@ export function buildModel(m: Model): BuiltModel {
   return { geometry, edges, spin: m.spin ? { geometry: mergeParts(m.spin.parts), at: m.spin.at } : undefined };
 }
 
-export function disposeUnits() { unit.forEach((g) => g.dispose()); unit.clear(); }
 
 /**
  * Lambert material whose "tint" parts take a per-material colour, so a lens recolours walls without touching roofs and details.

@@ -76,9 +76,9 @@ const KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant']
 /**
  * Brings the layout in line with the snapshot: scenery from households/firms, one placed tile per built building (extra tiles are
  * dropped last-first, missing ones added on `hints` tiles first, then the kind's zone, then any free tile), and a reserved tile for
- * every queued build. Returns the SAME object when nothing changed so identity checks stay cheap.
+ * every queued build (`claims`: tiles the player chose for newly accepted builds, because the real sim drops `tile`). Returns the SAME object when nothing changed so identity checks stay cheap.
  */
-export function reconcileLayout(prev: MapLayout | null, snap: Snapshot, hints: BuildHint[] = []): MapLayout {
+export function reconcileLayout(prev: MapLayout | null, snap: Snapshot, hints: BuildHint[] = [], claims: Record<number, Tile> = {}): MapLayout {
   const scenery = derivedScenery(snap);
   const taken = new Set(scenery.map(key));
   const next: MapLayout = { gridSize: GEO.gridSize, scenery, placed: [], pendingTiles: {} };
@@ -106,7 +106,7 @@ export function reconcileLayout(prev: MapLayout | null, snap: Snapshot, hints: B
   for (const p of snap.pending) {
     if (p.command.type !== 'place') continue;
     const prevTile = prev?.pendingTiles[p.id];
-    const t = claim(p.command.kind, prevTile ?? p.command.tile);
+    const t = claim(p.command.kind, prevTile ?? claims[p.id] ?? p.command.tile);
     next.pendingTiles[p.id] = t;
   }
   return prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
