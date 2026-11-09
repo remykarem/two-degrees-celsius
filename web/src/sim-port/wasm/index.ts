@@ -1,4 +1,4 @@
-import type { ActionInfo, Command, CommandPreview, LeverInfo, Result, Snapshot, TurnResult } from '../../contract';
+import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, TileRef, TurnResult } from '../../contract';
 import type { SimPort } from '../port';
 
 /**
@@ -12,6 +12,8 @@ export interface WasmSimInstance {
   levers(): string;
   actions(): string;
   snapshot(): string;
+  /** Contract v1.0 helper. May be missing in a package built before it landed: the wrapper then derives the answer from the snapshot. */
+  valid_tiles?(kind: string): string;
   preview(commandsJson: string): string;
   submit_turn(commandsJson: string): string;
   cancel_pending(id: number): string;
@@ -50,6 +52,14 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
     levers: () => value<LeverInfo[]>(() => sim.levers(), 'levers'),
     actions: () => value<ActionInfo[]>(() => sim.actions(), 'actions'),
     preview: (commands: Command[]) => call<CommandPreview[]>(() => sim.preview(JSON.stringify(commands))),
+    validTiles(kind: InfraKind): TileRef[] {
+      if (sim.valid_tiles) {
+        const r = call<TileRef[]>(() => sim.valid_tiles!(kind));
+        return r.ok ? r.value : [];
+      }
+      const r = call<Snapshot>(() => sim.snapshot());
+      return r.ok ? r.value.map.tiles.filter((t) => t.kind === 'empty' && t.buildable).map(({ x, y }) => ({ x, y })) : [];
+    },
     submitTurn: (commands: Command[]) => call<TurnResult>(() => sim.submit_turn(JSON.stringify(commands))),
     cancelPending: (id) => call(() => sim.cancel_pending(id)),
     exportState: () => call<string>(() => sim.export_state()),
@@ -72,5 +82,11 @@ export async function loadWasmPort(): Promise<SimPort> {
   if (!load || !wasmUrl) throw new Error('the wasm package is not built (run npm run build:wasm in web/)');
   const mod = await load();
   await mod.default({ module_or_path: await wasmUrl() });
-  return createWasmPort(mod);
+  const port = createWasmPort(mod);
+  // A package built before contract v1.0 (schemaVersion 1) must not drive this UI: refuse, and the caller falls back to the mock.
+  const probe = port.init(1);
+  if (!probe.ok || probe.value.schemaVersion !== 2 || !probe.value.map) {
+    throw new Error('the wasm package speaks an older contract (schemaVersion is not 2); rebuild it with npm run build:wasm');
+  }
+  return port;
 }

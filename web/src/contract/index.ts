@@ -1,4 +1,7 @@
-// Snapshot contract v0.3 (docs/snapshot-contract.md section 4, amended by sections 9 and 10). Types only: no logic, no imports.
+// Snapshot contract v1.0, Town v2 (docs/snapshot-contract.md section 11 wins over sections 3-10). Types only: no logic, no imports.
+
+/** Snapshot.schemaVersion for contract v1.0. */
+export type SchemaVersion = 2;
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
@@ -6,15 +9,18 @@ export type LeverKey =
   | 'green_subsidy' | 'campaign_cap' | 'emissions_cap' | 'commons_harvest'
   | 'commons_access' | 'bank_capital_ratio' | 'bailout' | 'public_spending'
   | 'job_guarantee';
-export type InfraKind = 'public_housing' | 'fossil_plant' | 'renewable_plant';
+export type InfraKind = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road';
+export interface TileRef { x: number; y: number }
 export type SystemKey = 'market' | 'regulated' | 'coop';
 export type ClassKey = 'capitalist' | 'rentier' | 'manager' | 'worker' | 'dependent';
 export type BlockReason =
   | 'transition_in_progress' | 'nothing_to_remove' | 'same_system'
-  | 'lever_unavailable' | 'insufficient_political_capital' | 'insufficient_funds' | 'invalid_command';
+  | 'lever_unavailable' | 'insufficient_political_capital' | 'insufficient_funds' | 'invalid_command'
+  | 'tile_occupied' | 'tile_invalid';
 
 export type MetricKey =
   | 'gdp' | 'gpi' | 'unemployment' | 'gini' | 'wage_share' | 'profit_share' | 'wellbeing' | 'emissions'
+  | 'avg_income' | 'median_income' | 'top_wealth_share'
   | 'budget' | 'temperature' | 'legitimacy' | 'debt' | 'money' | 'prices' | 'housing' | 'forest' | 'commons';
 
 export type CommonsAccessWire = { mode: 'open' } | { mode: 'community'; cap: number };
@@ -22,8 +28,8 @@ export type CommonsAccessWire = { mode: 'open' } | { mode: 'community'; cap: num
 export type Command =
   | { type: 'set_policy'; lever: LeverKey; value: number | boolean | CommonsAccessWire }
   | { type: 'switch_system'; to: SystemKey }
-  | { type: 'place'; kind: InfraKind; count: number; tile?: { x: number; y: number } }
-  | { type: 'remove'; kind: InfraKind; count: number };
+  | { type: 'place'; kind: InfraKind; tile: TileRef }
+  | { type: 'remove'; tile: TileRef };
 
 export type LeverUnit = 'usd' | 'usd_per_month' | 'usd_per_tonne' | 'fraction' | 'tonnes_per_month' | 'bool' | 'enum';
 export interface CostModel { base: number; unit: number; minSize: number }
@@ -51,6 +57,7 @@ export interface LeverInfo {
   optionAvailableIn?: Record<string, SystemKey[]>;
 }
 
+/** Costs are per building kind; a `remove` command names only a tile, the sim prices it by what stands there. */
 export type ActionKey = 'switch_system' | `place:${InfraKind}` | `remove:${InfraKind}`;
 export interface ActionInfo {
   key: ActionKey;
@@ -72,6 +79,10 @@ export interface CommandPreview {
   effectiveTurn: number;
   opposition: number;
   blocked: BlockReason | null;
+  /** For place and remove: can the tile take the command? True for other commands. */
+  tileValid: boolean;
+  /** Why not, when tileValid is false (a BlockReason code on the real wire). */
+  tileReason?: string;
 }
 
 export interface PendingItem {
@@ -93,17 +104,46 @@ export interface Indicators {
   gini: number; wageShare: number; profitShare: number; avgWellbeing: number;
   remainingBudget: number; budgetShare: number;
   temperature: number; gpiAnnual: number; moneyInCirculation: number; priceIndex: number;
+  avgIncomePerPerson: number; medianIncomePerPerson: number; topHouseholdWealthShare: number;
+}
+
+export type TileKind = 'empty' | 'home' | 'public_housing' | 'firm' | 'bank' | 'town_hall'
+  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons';
+export interface Tile {
+  x: number; y: number; kind: TileKind;
+  /** Home id for home/public_housing tiles, firm id for firm tiles. */
+  ref?: number;
+  buildable: boolean;
+  /** Plant tiles only: tonnes per month this plant emits. */
+  emissionsMonthly?: number;
+}
+export interface GameMap { width: 12; height: 12; tiles: Tile[] }
+
+export type AgeBand = 'child' | 'adult' | 'retired';
+export interface PersonView {
+  id: number; label: string; household: number; ageBand: AgeBand; skill: number;
+  job: { firm: number } | null; wage: number; commuteTiles: number; commuteMinutes: number; wellbeing: number;
 }
 
 export interface HouseholdView {
-  id: number; label: string; class: ClassKey; people: number;
-  employed: number; labourForce: number; savings: number; debt: number; wealthPerCapita: number;
+  id: number; label: string; members: number[]; home: number | null; class: ClassKey;
+  savings: number; debt: number; netWorth: number;
   income: {
     wages: number; dividends: number; rent: number; interest: number; benefits: number;
     taxPaid: number; rentPaid: number; loanPayments: number; spending: number;
   };
-  wellbeing: number; politicalPower: number; footprintTonnes: number; foodMet: number; housedShare: number;
+  politicalPower: number; arrearsMonths: number;
 }
+
+export interface HomeView {
+  id: number; tile: TileRef;
+  /** Owning household id, or 'public'. */
+  owner: number | 'public';
+  household: number | null;
+  rent: number;
+}
+
+export type Sector = 'goods' | 'food' | 'services';
 
 export type FirmOwner =
   | { kind: 'household'; id: number }
@@ -112,7 +152,7 @@ export type FirmOwner =
   | { kind: 'bank' };
 
 export interface FirmView {
-  id: number; active: boolean; sector: 'goods' | 'food'; name: string;
+  id: number; active: boolean; sector: Sector; name: string;
   owner: FirmOwner;
   workers: number; wage: number; price: number; output: number; emissions: number;
   revenue: number; profit: number; capital: number; debt: number; greenTech: number;
@@ -138,20 +178,24 @@ export interface EnergyView { fossilCap: number; renewableCap: number; fossilSha
 export interface HistoryPoint {
   turn: number; gdpRealAnnual: number; unemployment: number; gini: number;
   emissions: number; budgetShare: number; legitimacy: number; avgWellbeing: number; gpiAnnual: number; debtToGdp: number;
+  avgIncomePerPerson: number; medianIncomePerPerson: number; topHouseholdWealthShare: number;
 }
 
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
 
-export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number }
+/** Summary counts (the tiles are the truth). */
+export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number; road?: number }
 
 export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
 
 export interface Snapshot {
-  schemaVersion: number;
+  schemaVersion: SchemaVersion;
   game: GameCalendar;
   turn: number;
   tick: number;
-  /** Built (finished) counts, derived by the wire layer from sim capacity. The UI derives its tile layout from these. */
+  /** The map, owned by the simulation. */
+  map: GameMap;
+  /** Summary counts of built things. */
   buildings: Buildings;
   /** True when the numbers come from the web mock rather than the real simulation. The UI shows a badge. Not in section 10. */
   mock?: boolean;
@@ -163,7 +207,9 @@ export interface Snapshot {
   netLobby: number;
   unionDensity: number;
   indicators: Indicators;
+  people: PersonView[];
   households: HouseholdView[];
+  homes: HomeView[];
   firms: FirmView[];
   bank: BankView;
   government: GovernmentView;
@@ -189,13 +235,13 @@ export interface TurnResult {
   snapshot: Snapshot;
 }
 
-/** Section 10.8: any array may be missing or empty (the Rust side may start with only commutes and emissions). */
+/** Any array may be missing or empty. Commutes are per person with a tile path; purchases are real (household to firm). */
 export interface MonthFlows {
-  commutes?: { household: number; firm: number; people: number }[];
-  purchases?: { household: number; sector: 'goods' | 'food'; amount: number }[];
+  commutes?: { person: number; household: number; firm: number; path: TileRef[] }[];
+  purchases?: { household: number; firm: number; sector: Sector; amount: number }[];
   rent?: { household: number; amount: number }[];
   wages?: { household: number; firm: number; amount: number }[];
-  emissions?: { source: 'firm' | 'households' | 'sink'; id?: number; tonnes: number }[];
+  emissions?: { source: 'firm' | 'households' | 'sink' | 'plant'; id?: number; tile?: TileRef; tonnes: number }[];
 }
 
 /** Section 10.7: every fallible SimPort call returns this; Rust violations become error results, never exceptions. */
@@ -209,7 +255,12 @@ type Importance = { importance: 1 | 2 | 3 };
 
 /** Type + importance + payload. No display text: the UI formats it. */
 export type SimEvent = Importance & (
-  | { type: 'commuted'; household: number; firm: number; people: number }
+  | { type: 'commuted'; person: number; household: number; firm: number }
+  | { type: 'person_hired'; person: number; firm: number }
+  | { type: 'person_fired'; person: number; firm: number }
+  | { type: 'household_moved'; household: number; to: number }
+  | { type: 'household_evicted'; household: number }
+  | { type: 'purchase'; household: number; firm: number; amount: number }
   | { type: 'hired'; firm: number; people: number }
   | { type: 'fired'; firm: number; people: number }
   | { type: 'loan_defaulted'; firm: number }
@@ -233,6 +284,6 @@ export type SimEvent = Importance & (
 export type SimEventType = SimEvent['type'];
 
 export type TraceRecord =
-  | { type: 'emissions'; source: 'firm' | 'households' | 'sink'; id?: number; tonnes: number }
+  | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant'; id?: number; tile?: TileRef; tonnes: number }
   | { type: 'income'; household: number; kind: 'wages' | 'dividends' | 'rent' | 'interest' | 'benefits'; amount: number }
   | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; netLobby: number };
