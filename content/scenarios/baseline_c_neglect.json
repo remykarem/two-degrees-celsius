@@ -1,0 +1,46 @@
+{
+ "name": "Baseline C: neglect and extraction (fossil plants, open commons over-harvested, tax and benefit cuts)",
+ "turns": [
+  {
+   "turn": 1,
+   "set": {
+    "commons_harvest": 3.0,
+    "tax_capital": 0.15
+   }
+  },
+  {
+   "turn": 4,
+   "set": {
+    "tax_profit": 0.1
+   }
+  },
+  {
+   "turn": 6,
+   "set": {
+    "tax_wage": 0.2
+   }
+  },
+  {
+   "turn": 9,
+   "set": {
+    "benefit": 300.0
+   }
+  },
+  {
+   "turn": 12,
+   "set": {},
+   "place": {
+    "kind": "FossilPlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 16,
+   "set": {},
+   "place": {
+    "kind": "FossilPlant",
+    "count": 1
+   }
+  }
+ ]
+}

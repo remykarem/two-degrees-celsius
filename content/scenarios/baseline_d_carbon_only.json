@@ -1,0 +1,29 @@
+{
+ "name": "Baseline D: a carbon tax and nothing else",
+ "turns": [
+  {
+   "turn": 1,
+   "set": {
+    "carbon_price": 100
+   }
+  },
+  {
+   "turn": 9,
+   "set": {
+    "carbon_price": 200
+   }
+  },
+  {
+   "turn": 20,
+   "set": {
+    "carbon_price": 300
+   }
+  },
+  {
+   "turn": 35,
+   "set": {
+    "carbon_price": 400
+   }
+  }
+ ]
+}

@@ -196,6 +196,9 @@ pub struct InvestParams {
     pub capital_price_usd: f64,
     pub green_step: f64,
     pub green_cost_share: f64,
+    /// Most a firm spends on green investment in one month, as a share of that month's revenue.
+    /// A full step costs `12 * green_cost_share` months of revenue, so this spreads it over time.
+    pub green_spend_share: f64,
     pub green_payback_years: f64,
     pub green_max: f64,
     /// Only invest in capital if the firm's cash is above this many months of payroll.

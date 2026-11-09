@@ -1,0 +1,107 @@
+{
+ "name": "Baseline B: sensible play within the PC budget",
+ "turns": [
+  {
+   "turn": 1,
+   "set": {
+    "carbon_price": 50,
+    "green_subsidy": 0.4
+   }
+  },
+  {
+   "turn": 2,
+   "set": {
+    "benefit": 1000
+   },
+   "place": {
+    "kind": "PublicHousing",
+    "count": 20
+   }
+  },
+  {
+   "turn": 3,
+   "place": {
+    "kind": "RenewablePlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 5,
+   "place": {
+    "kind": "RenewablePlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 9,
+   "set": {
+    "carbon_price": 100,
+    "commons_harvest": 0.6
+   }
+  },
+  {
+   "turn": 12,
+   "place": {
+    "kind": "RenewablePlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 14,
+   "place": {
+    "kind": "RenewablePlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 16,
+   "remove": {
+    "kind": "FossilPlant",
+    "count": 2
+   }
+  },
+  {
+   "turn": 17,
+   "set": {
+    "carbon_price": 150,
+    "wealth_threshold": 30000,
+    "wealth_tax": 0.005
+   }
+  },
+  {
+   "turn": 20,
+   "remove": {
+    "kind": "FossilPlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 24,
+   "remove": {
+    "kind": "FossilPlant",
+    "count": 1
+   }
+  },
+  {
+   "turn": 25,
+   "set": {
+    "carbon_price": 200,
+    "tax_profit": 0.3
+   }
+  },
+  {
+   "turn": 30,
+   "place": {
+    "kind": "PublicHousing",
+    "count": 20
+   }
+  },
+  {
+   "turn": 32,
+   "place": {
+    "kind": "RenewablePlant",
+    "count": 1
+   }
+  }
+ ]
+}

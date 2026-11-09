@@ -4,6 +4,7 @@
 
 use crate::government::labour_weights;
 use crate::util::{announced_carbon_price, apportion, cash_reserve, cfg};
+use libm::pow;
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
@@ -35,10 +36,15 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         // or when an emissions cap binds.
         // Firms read an announced (pending) carbon price with a discount.
         let annual_carbon = f.emissions.0 * 12.0 * announced_carbon_price(s, p).as_f64();
-        let cost = f.revenue.scale(12.0 * ip.green_cost_share);
+        let full_cost = f.revenue.scale(12.0 * ip.green_cost_share);
+        // Spread over months: a tick buys the share `part` of a step, never more than a set
+        // fraction of the month's revenue (smooth transition, no lump).
+        let cost = full_cost.min(f.revenue.scale(ip.green_spend_share));
+        let part = safe_div(cost.as_f64(), full_cost.as_f64(), 0.0);
         let cap = s.effective.emissions_cap.0;
         let cap_binding = cap > 0.0 && f.emissions.0 >= 0.999 * cap;
-        let worthwhile = (annual_carbon * ip.green_payback_years > cost.as_f64() || cap_binding)
+        let worthwhile = (annual_carbon * ip.green_payback_years > full_cost.as_f64()
+            || cap_binding)
             && f.green_tech.0 < ip.green_max
             && cost > Cents::ZERO;
         let mut green_tech = f.green_tech.0;
@@ -66,7 +72,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     );
                 }
                 cash -= firm_share;
-                green_tech = 1.0 - (1.0 - green_tech) * (1.0 - ip.green_step);
+                green_tech = 1.0 - (1.0 - green_tech) * pow(1.0 - ip.green_step, part);
                 d.changes.push(Delta::Gdp(GdpPart::Investment, cost));
             } else {
                 green_plan = true;

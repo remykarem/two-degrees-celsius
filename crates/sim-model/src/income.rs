@@ -63,7 +63,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             // Retained cash for the planned green investment.
             reserve += f
                 .revenue
-                .scale(12.0 * p.invest.green_cost_share * (1.0 - s.policy.green_subsidy.0));
+                .scale(p.invest.green_spend_share * (1.0 - s.policy.green_subsidy.0));
         }
         let regular = profit
             .max(Cents::ZERO)

@@ -164,18 +164,35 @@ fn run(args: Args) -> Result<(), String> {
     }
     let mut exhausted: Option<u32> = None;
     let mut events_count = 0usize;
-    sim_engine::run(&mut sim, turns, &plan, |s, out| {
-        csv.push_str(&series::csv_row(s, &out.trace));
-        csv.push('\n');
-        events_count += out.events.len();
-        if exhausted.is_none() && matches!(s.state.outcome, Some((_, Outcome::BudgetExhausted))) {
-            exhausted = s.state.outcome.map(|(t, _)| t);
+    let mut rejected_total = 0usize;
+    for _ in 0..turns {
+        let cmds = plan.commands_at(sim.state.turn);
+        let turn_out = sim_engine::submit_turn_with(&mut sim, &cmds, |s, out| {
+            csv.push_str(&series::csv_row(s, &out.trace));
+            csv.push('\n');
+            events_count += out.events.len();
+            if exhausted.is_none() && matches!(s.state.outcome, Some((_, Outcome::BudgetExhausted)))
+            {
+                exhausted = s.state.outcome.map(|(t, _)| t);
+            }
+            if !args.quiet && s.state.tick % 12 == 0 {
+                println!("{}", summary_line(s));
+            }
+        })
+        .map_err(|v| v.to_string())?;
+        for r in &turn_out.rejected {
+            rejected_total += 1;
+            if !args.quiet {
+                println!(
+                    "turn {}: rejected {:?} ({:?})",
+                    turn_out.turn, r.command, r.reason
+                );
+            }
         }
-        if !args.quiet && s.state.tick % 12 == 0 {
-            println!("{}", summary_line(s));
-        }
-    })
-    .map_err(|v| v.to_string())?;
+    }
+    if rejected_total > 0 {
+        println!("rejected commands: {rejected_total}");
+    }
 
     let s = &sim.state;
     let i = &s.indicators;
@@ -204,8 +221,9 @@ fn run(args: Args) -> Result<(), String> {
         s.nature.cumulative.0, sim.params.nature.budget_b0, i.temperature, s.bank.equity.dollars(), i.money.dollars()
     );
     println!(
-        "events emitted: {events_count}; unpaid obligations clamped: ${:.0}",
-        sim.clamped_total.dollars()
+        "events emitted: {events_count}; unpaid obligations clamped: ${:.0}; unfunded government payments: ${:.0}",
+        sim.clamped_total.dollars(),
+        s.gov.unfunded_total.dollars()
     );
     if let Some(p) = &args.csv {
         fs::write(p, csv).map_err(|e| format!("{}: {e}", p.display()))?;

@@ -12,6 +12,9 @@ const REGULATED: &str = include_str!("../content/systems/regulated.json");
 const COOP: &str = include_str!("../content/systems/coop.json");
 const SCENARIO_REGULATED: &str = include_str!("../content/scenarios/regulated_green_deal.json");
 const SCENARIO_COOP: &str = include_str!("../content/scenarios/worker_coops.json");
+const SCENARIO_B: &str = include_str!("../content/scenarios/baseline_b_sensible.json");
+const SCENARIO_C: &str = include_str!("../content/scenarios/baseline_c_neglect.json");
+const SCENARIO_D: &str = include_str!("../content/scenarios/baseline_d_carbon_only.json");
 const SCENARIO_CARBON: &str = include_str!("../content/scenarios/carbon_price_year5.json");
 
 fn params() -> Params {
@@ -508,6 +511,9 @@ struct Summary {
     final_outcome: Outcome,
     emissions_total: f64,
     legitimacy_end: f64,
+    legitimacy_min: f64,
+    /// Share of ticks with unemployment below 15%.
+    calm_share: f64,
 }
 
 fn summarise(script: &Plan, seed: u64) -> Summary {
@@ -516,7 +522,9 @@ fn summarise(script: &Plan, seed: u64) -> Summary {
     let mut g = Vec::new();
     let mut gdp = Vec::new();
     let mut exhausted = None;
+    let mut legit_min = 1.0f64;
     sim_engine::run(&mut sim, 160, script, |s, _| {
+        legit_min = legit_min.min(s.state.gov.legitimacy.0);
         u.push(s.state.indicators.unemployment.0);
         g.push(s.state.indicators.gini.0);
         gdp.push(s.state.indicators.gdp_real_annual);
@@ -539,41 +547,86 @@ fn summarise(script: &Plan, seed: u64) -> Summary {
         final_outcome: sim_engine::final_outcome(&sim),
         emissions_total: sim.state.nature.cumulative.0,
         legitimacy_end: sim.state.gov.legitimacy.0,
+        legitimacy_min: legit_min,
+        calm_share: u.iter().filter(|x| **x < 0.15).count() as f64 / u.len() as f64,
     }
 }
 
+/// Baseline A (causal-model section 9): no action. Degrades, never crashes, the budget runs out
+/// between turns 90 and 140 (years 22.5 to 35), inequality rises, unemployment stays in 4% to 15%.
 #[test]
-#[ignore = "targets superseded by causal-model section 9 (baseline runs)"]
 fn default_market_run_lands_near_the_design_targets() {
     let s = summarise(&Plan::default(), 42);
     println!(
-        "market: unemployment mean {:.3} max {:.3}, gini {:.3} -> {:.3}, gdp cagr {:.4}, exhausted {:?}, outcome {:?}",
-        s.unemployment_mean, s.unemployment_max, s.gini_start, s.gini_end, s.gdp_cagr, s.exhausted_year, s.final_outcome
+        "A: unemployment mean {:.3} max {:.3}, gini {:.3} -> {:.3}, gdp cagr {:.4}, exhausted {:?}, outcome {:?}, legit min {:.2}",
+        s.unemployment_mean, s.unemployment_max, s.gini_start, s.gini_end, s.gdp_cagr, s.exhausted_year, s.final_outcome, s.legitimacy_min
     );
     assert!(
-        (0.06..=0.12).contains(&s.unemployment_mean),
+        (0.04..=0.15).contains(&s.unemployment_mean),
         "unemployment mean {}",
         s.unemployment_mean
     );
+    assert!(s.gini_end > s.gini_start + 0.03, "inequality should rise");
     assert!(
-        (s.gini_start - 0.40).abs() < 0.06,
+        (0.35..=0.50).contains(&s.gini_start),
         "gini start {}",
         s.gini_start
-    );
-    assert!(
-        (0.48..=0.62).contains(&s.gini_end),
-        "gini end {}",
-        s.gini_end
-    );
-    assert!(
-        (0.01..=0.03).contains(&s.gdp_cagr),
-        "gdp growth {}",
-        s.gdp_cagr
     );
     let y = s
         .exhausted_year
         .expect("budget should run out in the default run");
-    assert!((23.0..=33.0).contains(&y), "budget exhausted in year {y}");
+    assert!((22.5..=35.0).contains(&y), "budget exhausted in year {y}");
+    assert!(
+        matches!(s.final_outcome, Outcome::BudgetExhausted),
+        "A fails by the budget, not by a crash: {:?}",
+        s.final_outcome
+    );
+}
+
+/// Baseline B: sensible play within the PC budget survives all 160 turns.
+#[test]
+fn baseline_b_sensible_play_survives_with_the_budget_intact() {
+    let s = summarise(&Plan::from_json(SCENARIO_B).unwrap(), 42);
+    println!(
+        "B: outcome {:?}, legit min {:.2}, calm share {:.2}, budget used {:.0}, gini end {:.3}",
+        s.final_outcome, s.legitimacy_min, s.calm_share, s.emissions_total, s.gini_end
+    );
+    assert!(matches!(s.final_outcome, Outcome::Survived));
+    assert!(s.exhausted_year.is_none());
+    assert!(s.legitimacy_min > 0.3, "legitimacy {}", s.legitimacy_min);
+    assert!(s.calm_share > 0.85, "calm share {}", s.calm_share);
+}
+
+/// Baseline C: neglect and extraction fails by about year 30.
+#[test]
+fn baseline_c_neglect_fails_by_year_30() {
+    let s = summarise(&Plan::from_json(SCENARIO_C).unwrap(), 42);
+    println!(
+        "C: outcome {:?}, exhausted {:?}",
+        s.final_outcome, s.exhausted_year
+    );
+    assert!(!matches!(s.final_outcome, Outcome::Survived));
+    let a = summarise(&Plan::default(), 42);
+    if matches!(s.final_outcome, Outcome::BudgetExhausted) {
+        let y = s.exhausted_year.unwrap();
+        assert!(y <= 30.0, "failed in year {y}");
+        assert!(
+            y <= a.exhausted_year.unwrap(),
+            "C should fail no later than A"
+        );
+    }
+}
+
+/// Baseline D: one tool (a carbon tax) is not enough.
+#[test]
+fn baseline_d_carbon_tax_alone_fails() {
+    let s = summarise(&Plan::from_json(SCENARIO_D).unwrap(), 42);
+    println!(
+        "D: outcome {:?}, exhausted {:?}",
+        s.final_outcome, s.exhausted_year
+    );
+    assert!(!matches!(s.final_outcome, Outcome::Survived));
+    assert!(s.exhausted_year.is_some());
 }
 
 #[test]
@@ -623,7 +676,6 @@ fn carbon_price_script_runs() {
 // ---------- golden snapshot ----------
 
 #[test]
-#[ignore = "pre-redesign economy; golden snapshot is regenerated after calibration"]
 fn golden_snapshot_seed_42() {
     let mut sim = new_sim(42);
     let mut out = String::new();
