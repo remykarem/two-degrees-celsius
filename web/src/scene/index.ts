@@ -27,6 +27,8 @@ export interface SceneHandle {
   dispose(): void;
   /** Test/debug hook: current instance counts and draw calls. */
   stats(): { drawCalls: number; triangles: number; instances: number; entities: number };
+  /** Test/debug hook: where each person is on screen (client pixels). */
+  peopleScreen(): { id: number; x: number; y: number }[];
 }
 
 function marker(color: number, opacity: number) {
@@ -475,6 +477,10 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   return {
     stats,
+    peopleScreen() {
+      const r = el.getBoundingClientRect();
+      return people.positions.map((p) => { const v = new THREE.Vector3(p.x, p.y, p.z).project(rig.camera); return { id: p.id, x: r.left + (v.x * 0.5 + 0.5) * r.width, y: r.top + (-v.y * 0.5 + 0.5) * r.height }; });
+    },
     dispose() {
       cancelAnimationFrame(raf);
       unsub();

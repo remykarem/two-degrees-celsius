@@ -36,7 +36,7 @@ export const PANEL = 0x2d4f7a;
 
 export const GROUND = [0xa8d37c, 0x9fcb72];
 /** Dirt footpaths where there is no road. */
-export const PATH = 0xd9c593;
+export const PATH = 0xd6c99f;
 /** Real (built) roads: darker than the footpaths. */
 export const ASPHALT = 0x6d7078;
 export const SOIL = 0x9b7653;

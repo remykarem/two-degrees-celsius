@@ -9,7 +9,7 @@
   let failed = $state<string | null>(null);
   let gl = $state<'ok' | 'lost' | 'unavailable'>('ok');
   let said = $state('');
-  let handle: { dispose(): void } | null = null;
+  let handle: ReturnType<typeof createScene> | null = null;
 
   function start() {
     handle?.dispose();
@@ -17,6 +17,7 @@
     failed = null;
     try {
       handle = createScene(el, game);
+      if (import.meta.env.DEV) (window as unknown as { __scene: typeof handle }).__scene = handle;
     } catch (e) {
       failed = e instanceof Error ? e.message : String(e);
     }
