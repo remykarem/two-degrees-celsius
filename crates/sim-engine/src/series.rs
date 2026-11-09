@@ -3,7 +3,7 @@
 use crate::Sim;
 use sim_types::*;
 
-pub const CSV_HEADER: &str = "tick,year,gdp_annual,gdp_real_annual,unemployment,gini,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_goods,em_food,em_households,forest,commons,system";
+pub const CSV_HEADER: &str = "tick,year,gdp_annual,gdp_real_annual,unemployment,gini,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_goods,em_food,em_households,forest,commons,system,employed,wage_goods,price_goods,inventory_goods,profit_goods,investment,gov_purchases,lent,top_savings";
 
 /// Emissions by source this tick, read from the trace.
 pub fn emissions_by_source(sim: &Sim, trace: &[TraceRecord]) -> (f64, f64, f64) {
@@ -28,7 +28,7 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
     let i = &s.indicators;
     let (g, f, h) = emissions_by_source(sim, trace);
     format!(
-        "{},{:.3},{:.0},{:.0},{:.5},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?}",
+        "{},{:.3},{:.0},{:.0},{:.5},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?},{:.1},{:.2},{:.3},{:.1},{:.0},{:.0},{:.0},{:.0},{:.0}",
         s.tick,
         s.tick as f64 / 12.0,
         i.gdp_annual.dollars(),
@@ -54,6 +54,15 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
         h,
         s.nature.forest.0,
         s.nature.commons.0,
-        s.system
+        s.system,
+        i.employed.0,
+        s.firms[0].wage.dollars(),
+        s.firms[0].price.dollars(),
+        s.firms[0].inventory.0,
+        s.firms[0].profit.dollars(),
+        s.gdp_parts.investment.dollars(),
+        s.gov.purchases_budget.dollars(),
+        s.bank.lent_this_tick.dollars(),
+        s.households[0].savings.dollars()
     )
 }

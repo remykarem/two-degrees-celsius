@@ -70,6 +70,7 @@ pub struct FirmPatch {
     pub closed_tick: Option<Option<u32>>,
     pub excess_demand: Option<Rate>,
     pub carbon_cost: Option<Cents>,
+    pub profit_ema: Option<Cents>,
 }
 
 /// Partial update of a household cohort. `None` means unchanged.
@@ -107,7 +108,6 @@ pub struct GovPatch {
     pub tax_revenue: Option<Cents>,
     pub spending: Option<Cents>,
     pub pending_build: Option<Vec<(InfraKind, u32)>>,
-    pub public_housing: Option<Units>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -129,6 +129,7 @@ pub enum Delta {
     Transition(Option<Transition>),
     OutputPenalty(Rate),
     UnionDensity(Rate),
+    NetLobby(Rate),
     Gdp(GdpPart, Cents),
     Outcome(Option<(u32, Outcome)>),
     ClearPendingCommons,

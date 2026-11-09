@@ -227,7 +227,7 @@ fn apply_change(s: &mut State, c: Delta) {
             set_fields!(f, p; active, owner, capital, workers, wage, price, inventory, output,
                 emissions, green_tech, tfp, sales_hist, sales_units, revenue, profit, unfilled,
                 over_target_months, distress_months, wage_shortfall, plan_invest, loan_request,
-                loan_rate, amort, green_plan, closed_tick, excess_demand, carbon_cost);
+                loan_rate, amort, green_plan, closed_tick, excess_demand, carbon_cost, profit_ema);
         }
         Delta::Household(id, p) => {
             let h = &mut s.households[id.idx()];
@@ -254,6 +254,7 @@ fn apply_change(s: &mut State, c: Delta) {
         Delta::Transition(t) => s.transition = t,
         Delta::OutputPenalty(r) => s.output_penalty = r,
         Delta::UnionDensity(r) => s.union_density = r,
+        Delta::NetLobby(r) => s.net_lobby = r,
         Delta::Gdp(part, c) => match part {
             GdpPart::Investment => s.gdp_parts.investment += c,
             GdpPart::GovServices => s.gdp_parts.gov_services += c,

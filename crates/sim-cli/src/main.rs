@@ -29,6 +29,9 @@ struct Args {
     /// Directory holding params.json, initial_town.json and systems/*.json.
     #[arg(long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content"))]
     content: PathBuf,
+    /// Override a parameter, e.g. --set labour.wage_up=1.01 (prefix town., market., regulated. or coop. for the other files).
+    #[arg(long = "set", value_name = "PATH=VALUE")]
+    overrides: Vec<String>,
     /// Print only the final summary line block.
     #[arg(long)]
     quiet: bool,
@@ -39,12 +42,54 @@ fn read(dir: &Path, name: &str) -> Result<String, String> {
     fs::read_to_string(&p).map_err(|e| format!("cannot read {}: {e}", p.display()))
 }
 
-fn load_params(dir: &Path) -> Result<Params, String> {
-    let params = read(dir, "params.json")?;
-    let initial_town = read(dir, "initial_town.json")?;
-    let market = read(dir, "systems/market.json")?;
-    let regulated = read(dir, "systems/regulated.json")?;
-    let coop = read(dir, "systems/coop.json")?;
+/// Apply `a.b.c=value` to a JSON document. The value is parsed as JSON, else kept as a string.
+fn set_path(doc: &mut serde_json::Value, path: &str, value: &str) -> Result<(), String> {
+    let v: serde_json::Value =
+        serde_json::from_str(value).unwrap_or_else(|_| serde_json::Value::String(value.to_string()));
+    let mut cur = doc;
+    let parts: Vec<&str> = path.split('.').collect();
+    for (i, key) in parts.iter().enumerate() {
+        let last = i + 1 == parts.len();
+        let next = if let Ok(idx) = key.parse::<usize>() {
+            cur.get_mut(idx)
+        } else {
+            cur.get_mut(*key)
+        };
+        let Some(next) = next else { return Err(format!("no such parameter '{path}'")) };
+        if last {
+            *next = v;
+            return Ok(());
+        }
+        cur = next;
+    }
+    Ok(())
+}
+
+fn load_params(dir: &Path, overrides: &[String]) -> Result<Params, String> {
+    let mut docs: Vec<(&str, serde_json::Value)> = Vec::new();
+    for (prefix, file) in [
+        ("", "params.json"),
+        ("town", "initial_town.json"),
+        ("market", "systems/market.json"),
+        ("regulated", "systems/regulated.json"),
+        ("coop", "systems/coop.json"),
+    ] {
+        let text = read(dir, file)?;
+        docs.push((prefix, serde_json::from_str(&text).map_err(|e| format!("{file}: {e}"))?));
+    }
+    for o in overrides {
+        let (path, value) = o.split_once('=').ok_or_else(|| format!("bad --set '{o}'"))?;
+        let (prefix, rest) = path.split_once('.').unwrap_or((path, ""));
+        let target = docs
+            .iter_mut()
+            .find(|(p, _)| !p.is_empty() && *p == prefix && !rest.is_empty());
+        match target {
+            Some((_, doc)) => set_path(doc, rest, value)?,
+            None => set_path(&mut docs[0].1, path, value)?,
+        }
+    }
+    let ser = |i: usize| docs[i].1.to_string();
+    let (params, initial_town, market, regulated, coop) = (ser(0), ser(1), ser(2), ser(3), ser(4));
     Params::from_content(&ContentJson {
         params: &params,
         initial_town: &initial_town,
@@ -73,7 +118,7 @@ fn summary_line(sim: &Sim) -> String {
 }
 
 fn run(args: Args) -> Result<(), String> {
-    let params = load_params(&args.content)?;
+    let params = load_params(&args.content, &args.overrides)?;
     let ticks = args.ticks.unwrap_or(params.run.ticks);
     let script = match &args.script {
         Some(p) => {

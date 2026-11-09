@@ -30,6 +30,24 @@ pub struct Sim {
     pub clamped_total: Cents,
 }
 
+impl Sim {
+    /// Start the run clock after settling: tick 0, no emissions or outcome recorded yet.
+    fn reset_clock(&mut self) {
+        let s = &mut self.state;
+        s.tick = 0;
+        s.outcome = None;
+        s.nature.cumulative = Tonnes::ZERO;
+        s.nature.atmosphere = Tonnes(self.params.nature.atmosphere_start);
+        s.gov.legitimacy = Rate(self.params.initial.legitimacy);
+        s.bank.failed = false;
+        for f in &mut s.firms {
+            f.closed_tick = None;
+        }
+        self.clamped_total = Cents::ZERO;
+        s.indicators = sim_metrics::compute(s, &self.params, &self.base_prices);
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct StepOutput {
     pub events: Vec<Event>,
@@ -68,6 +86,11 @@ pub fn init(params: Params, seed: u64) -> Result<Sim, String> {
     sim.state.indicators = sim_metrics::compute(&sim.state, &sim.params, &sim.base_prices);
     check_state(&sim.state, 0, SystemId::Commands, sim.initial_population)
         .map_err(|v| v.to_string())?;
+    // Settle: run the economy for a while with no player input, then start the clock.
+    for _ in 0..sim.params.run.warmup_ticks {
+        step(&mut sim, &[]).map_err(|v| v.to_string())?;
+    }
+    sim.reset_clock();
     Ok(sim)
 }
 

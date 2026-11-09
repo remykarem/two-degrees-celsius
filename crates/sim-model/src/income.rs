@@ -57,7 +57,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let profit = pre_tax - tax;
 
         // Dividends: payout ratio of profit, never below the cash reserve for payroll and debt service.
-        let reserve = (wages_paid + interest_due + amort_due).scale(p.income.cash_reserve_months);
+        let mut reserve = (wages_paid + interest_due + amort_due).scale(p.income.cash_reserve_months);
+        if f.green_plan {
+            // Retained cash for the planned green investment.
+            reserve += f
+                .revenue
+                .scale(12.0 * p.invest.green_cost_share * (1.0 - s.policy.green_subsidy.0));
+        }
         let dividends = profit
             .max(Cents::ZERO)
             .scale(payout)

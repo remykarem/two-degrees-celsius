@@ -81,7 +81,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             (true, &skilled_order, skilled_now, target_skilled),
             (false, &general_order, general_now, target_general),
         ] {
-            let mut vac = (want - have).max(0.0);
+            let mut vac = (want - have).max(0.0).min((lp.max_hire_share * have).max(2.0));
             for &h in order {
                 if vac <= 1e-9 {
                     break;
@@ -144,12 +144,16 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         }
 
         // Wage adjustment: the reserve-army effect.
+        // Raises are only given by firms that made a profit last month.
+        let can_pay = f.profit > Cents::ZERO;
         let mut w = f.wage.as_f64();
         if unfilled {
-            w *= lp.wage_up;
+            if can_pay {
+                w *= lp.wage_up;
+            }
         } else if unemployment > lp.wage_cut_unemployment {
             w *= c.wage_down;
-        } else if unemployment < lp.wage_tight_unemployment {
+        } else if unemployment < lp.wage_tight_unemployment && can_pay {
             w *= lp.wage_tight_up;
         }
         let wage = Cents::from_f64(w).max(min_wage);

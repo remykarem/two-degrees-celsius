@@ -100,6 +100,8 @@ pub struct Firm {
     pub revenue: Cents,
     pub profit: Cents,
     pub carbon_cost: Cents,
+    /// Smoothed profit, used by investment decisions.
+    pub profit_ema: Cents,
     pub unfilled: bool,
     pub over_target_months: u32,
     pub distress_months: u32,

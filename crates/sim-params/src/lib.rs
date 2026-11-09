@@ -12,6 +12,8 @@ use sim_types::{Class, EconomicSystem, Sector};
 #[serde(deny_unknown_fields)]
 pub struct RunParams {
     pub ticks: u32,
+    /// Settling months run before tick 0 so the run starts from a working economy.
+    pub warmup_ticks: u32,
     pub stop_on_loss: bool,
 }
 
@@ -29,6 +31,8 @@ pub struct LabourParams {
     pub wage_tight_up: f64,
     pub fire_after_months: u32,
     pub max_fire_share: f64,
+    /// Largest share of its current workforce a firm can add in one month.
+    pub max_hire_share: f64,
     pub skill_gain: f64,
     pub skill_loss: f64,
     /// Share of a firm's jobs that are skilled (filled by premium cohorts).
@@ -134,6 +138,10 @@ pub struct InvestParams {
     pub housing_cost_usd: f64,
     pub housing_hurdle: f64,
     pub housing_target_occupancy: f64,
+    /// Excess return over the hurdle at which investment reaches its maximum.
+    pub return_scale: f64,
+    /// Weight of the newest month in smoothed profit and in the investment plan.
+    pub smoothing: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -179,6 +187,12 @@ pub struct GovParams {
     pub legit_bailout: f64,
     pub legit_debt: f64,
     pub collapse_unemployment: f64,
+    /// Government purchases rise (fall) by this factor per unit of unemployment above (below) the target.
+    pub stabilizer: f64,
+    pub unemployment_target: f64,
+    /// Debt-to-GDP ratio above which purchases are cut back, and how fast.
+    pub debt_brake_start: f64,
+    pub debt_brake_slope: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -221,6 +235,8 @@ pub struct WellbeingParams {
     pub w_security: f64,
     pub security_months: f64,
     pub smoothing: f64,
+    /// Monthly gross emissions (tonnes) at which local pollution is total.
+    pub pollution_scale: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -328,6 +344,8 @@ pub struct FirmInit {
     pub intensity_base: f64,
     /// Output the firm should produce at the initial state; TFP is derived from it.
     pub initial_output: f64,
+    /// Capital investment planned for the first month.
+    pub plan_invest_usd: f64,
     /// Employment per cohort index.
     pub employment: Vec<f64>,
 }
@@ -360,6 +378,8 @@ pub struct InitialTown {
     pub cohorts: Vec<CohortInit>,
     pub firms: Vec<FirmInit>,
     pub bank_owner: usize,
+    /// Government goods purchases planned for the first month.
+    pub gov_purchases_usd: f64,
     pub gov_cash_usd: f64,
     pub gov_debt_usd: f64,
     pub legitimacy: f64,
