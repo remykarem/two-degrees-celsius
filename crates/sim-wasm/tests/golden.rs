@@ -95,6 +95,26 @@ fn bad_input_gives_error_results_not_panics() {
     assert!(sim.preview("{}").contains("bad_request"));
     assert!(sim.cancel_pending(999).contains("no_such_pending"));
     assert!(sim.import_state("garbage").contains(r#""ok":false"#));
-    let big = r#"[{"type":"place","kind":"fossil_plant","count":4000000000}]"#;
-    assert!(sim.submit_turn(big).contains(r#""rejected""#));
+    let big = r#"[{"type":"place","kind":"fossil_plant","tile":{"x":2147483647,"y":-5}}]"#;
+    let reply = sim.submit_turn(big);
+    assert!(reply.contains(r#""rejected""#) && reply.contains("tile_invalid"));
+    // A place command needs a tile.
+    assert!(sim
+        .submit_turn(r#"[{"type":"place","kind":"road"}]"#)
+        .contains("bad_request"));
+}
+
+#[test]
+fn valid_tiles_helper_returns_tiles_or_an_error() {
+    let mut sim = WasmSim::new();
+    assert!(sim.valid_tiles("road").contains(r#""ok":false"#));
+    sim.init(7.0, None);
+    for kind in ["public_housing", "fossil_plant", "renewable_plant", "road"] {
+        let v: Value = serde_json::from_str(&sim.valid_tiles(kind)).unwrap();
+        assert_eq!(v["ok"], true, "{kind}");
+        let tiles = v["value"].as_array().unwrap();
+        assert!(tiles.len() > 50 && tiles[0]["x"].is_number(), "{kind}");
+    }
+    assert!(sim.valid_tiles("castle").contains("bad_request"));
+    assert!(sim.valid_tiles("").contains("bad_request"));
 }

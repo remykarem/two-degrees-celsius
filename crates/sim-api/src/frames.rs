@@ -1,18 +1,20 @@
 //! Month frames: the per-tick events and flows the scene plays back.
 //!
-//! What is real and what is empty (see docs/sim-api-notes.md):
+//! What is real and what is empty (see docs/sim-api-notes.md, "Town v2"):
 //! - `events`: every sim event of the tick, with importance. Month 0 also carries the events
 //!   raised before the first tick (rejections, activations).
-//! - `commutes`: one entry per household cohort and active firm with employed people,
-//!   from the end-of-tick employment table (every month, not only new hires).
-//! - `emissions`: the tick's emission trace records (per firm, households, sink).
-//! - `rent`: rent paid by each household this tick.
-//! - `wages`: per household and firm, wage x employment x wage premium (the exact S4 formula),
-//!   capped at the wages the household actually received this tick.
-//! - `purchases`: always empty. The sim records only a household's total spending, with no
-//!   sector or counterparty, so any split would be invented.
+//! - `commutes` (real): one entry per person with a firm job, from the end-of-tick state:
+//!   home tile (`from`), workplace tile (`to`), tiles and minutes. The sim does not expose the
+//!   path itself, so there is no `path` field.
+//! - `purchases` (real): the tick's `purchase` events, household to firm, in dollars.
+//! - `wages` (real): each employed person's wage paid this tick, to their firm.
+//! - `rent` (real): rent paid by each household this tick, with its home.
+//! - `emissions` (real): the tick's emission trace records (per firm, households, plant with
+//!   its tile, sink; the sink is negative).
+use crate::command::Tile;
 use crate::events::{EmissionLine, SimEvent};
-use crate::turn::{Commute, MonthFlows, RentFlow, WageFlow};
+use crate::keys::SectorKey;
+use crate::turn::{Commute, MonthFlows, Purchase, RentFlow, WageFlow};
 use sim_engine::{Sim, StepOutput};
 use sim_types as st;
 
@@ -37,46 +39,65 @@ pub fn capture(sim: &Sim, out: &StepOutput) -> TickCapture {
 fn flows(sim: &Sim, out: &StepOutput) -> MonthFlows {
     let s = &sim.state;
     let mut f = MonthFlows::default();
-    for h in &s.households {
-        let mut wage_rows: Vec<(u32, f64)> = Vec::new();
-        for fi in s.firms.iter().filter(|x| x.active) {
-            let n = h.employment.get(fi.id.idx()).map_or(0.0, |p| p.0);
-            if n > 1e-9 {
-                f.commutes.push(Commute {
-                    household: h.id.0,
-                    firm: fi.id.0,
-                    people: n,
-                });
-                wage_rows.push((fi.id.0, fi.wage.scale(n * h.wage_premium.0).as_f64()));
-            }
-        }
-        let due: f64 = wage_rows.iter().map(|r| r.1).sum();
-        let paid = h.income.wages.as_f64();
-        let factor = if due > paid && due > 0.0 {
-            paid / due
-        } else {
-            1.0
+    for p in &s.persons {
+        let Some(firm_id) = p.job else { continue };
+        let Some(firm) = s.firms.get(firm_id.idx()) else {
+            continue;
         };
-        for (firm, cents) in wage_rows {
-            let amount = cents * factor / 100.0;
-            if amount > 0.0 {
-                f.wages.push(WageFlow {
-                    household: h.id.0,
-                    firm,
-                    amount,
+        let from = s
+            .households
+            .get(p.household.idx())
+            .and_then(|h| h.home)
+            .and_then(|id| s.home(id))
+            .map(|h| Tile::from_sim(h.tile));
+        f.commutes.push(Commute {
+            person: p.id.0,
+            household: p.household.0,
+            firm: firm_id.0,
+            from,
+            to: Tile::from_sim(firm.tile),
+            tiles: p.commute_tiles,
+            minutes: p.commute_minutes,
+        });
+        if p.wage > st::Cents::ZERO {
+            f.wages.push(WageFlow {
+                person: p.id.0,
+                household: p.household.0,
+                firm: firm_id.0,
+                amount: p.wage.dollars(),
+            });
+        }
+    }
+    for e in &out.events {
+        if let st::Event::Purchase {
+            household,
+            firm,
+            amount,
+        } = *e
+        {
+            if let Some(fi) = s.firms.get(firm.idx()) {
+                f.purchases.push(Purchase {
+                    household: household.0,
+                    firm: firm.0,
+                    sector: SectorKey::from_sim(fi.sector),
+                    amount: amount.dollars(),
                 });
             }
         }
+    }
+    for h in &s.households {
         if h.income.rent_paid > st::Cents::ZERO {
             f.rent.push(RentFlow {
                 household: h.id.0,
+                home: h.home.map(|x| x.0),
                 amount: h.income.rent_paid.dollars(),
             });
         }
     }
     for t in &out.trace {
         if let st::TraceRecord::Emissions { source, tonnes } = *t {
-            f.emissions.push(EmissionLine::from_sim(source, tonnes));
+            f.emissions
+                .push(EmissionLine::from_sim(source, tonnes, &s.plants));
         }
     }
     f

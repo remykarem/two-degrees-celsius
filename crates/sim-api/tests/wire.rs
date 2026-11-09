@@ -42,12 +42,14 @@ fn commands_round_trip_and_match_contract_json() {
         },
         Command::Place {
             kind: InfraKind::FossilPlant,
-            count: 2,
-            tile: Some(Tile { x: 4, y: 7 }),
+            tile: Tile { x: 4, y: 7 },
         },
         Command::Remove {
-            kind: InfraKind::PublicHousing,
-            count: 1,
+            tile: Tile { x: 3, y: 3 },
+        },
+        Command::Place {
+            kind: InfraKind::Road,
+            tile: Tile { x: 0, y: 11 },
         },
     ];
     round_trip(&cmds);
@@ -63,14 +65,22 @@ fn commands_round_trip_and_match_contract_json() {
     assert_eq!(j[5]["tile"], serde_json::json!({"x":4,"y":7}));
     assert_eq!(
         j[6],
-        serde_json::json!({"type":"remove","kind":"public_housing","count":1})
+        serde_json::json!({"type":"remove","tile":{"x":3,"y":3}})
     );
+    assert_eq!(j[7]["kind"], "road");
     // parse_commands accepts the contract's literal JSON, integers included.
     let parsed = api::parse_commands(
-        r#"[{"type":"set_policy","lever":"tax_wage","value":0},{"type":"place","kind":"renewable_plant","count":1,"tile":{"x":1,"y":2}}]"#,
+        r#"[{"type":"set_policy","lever":"tax_wage","value":0},{"type":"place","kind":"renewable_plant","tile":{"x":1,"y":2}}]"#,
     )
     .unwrap();
     assert_eq!(parsed.len(), 2);
+    // A place command without a tile is a bad request: the tile is required.
+    assert_eq!(
+        api::parse_commands(r#"[{"type":"place","kind":"road"}]"#)
+            .unwrap_err()
+            .code,
+        "bad_request"
+    );
     assert_eq!(
         api::parse_commands("[{\"type\":\"nope\"}]")
             .unwrap_err()
@@ -84,18 +94,31 @@ fn every_event_and_trace_variant_round_trips() {
     use SimEventKind as K;
     let kinds = [
         K::Commuted {
-            household: 1,
+            person: 4,
             firm: 0,
-            people: 12.5,
+            tiles: 7,
+            minutes: 30,
         },
-        K::Hired {
-            firm: 0,
-            people: 3.0,
+        K::PersonHired { person: 4, firm: 0 },
+        K::PersonFired { person: 5, firm: 1 },
+        K::Purchase {
+            household: 2,
+            firm: 2,
+            amount: 31.5,
         },
-        K::Fired {
-            firm: 1,
-            people: 2.0,
+        K::HouseholdMoved {
+            household: 7,
+            to: 3,
         },
+        K::HouseholdEvicted { household: 6 },
+        K::Built {
+            kind: InfraKind::Road,
+            tile: Tile { x: 4, y: 6 },
+        },
+        K::Removed {
+            tile: Tile { x: 4, y: 6 },
+        },
+        K::ElectricityRationed { served: 0.8 },
         K::LoanDefaulted { firm: 1 },
         K::FirmFounded { firm: 2 },
         K::FirmClosed { firm: 2 },
@@ -128,7 +151,7 @@ fn every_event_and_trace_variant_round_trips() {
             reason: CollapseReason::MassUnemployment,
         },
     ];
-    assert_eq!(kinds.len(), 20);
+    assert_eq!(kinds.len(), 26);
     for k in kinds {
         let e = SimEvent::new(k);
         assert!((1..=3).contains(&e.importance));
@@ -136,26 +159,37 @@ fn every_event_and_trace_variant_round_trips() {
         let j = serde_json::to_value(e).unwrap();
         assert!(j["type"].is_string() && j["importance"].is_u64(), "{j}");
     }
-    let j = serde_json::to_value(SimEvent::new(K::Hired {
-        firm: 4,
-        people: 1.0,
-    }))
-    .unwrap();
+    let j = serde_json::to_value(SimEvent::new(K::PersonHired { person: 9, firm: 4 })).unwrap();
     assert_eq!(
         j,
-        serde_json::json!({"importance":1,"type":"hired","firm":4,"people":1.0})
+        serde_json::json!({"importance":1,"type":"person_hired","person":9,"firm":4})
     );
+    let j = serde_json::to_value(SimEvent::new(K::HouseholdMoved {
+        household: 7,
+        to: 3,
+    }))
+    .unwrap();
+    assert_eq!(j["type"], "household_moved");
+    assert_eq!(j["importance"], 2);
 
     let traces = [
         TraceRecord::Emissions {
             source: EmissionSourceKind::Firm,
             id: Some(0),
+            tile: None,
             tonnes: 3.0,
         },
         TraceRecord::Emissions {
             source: EmissionSourceKind::Sink,
             id: None,
+            tile: None,
             tonnes: -1.0,
+        },
+        TraceRecord::Emissions {
+            source: EmissionSourceKind::Plant,
+            id: Some(1),
+            tile: Some(Tile { x: 10, y: 5 }),
+            tonnes: 12.0,
         },
         TraceRecord::Income {
             household: 1,
@@ -172,12 +206,16 @@ fn every_event_and_trace_variant_round_trips() {
     for t in traces {
         round_trip(&t);
     }
-    let j = serde_json::to_value(traces[3]).unwrap();
+    let j = serde_json::to_value(traces[2]).unwrap();
+    assert_eq!(j["source"], "plant");
+    assert_eq!(j["tile"], serde_json::json!({"x":10,"y":5}));
+    let j = serde_json::to_value(traces[4]).unwrap();
     assert_eq!(j["type"], "policy_gap");
     assert!(j.get("netLobby").is_some());
     round_trip(&EmissionLine {
         source: EmissionSourceKind::Households,
         id: None,
+        tile: None,
         tonnes: 1.0,
     });
 }
@@ -210,9 +248,8 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
     let cmds = [
         num(LeverKey::CarbonPrice, 50.0),
         Command::Place {
-            kind: InfraKind::PublicHousing,
-            count: 1,
-            tile: None,
+            kind: InfraKind::Road,
+            tile: Tile { x: 4, y: 6 },
         },
         num(LeverKey::CampaignCap, 0.5),
     ];
@@ -231,13 +268,17 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
         "gameOver",
         "pc",
         "system",
+        "map",
         "buildings",
         "pending",
         "policy",
         "netLobby",
         "unionDensity",
         "indicators",
+        "people",
         "households",
+        "homes",
+        "plants",
         "firms",
         "bank",
         "government",
@@ -249,6 +290,17 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
         assert!(j.get(k).is_some(), "snapshot lacks {k}");
     }
     assert_eq!(j["policy"].as_object().unwrap().len(), 19);
+    assert_eq!(j["schemaVersion"], 2);
+    assert_eq!(j["map"]["width"], 12);
+    assert_eq!(j["map"]["tiles"].as_array().unwrap().len(), 144);
+    for k in [
+        "avgIncomePerPerson",
+        "medianIncomePerPerson",
+        "topHouseholdWealthShare",
+    ] {
+        assert!(j["indicators"][k].is_number(), "indicators lack {k}");
+        assert!(j["history"][0][k].is_number(), "history lacks {k}");
+    }
     assert_eq!(
         j["game"],
         serde_json::json!({"startYear":2031,"firstTurn":1,"lastTurn":160,"turnsPerYear":4})
@@ -258,39 +310,90 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
 }
 
 #[test]
-fn initial_town_building_counts_and_shape() {
+fn initial_town_map_people_homes_and_shape() {
     let api = Api::init(1).unwrap();
     let s = api.snapshot();
-    assert_eq!(
-        (
-            s.buildings.public_housing,
-            s.buildings.fossil_plant,
-            s.buildings.renewable_plant
-        ),
-        (0, 5, 0)
-    );
-    assert_eq!(s.households.len(), 6);
+    assert_eq!(s.people.len(), 20);
+    assert_eq!(s.households.len(), 8);
+    assert_eq!(s.homes.len(), 7);
+    assert_eq!(s.households.iter().filter(|h| h.home.is_none()).count(), 1);
+    assert_eq!(s.housing.unhoused_households, 1);
     assert_eq!(s.firms.len(), 4);
-    assert_eq!(s.firms.iter().filter(|f| f.active).count(), 2);
+    assert_eq!(s.firms.iter().filter(|f| f.active).count(), 3);
     assert_eq!(s.turn, 1);
     assert!(s.game_over.is_none());
     assert_eq!(s.pc.current, 60.0);
     assert!((s.pc.regen_next_turn - 8.0 * 0.7).abs() < 1e-12);
-    assert_eq!(s.energy.fossil_cap, 100.0);
+    // Every person is in exactly one household, and the household lists them.
+    for p in &s.people {
+        let h = &s.households[p.household as usize];
+        assert_eq!(h.members.iter().filter(|m| **m == p.id).count(), 1);
+    }
+    assert_eq!(
+        s.households.iter().map(|h| h.members.len()).sum::<usize>(),
+        20
+    );
+    // Buildings are a summary of the map.
+    let count =
+        |k: sim_api::keys::TileKindKey| s.map.tiles.iter().filter(|t| t.kind == k).count() as u32;
+    use sim_api::keys::TileKindKey as T;
+    assert_eq!(s.buildings.fossil_plant, count(T::FossilPlant));
+    assert_eq!(s.buildings.renewable_plant, count(T::RenewablePlant));
+    assert_eq!(s.buildings.public_housing, count(T::PublicHousing));
+    assert_eq!(s.buildings.road, count(T::Road));
+    assert_eq!(s.buildings.fossil_plant as usize, s.plants.len());
+    assert!(s.buildings.fossil_plant >= 1);
+    assert_eq!(count(T::Home), 7);
+    assert_eq!(count(T::Bank), 1);
+    assert_eq!(count(T::TownHall), 1);
+    // Tiles are row-major, homes and plants agree with the map, plant tiles report emissions.
+    for (i, t) in s.map.tiles.iter().enumerate() {
+        assert_eq!((t.y * 12 + t.x) as usize, i);
+        assert_eq!(t.buildable, t.kind == T::Empty);
+        assert_eq!(
+            t.emissions_monthly.is_some(),
+            matches!(t.kind, T::FossilPlant | T::RenewablePlant)
+        );
+    }
+    for h in &s.homes {
+        let t = &s.map.tiles[(h.tile.y * 12 + h.tile.x) as usize];
+        assert_eq!(t.reference, Some(h.id));
+    }
+    assert!(s.plants.iter().any(|p| p.emissions_monthly > 0.0));
     // Lobbied levers carry an effective value, the others null.
     for (k, e) in &s.policy {
         let info = api.levers().iter().find(|l| l.key == *k).unwrap();
         assert_eq!(e.effective.is_some(), info.lobbied, "{k:?}");
     }
-    assert_eq!(s.firms[0].name, "Factory");
-    assert_eq!(s.firms[3].name, "Farm 2");
+    let names: Vec<_> = s.firms.iter().map(|f| f.name.as_str()).collect();
+    assert_eq!(names, ["Factory", "Farm", "Shop", "Shop 2"]);
+    assert_eq!(s.firms[2].sector, sim_api::keys::SectorKey::Services);
+    // Inequality is harsh from the start; a household can have negative net worth.
+    assert!(s.indicators.gini > 0.5, "{}", s.indicators.gini);
+    assert!(s.indicators.top_household_wealth_share > 0.4);
+    assert!(s.indicators.avg_income_per_person > 0.0);
+    assert!(s.households.iter().any(|h| h.net_worth < 0.0));
 }
 
 #[test]
 fn metadata_is_consistent_with_params_and_start_policy() {
     let api = Api::init(1).unwrap();
     assert_eq!(api.levers().len(), 19);
-    assert_eq!(api.actions().len(), 7);
+    assert_eq!(api.actions().len(), 9);
+    for a in api.actions() {
+        assert_eq!(a.needs_tile, a.key != "switch_system", "{}", a.key);
+        assert_eq!(a.tile_rule.is_some(), a.needs_tile, "{}", a.key);
+    }
+    let road = api
+        .actions()
+        .iter()
+        .find(|a| a.key == "place:road")
+        .unwrap();
+    assert_eq!(road.money_cost, api.sim().params.government.road_cost_usd);
+    assert_eq!(
+        road.lead_time,
+        api.sim().params.turn.lever("place_road").lead_time
+    );
     let params = &api.sim().params;
     let snap = api.snapshot();
     for l in api.levers() {
@@ -352,7 +455,10 @@ fn metadata_is_consistent_with_params_and_start_policy() {
         .find(|a| a.key == "place:fossil_plant")
         .unwrap();
     assert_eq!(plant.money_cost, params.government.plant_cost_usd);
-    assert_eq!(plant.lead_time, 4);
+    assert_eq!(
+        plant.lead_time,
+        params.turn.lever("place_fossil_plant").lead_time
+    );
 }
 
 #[test]
@@ -383,22 +489,6 @@ fn preview_validates_ranges_and_availability() {
         Some(BlockReason::InvalidCommand)
     );
     assert_eq!(
-        blocked(Command::Place {
-            kind: InfraKind::FossilPlant,
-            count: 0,
-            tile: None
-        }),
-        Some(BlockReason::InvalidCommand)
-    );
-    assert_eq!(
-        blocked(Command::Place {
-            kind: InfraKind::FossilPlant,
-            count: 100_000,
-            tile: None
-        }),
-        Some(BlockReason::InvalidCommand)
-    );
-    assert_eq!(
         blocked(Command::SetPolicy {
             lever: LeverKey::CommonsAccess,
             value: PolicyValue::Commons(CommonsAccessWire::Community { cap: f64::INFINITY }),
@@ -425,8 +515,7 @@ fn preview_validates_ranges_and_availability() {
     );
     assert_eq!(
         blocked(Command::Remove {
-            kind: InfraKind::PublicHousing,
-            count: 1
+            tile: Tile { x: 3, y: 9 }
         }),
         Some(BlockReason::NothingToRemove)
     );
@@ -495,21 +584,28 @@ fn bad_inputs_never_panic() {
         num(LeverKey::PublicSpending, 1e300),
         Command::Place {
             kind: InfraKind::RenewablePlant,
-            count: u32::MAX,
-            tile: None,
+            tile: Tile {
+                x: i32::MAX,
+                y: i32::MIN,
+            },
         },
         Command::Remove {
-            kind: InfraKind::FossilPlant,
-            count: u32::MAX,
+            tile: Tile { x: -1, y: 300 },
         },
     ];
     let r = api.submit_turn(&nasty).unwrap();
     assert_eq!(r.accepted.len(), 0);
     assert_eq!(r.rejected.len(), 5);
-    assert!(r
-        .rejected
-        .iter()
-        .all(|x| x.reason == BlockReason::InvalidCommand));
+    assert_eq!(
+        r.rejected.iter().map(|x| x.reason).collect::<Vec<_>>(),
+        vec![
+            BlockReason::InvalidCommand,
+            BlockReason::InvalidCommand,
+            BlockReason::InvalidCommand,
+            BlockReason::TileInvalid,
+            BlockReason::TileInvalid
+        ]
+    );
     assert_eq!(
         r.months[0]
             .events
@@ -538,4 +634,124 @@ fn bad_inputs_never_panic() {
         api.import_state("{\"schemaVersion\":99}").unwrap_err().code,
         "schema_mismatch"
     );
+}
+
+#[test]
+fn old_saves_are_refused_with_a_clear_error() {
+    let mut api = Api::init(3).unwrap();
+    let blob = api.export_state().unwrap();
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    assert_eq!(v["schemaVersion"], 2);
+    v["schemaVersion"] = serde_json::json!(1);
+    let e = api.import_state(&v.to_string()).unwrap_err();
+    assert_eq!(e.code, "schema_mismatch");
+    assert!(e.message.contains("schemaVersion"), "{}", e.message);
+    // A v2 blob whose ids or tiles point at nothing is refused, not trusted.
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["state"]["persons"][0]["household"] = serde_json::json!(99);
+    assert_eq!(
+        api.import_state(&v.to_string()).unwrap_err().code,
+        "bad_state"
+    );
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["state"]["homes"][0]["tile"] = serde_json::json!({"x": 200, "y": 200});
+    assert_eq!(
+        api.import_state(&v.to_string()).unwrap_err().code,
+        "bad_state"
+    );
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["state"]["map"]["cells"] = serde_json::json!([]);
+    assert_eq!(
+        api.import_state(&v.to_string()).unwrap_err().code,
+        "bad_state"
+    );
+}
+
+#[test]
+fn tile_commands_report_tile_validity() {
+    let api = Api::init(1).unwrap();
+    let s = api.snapshot();
+    let kind_at = |x: i32, y: i32| s.map.tiles[(y * 12 + x) as usize].kind;
+    use sim_api::keys::TileKindKey as T;
+    let place = |kind: InfraKind, x: i32, y: i32| Command::Place {
+        kind,
+        tile: Tile { x, y },
+    };
+    // Factory tile (occupied), forest (invalid), off the map (invalid), empty (valid).
+    assert_eq!(kind_at(9, 3), T::Firm);
+    assert_eq!(kind_at(0, 0), T::Forest);
+    let p = api
+        .preview(&[
+            place(InfraKind::Road, 9, 3),
+            place(InfraKind::Road, 0, 0),
+            place(InfraKind::Road, 12, 0),
+            place(InfraKind::Road, -1, 4),
+            place(InfraKind::Road, 4, 6),
+            Command::Remove {
+                tile: Tile { x: 4, y: 6 },
+            },
+            Command::Remove {
+                tile: Tile { x: 9, y: 3 },
+            },
+        ])
+        .unwrap();
+    let got: Vec<_> = p.iter().map(|x| (x.tile_valid, x.tile_reason)).collect();
+    assert_eq!(
+        got,
+        vec![
+            (false, Some(BlockReason::TileOccupied)),
+            (false, Some(BlockReason::TileInvalid)),
+            (false, Some(BlockReason::TileInvalid)),
+            (false, Some(BlockReason::TileInvalid)),
+            (true, None),
+            (false, Some(BlockReason::NothingToRemove)),
+            (false, Some(BlockReason::TileInvalid)),
+        ]
+    );
+    assert_eq!(p[0].blocked, Some(BlockReason::TileOccupied));
+    assert_eq!(p[4].blocked, None);
+    // Non-tile commands are always tile-valid.
+    let q = api.preview(&[num(LeverKey::TaxWage, 0.2)]).unwrap();
+    assert!(q[0].tile_valid && q[0].tile_reason.is_none());
+    // A second command on a tile that already has a queued build is occupied.
+    let q = api
+        .preview(&[
+            place(InfraKind::Road, 4, 6),
+            place(InfraKind::FossilPlant, 4, 6),
+        ])
+        .unwrap();
+    assert_eq!(q[1].tile_reason, Some(BlockReason::TileOccupied));
+}
+
+#[test]
+fn valid_tiles_match_the_map_and_queued_builds() {
+    let mut api = Api::init(1).unwrap();
+    let s = api.snapshot();
+    let empty = s.map.tiles.iter().filter(|t| t.buildable).count();
+    for k in InfraKind::ALL {
+        let v = api.valid_tiles(k);
+        assert_eq!(v.len(), empty, "{k:?}");
+        // Row-major, and each one really is empty.
+        for t in &v {
+            assert!(s.map.tiles[(t.y * 12 + t.x) as usize].buildable);
+        }
+        assert!(v.windows(2).all(|w| (w[0].y, w[0].x) < (w[1].y, w[1].x)));
+        // Every valid tile previews as valid for that kind.
+        let cmds: Vec<_> = v
+            .iter()
+            .take(5)
+            .map(|t| Command::Place { kind: k, tile: *t })
+            .collect();
+        assert!(api.preview(&cmds).unwrap().iter().all(|p| p.tile_valid));
+    }
+    // A queued road takes its tile out of every list.
+    let t = api.valid_tiles(InfraKind::Road)[10];
+    api.submit_turn(&[Command::Place {
+        kind: InfraKind::Road,
+        tile: t,
+    }])
+    .unwrap();
+    for k in InfraKind::ALL {
+        assert!(!api.valid_tiles(k).contains(&t), "{k:?}");
+    }
 }

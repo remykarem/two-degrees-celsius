@@ -17,6 +17,10 @@ pub struct HistoryPoint {
     pub avg_wellbeing: f64,
     pub gpi_annual: f64,
     pub debt_to_gdp: f64,
+    /// Mean monthly income per person, dollars.
+    pub avg_income_per_person: f64,
+    pub median_income_per_person: f64,
+    pub top_household_wealth_share: f64,
 }
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
@@ -48,5 +52,8 @@ pub fn point(s: &State, p: &Params, played_turn: u32) -> HistoryPoint {
         avg_wellbeing: i.avg_wellbeing.0,
         gpi_annual: i.gpi_annual,
         debt_to_gdp: debt_to_gdp(s),
+        avg_income_per_person: i.avg_income_pp.dollars(),
+        median_income_per_person: i.median_income_pp.dollars(),
+        top_household_wealth_share: i.top_wealth_share.0,
     }
 }

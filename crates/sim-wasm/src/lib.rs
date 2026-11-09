@@ -14,7 +14,7 @@
 use serde::Serialize;
 use sim_api::api::parse_commands;
 use sim_api::error::code;
-use sim_api::{Api, ApiError, ApiResult};
+use sim_api::{Api, ApiError, ApiResult, InfraKind};
 use sim_params::ContentJson;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -116,6 +116,16 @@ impl WasmSim {
         wrap(self.get_mut().and_then(|a| {
             let cmds = parse_commands(commands_json)?;
             a.submit_turn(&cmds)
+        }))
+    }
+
+    /// `Result<{x,y}[]>`: tiles where `kind` (`public_housing`, `fossil_plant`,
+    /// `renewable_plant` or `road`) can be placed now.
+    pub fn valid_tiles(&self, kind: &str) -> String {
+        wrap(self.get().and_then(|a| {
+            let k: InfraKind = serde_json::from_value(serde_json::Value::String(kind.to_string()))
+                .map_err(|_| ApiError::new(code::BAD_REQUEST, format!("unknown kind '{kind}'")))?;
+            Ok(a.valid_tiles(k))
         }))
     }
 

@@ -3,11 +3,27 @@ use crate::keys::{InfraKind, LeverKey, SystemKey};
 use serde::{Deserialize, Serialize};
 use sim_types as st;
 
-/// Cosmetic map position. The simulation has no space: it is accepted and ignored.
+/// A tile of the simulation's 12 x 12 map (`x` column, `y` row, from 0). Integers are accepted
+/// on input so that out-of-range values become `tile_invalid` instead of a parse error.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tile {
     pub x: i32,
     pub y: i32,
+}
+
+impl Tile {
+    pub fn from_sim(t: st::Tile) -> Tile {
+        Tile {
+            x: i32::from(t.x),
+            y: i32::from(t.y),
+        }
+    }
+    /// `None` if the coordinates do not fit a map tile at all.
+    pub fn to_sim(self) -> Option<st::Tile> {
+        let x = u8::try_from(self.x).ok()?;
+        let y = u8::try_from(self.y).ok()?;
+        Some(st::Tile { x, y })
+    }
 }
 
 /// Commons rule as the player may send it. `enclosed` only arises from lobbying.
@@ -30,27 +46,12 @@ pub enum PolicyValue {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Command {
-    SetPolicy {
-        lever: LeverKey,
-        value: PolicyValue,
-    },
-    SwitchSystem {
-        to: SystemKey,
-    },
-    Place {
-        kind: InfraKind,
-        count: u32,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        tile: Option<Tile>,
-    },
-    Remove {
-        kind: InfraKind,
-        count: u32,
-    },
+    SetPolicy { lever: LeverKey, value: PolicyValue },
+    SwitchSystem { to: SystemKey },
+    Place { kind: InfraKind, tile: Tile },
+    Remove { tile: Tile },
 }
 
-/// Largest building count a single place/remove command may carry.
-pub const MAX_BUILD_COUNT: u32 = 100;
 /// Community commons cap range: multiples of maximum sustainable yield.
 pub const COMMUNITY_CAP_MAX: f64 = 1.0;
 
@@ -85,14 +86,12 @@ impl Command {
     /// Wire form of a sim command (used for pending items and echoed commands).
     pub fn from_sim(c: &st::Command) -> Command {
         match *c {
-            st::Command::Place { kind, count } => Command::Place {
+            st::Command::Place { kind, tile } => Command::Place {
                 kind: InfraKind::from_sim(kind),
-                count,
-                tile: None,
+                tile: Tile::from_sim(tile),
             },
-            st::Command::Remove { kind, count } => Command::Remove {
-                kind: InfraKind::from_sim(kind),
-                count,
+            st::Command::Remove { tile } => Command::Remove {
+                tile: Tile::from_sim(tile),
             },
             st::Command::SwitchSystem(to) => Command::SwitchSystem {
                 to: SystemKey::from_sim(to),

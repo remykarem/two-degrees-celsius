@@ -1,11 +1,9 @@
 //! Static metadata: `LeverInfo` and `ActionInfo`. Costs and lead times come from
 //! `params.turn.levers` (one source of truth); labels, ranges, arrows and availability come
 //! from `content/levers.json`.
-use crate::command::{
-    numeric_change, Command, CommonsAccessWire, PolicyValue, COMMUNITY_CAP_MAX, MAX_BUILD_COUNT,
-};
+use crate::command::{numeric_change, Command, CommonsAccessWire, PolicyValue, COMMUNITY_CAP_MAX};
 use crate::error::{code, ApiError, ApiResult};
-use crate::keys::{InfraKind, LeverKey, MetricKey, SystemKey};
+use crate::keys::{BlockReason, InfraKind, LeverKey, MetricKey, SystemKey};
 use serde::{Deserialize, Serialize};
 use sim_params::Params;
 use sim_types as st;
@@ -81,6 +79,11 @@ pub struct ActionInfo {
     /// Estimated dollars charged on activation; 0 if none. `preview` is the authority.
     pub money_cost: f64,
     pub available_in: Vec<SystemKey>,
+    /// True for `place:*` and `remove:*`: the command carries a tile.
+    pub needs_tile: bool,
+    /// What the tile must be (from `content/levers.json`); absent for `switch_system`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tile_rule: Option<String>,
 }
 
 /// Game calendar (contract section 9, item 8).
@@ -125,6 +128,8 @@ struct LeverEntry {
 struct ActionEntry {
     label: String,
     available_in: Vec<SystemKey>,
+    #[serde(default)]
+    tile_rule: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -133,6 +138,28 @@ struct LeversFile {
     game: GameFile,
     levers: BTreeMap<LeverKey, LeverEntry>,
     actions: BTreeMap<String, ActionEntry>,
+}
+
+/// Why the wire layer refuses a command before the engine sees it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Rejection {
+    pub reason: BlockReason,
+    pub why: String,
+}
+
+impl Rejection {
+    pub fn invalid(why: String) -> Rejection {
+        Rejection {
+            reason: BlockReason::InvalidCommand,
+            why,
+        }
+    }
+    pub fn tile(t: crate::command::Tile) -> Rejection {
+        Rejection {
+            reason: BlockReason::TileInvalid,
+            why: format!("tile ({}, {}) is not on the map", t.x, t.y),
+        }
+    }
 }
 
 /// All static metadata, built once per `Api`.
@@ -227,6 +254,7 @@ impl Meta {
                 .get(&key)
                 .ok_or_else(|| bad(format!("levers.json is missing action '{key}'")))?;
             let pk = action_param_key(&key).unwrap_or_default();
+            let needs_tile = key.contains(':');
             let cfg = params
                 .turn
                 .levers
@@ -235,6 +263,7 @@ impl Meta {
             let money = match key.as_str() {
                 "place:public_housing" => params.government.public_housing_cost_usd,
                 "place:fossil_plant" | "place:renewable_plant" => params.government.plant_cost_usd,
+                "place:road" => params.government.road_cost_usd,
                 _ => 0.0,
             };
             actions.push(ActionInfo {
@@ -249,6 +278,8 @@ impl Meta {
                 },
                 money_cost: money,
                 available_in: e.available_in.clone(),
+                needs_tile,
+                tile_rule: e.tile_rule.clone(),
             });
         }
         if file.actions.len() != actions.len() {
@@ -283,23 +314,20 @@ impl Meta {
 
     /// Validate a wire command (type, finiteness, range) and convert it to the sim command.
     /// The error is a human-readable reason; the caller maps it to `invalid_command`.
-    pub fn to_sim(&self, c: &Command) -> Result<st::Command, String> {
+    pub fn to_sim(&self, c: &Command) -> Result<st::Command, Rejection> {
         match *c {
             Command::SwitchSystem { to } => Ok(st::Command::SwitchSystem(to.to_sim())),
-            Command::Place { kind, count, .. } => {
-                check_count(count)?;
-                Ok(st::Command::Place {
+            Command::Place { kind, tile } => match tile.to_sim() {
+                Some(tile) => Ok(st::Command::Place {
                     kind: kind.to_sim(),
-                    count,
-                })
-            }
-            Command::Remove { kind, count } => {
-                check_count(count)?;
-                Ok(st::Command::Remove {
-                    kind: kind.to_sim(),
-                    count,
-                })
-            }
+                    tile,
+                }),
+                None => Err(Rejection::tile(tile)),
+            },
+            Command::Remove { tile } => match tile.to_sim() {
+                Some(tile) => Ok(st::Command::Remove { tile }),
+                None => Err(Rejection::tile(tile)),
+            },
             Command::SetPolicy { lever, value } => {
                 let info = self.lever(lever);
                 let name = lever.as_str();
@@ -312,9 +340,9 @@ impl Meta {
                             CommonsAccessWire::Open => st::CommonsAccess::Open,
                             CommonsAccessWire::Community { cap } => {
                                 if !(cap.is_finite() && (0.0..=COMMUNITY_CAP_MAX).contains(&cap)) {
-                                    return Err(format!(
+                                    return Err(Rejection::invalid(format!(
                                         "{name}: community cap must be in 0..={COMMUNITY_CAP_MAX}"
-                                    ));
+                                    )));
                                 }
                                 st::CommonsAccess::Community { cap: st::Rate(cap) }
                             }
@@ -325,26 +353,20 @@ impl Meta {
                     }
                     (_, PolicyValue::Number(v)) => {
                         if !v.is_finite() || v < info.min - 1e-9 || v > info.max + 1e-9 {
-                            return Err(format!(
+                            return Err(Rejection::invalid(format!(
                                 "{name}: value {v} is outside {}..={}",
                                 info.min, info.max
-                            ));
+                            )));
                         }
                         numeric_change(lever, v)
                             .map(st::Command::SetPolicy)
-                            .ok_or_else(|| format!("{name} does not take a number"))
+                            .ok_or_else(|| {
+                                Rejection::invalid(format!("{name} does not take a number"))
+                            })
                     }
-                    _ => Err(format!("{name}: wrong value type")),
+                    _ => Err(Rejection::invalid(format!("{name}: wrong value type"))),
                 }
             }
         }
-    }
-}
-
-fn check_count(count: u32) -> Result<(), String> {
-    if count == 0 || count > MAX_BUILD_COUNT {
-        Err(format!("count must be in 1..={MAX_BUILD_COUNT}"))
-    } else {
-        Ok(())
     }
 }

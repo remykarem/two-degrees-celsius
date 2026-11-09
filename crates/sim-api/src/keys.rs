@@ -116,19 +116,22 @@ pub enum InfraKind {
     PublicHousing,
     FossilPlant,
     RenewablePlant,
+    Road,
 }
 
 impl InfraKind {
-    pub const ALL: [InfraKind; 3] = [
+    pub const ALL: [InfraKind; 4] = [
         InfraKind::PublicHousing,
         InfraKind::FossilPlant,
         InfraKind::RenewablePlant,
+        InfraKind::Road,
     ];
     pub fn as_str(self) -> &'static str {
         match self {
             InfraKind::PublicHousing => "public_housing",
             InfraKind::FossilPlant => "fossil_plant",
             InfraKind::RenewablePlant => "renewable_plant",
+            InfraKind::Road => "road",
         }
     }
     pub fn to_sim(self) -> st::InfraKind {
@@ -136,6 +139,7 @@ impl InfraKind {
             InfraKind::PublicHousing => st::InfraKind::PublicHousing,
             InfraKind::FossilPlant => st::InfraKind::FossilPlant,
             InfraKind::RenewablePlant => st::InfraKind::RenewablePlant,
+            InfraKind::Road => st::InfraKind::Road,
         }
     }
     pub fn from_sim(k: st::InfraKind) -> InfraKind {
@@ -143,6 +147,7 @@ impl InfraKind {
             st::InfraKind::PublicHousing => InfraKind::PublicHousing,
             st::InfraKind::FossilPlant => InfraKind::FossilPlant,
             st::InfraKind::RenewablePlant => InfraKind::RenewablePlant,
+            st::InfraKind::Road => InfraKind::Road,
         }
     }
 }
@@ -205,6 +210,8 @@ pub enum BlockReason {
     InsufficientPoliticalCapital,
     InsufficientFunds,
     InvalidCommand,
+    TileOccupied,
+    TileInvalid,
 }
 
 impl BlockReason {
@@ -219,6 +226,8 @@ impl BlockReason {
             }
             st::BlockReason::InsufficientFunds => BlockReason::InsufficientFunds,
             st::BlockReason::InvalidCommand => BlockReason::InvalidCommand,
+            st::BlockReason::TileOccupied => BlockReason::TileOccupied,
+            st::BlockReason::TileInvalid => BlockReason::TileInvalid,
         }
     }
 }
@@ -243,6 +252,9 @@ pub enum MetricKey {
     Housing,
     Forest,
     Commons,
+    AvgIncome,
+    MedianIncome,
+    TopWealthShare,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -263,12 +275,13 @@ impl CollapseReason {
     }
 }
 
-/// Sector of a firm (`goods` or `food`).
+/// Sector of a firm (`goods`, `food` or `services`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SectorKey {
     Goods,
     Food,
+    Services,
 }
 
 impl SectorKey {
@@ -276,6 +289,7 @@ impl SectorKey {
         match s {
             st::Sector::Goods => SectorKey::Goods,
             st::Sector::Food => SectorKey::Food,
+            st::Sector::Services => SectorKey::Services,
         }
     }
 }
@@ -303,6 +317,58 @@ impl GameOutcome {
             st::Outcome::Collapse(r) => GameOutcome::Collapse {
                 collapse: CollapseReason::from_sim(r),
             },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TileKindKey {
+    Empty,
+    Home,
+    PublicHousing,
+    Firm,
+    Bank,
+    TownHall,
+    FossilPlant,
+    RenewablePlant,
+    Road,
+    Forest,
+    Commons,
+}
+
+impl TileKindKey {
+    pub fn from_sim(k: st::TileKind) -> TileKindKey {
+        match k {
+            st::TileKind::Empty => TileKindKey::Empty,
+            st::TileKind::Home => TileKindKey::Home,
+            st::TileKind::PublicHousing => TileKindKey::PublicHousing,
+            st::TileKind::Firm => TileKindKey::Firm,
+            st::TileKind::Bank => TileKindKey::Bank,
+            st::TileKind::TownHall => TileKindKey::TownHall,
+            st::TileKind::FossilPlant => TileKindKey::FossilPlant,
+            st::TileKind::RenewablePlant => TileKindKey::RenewablePlant,
+            st::TileKind::Road => TileKindKey::Road,
+            st::TileKind::Forest => TileKindKey::Forest,
+            st::TileKind::Commons => TileKindKey::Commons,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgeBandKey {
+    Child,
+    Adult,
+    Retired,
+}
+
+impl AgeBandKey {
+    pub fn from_sim(a: st::AgeBand) -> AgeBandKey {
+        match a {
+            st::AgeBand::Child => AgeBandKey::Child,
+            st::AgeBand::Adult => AgeBandKey::Adult,
+            st::AgeBand::Retired => AgeBandKey::Retired,
         }
     }
 }

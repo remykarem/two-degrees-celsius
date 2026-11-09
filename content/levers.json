@@ -354,7 +354,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
     },
     "place:fossil_plant": {
       "label": "Build fossil power plant",
@@ -362,7 +363,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
     },
     "place:renewable_plant": {
       "label": "Build renewable power plant",
@@ -370,7 +372,17 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
+    },
+    "place:road": {
+      "label": "Build road",
+      "availableIn": [
+        "market",
+        "regulated",
+        "coop"
+      ],
+      "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
     },
     "remove:public_housing": {
       "label": "Demolish public housing",
@@ -378,7 +390,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "a tile that holds a public housing (fixed town buildings cannot be removed)"
     },
     "remove:fossil_plant": {
       "label": "Decommission fossil power plant",
@@ -386,7 +399,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "a tile that holds a fossil plant (fixed town buildings cannot be removed)"
     },
     "remove:renewable_plant": {
       "label": "Decommission renewable power plant",
@@ -394,7 +408,17 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "tileRule": "a tile that holds a renewable plant (fixed town buildings cannot be removed)"
+    },
+    "remove:road": {
+      "label": "Remove road",
+      "availableIn": [
+        "market",
+        "regulated",
+        "coop"
+      ],
+      "tileRule": "a tile that holds a road (fixed town buildings cannot be removed)"
     }
   }
 }

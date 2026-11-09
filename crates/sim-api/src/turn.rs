@@ -1,5 +1,5 @@
 //! Turn-level wire types: pending items, previews, month frames and the turn result.
-use crate::command::Command;
+use crate::command::{Command, Tile};
 use crate::events::{EmissionLine, SimEvent, TraceRecord};
 use crate::keys::{BlockReason, LeverKey, SectorKey};
 use crate::snapshot::Snapshot;
@@ -41,6 +41,11 @@ pub struct CommandPreview {
     pub effective_turn: u32,
     pub opposition: f64,
     pub blocked: Option<BlockReason>,
+    /// For place and remove: can the tile take the command? `true` for other commands.
+    pub tile_valid: bool,
+    /// `tile_occupied`, `tile_invalid` or `nothing_to_remove` when `tileValid` is false.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tile_reason: Option<BlockReason>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -57,16 +62,24 @@ pub struct PolicyGap {
     pub effective: f64,
 }
 
+/// One person's commute this month. The sim exposes distance and time, not the path, so the
+/// tiles are the two ends (`from` is `null` for an unhoused household).
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Commute {
+    pub person: u32,
     pub household: u32,
     pub firm: u32,
-    pub people: f64,
+    pub from: Option<Tile>,
+    pub to: Tile,
+    pub tiles: u32,
+    pub minutes: u32,
 }
 
+/// A household buying from a firm this month.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Purchase {
     pub household: u32,
+    pub firm: u32,
     pub sector: SectorKey,
     pub amount: f64,
 }
@@ -74,11 +87,14 @@ pub struct Purchase {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RentFlow {
     pub household: u32,
+    /// The household's home, if it has one.
+    pub home: Option<u32>,
     pub amount: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WageFlow {
+    pub person: u32,
     pub household: u32,
     pub firm: u32,
     pub amount: f64,

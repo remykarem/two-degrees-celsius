@@ -1,6 +1,7 @@
 //! `SimEvent` and `TraceRecord` (contract section 9, item 3). Payloads only, no display text.
 //! Money is in dollars. Importance (1 low, 3 high) ranks events on the results screen.
-use crate::keys::{BlockReason, ClassKey, CollapseReason, LeverKey, SystemKey};
+use crate::command::Tile;
+use crate::keys::{BlockReason, ClassKey, CollapseReason, InfraKind, LeverKey, SystemKey};
 use serde::{Deserialize, Serialize};
 use sim_types as st;
 
@@ -8,17 +9,41 @@ use sim_types as st;
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SimEventKind {
     Commuted {
+        person: u32,
+        firm: u32,
+        tiles: u32,
+        minutes: u32,
+    },
+    PersonHired {
+        person: u32,
+        firm: u32,
+    },
+    PersonFired {
+        person: u32,
+        firm: u32,
+    },
+    Purchase {
         household: u32,
         firm: u32,
-        people: f64,
+        amount: f64,
     },
-    Hired {
-        firm: u32,
-        people: f64,
+    /// `to` is the id of the home the household moved into.
+    HouseholdMoved {
+        household: u32,
+        to: u32,
     },
-    Fired {
-        firm: u32,
-        people: f64,
+    HouseholdEvicted {
+        household: u32,
+    },
+    Built {
+        kind: InfraKind,
+        tile: Tile,
+    },
+    Removed {
+        tile: Tile,
+    },
+    ElectricityRationed {
+        served: f64,
     },
     LoanDefaulted {
         firm: u32,
@@ -88,22 +113,50 @@ impl SimEvent {
         use SimEventKind as K;
         let kind = match *e {
             st::Event::Commuted {
+                person,
+                firm,
+                tiles,
+                minutes,
+            } => K::Commuted {
+                person: person.0,
+                firm: firm.0,
+                tiles,
+                minutes,
+            },
+            st::Event::PersonHired { person, firm } => K::PersonHired {
+                person: person.0,
+                firm: firm.0,
+            },
+            st::Event::PersonFired { person, firm } => K::PersonFired {
+                person: person.0,
+                firm: firm.0,
+            },
+            st::Event::Purchase {
                 household,
                 firm,
-                people,
-            } => K::Commuted {
+                amount,
+            } => K::Purchase {
                 household: household.0,
                 firm: firm.0,
-                people: people.0,
+                amount: amount.dollars(),
             },
-            st::Event::Hired { firm, people } => K::Hired {
-                firm: firm.0,
-                people: people.0,
+            st::Event::HouseholdMoved { household, home } => K::HouseholdMoved {
+                household: household.0,
+                to: home.0,
             },
-            st::Event::Fired { firm, people } => K::Fired {
-                firm: firm.0,
-                people: people.0,
+            st::Event::HouseholdEvicted { household } => K::HouseholdEvicted {
+                household: household.0,
             },
+            st::Event::Built { kind, tile } => K::Built {
+                kind: InfraKind::from_sim(kind),
+                tile: Tile::from_sim(tile),
+            },
+            st::Event::Removed { tile } => K::Removed {
+                tile: Tile::from_sim(tile),
+            },
+            st::Event::ElectricityRationed { served } => {
+                K::ElectricityRationed { served: served.0 }
+            }
             st::Event::LoanDefaulted { firm } => K::LoanDefaulted { firm: firm.0 },
             st::Event::FirmFounded { firm } => K::FirmFounded { firm: firm.0 },
             st::Event::FirmClosed { firm } => K::FirmClosed { firm: firm.0 },
@@ -155,6 +208,7 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::CommonsEnclosed { .. }
         | K::BankBailout { .. }
         | K::FirmClosed { .. }
+        | K::HouseholdEvicted { .. }
         | K::SystemSwitchCompleted { .. } => 3,
         K::LoanDefaulted { .. }
         | K::FirmFounded { .. }
@@ -164,8 +218,13 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::RentShortfall { .. }
         | K::SpendingCut { .. }
         | K::ClassChanged { .. }
+        | K::HouseholdMoved { .. }
+        | K::PersonFired { .. }
+        | K::Built { .. }
+        | K::Removed { .. }
+        | K::ElectricityRationed { .. }
         | K::SystemSwitchStarted { .. } => 2,
-        K::Commuted { .. } | K::Hired { .. } | K::Fired { .. } => 1,
+        K::Commuted { .. } | K::PersonHired { .. } | K::Purchase { .. } => 1,
     }
 }
 
@@ -174,6 +233,7 @@ pub fn importance(k: &SimEventKind) -> u8 {
 pub enum EmissionSourceKind {
     Firm,
     Households,
+    Plant,
     Sink,
 }
 
@@ -184,19 +244,36 @@ pub struct EmissionLine {
     pub source: EmissionSourceKind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<u32>,
+    /// Set for `plant` sources: the tile the plant stands on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tile: Option<Tile>,
     pub tonnes: f64,
 }
 
 impl EmissionLine {
-    pub fn from_sim(source: st::EmissionSource, tonnes: st::Tonnes) -> EmissionLine {
-        let (source, id) = match source {
-            st::EmissionSource::Firm(f) => (EmissionSourceKind::Firm, Some(f.0)),
-            st::EmissionSource::Households => (EmissionSourceKind::Households, None),
-            st::EmissionSource::Sink => (EmissionSourceKind::Sink, None),
+    /// `plants` maps plant ids to tiles (the sim's trace carries only the plant id).
+    pub fn from_sim(
+        source: st::EmissionSource,
+        tonnes: st::Tonnes,
+        plants: &[st::Plant],
+    ) -> EmissionLine {
+        let (source, id, tile) = match source {
+            st::EmissionSource::Firm(f) => (EmissionSourceKind::Firm, Some(f.0), None),
+            st::EmissionSource::Households => (EmissionSourceKind::Households, None, None),
+            st::EmissionSource::Plant(p) => (
+                EmissionSourceKind::Plant,
+                Some(p.0),
+                plants
+                    .iter()
+                    .find(|x| x.id == p)
+                    .map(|x| Tile::from_sim(x.tile)),
+            ),
+            st::EmissionSource::Sink => (EmissionSourceKind::Sink, None, None),
         };
         EmissionLine {
             source,
             id,
+            tile,
             tonnes: tonnes.0,
         }
     }
@@ -219,6 +296,8 @@ pub enum TraceRecord {
         source: EmissionSourceKind,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         id: Option<u32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tile: Option<Tile>,
         tonnes: f64,
     },
     Income {
@@ -236,13 +315,14 @@ pub enum TraceRecord {
 }
 
 impl TraceRecord {
-    pub fn from_sim(t: &st::TraceRecord) -> TraceRecord {
+    pub fn from_sim(t: &st::TraceRecord, plants: &[st::Plant]) -> TraceRecord {
         match *t {
             st::TraceRecord::Emissions { source, tonnes } => {
-                let l = EmissionLine::from_sim(source, tonnes);
+                let l = EmissionLine::from_sim(source, tonnes, plants);
                 TraceRecord::Emissions {
                     source: l.source,
                     id: l.id,
+                    tile: l.tile,
                     tonnes: l.tonnes,
                 }
             }

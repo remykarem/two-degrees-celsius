@@ -1,7 +1,10 @@
 //! The `Snapshot` view of the sim state (contract sections 4, 9 and 10). A stable wire type,
 //! decoupled from the internal `State`. One function per area.
+use crate::command::Tile;
 use crate::history::{budget_share, debt_to_gdp, HistoryPoint};
-use crate::keys::{ClassKey, GameOutcome, LeverKey, PlainOutcome, SectorKey, SystemKey};
+use crate::keys::{
+    AgeBandKey, ClassKey, GameOutcome, LeverKey, PlainOutcome, SectorKey, SystemKey, TileKindKey,
+};
 use crate::meta::{GameCalendar, Meta};
 use crate::turn::PendingItem;
 use serde::{Deserialize, Serialize};
@@ -60,6 +63,7 @@ pub struct Buildings {
     pub public_housing: u32,
     pub fossil_plant: u32,
     pub renewable_plant: u32,
+    pub road: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -71,6 +75,11 @@ pub struct Indicators {
     pub employed: f64,
     pub labour_force: f64,
     pub gini: f64,
+    /// Mean monthly income per person (household gross income shared over its members).
+    pub avg_income_per_person: f64,
+    pub median_income_per_person: f64,
+    /// Wealth of the wealthiest household over the positive wealth of all households.
+    pub top_household_wealth_share: f64,
     pub wage_share: f64,
     pub profit_share: f64,
     pub avg_wellbeing: f64,
@@ -101,19 +110,116 @@ pub struct HouseholdIncome {
 pub struct HouseholdView {
     pub id: u32,
     pub label: String,
+    /// Person ids.
+    pub members: Vec<u32>,
+    /// Home id, or `null` for an unhoused household.
+    pub home: Option<u32>,
     pub class: ClassKey,
-    pub people: f64,
-    pub employed: f64,
-    pub labour_force: f64,
     pub savings: f64,
     pub debt: f64,
-    pub wealth_per_capita: f64,
+    pub net_worth: f64,
     pub income: HouseholdIncome,
-    pub wellbeing: f64,
     pub political_power: f64,
+    pub arrears_months: u32,
+    pub wellbeing: f64,
     pub footprint_tonnes: f64,
     pub food_met: f64,
-    pub housed_share: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobView {
+    pub firm: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonView {
+    pub id: u32,
+    pub label: String,
+    pub household: u32,
+    pub age_band: AgeBandKey,
+    pub skill: f64,
+    /// The firm job, or `null` (unemployed, outside the labour force, or in the job guarantee).
+    pub job: Option<JobView>,
+    pub wage: f64,
+    pub commute_tiles: u32,
+    pub commute_minutes: u32,
+    pub wellbeing: f64,
+    pub in_labour_force: bool,
+    /// In the government job guarantee (employed at the minimum wage, no firm).
+    pub job_guarantee: bool,
+    pub effective_hours: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PublicOwner {
+    Public,
+}
+
+/// Owner of a home: a household id, or the string `"public"`.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum HomeOwnerView {
+    Household(u32),
+    Public(PublicOwner),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeView {
+    pub id: u32,
+    pub tile: Tile,
+    pub owner: HomeOwnerView,
+    pub household: Option<u32>,
+    pub rent: f64,
+    pub value: f64,
+}
+
+/// One cell of the map.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TileView {
+    pub x: i32,
+    pub y: i32,
+    pub kind: TileKindKey,
+    /// Home, firm or plant id for those kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none", rename = "ref")]
+    pub reference: Option<u32>,
+    /// True if the tile is empty (a building could stand there, queued builds aside; use
+    /// `validTiles(kind)` for the exact answer).
+    pub buildable: bool,
+    /// Plant tiles only: tonnes of CO2 emitted per month.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emissions_monthly: Option<f64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MapView {
+    pub width: u32,
+    pub height: u32,
+    /// Row-major: `tiles[y * width + x]`.
+    pub tiles: Vec<TileView>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PlantKindKey {
+    Fossil,
+    Renewable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlantView {
+    pub id: u32,
+    pub kind: PlantKindKey,
+    pub tile: Tile,
+    pub capacity: f64,
+    pub output: f64,
+    pub emissions_monthly: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -133,6 +239,7 @@ pub struct FirmView {
     pub sector: SectorKey,
     pub name: String,
     pub owner: FirmOwner,
+    pub tile: Tile,
     pub workers: f64,
     pub wage: f64,
     pub price: f64,
@@ -204,12 +311,11 @@ pub struct NatureView {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HousingView {
-    pub private_cap: f64,
-    pub public_cap: f64,
+    pub homes: u32,
     pub rent_private: f64,
     pub rent_public: f64,
     pub occupancy: f64,
-    pub housed_share: f64,
+    pub unhoused_households: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -217,7 +323,13 @@ pub struct HousingView {
 pub struct EnergyView {
     pub fossil_cap: f64,
     pub renewable_cap: f64,
+    /// Fossil capacity over total capacity (0 with no plants).
     pub fossil_share: f64,
+    pub demand: f64,
+    pub supply: f64,
+    pub delivered: f64,
+    pub served: f64,
+    pub grid_intensity: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -230,13 +342,17 @@ pub struct Snapshot {
     pub game_over: Option<GameOver>,
     pub pc: PcView,
     pub system: SystemView,
+    pub map: MapView,
     pub buildings: Buildings,
     pub pending: Vec<PendingItem>,
     pub policy: BTreeMap<LeverKey, PolicyEntry>,
     pub net_lobby: f64,
     pub union_density: f64,
     pub indicators: Indicators,
+    pub people: Vec<PersonView>,
     pub households: Vec<HouseholdView>,
+    pub homes: Vec<HomeView>,
+    pub plants: Vec<PlantView>,
     pub firms: Vec<FirmView>,
     pub bank: BankView,
     pub government: GovernmentView,
@@ -246,37 +362,44 @@ pub struct Snapshot {
     pub history: Vec<HistoryPoint>,
 }
 
-/// Housing added by one `public_housing` build. The model adds exactly `count` units of
-/// public capacity per build (`sim-model/src/government.rs`), so this is 1.
-pub const PUBLIC_HOUSING_PER_BUILDING: f64 = 1.0;
-
-fn buildings_from(
-    public_cap: f64,
-    fossil_cap: f64,
-    renewable_cap: f64,
-    plant_cap: f64,
-) -> Buildings {
-    let count = |cap: f64, per: f64| -> u32 {
-        if per > 0.0 && cap.is_finite() && cap > 0.0 {
-            (cap / per).round().min(f64::from(u32::MAX)) as u32
-        } else {
-            0
-        }
-    };
+/// Summary counts, derived from the map.
+pub fn buildings(sim: &Sim) -> Buildings {
+    let count = |k: st::TileKind| sim.state.map.cells.iter().filter(|c| c.kind == k).count() as u32;
     Buildings {
-        public_housing: count(public_cap, PUBLIC_HOUSING_PER_BUILDING),
-        fossil_plant: count(fossil_cap, plant_cap),
-        renewable_plant: count(renewable_cap, plant_cap),
+        public_housing: count(st::TileKind::PublicHousing),
+        fossil_plant: count(st::TileKind::FossilPlant),
+        renewable_plant: count(st::TileKind::RenewablePlant),
+        road: count(st::TileKind::Road),
     }
 }
 
-pub fn buildings(sim: &Sim) -> Buildings {
-    buildings_from(
-        sim.state.housing.public_cap.0,
-        sim.state.energy.fossil_cap.0,
-        sim.state.energy.renewable_cap.0,
-        sim.params.government.plant_capacity,
-    )
+fn map_view(s: &st::State) -> MapView {
+    let tiles = s
+        .map
+        .tiles()
+        .map(|t| {
+            let c = s.map.cells[s.map.idx(t)];
+            let emissions_monthly = match c.kind {
+                st::TileKind::FossilPlant | st::TileKind::RenewablePlant => {
+                    s.plants.iter().find(|p| p.tile == t).map(|p| p.emissions.0)
+                }
+                _ => None,
+            };
+            TileView {
+                x: i32::from(t.x),
+                y: i32::from(t.y),
+                kind: TileKindKey::from_sim(c.kind),
+                reference: c.id,
+                buildable: c.kind == st::TileKind::Empty,
+                emissions_monthly,
+            }
+        })
+        .collect();
+    MapView {
+        width: u32::from(s.map.width),
+        height: u32::from(s.map.height),
+        tiles,
+    }
 }
 
 /// `Some` once the game has ended: the first recorded outcome, or `survived` after the last turn.
@@ -304,6 +427,9 @@ fn indicators(sim: &Sim) -> Indicators {
         employed: i.employed.0,
         labour_force: i.labour_force.0,
         gini: i.gini.0,
+        avg_income_per_person: i.avg_income_pp.dollars(),
+        median_income_per_person: i.median_income_pp.dollars(),
+        top_household_wealth_share: i.top_wealth_share.0,
         wage_share: i.wage_share.0,
         profit_share: i.profit_share.0,
         avg_wellbeing: i.avg_wellbeing.0,
@@ -377,6 +503,28 @@ fn policy(sim: &Sim) -> BTreeMap<LeverKey, PolicyEntry> {
     m
 }
 
+fn people(sim: &Sim) -> Vec<PersonView> {
+    sim.state
+        .persons
+        .iter()
+        .map(|p| PersonView {
+            id: p.id.0,
+            label: p.label.clone(),
+            household: p.household.0,
+            age_band: AgeBandKey::from_sim(p.age_band),
+            skill: p.skill.0,
+            job: p.job.map(|f| JobView { firm: f.0 }),
+            wage: p.wage.dollars(),
+            commute_tiles: p.commute_tiles,
+            commute_minutes: p.commute_minutes,
+            wellbeing: p.wellbeing.0,
+            in_labour_force: p.in_labour_force,
+            job_guarantee: p.jg,
+            effective_hours: p.effective_hours.0,
+        })
+        .collect()
+}
+
 fn households(sim: &Sim) -> Vec<HouseholdView> {
     sim.state
         .households
@@ -384,13 +532,12 @@ fn households(sim: &Sim) -> Vec<HouseholdView> {
         .map(|h| HouseholdView {
             id: h.id.0,
             label: h.label.clone(),
+            members: h.members.iter().map(|m| m.0).collect(),
+            home: h.home.map(|x| x.0),
             class: ClassKey::from_sim(h.class),
-            people: h.weight.0,
-            employed: h.employed().0,
-            labour_force: h.labour_force().0,
             savings: h.savings.dollars(),
             debt: h.debt.dollars(),
-            wealth_per_capita: h.wealth_pc.dollars(),
+            net_worth: h.wealth.dollars(),
             income: HouseholdIncome {
                 wages: h.income.wages.dollars(),
                 dividends: h.income.dividends.dollars(),
@@ -402,11 +549,47 @@ fn households(sim: &Sim) -> Vec<HouseholdView> {
                 loan_payments: h.income.loan_payments.dollars(),
                 spending: h.income.spending.dollars(),
             },
-            wellbeing: h.wellbeing.0,
             political_power: h.political_power.0,
+            arrears_months: h.arrears_months,
+            wellbeing: h.wellbeing.0,
             footprint_tonnes: h.footprint.0,
             food_met: h.food_met.0,
-            housed_share: h.housed_share.0,
+        })
+        .collect()
+}
+
+fn homes(sim: &Sim) -> Vec<HomeView> {
+    sim.state
+        .homes
+        .iter()
+        .map(|h| HomeView {
+            id: h.id.0,
+            tile: Tile::from_sim(h.tile),
+            owner: match h.owner {
+                st::HomeOwner::Household(x) => HomeOwnerView::Household(x.0),
+                st::HomeOwner::Public => HomeOwnerView::Public(PublicOwner::Public),
+            },
+            household: h.household.map(|x| x.0),
+            rent: h.rent.dollars(),
+            value: h.value.dollars(),
+        })
+        .collect()
+}
+
+fn plants(sim: &Sim) -> Vec<PlantView> {
+    sim.state
+        .plants
+        .iter()
+        .map(|p| PlantView {
+            id: p.id.0,
+            kind: match p.kind {
+                st::PlantKind::Fossil => PlantKindKey::Fossil,
+                st::PlantKind::Renewable => PlantKindKey::Renewable,
+            },
+            tile: Tile::from_sim(p.tile),
+            capacity: p.capacity.0,
+            output: p.output.0,
+            emissions_monthly: p.emissions.0,
         })
         .collect()
 }
@@ -415,12 +598,14 @@ fn households(sim: &Sim) -> Vec<HouseholdView> {
 fn firm_names(firms: &[st::Firm]) -> Vec<String> {
     let mut goods = 0u32;
     let mut food = 0u32;
+    let mut services = 0u32;
     firms
         .iter()
         .map(|f| {
             let (base, n) = match f.sector {
                 st::Sector::Goods => ("Factory", &mut goods),
                 st::Sector::Food => ("Farm", &mut food),
+                st::Sector::Services => ("Shop", &mut services),
             };
             *n += 1;
             if *n == 1 {
@@ -443,6 +628,7 @@ fn firms(sim: &Sim) -> Vec<FirmView> {
             active: f.active,
             sector: SectorKey::from_sim(f.sector),
             name,
+            tile: Tile::from_sim(f.tile),
             owner: match f.owner {
                 st::Owner::Household(h) => FirmOwner::Household { id: h.0 },
                 st::Owner::Workers => FirmOwner::Workers,
@@ -486,13 +672,17 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
                 total: t.total,
             }),
         },
+        map: map_view(s),
         buildings: buildings(sim),
         pending: s.pending.iter().map(PendingItem::from_sim).collect(),
         policy: policy(sim),
         net_lobby: s.net_lobby.0,
         union_density: s.union_density.0,
         indicators: indicators(sim),
+        people: people(sim),
         households: households(sim),
+        homes: homes(sim),
+        plants: plants(sim),
         firms: firms(sim),
         bank: BankView {
             equity: s.bank.equity.dollars(),
@@ -525,17 +715,29 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
             sink_monthly: s.nature.sink.0,
         },
         housing: HousingView {
-            private_cap: s.housing.private_cap.0,
-            public_cap: s.housing.public_cap.0,
+            homes: s.homes.len() as u32,
             rent_private: s.housing.rent_private.dollars(),
             rent_public: s.housing.rent_public.dollars(),
             occupancy: s.housing.occupancy.0,
-            housed_share: s.housing.housed_share.0,
+            unhoused_households: s.housing.unhoused_households,
         },
-        energy: EnergyView {
-            fossil_cap: s.energy.fossil_cap.0,
-            renewable_cap: s.energy.renewable_cap.0,
-            fossil_share: s.energy.grid_factor(),
+        energy: {
+            let fossil = s.capacity(st::PlantKind::Fossil);
+            let renewable = s.capacity(st::PlantKind::Renewable);
+            EnergyView {
+                fossil_cap: fossil,
+                renewable_cap: renewable,
+                fossil_share: if fossil + renewable > 0.0 {
+                    fossil / (fossil + renewable)
+                } else {
+                    0.0
+                },
+                demand: s.energy.demand.0,
+                supply: s.energy.supply.0,
+                delivered: s.energy.delivered.0,
+                served: s.energy.served.0,
+                grid_intensity: s.energy.grid_intensity.0,
+            }
         },
         history: history.to_vec(),
     }
@@ -551,20 +753,5 @@ mod tests {
         assert_eq!(share(150_000.0, 100_000.0), 1.0);
         assert_eq!(share(-1.0, 100_000.0), 0.0);
         assert_eq!(share(1.0, 0.0), 0.0);
-    }
-
-    #[test]
-    fn building_counts_round_from_capacity() {
-        let b = buildings_from(0.0, 100.0, 0.0, 20.0);
-        assert_eq!(
-            (b.public_housing, b.fossil_plant, b.renewable_plant),
-            (0, 5, 0)
-        );
-        let b = buildings_from(3.0, 99.9, 40.0, 20.0);
-        assert_eq!(
-            (b.public_housing, b.fossil_plant, b.renewable_plant),
-            (3, 5, 2)
-        );
-        assert_eq!(buildings_from(-1.0, f64::NAN, 5.0, 0.0).fossil_plant, 0);
     }
 }

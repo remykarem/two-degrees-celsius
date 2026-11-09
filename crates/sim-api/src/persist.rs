@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_params::Params;
 use sim_rng::Rng;
-use sim_types::{Cents, Owner, State, SystemId, MAX_FIRMS};
+use sim_types::{
+    Cents, Command, CommonsAccess, HomeOwner, Owner, State, SystemId, Tile, TileKind, MAX_FIRMS,
+};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,7 +104,8 @@ pub fn import(blob: &str, params: &Params) -> ApiResult<Imported> {
     })
 }
 
-/// Indexing the engine does without bounds checks must be safe for any imported state.
+/// Indexing the engine does without bounds checks must be safe for any imported state: every
+/// id and tile in the save must refer to something that exists.
 fn validate_shape(s: &State, p: &Params) -> ApiResult<()> {
     if s.schema_version != sim_types::SCHEMA_VERSION {
         return Err(ApiError::new(
@@ -111,38 +114,91 @@ fn validate_shape(s: &State, p: &Params) -> ApiResult<()> {
         ));
     }
     let nh = s.households.len();
-    if nh != p.initial.cohorts.len() || s.firms.len() != p.initial.firms.len() {
+    let np = s.persons.len();
+    let nf = s.firms.len();
+    let people_expected: usize = p.initial.households.iter().map(|h| h.people.len()).sum();
+    if nh != p.initial.households.len() || np != people_expected || nf != p.initial.firms.len() {
         return Err(bad(
-            "saved state has a different number of households or firms",
+            "saved state has a different number of people, households or firms",
         ));
     }
-    if s.firms.len() != MAX_FIRMS {
+    if nf != MAX_FIRMS {
         return Err(bad("saved state has the wrong number of firm slots"));
     }
-    if s.households
-        .iter()
-        .any(|h| h.employment.len() != s.firms.len())
+    let (w, h) = (usize::from(s.map.width), usize::from(s.map.height));
+    if w != usize::from(p.initial.map.width)
+        || h != usize::from(p.initial.map.height)
+        || s.map.cells.len() != w * h
     {
-        return Err(bad("saved employment table does not match the firm slots"));
+        return Err(bad("saved map has the wrong size"));
     }
-    if s.households
-        .iter()
-        .enumerate()
-        .any(|(i, h)| h.id.idx() != i)
-        || s.firms.iter().enumerate().any(|(i, f)| f.id.idx() != i)
+    if s.persons.iter().enumerate().any(|(i, x)| x.id.idx() != i)
+        || s.households
+            .iter()
+            .enumerate()
+            .any(|(i, x)| x.id.idx() != i)
+        || s.firms.iter().enumerate().any(|(i, x)| x.id.idx() != i)
     {
         return Err(bad("saved ids do not match their positions"));
     }
-    let owner_ok = |i: usize| i < nh;
-    let firm_ok = s.firms.iter().all(|f| {
-        owner_ok(f.founder.idx())
+    let hh = |i: usize| i < nh;
+    let tile_ok = |t: Tile| s.map.in_bounds(t);
+    let home_exists = |id: u32| s.homes.iter().any(|x| x.id.0 == id);
+    let plant_exists = |id: u32| s.plants.iter().any(|x| x.id.0 == id);
+    let people_ok = s
+        .persons
+        .iter()
+        .all(|x| hh(x.household.idx()) && x.job.is_none_or(|f| f.idx() < nf));
+    let households_ok = s.households.iter().all(|x| {
+        x.members.iter().all(|m| m.idx() < np) && x.home.is_none_or(|id| home_exists(id.0))
+    });
+    let homes_ok = s.homes.iter().all(|x| {
+        tile_ok(x.tile)
+            && x.household.is_none_or(|i| hh(i.idx()))
+            && match x.owner {
+                HomeOwner::Household(o) => hh(o.idx()),
+                HomeOwner::Public => true,
+            }
+    }) && s.homes.iter().all(|x| x.id.0 < s.next_home_id);
+    let plants_ok = s
+        .plants
+        .iter()
+        .all(|x| tile_ok(x.tile) && x.id.0 < s.next_plant_id);
+    let firms_ok = s.firms.iter().all(|f| {
+        tile_ok(f.tile)
+            && hh(f.founder.idx())
             && match f.owner {
-                Owner::Household(h) => owner_ok(h.idx()),
+                Owner::Household(o) => hh(o.idx()),
                 _ => true,
             }
     });
-    if !(firm_ok && owner_ok(s.bank.owner.idx()) && owner_ok(s.housing.owner.idx())) {
-        return Err(bad("saved state refers to a household that does not exist"));
+    let cells_ok = s.map.cells.iter().all(|c| match (c.kind, c.id) {
+        (TileKind::Home | TileKind::PublicHousing, Some(id)) => home_exists(id),
+        (TileKind::Firm, Some(id)) => (id as usize) < nf,
+        (TileKind::FossilPlant | TileKind::RenewablePlant, Some(id)) => plant_exists(id),
+        _ => true,
+    });
+    let pending_ok = s.pending.iter().all(|c| match c.command {
+        Command::Place { tile, .. } | Command::Remove { tile } => tile_ok(tile),
+        _ => true,
+    }) && s.gov.pending_build.iter().all(|(_, t)| tile_ok(*t));
+    let owners_ok = hh(s.bank.owner.idx())
+        && match s.nature.commons_access {
+            CommonsAccess::Enclosed(o) => hh(o.idx()),
+            _ => true,
+        };
+    if !(people_ok
+        && households_ok
+        && homes_ok
+        && plants_ok
+        && firms_ok
+        && cells_ok
+        && pending_ok
+        && owners_ok)
+    {
+        return Err(bad(
+            "saved state refers to a person, household, home, plant, firm or tile that does not exist",
+        ));
     }
     Ok(())
 }

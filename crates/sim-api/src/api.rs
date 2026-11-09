@@ -1,12 +1,12 @@
 //! `Api`: the `SimPort` operations over a `Sim`.
-use crate::command::Command;
+use crate::command::{Command, Tile};
 use crate::content;
 use crate::error::{code, ApiError, ApiResult};
 use crate::events::{SimEvent, SimEventKind, TraceRecord};
 use crate::frames::{self, TickCapture};
 use crate::history::{self, HistoryPoint};
-use crate::keys::{BlockReason, LeverKey};
-use crate::meta::{ActionInfo, LeverInfo, Meta};
+use crate::keys::{BlockReason, InfraKind, LeverKey};
+use crate::meta::{ActionInfo, LeverInfo, Meta, Rejection};
 use crate::persist;
 use crate::snapshot::{self, Snapshot};
 use crate::turn::{
@@ -30,7 +30,8 @@ fn param_key(c: &Command) -> String {
         Command::SetPolicy { lever, .. } => lever.as_str().to_string(),
         Command::SwitchSystem { .. } => "switch_system".to_string(),
         Command::Place { kind, .. } => format!("place_{}", kind.as_str()),
-        Command::Remove { kind, .. } => format!("remove_{}", kind.as_str()),
+        // What a removal costs depends on the tile; only wire-invalid removals get here.
+        Command::Remove { .. } => "remove_road".to_string(),
     }
 }
 
@@ -45,8 +46,8 @@ struct Split {
     /// Original index of each engine command.
     index: Vec<usize>,
     cmds: Vec<st::Command>,
-    /// `(original index, reason text)` of wire-level rejections.
-    invalid: Vec<(usize, String)>,
+    /// `(original index, rejection)` of wire-level rejections.
+    invalid: Vec<(usize, Rejection)>,
 }
 
 impl Api {
@@ -106,10 +107,19 @@ impl Api {
                     s.index.push(i);
                     s.cmds.push(sc);
                 }
-                Err(why) => s.invalid.push((i, why)),
+                Err(r) => s.invalid.push((i, r)),
             }
         }
         s
+    }
+
+    /// Tiles where `kind` can be built now (empty, not scenery, nothing queued there), in
+    /// row-major order. The UI shades the grid with this.
+    pub fn valid_tiles(&self, kind: InfraKind) -> Vec<Tile> {
+        sim_engine::turn::valid_tiles(&self.sim, kind.to_sim())
+            .into_iter()
+            .map(Tile::from_sim)
+            .collect()
     }
 
     fn ensure_running(&self) -> ApiResult<()> {
@@ -138,9 +148,11 @@ impl Api {
                 effective_turn: cost.effective_turn,
                 opposition: cost.opposition,
                 blocked: cost.blocked.map(BlockReason::from_sim),
+                tile_valid: cost.tile_valid,
+                tile_reason: cost.tile_reason.map(BlockReason::from_sim),
             });
         }
-        for (i, _) in &split.invalid {
+        for (i, rej) in &split.invalid {
             let lead = self
                 .sim
                 .params
@@ -155,7 +167,9 @@ impl Api {
                 lead_time: lead,
                 effective_turn: self.sim.state.turn + lead,
                 opposition: 0.0,
-                blocked: Some(BlockReason::InvalidCommand),
+                blocked: Some(rej.reason),
+                tile_valid: rej.reason != BlockReason::TileInvalid,
+                tile_reason: (rej.reason == BlockReason::TileInvalid).then_some(rej.reason),
             });
         }
         Ok(out.into_iter().flatten().collect())
@@ -196,11 +210,7 @@ impl Api {
         let mut pre: Vec<SimEvent> = split
             .invalid
             .iter()
-            .map(|_| {
-                SimEvent::new(SimEventKind::PolicyBlocked {
-                    reason: BlockReason::InvalidCommand,
-                })
-            })
+            .map(|(_, r)| SimEvent::new(SimEventKind::PolicyBlocked { reason: r.reason }))
             .collect();
         pre.extend(out.events[..pre_n].iter().map(SimEvent::from_sim));
         let months: Vec<MonthFrame> = ticks
@@ -233,10 +243,10 @@ impl Api {
                 }
             })
             .collect();
-        rejected.extend(split.invalid.iter().map(|(i, _)| RejectedCommand {
+        rejected.extend(split.invalid.iter().map(|(i, r)| RejectedCommand {
             index: *i,
             command: cmds[*i],
-            reason: BlockReason::InvalidCommand,
+            reason: r.reason,
         }));
         rejected.sort_by_key(|r| r.index);
 
@@ -259,7 +269,11 @@ impl Api {
                     effective: g.effective,
                 })
                 .collect(),
-            trace: out.trace.iter().map(TraceRecord::from_sim).collect(),
+            trace: out
+                .trace
+                .iter()
+                .map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
+                .collect(),
             snapshot: self.snapshot(),
         })
     }
@@ -286,7 +300,9 @@ impl Api {
         for p in &imp.state.pending {
             self.meta
                 .to_sim(&Command::from_sim(&p.command))
-                .map_err(|e| ApiError::new(code::BAD_STATE, format!("saved pending item: {e}")))?;
+                .map_err(|e| {
+                    ApiError::new(code::BAD_STATE, format!("saved pending item: {}", e.why))
+                })?;
         }
         self.sim.state = imp.state;
         self.sim.rng = imp.rng;
