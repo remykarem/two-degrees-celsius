@@ -4,7 +4,7 @@ import { LENSES } from '../src/store';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { planEntities } from '../src/scene/entities';
-import { entityTints, legendFor, ramp, RAMP, tileTints, emitterWeights, employmentShare, type LensCtx } from '../src/scene/lenses';
+import { entityTints, legendFor, ramp, RAMP, extremes, tileTints, emitterWeights, employmentShare, type LensCtx } from '../src/scene/lenses';
 import { CLASS_COLOR, hex } from '../src/scene/palette';
 import { pathTiles } from '../src/scene/paths';
 
@@ -30,7 +30,7 @@ describe('lens colours', () => {
     const t = entityTints('emissions', ctx);
     const active = descs.filter((d) => d.firm?.active);
     const heavy = active.reduce((a, b) => (a.firm!.emissions >= b.firm!.emissions ? a : b));
-    expect(t.get(heavy.key)).toBe(RAMP.emissions[3]);
+    expect(t.get(heavy.key)).toBe(ramp(RAMP.emissions, heavy.firm!.emissions / extremes(snapshot).maxEmission));
   });
   it('emissions heat is high near emitters and absent far away', () => {
     const tiles = tileTints('emissions', ctx);

@@ -108,7 +108,7 @@ export class EntityLayer {
 
   private addConstructionMarks(item: Item, built: BuiltModel) {
     const d = item.desc;
-    if (d.state === 'pending') {
+    if (d.state === 'pending' && d.ref.kind !== 'road') {
       if (!this.crane) this.crane = this.model('crane' as ModelId).geometry;
       const crane = new THREE.Mesh(this.crane, makeTintMaterial(CRANE, 0.9));
       item.group.add(crane);

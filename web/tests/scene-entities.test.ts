@@ -34,7 +34,7 @@ describe('layout to entity mapping', () => {
   it('firms use factory, farm, or vacant lot from sector and active flag', () => {
     const firms = descs.filter((d) => d.ref.kind === 'firm');
     for (const f of firms) {
-      const expected = !f.firm || !f.firm.active ? 'firm_vacant' : f.firm.sector === 'food' ? 'firm_food' : 'firm_goods';
+      const expected = !f.firm || !f.firm.active ? 'firm_vacant' : f.firm.sector === 'food' ? 'firm_food' : f.firm.sector === 'services' ? 'firm_shop' : 'firm_goods';
       expect(f.model).toBe(expected);
     }
     expect(firms.some((f) => f.model === 'firm_goods')).toBe(true);

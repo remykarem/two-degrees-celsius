@@ -1,4 +1,4 @@
-import { BRICK, CRANE, DARK, FOOD, GLASS, GOLD, GRASS, LEAF, METAL, PANEL, ROOF, ROOF_DARK, SMOKE_DARK, STONE, WALL, WOOD } from './palette';
+import { AWNING_A, BRICK, CRANE, DARK, FOOD, GLASS, GOLD, GRASS, LEAF, METAL, PANEL, ROOF, ROOF_DARK, SMOKE_DARK, STONE, WALL, WOOD } from './palette';
 
 /**
  * Procedural building models as plain data (pure; geometry is built in geometry.ts).
@@ -121,6 +121,25 @@ export const MODELS = {
     ...[-0.3, -0.05].flatMap((x) => [0.12, 0.34].map((z) => P('box', x, 0.1, z, 0.22, 0.03, 0.18, PANEL, { rz: -0.5 }))),
     ...[-0.3, -0.05].flatMap((x) => [0.12, 0.34].map((z) => box(x, 0.03, z, 0.03, 0.08, 0.03, METAL))),
   ], { at: [0.22, 0.77, -0.15], parts: [0, 1, 2].map((i) => P('box', 0, 0, 0, 0.05, 0.38, 0.03, 0xf2f0e8, { rz: (i * 2 * Math.PI) / 3 })) }),
+
+  // Shop (services): a market stall with a striped awning, crates and a sign; not the goods model.
+  firm_shop: model([
+    box(0, 0, 0.05, 0.72, 0.26, 0.4, WALL, true), box(0, 0.26, 0.05, 0.76, 0.04, 0.44, ROOF_DARK),
+    ...[-0.3, -0.18, -0.06, 0.06, 0.18, 0.3].map((x, i) => P('box', x, 0.32, 0.2, 0.12, 0.05, 0.34, i % 2 ? 0xffffff : AWNING_A, { rz: 0 })),
+    ...[-0.34, 0.34].map((x) => box(x, 0, 0.36, 0.03, 0.34, 0.03, WOOD)),
+    box(0, 0.1, 0.26, 0.6, 0.12, 0.14, WOOD), box(-0.2, 0.22, 0.28, 0.1, 0.07, 0.08, 0xe6c35c), box(0.02, 0.22, 0.28, 0.1, 0.07, 0.08, FOOD), box(0.22, 0.22, 0.28, 0.1, 0.07, 0.08, 0x8fc16a),
+    box(0.3, 0, -0.22, 0.16, 0.14, 0.16, WOOD), box(0.1, 0, -0.26, 0.14, 0.1, 0.14, WOOD),
+    box(-0.3, 0.3, -0.22, 0.02, 0.4, 0.02, DARK), box(-0.3, 0.6, -0.22, 0.26, 0.14, 0.03, GOLD),
+  ]),
+  // A tent for a household without a home, pitched on a free tile near the town hall.
+  tent: model([
+    P('pyr', 0, 0, 0, 0.5, 0.36, 0.5, 0xe9a23b, { }), box(0, 0, 0.18, 0.1, 0.16, 0.02, DARK), box(0.2, 0, -0.2, 0.02, 0.3, 0.02, WOOD), box(0.26, 0.24, -0.2, 0.12, 0.06, 0.01, 0xd1432f),
+  ]),
+  // Road works: cones and a barrier (drawn on a queued or planned road tile).
+  road_site: model([
+    ...[[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].map(([x, z]) => cone(x!, 0.04, z!, 0.1, 0.18, 0xf08a24)),
+    box(0, 0.12, -0.34, 0.5, 0.05, 0.03, 0xf2c14e), box(-0.2, 0.04, -0.34, 0.03, 0.12, 0.03, DARK), box(0.2, 0.04, -0.34, 0.03, 0.12, 0.03, DARK),
+  ]),
 
   // Under construction extras (drawn on top of a translucent building)
   crane: model([

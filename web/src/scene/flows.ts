@@ -1,17 +1,17 @@
-import type { ClassKey, MonthFlows, MonthFrame, Sector, SimEvent, Snapshot } from '../contract';
+import type { ClassKey, MonthFlows, MonthFrame, PlantView, Sector, SimEvent, Snapshot } from '../contract';
 import type { MapLayout, Tile } from '../store';
-import { centreOf, hash01, type Pt } from './coords';
+import { centreOf, hash01, tileKey, type Pt } from './coords';
 import { route } from './paths';
 
 /** Pure planner: MonthFrame -> animation tracks. No Three.js, no clock. Reads frames, never changes state. */
-export const CAPS = { figures: 48, goods: 36, tokens: 80, smoke: 140, fx: 12 } as const;
+export const CAPS = { goods: 36, tokens: 80, smoke: 140, fx: 12 } as const;
 export const CLASS_ORDER: ClassKey[] = ['capitalist', 'rentier', 'manager', 'worker', 'dependent'];
 
-export type TrackKind = 'figure' | 'good' | 'token';
+export type TrackKind = 'good' | 'token';
 export interface Track {
   id: string;
   kind: TrackKind;
-  /** figure: class index; good: 0 goods / 1 food; token: 0 wage / 1 rent / 2 purchase. */
+  /** good: 0 goods / 1 food / 2 service; token: 0 wage / 1 rent / 2 purchase. */
   style: number;
   path: Pt[];
   /** Month-local time window, 0..1. */
@@ -28,6 +28,8 @@ export interface PlanCtx {
   layout: MapLayout;
   households: { id: number; class: ClassKey; home: number | null }[];
   firms: { id: number; sector: Sector; active: boolean }[];
+  homes: { id: number; owner: number | 'public'; tile: Tile }[];
+  plants: PlantView[];
   fossilShare: number;
   turn: number;
 }
@@ -35,6 +37,7 @@ export interface PlanCtx {
 export function ctxFromSnapshot(layout: MapLayout, s: Snapshot): PlanCtx {
   return {
     layout, turn: s.turn, fossilShare: s.energy.fossilShare,
+    homes: s.homes.map((h) => ({ id: h.id, owner: h.owner, tile: { ...h.tile } })), plants: s.plants,
     households: s.households.map((h) => ({ id: h.id, class: h.class, home: h.home })),
     firms: s.firms.map((f) => ({ id: f.id, sector: f.sector, active: f.active })),
   };
@@ -101,10 +104,20 @@ function window01(seed: number): [number, number] {
   return [t0, Math.min(1, t0 + 0.34 + 0.14 * hash01(seed + 5))];
 }
 
-/** Emissions list for a frame -> emitters (chimneys, house puffs, forest sinks, fossil plants). */
+/** Smoke below this share of the heaviest emitter is not drawn (a plant that emits nothing shows no smoke). */
+export const SMOKE_MIN = 0.02;
+
+/**
+ * Emissions list for a frame -> emitters (chimneys, house puffs, forest sinks, plants). Each emitter's rate is its tonnes over the
+ * heaviest firm or plant, so the player SEES which one emits. Plants use the frame's `plant` entries when present, else the snapshot's
+ * `emissionsMonthly`; a renewable plant (0 t) gets no smoke.
+ */
 export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [], c: PlanCtx): Emitter[] {
   const n = c.layout.gridSize;
-  const max = Math.max(1e-9, ...emissions.map((e) => Math.max(0, e.tonnes)));
+  const plantT = new Map<string, number>();
+  for (const p of c.plants) plantT.set(tileKey(p.tile), p.emissionsMonthly);
+  for (const e of emissions) if (e.source === 'plant' && e.tile) plantT.set(tileKey(e.tile), Math.max(0, e.tonnes));
+  const max = Math.max(1e-9, ...emissions.filter((e) => e.source === 'firm').map((e) => Math.max(0, e.tonnes)), ...plantT.values());
   const maxSink = Math.max(1e-9, ...emissions.map((e) => Math.max(0, -e.tonnes)));
   const out: Emitter[] = [];
   for (const e of emissions) {
@@ -112,7 +125,7 @@ export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [
       const t = firmTile(c, e.id);
       const active = c.firms.find((f) => f.id === e.id)?.active ?? false;
       const sector = c.firms.find((f) => f.id === e.id)?.sector;
-      if (t && active && e.tonnes > 0) out.push({ id: `f${e.id}`, kind: 'smoke', at: centreOf(t, n), top: sector === 'food' ? 0.55 : 1.0, rate: Math.min(1, e.tonnes / max) });
+      if (t && active && e.tonnes / max >= SMOKE_MIN) out.push({ id: `f${e.id}`, kind: 'smoke', at: centreOf(t, n), top: sector === 'food' ? 0.55 : sector === 'services' ? 0.45 : 1.0, rate: Math.min(1, e.tonnes / max) });
     } else if (e.source === 'households' && e.tonnes > 0) {
       for (const h of c.layout.scenery.filter((s) => s.kind === 'home')) out.push({ id: `h${h.ref}`, kind: 'house', at: centreOf(h, n), top: 0.62, rate: Math.min(1, (e.tonnes / max) * 0.5) });
     } else if (e.source === 'sink' && e.tonnes < 0) {
@@ -120,16 +133,20 @@ export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [
     }
   }
   for (const p of c.layout.placed) {
-    if (p.kind === 'fossil_plant') out.push({ id: `p${p.x},${p.y}`, kind: 'smoke', at: centreOf(p, n), top: 1.1, rate: 0.3 + 0.6 * c.fossilShare });
+    if (p.kind !== 'fossil_plant') continue;
+    const tonnes = plantT.get(tileKey(p));
+    const rate = tonnes === undefined ? 0.3 + 0.6 * c.fossilShare : tonnes / max;
+    if (rate >= SMOKE_MIN) out.push({ id: `p${p.x},${p.y}`, kind: 'smoke', at: centreOf(p, n), top: 1.1, rate: Math.min(1, rate) });
   }
   return out;
 }
 
 /** Emissions as a flow list straight from a snapshot, used for ambient smoke outside playback. */
 export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emissions']> {
-  const sum = s.nature.grossEmissionsMonthly * 0.1; // mock/real both split households off the gross total; a rough ambient share
+  const sum = s.nature.grossEmissionsMonthly * 0.1; // a rough ambient share for household puffs
   return [
     ...s.firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: f.active ? f.emissions : 0 })),
+    ...s.plants.map((p) => ({ source: 'plant' as const, tile: { ...p.tile }, tonnes: p.emissionsMonthly })),
     { source: 'households' as const, tonnes: sum },
     { source: 'sink' as const, tonnes: -s.nature.sinkMonthly },
   ];
@@ -168,19 +185,8 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
   const tracks: Track[] = [];
   const seed0 = frame.month * 1009 + c.turn * 31;
   const bank = firstOf(c, 'bank'), gov = firstOf(c, 'government');
-  const clsOf = (id: number) => Math.max(0, CLASS_ORDER.indexOf(c.households.find((h) => h.id === id)?.class ?? 'worker'));
 
-  // Commuters: small figures home -> workplace -> home.
-  const commutes = f.commutes.filter((x) => homeTile(c, x.household) && firmTile(c, x.firm));
-  allocate(commutes.map(() => 1), CAPS.figures, 6).forEach((cnt, i) => {
-    const x = commutes[i]!;
-    for (let k = 0; k < cnt; k++) {
-      const seed = seed0 + i * 53 + k, [t0, t1] = window01(seed);
-      tracks.push({ id: `c${frame.month}:${i}:${k}`, kind: 'figure', style: clsOf(x.household), path: pathBetween(c, homeTile(c, x.household)!, firmTile(c, x.firm)!, seed), t0, t1 });
-    }
-  });
-
-  // Purchases: goods firm -> home, plus a coin the other way.
+  // Purchases (real, household -> firm): goods, food or a service ticket from the firm to the home, plus a coin the other way.
   const buys = f.purchases.flatMap((p) => {
     const h = homeTile(c, p.household);
     if (!h) return [];
@@ -191,7 +197,7 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
     const b = buys[i]!;
     for (let k = 0; k < cnt; k++) {
       const seed = seed0 + 5000 + i * 17 + k, [t0, t1] = window01(seed);
-      tracks.push({ id: `g${frame.month}:${i}:${k}`, kind: 'good', style: b.p.sector === 'food' ? 1 : 0, path: pathBetween(c, b.ft, b.h, seed), t0, t1 });
+      tracks.push({ id: `g${frame.month}:${i}:${k}`, kind: 'good', style: b.p.sector === 'food' ? 1 : b.p.sector === 'services' ? 2 : 0, path: pathBetween(c, b.ft, b.h, seed), t0, t1 });
       if (k % 2 === 0) tracks.push({ id: `bp${frame.month}:${i}:${k}`, kind: 'token', style: 2, path: pathBetween(c, b.h, b.ft, seed + 1), t0: Math.max(0, t0 - 0.05), t1: Math.max(0.2, t1 - 0.05) });
     }
   });
@@ -206,11 +212,10 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
       tracks.push({ id: `w${frame.month}:${i}:${k}`, kind: 'token', style: 0, path: pathBetween(c, firmTile(c, w.firm)!, homeTile(c, w.household)!, seed), t0, t1 });
     }
   });
-  const landlord = c.households.find((h) => h.class === 'rentier');
   const rents = f.rent.flatMap((r) => {
     const from = homeTile(c, r.household);
-    const cls = c.households.find((h) => h.id === r.household)?.class;
-    const to = cls === 'dependent' ? gov ?? bank : (landlord && landlord.id !== r.household ? homeTile(c, landlord.id) : undefined) ?? gov ?? bank;
+    const home = c.homes.find((h) => h.id === r.home);
+    const to = home ? (home.owner === 'public' ? gov ?? bank : homeTile(c, home.owner) ?? gov ?? bank) : gov ?? bank;
     return from && to ? [{ r, from, to }] : [];
   });
   allocate(rents.map((r) => r.r.amount), Math.floor(tokenBudget * 0.35), 3).forEach((cnt, i) => {

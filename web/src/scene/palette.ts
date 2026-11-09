@@ -34,12 +34,21 @@ export const LEAF_DRY = 0xb89a52;
 export const GRASS = 0xa8cf86;
 export const PANEL = 0x2d4f7a;
 
-export const GROUND = [0xdbe6c4, 0xd2dfb9];
-export const PATH = 0xece3cc;
+export const GROUND = [0xa8d37c, 0x9fcb72];
+/** Dirt footpaths where there is no road. */
+export const PATH = 0xd9c593;
 /** Real (built) roads: darker than the footpaths. */
 export const ASPHALT = 0x6d7078;
-export const SOIL = 0xb59b78;
+export const SOIL = 0x9b7653;
+export const SOIL_DARK = 0x7f6040;
 export const BACKGROUND = 0xf6f0e3;
+export const FAR_GRASS = 0x8bbf68;
+export const SKY_TOP = '#8ec9ee';
+export const SKY_MID = '#cfe8f3';
+export const SKY_LOW = '#fbf3dc';
+export const ROAD_LINE = 0xf2efe2;
+export const HEDGE = 0x4f9250;
+export const AWNING_A = 0xd1432f;
 export const EDGE = 0x5a4636;
 export const HOVER_OK = 0x2f9e5b;
 export const HOVER_BAD = 0xd1432f;
@@ -50,6 +59,7 @@ export const SINK = 0x6dbb6a;
 export const COIN = 0xf2c14e;
 export const GOODS = 0xc58a52;
 export const FOOD = 0xd6603f;
+export const SERVICE = 0x9b6fd0;
 export const CRANE = 0xf0b429;
 
 /** Base wall tints (lens "none"): class colour washed toward cream so the town stays calm and warm. */

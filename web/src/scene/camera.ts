@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { clampPan, clampZoom, rotateDelta, smoothFactor, stepTween, ROTATE_MS, ZOOM_MAX, ZOOM_MIN, type AngleTween } from './cameraMath';
 
 const OFFSET = new THREE.Vector3(14, 12, 14);
-const HALF_H = 7.4;
+const HALF_H = 8.3;
 const UP = new THREE.Vector3(0, 1, 0);
 const GROUND = new THREE.Plane(UP, 0);
 

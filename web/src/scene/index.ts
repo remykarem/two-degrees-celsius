@@ -1,18 +1,24 @@
 import * as THREE from 'three';
 import { GRID_SIZE, layoutOf, selectionTile, tileKey, type Game, type GameState, type Tile } from '../store';
 import { sceneBus, type SceneBus } from '../store/scene-bus';
+import { personHover } from '../store/scene-people';
 import { createRig } from './camera';
 import { rotateDelta, wheelFactor, ZOOM_MAX, ZOOM_MIN } from './cameraMath';
 import { tileOf } from './coords';
 import { EntityLayer } from './entityLayer';
 import { entityAt, factsFor, planEntities, type EntityDesc } from './entities';
 import { ctxFromSnapshot, emissionsFromSnapshot, planEmitters, planFlowLoop, planFrame, type Emitter, type FramePlan, type Track } from './flows';
+import type { PersonView } from '../contract';
+import { createIsland } from './island';
+import { planCommutes, campTiles, planStands, type CommutePlan, type PersonStand } from './people';
+import { PeopleLayer } from './peopleLayer';
+import { roadGeometry } from './roads';
 import { buildModel, makeTintMaterial, setTint, type BuiltModel } from './geometry';
-import { entityTints, legendFor, tileTints, type LensCtx } from './lenses';
+import { entityTints, legendFor, personTints, tileTints, type LensCtx } from './lenses';
 import { FxLayer } from './fx';
 import { MODELS } from './models';
 import { pathTiles } from './paths';
-import { ASPHALT, BACKGROUND, GROUND, HOVER_BAD, HOVER_OK, mix, SELECT, SOIL } from './palette';
+import { ASPHALT, GROUND, HOVER_BAD, HOVER_OK, mix, SELECT } from './palette';
 import { TIMING } from './timing';
 
 export { TIMING } from './timing';
@@ -64,24 +70,22 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   const size = GRID_SIZE;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(BACKGROUND);
-  scene.add(new THREE.HemisphereLight(0xfff6e6, 0xc9bda5, 1.35));
+  const island = createIsland(size);
+  scene.background = island.sky;
+  scene.add(island.group);
+  scene.add(new THREE.HemisphereLight(0xf2f7ff, 0xb9c79a, 1.35));
   const sun = new THREE.DirectionalLight(0xfff0d8, 1.9);
   sun.position.set(-7, 15, 9);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 40 });
+  Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 44 });
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
   scene.add(sun);
 
-  // Ground: a soil slab and 144 instanced tiles whose colours the lenses and build mode paint.
+  // Ground: the island plot lives in island.ts; here are the 144 instanced tiles whose colours the lenses and build mode paint.
   const disposables: { dispose(): void }[] = [];
   const own = <T extends { dispose(): void }>(x: T): T => { disposables.push(x); return x; };
-  const slab = new THREE.Mesh(own(new THREE.BoxGeometry(size + 0.5, 0.5, size + 0.5)), own(new THREE.MeshLambertMaterial({ color: SOIL })));
-  slab.position.y = -0.31;
-  slab.receiveShadow = true;
-  scene.add(slab);
   const tilesMesh = new THREE.InstancedMesh(own(new THREE.BoxGeometry(0.97, 0.1, 0.97).translate(0, -0.05, 0)), own(new THREE.MeshLambertMaterial()), size * size);
   tilesMesh.receiveShadow = true;
   const dummy = new THREE.Object3D();
@@ -102,7 +106,17 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   const layer = new EntityLayer();
   const fx = new FxLayer();
-  scene.add(layer.group, fx.group);
+  const people = new PeopleLayer();
+  scene.add(layer.group, fx.group, people.group);
+
+  // Roads: one merged mesh for built roads, one translucent mesh for queued and planned ones, one ghost for the hovered tile.
+  const roadMat = own(makeTintMaterial(0xffffff));
+  const roadPendingMat = own(makeTintMaterial(0xffe9b0, 0.62));
+  const roadGhostMat = own(makeTintMaterial(0xcfe8c8, 0.5));
+  const mkRoad = (mat: THREE.Material, y: number) => { const m = new THREE.Mesh(new THREE.BufferGeometry(), mat); m.position.y = y; m.receiveShadow = true; m.visible = false; scene.add(m); return m; };
+  const roadMesh = mkRoad(roadMat, 0.01), roadPending = mkRoad(roadPendingMat, 0.02), roadGhost = mkRoad(roadGhostMat, 0.03);
+  const setRoads = (m: THREE.Mesh, tiles: Tile[], connected: Set<string>) => { m.geometry.dispose(); const g = roadGeometry(tiles, connected, size); m.geometry = g ?? new THREE.BufferGeometry(); m.visible = !!g; };
+  let connectedRoads = new Set<string>();
 
   const ghostModels = new Map<string, BuiltModel>();
   const ghostMat = makeTintMaterial(0xffffff, 0.5);
@@ -122,6 +136,14 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   let flowLoop: Track[] = [];
   let ambient: Emitter[] = [];
   let plan: FramePlan | null = null;
+  let stands: PersonStand[] = [];
+  let commutes: Map<number, CommutePlan> | null = null;
+  let hoverPerson: number | null = null;
+  let selectedPerson: number | null = null;
+  const personFacts = (p: PersonView) => [
+    { label: 'Person', value: p.label }, { label: 'Age', value: p.ageBand },
+    { label: 'Work', value: p.job ? `${descs.find((d) => d.firm?.id === p.job!.firm)?.firm?.name ?? 'Employed'}, ${p.commuteMinutes} min commute` : p.inLabourForce ? 'Looking for work' : 'Not in the labour force' },
+  ];
   let planMonth: number | null = null;
   let monthStart = 0;
   const tileColors: THREE.Color = new THREE.Color();
@@ -152,6 +174,13 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       if (p && d.state === 'normal' && ((p.state === 'pending') || (p.model === 'firm_vacant' && d.model !== 'firm_vacant'))) pops.set(d.key, 0.5);
     }
     layer.rebuild(descs, pops);
+    const drafted = s.draft.flatMap((d) => (d.command.type === 'place' && d.command.kind === 'road' ? [{ x: d.command.tile.x, y: d.command.tile.y }] : []));
+    const queued = [...layout.pendingRoads, ...drafted];
+    connectedRoads = new Set([...layout.roads, ...queued].map(tileKey));
+    setRoads(roadMesh, layout.roads, connectedRoads);
+    setRoads(roadPending, queued, connectedRoads);
+    stands = s.snapshot ? planStands(layout, s.snapshot) : [];
+    people.setStands(stands, s.snapshot ? campTiles(layout, s.snapshot) : [], size);
     if (reducedMotion()) layer.finishPops();
     ambient = s.snapshot ? planEmitters(emissionsFromSnapshot(s.snapshot), ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
     flowLoop = s.snapshot && s.lastResult && s.lastResult.months.length ? planFlowLoop(s.lastResult.months, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
@@ -159,6 +188,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   function applyLens(s: GameState) {
     layer.setTints(entityTints(s.lens, lensCtx(s)));
+    people.setTints(personTints(s.lens, s.snapshot, stands));
     paintTiles(s);
     bus.legend.set(legendFor(s.lens, lensCtx(s)));
   }
@@ -176,7 +206,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   function syncPlayback(s: GameState) {
     const active = s.phase === 'playback' && !s.playback.skipped && s.playback.month >= 0 && !!s.lastResult && !!s.snapshot;
     if (!active) {
-      if (plan) { plan = null; planMonth = null; }
+      if (plan) { plan = null; planMonth = null; commutes = null; }
       bus.playback.set({ active: s.phase === 'playback' && !s.playback.skipped, month: s.phase === 'playback' ? s.playback.month : -1, monthT: 0, overall: s.phase === 'playback' ? 0 : 1 });
       return;
     }
@@ -185,6 +215,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       monthStart = performance.now();
       const frame = s.lastResult!.months[planMonth];
       plan = frame ? planFrame(frame, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!)) : null;
+      commutes = frame ? new Map(planCommutes(frame, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c])) : null;
     }
   }
 
@@ -201,15 +232,20 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     if (selTile) { place(selectLine, selTile, 0.07); place(selectFill, selTile, 0.065); }
     layer.setSelected(keyAt(selTile));
     const ent = selTile ? entityAt(descs, selTile) : null;
-    bus.selection.set(selTile ? { tile: selTile, entity: ent?.ref ?? null, facts: ent ? factsFor(ent) : [] } : null);
+    const selPerson = s.selection?.kind === 'person' ? s.snapshot?.people.find((p) => p.id === (s.selection as { id: number }).id) ?? null : null;
+    selectedPerson = selPerson?.id ?? null;
+    bus.selection.set(selTile || selPerson ? { tile: selTile ?? stands.find((q) => q.id === selectedPerson)?.tile ?? { x: 0, y: 0 }, entity: ent?.ref ?? null, facts: selPerson ? personFacts(selPerson) : ent ? factsFor(ent) : [] } : null);
 
     const showHover = !!s.hover && s.phase !== 'playback';
     hoverLine.visible = hoverFill.visible = showHover;
     ghost.visible = false;
+    if (!showHover) roadGhost.visible = false;
     layer.setHover(showHover ? keyAt(s.hover) : null);
     if (showHover && s.hover) {
       const reason = s.buildKind ? game.tileError(s.hover) : null;
       for (const m of [hoverFill, hoverLine]) { place(m, s.hover, 0.075); ((m as THREE.Mesh | THREE.LineSegments).material as THREE.MeshBasicMaterial).color.setHex(reason ? HOVER_BAD : HOVER_OK); }
+      if (s.buildKind === 'road' && !reason) setRoads(roadGhost, [s.hover], new Set([...connectedRoads, tileKey(s.hover)]));
+      else roadGhost.visible = false;
       if (s.buildKind && s.buildKind !== 'road' && !reason) {
         const b = ghostFor(s.buildKind);
         ghost.geometry = b.geometry;
@@ -253,6 +289,21 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const g = rig.groundAt(n.x, n.y);
     return g ? tileOf(g.x, g.z, size) : null;
   }
+  /** The person under a pointer (people win over the tile under them), unless the player is placing something. */
+  function personAt(ev: { clientX: number; clientY: number }): number | null {
+    if (game.state.get().buildKind) return null;
+    const r = el.getBoundingClientRect();
+    return people.pick(rig.camera, r.width, r.height, ev.clientX - r.left, ev.clientY - r.top, 15);
+  }
+  function setHoverPerson(id: number | null) {
+    if (id === hoverPerson) return;
+    hoverPerson = id;
+    const st = stands.find((q) => q.id === id);
+    const p = id === null ? null : game.state.get().snapshot?.people.find((q) => q.id === id);
+    personHover.set(st && p ? { id: st.id, label: p.label, tile: { ...st.tile } } : null);
+    el.style.cursor = id === null ? '' : 'pointer';
+    dirty = true;
+  }
   const pointers = new Map<number, { x: number; y: number }>();
   let down: { x: number; y: number; moved: boolean } | null = null;
   let pinch = 0;
@@ -285,16 +336,24 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
         return;
       }
     }
-    if (!prev || !down) game.hover(pick(e));
+    if (!prev || !down) {
+      const pid = personAt(e);
+      setHoverPerson(pid);
+      game.hover(pid !== null ? stands.find((q) => q.id === pid)!.tile : pick(e));
+    }
   };
   const onUp = (e: PointerEvent) => {
     const wasClick = down && !down.moved && pointers.size === 1;
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = 0;
-    if (wasClick) { const t = pick(e); if (t) game.clickTile(t); }
+    if (wasClick) {
+      const pid = personAt(e);
+      if (pid !== null) game.select({ kind: 'person', id: pid });
+      else { const t = pick(e); if (t) game.clickTile(t); }
+    }
     if (pointers.size === 0) down = null;
   };
-  const onLeave = () => { if (pointers.size === 0) game.hover(null); };
+  const onLeave = () => { if (pointers.size === 0) { game.hover(null); setHoverPerson(null); } };
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
     const n = ndcOf(e);
@@ -374,7 +433,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   let lastPaint = 0;
   let lastPublish = 0;
   let lastCam = '';
-  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances, entities: layer.count });
+  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances + people.instances, entities: layer.count });
 
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
@@ -392,6 +451,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const ambientNeeded = ambient.length > 0 || layer.hasSpinners || looping;
     if (!animating && !(ambientNeeded && now - lastPaint > 40)) return;
     fx.update(plan, monthT, sec, ambient, looping ? flowLoop : [], (sec / 3) % 1, s.lens === 'emissions');
+    people.update(sec, commutes, playing ? monthT : 0, selectedPerson, hoverPerson, reducedMotion() || !playing);
     renderer.render(scene, rig.camera);
     lastPaint = now;
     dirty = false;
@@ -433,6 +493,10 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       el.removeEventListener('webglcontextrestored', onRestored);
       layer.dispose();
       fx.dispose();
+      people.dispose();
+      island.dispose();
+      for (const m of [roadMesh, roadPending, roadGhost]) m.geometry.dispose();
+      personHover.set(null);
       ghostModels.forEach((b) => b.geometry.dispose());
       disposables.forEach((d) => d.dispose());
       tilesMesh.dispose();

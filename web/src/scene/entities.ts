@@ -1,4 +1,4 @@
-import type { ClassKey, FirmView, HouseholdView, Snapshot } from '../contract';
+import type { ClassKey, FirmView, HouseholdView, PlantView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Tile } from '../store';
 import type { EntityRef } from '../store/scene-bus';
 import { tileKey, worldOf } from './coords';
@@ -20,18 +20,21 @@ export interface EntityDesc {
   turnsLeft: number;
   household?: HouseholdView;
   firm?: FirmView;
+  plant?: PlantView;
+  /** Residents' commute minutes (longest first), for the commute lens. */
+  commuteMinutes?: number[];
   /** 0..1 forest or commons stock where relevant. */
   stock?: number;
 }
 
 const KIND_TINT: Record<string, number> = {
   firm: 0xd5d8de, bank: WALL, government: WALL, forest: 0x7fb871, commons: 0xb4d891,
-  public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc,
+  public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc, road: 0xd8d2c6,
 };
 
-type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant';
-const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant' };
-const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
+type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road';
+const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant', road: 'road_site' };
+const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road' };
 
 export const infraModel = (k: Building): ModelId => INFRA_MODEL[k];
 
@@ -57,12 +60,13 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
       case 'home': {
         const hh = snap ? snap.households.find((h) => h.id === snap.homes.find((x) => x.id === sc.ref)?.household) : undefined;
         const cls: ClassKey = hh?.class ?? 'worker';
-        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: `home_${cls}` as ModelId, tint: homeTint(cls), household: hh });
+        const mins = snap && hh ? snap.people.filter((q) => q.household === hh.id && q.job).map((q) => q.commuteMinutes).sort((a, b) => b - a) : undefined;
+        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: `home_${cls}` as ModelId, tint: homeTint(cls), household: hh, commuteMinutes: mins });
         break;
       }
       case 'firm': {
         const f = snap?.firms.find((x) => x.id === sc.ref);
-        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : 'firm_goods'; // services share the goods model for now
+        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : f.sector === 'services' ? 'firm_shop' : 'firm_goods';
         const label = f && f.active ? f.name : f ? `${f.name} (closed)` : sc.label;
         out.push({ ...base, ref: ref(label), model, tint: KIND_TINT.firm!, firm: f });
         break;
@@ -83,13 +87,13 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
 
   for (const p of layout.placed) {
     out.push({
-      key: `p:${tileKey(p)}`, ...at(p), state: 'normal', turnsLeft: 0, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
+      key: `p:${tileKey(p)}`, ...at(p), plant: snap?.plants.find((q) => q.tile.x === p.x && q.tile.y === p.y), state: 'normal', turnsLeft: 0, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
       ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL[p.kind] },
     });
   }
   for (const q of snap?.pending ?? []) {
     const tile = layout.pendingTiles[q.id];
-    if (q.command.type !== 'place' || !tile || q.command.kind === 'road') continue;
+    if (q.command.type !== 'place' || !tile) continue;
     const tl = turnsLeft(q.effectiveTurn, turn);
     out.push({
       key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: INFRA_MODEL[q.command.kind], tint: KIND_TINT[q.command.kind]!,
@@ -99,7 +103,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
 
   for (const d of draft) {
     const c = d.command;
-    if (c.type !== 'place' || c.kind === 'road') continue;
+    if (c.type !== 'place') continue;
     out.push({
       key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
       ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL[c.kind]} (planned)`, pendingTurns: d.preview.leadTime },
@@ -124,6 +128,8 @@ export function factsFor(d: EntityDesc): { label: string; value: string }[] {
   if (h) f.push({ label: 'Class', value: h.class }, { label: 'People', value: String(h.members.length) }, { label: 'Net worth', value: `$${num(h.netWorth)}` });
   const fm = d.firm;
   if (fm) f.push({ label: 'Sector', value: fm.sector }, { label: 'Status', value: fm.active ? 'trading' : 'closed' }, ...(fm.active ? [{ label: 'Workers', value: String(fm.workers) }, { label: 'Emissions', value: `${num(fm.emissions)} t/month` }] : []));
+  const pl = d.plant;
+  if (pl) f.push({ label: 'Emissions', value: `${num(pl.emissionsMonthly)} t/month` }, { label: 'Output', value: num(pl.output) });
   if (d.stock !== undefined) f.push({ label: d.ref.kind === 'forest' ? 'Forest stock' : 'Commons stock', value: pct(d.stock) });
   return f;
 }

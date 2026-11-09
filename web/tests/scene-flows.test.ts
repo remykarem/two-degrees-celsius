@@ -32,7 +32,7 @@ describe('frame planner', () => {
     const plan = planFrame(frame, ctx);
     expect(JSON.stringify(frame)).toBe(before);
     expect(plan.tracks.length).toBeGreaterThan(0);
-    for (const k of ['figure', 'good', 'token'] as const) expect(plan.tracks.some((t) => t.kind === k), k).toBe(true);
+    for (const k of ['good', 'token'] as const) expect(plan.tracks.some((t) => t.kind === k), k).toBe(true);
   });
   it('is deterministic', () => {
     expect(planFrame(frame, ctx)).toEqual(planFrame(frame, ctx));
@@ -49,7 +49,6 @@ describe('frame planner', () => {
       },
     };
     const p = planFrame(big, ctx);
-    expect(p.tracks.filter((t) => t.kind === 'figure').length).toBeLessThanOrEqual(CAPS.figures);
     expect(p.tracks.filter((t) => t.kind === 'good').length).toBeLessThanOrEqual(CAPS.goods);
     expect(p.tracks.filter((t) => t.kind === 'token').length).toBeLessThanOrEqual(CAPS.tokens);
   });
@@ -89,13 +88,19 @@ describe('emitters and smoke', () => {
     const closed = planEmitters([{ source: 'firm', id: 0, tonnes: 10 }], { ...ctx, firms: ctx.firms.map((f) => ({ ...f, active: false })) });
     expect(closed.find((e) => e.id === 'f0')).toBeUndefined();
   });
-  it('fossil plants smoke more with a higher fossil share; pending ones do not', () => {
-    const lo = planEmitters([], { ...ctx, fossilShare: 0 }).filter((e) => e.id.startsWith('p'));
-    const hi = planEmitters([], { ...ctx, fossilShare: 1 }).filter((e) => e.id.startsWith('p'));
-    expect(lo).toHaveLength(2); // the two starting fossil plants
-    expect(hi[0]!.rate).toBeGreaterThan(lo[0]!.rate);
+  it('plant smoke follows each plant\'s own emissions; pending plants and zero emitters do not smoke', () => {
+    const fossil = layout.placed.filter((p) => p.kind === 'fossil_plant');
+    expect(fossil.length).toBeGreaterThanOrEqual(2);
+    const e0 = emissionsFromSnapshot(s0).filter((e) => e.source === 'plant');
+    expect(e0.length).toBeGreaterThan(0);
+    // make the first plant twice as heavy as the second, the rest silent
+    const frame: MonthFrame['flows']['emissions'] = fossil.map((p, i) => ({ source: 'plant' as const, tile: { x: p.x, y: p.y }, tonnes: i === 0 ? 8 : i === 1 ? 4 : 0 }));
+    const em = planEmitters(frame, { ...ctx, plants: [] }).filter((e) => e.id.startsWith('p'));
+    expect(em).toHaveLength(2);
+    expect(em[0]!.rate).toBeCloseTo(1);
+    expect(em[1]!.rate).toBeCloseTo(0.5);
     const none = { ...ctx, layout: { ...layout, placed: [] } };
-    expect(planEmitters([], none)).toHaveLength(0);
+    expect(planEmitters(frame, none).filter((e) => e.id.startsWith('p'))).toHaveLength(0);
   });
   it('ambient emissions come from the snapshot', () => {
     expect(emissionsFromSnapshot(s0).some((e) => e.source === 'firm')).toBe(true);
@@ -142,8 +147,7 @@ describe('empty and partial flows (contract v0.3 section 10.8)', () => {
     const h = ctx.households[0]!.id, f = ctx.firms.find((x) => x.active)!.id;
     const partial: MonthFrame = { month: 1, events: [], flows: { commutes: [{ person: 4, household: h, firm: f, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
     const plan = planFrame(partial, ctx);
-    expect(plan.tracks.every((t) => t.kind === 'figure')).toBe(true);
-    expect(plan.tracks.length).toBeGreaterThan(0);
+    expect(plan.tracks).toEqual([]); // commutes are walked by the people layer, not the track planner
     expect(plan.emitters.length).toBeGreaterThan(0);
   });
   it('tolerates empty arrays, no events array, and a loop made only of empty frames', () => {
