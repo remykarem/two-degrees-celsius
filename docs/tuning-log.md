@@ -53,3 +53,31 @@ Not a calibration. Done only to get a consistent starting state under the new ru
 - `public_spending_usd` 330,000 (the old tick-1 value) gave 20% unemployment after warm-up; 450,000 gives about 10%. Chosen by two trial runs, not searched.
 - `run.warmup_ticks` 48 (was 0 in the WIP commit): the first year without warm-up is a 40% unemployment shock because the hand-written town is not a fixed point.
 - New parameters with first-guess values: `labour.wage_k` 0.1, `u_ref` 0.07, `wage_cap` 0.01, `expected_smoothing` 0.3, `goods.price_adjust` 0.05, `invest.accelerator` 0.05, `max_invest_share` 0.02, `goods.wealth_consumption_rate` 0.002.
+
+## Phase 2 (balancing), seed 42
+Method: one-parameter and small-grid runs of the CLI (`--set`), judged on the yearly table (unemployment, Gini, debt/GDP, legitimacy, budget left), not on a score. Baselines A, B, C, D are the scripts in `content/scenarios/`.
+
+Findings that drove the changes:
+- Government deficit about 140k a month at the old start (revenue 480k, committed payments 118k, G 450k, interest 47k on 15 million of debt after warm-up). Cutting G or raising taxes barely moved it: output and revenue fell instead (the deficit equals the private sector's net saving). Net saving by cohort: managers 42k a month, landlord 9k, workers 7k each, firms 9k, bank 4k.
+- So the levers that worked were on the saving side: manager propensity, wealth effect, payout.
+
+| Param | From | To | Why |
+|---|---|---|---|
+| goods.propensity manager / worker / capitalist / rentier | 0.7 / 0.95 / 0.4 / 0.45 | 0.9 / 1.0 / 0.45 / 0.5 | balanced start |
+| goods.wealth_consumption_rate | 0.002 | 0.01 | balanced start |
+| market payout_ratio | 0.6 | 0.7 | balanced start |
+| policy tax_wage / public_spending_usd | 0.28 / 450000 | 0.30 / 400000 | balanced start, about 8% unemployment |
+| labour.u_ref | 0.07 | 0.09 | natural rate of this economy; wages no longer fall to the floor in warm-up |
+| labour.inflation_anchor, productivity_passthrough (new) | n/a | 0.0016, 1.0 | wage/price drift (backlog 3) |
+| income.excess_cash_months, excess_payout_rate (new) | n/a | 6, 0.1 | idle firm cash |
+| invest.green_spend_share (new) | n/a | 0.1 | smooth green investment (backlog 4) |
+| government.legit_debt | 0.02 | 0.008 | structural deficits |
+| nature.budget_b0 | 400000 | 220000 | baseline A exhausted in year 24.9 |
+
+Tried and rejected: initial firm wage 1250 to 1400 (unemployment 18% to 25%, wages pinned at the floor anyway); higher u_ref 0.10 to 0.12 (unemployment follows u_ref up: 12% to 14%); a lower initial government debt (bank equity would be negative); raising taxes in baseline B (legitimacy collapsed).
+
+Baselines at the end of Phase 2 (years 1, 6, 11, ... in the CLI table):
+- A: exhausted year 24.9 (turn 100); unemployment mean 11%, Gini 0.415 to 0.46 (0.51 after exhaustion), debt/GDP 0.4 to 1.1, legitimacy 1.0.
+- B: survives, budget 50% left, unemployment 5% to 25% (92% of ticks below 15%, the peak is the carbon-price shock in years 3 to 6), Gini 0.40 to 0.45, debt/GDP 1.35, legitimacy at least 0.7.
+- C: budget exhausted year 23.7 (turn 95), Gini 0.57, price index doubles (wage-price spiral after tax cuts).
+- D (carbon tax 100 to 400): budget exhausted year 33.5 (turn 134); emissions cut by 20% to 25% only, unemployment up to 21%.

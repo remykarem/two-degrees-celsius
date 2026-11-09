@@ -55,4 +55,4 @@ Only effects stated in `docs/causal-model.md` (S5/S7/S8, sign tests in section 5
 7. `gameOver.turn` for collapses is derived from the outcome tick; the 1-2 remaining ticks of that turn still run.
 8. Rejected `index` refers to the submitted list (including wire-invalid commands); accepted `PendingItem.command` has no `tile` (the sim has none).
 9. Costs are measured against the latest pending value of the same lever, so a batch's second command depends on the first (preview does the same).
-10. Under the current balance every scripted plan in `tests/game.rs` (including no action) ends in `collapse: legitimacy_zero` around turns 38-41, so a full 160-turn run is not reached; this is model balance (`docs/balance-backlog.md`), not changed here. The tests assert `history.length == turns played` and halting.
+10. (Phase 1: every plan collapsed on legitimacy around turns 38-41.) After the Phase 2 balancing, no action ends in `budget_exhausted` around turn 100, and baseline B survives 160 turns. The tests assert `history.length == turns played` and halting.

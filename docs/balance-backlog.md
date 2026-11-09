@@ -21,6 +21,9 @@ Budget exhausted in year 38 (target in section 9: years 22 to 35).
 ## Decisions made
 - **Starting government budget is balanced** (decided). Doing nothing must not collapse the town on day one through debt alone. Expect higher starting unemployment; the player then chooses between spending, taxing and borrowing.
 
+## Phase 2 status (update)
+Items 1 to 7 below are RESOLVED or documented in `docs/deviations.md` #39 to #46, `docs/tuning-log.md` (Phase 2) and the baseline tests in `tests/scenarios.rs`. Remaining work: see 'Open problems' in `docs/deviations.md`.
+
 ## Open issues
 
 | # | Issue | Kind | Notes |
@@ -32,6 +35,16 @@ Budget exhausted in year 38 (target in section 9: years 22 to 35).
 | 5 | Carbon-price sign test passes only when emissions are measured in years 2 to 4 after the price takes effect (it takes effect 2 turns after queueing) | Test design | Decide the intended response time and document it. |
 | 6 | Government financing loop only partly broken: bank lending room now limits government borrowing, but baseline debt still rises | Model | Check after the balanced start. |
 | 7 | Budget exhaustion year 38 vs target 22 to 35 | Calibration | `budget_b0` is not calibrated. Do this last. |
+
+### Resolutions (Phase 2)
+1. RESOLVED (balanced start; legit debt term softened, #41, #43).
+2. RESOLVED (balanced start; legit debt term softened, #41, #43).
+3. RESOLVED by verification (benefit, UBI and wage tax already steer demand, #Demand levers); no new lever.
+4. RESOLVED (wage trend and anchor, #39); the start-up price index of 0.75 remains.
+5. RESOLVED (spread over months, #42).
+6. DOCUMENTED: a carbon price is announced and takes effect 2 turns after queueing; firms start to react to the announced price (discounted), green investment builds over 2 to 3 years, and emissions fall visibly from year 2. The test measures years 2 to 4 after the price takes effect.
+7. CHECKED: bank lending room limits government borrowing; unfunded payments only appear late in baseline A ($2.5 million over 40 years). Debt still rises with the structural deficit (#41).
+8. RESOLVED (b0 220000: A exhausted in year 24.9, #44).
 
 ## Still to do in Phase 2
 1. Apply the balanced start; re-run baseline A.
