@@ -2,7 +2,7 @@
   import type { CommandPreview, LeverInfo, SystemKey } from '../contract';
   import { Segmented, Slider } from '../ui-kit';
   import { leverCostHint } from './costs';
-  import { formatLever, leadText, METRIC_LABEL, SYSTEM_NAME } from './format';
+  import { formatLever, leadText, lobbyingDiffers, METRIC_LABEL, SYSTEM_NAME } from './format';
   import { arrowGlyph, arrowsShown, blockText, lobbyNote, toNum } from './policy';
 
   let { lever, nominal, effective, disabled, system, draftValue, preview, onset, onreset }: {
@@ -41,7 +41,7 @@
 
   <div class="meta">
     {#if lever.unit !== 'bool' && lever.unit !== 'enum'}{@render resetBtn()}{/if}
-    <span>Now <b>{formatLever(lever, nominal)}</b>{#if effective !== null && lever.lobbied} &nbsp;(about {formatLever(lever, effective)} in force){/if}</span>
+    <span>Now <b>{formatLever(lever, nominal)}</b>{#if effective !== null && lever.lobbied && typeof nominal === 'number' && lobbyingDiffers(nominal, effective)} &nbsp;(about {formatLever(lever, effective)} in force){/if}</span>
     <span title="An estimate. The exact price (including lobbying opposition) appears once you draft the change.">{leverCostHint(lever)}; in force {leadText(lever.leadTime)}</span>
   </div>
   {#if hiddenOptions.length}<div class="why-off" role="note">{hiddenOptions.map((o) => `${o.label}: ${o.title ?? ''}`).join('. ')}.</div>{/if}

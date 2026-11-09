@@ -67,7 +67,7 @@ describe('metrics derivation', () => {
       expect(m.fmt(m.value(s))).not.toMatch(/NaN|undefined/);
     }
     const u = unemploymentCount(s);
-    expect(metricById('unemployment')!.detail!(s)).toBe(`${u.unemployed} of ${u.labourForce} in the labour force`);
+    expect(metricById('unemployment')!.detail!(s)).toBe(`${u.unemployed} of ${u.labourForce} unemployed`);
     expect(u.unemployed).toBeLessThanOrEqual(u.labourForce);
     expect(METRICS.filter((m) => m.series).every((m) => s.history.every((h) => Number.isFinite(m.series!(h))))).toBe(true);
   });

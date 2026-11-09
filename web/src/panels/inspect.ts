@@ -74,7 +74,8 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
         : [{ label: 'Commute', value: 'none (no job)' }] },
       { heading: 'Life', rows: [
         { label: 'Wellbeing', value: p.wellbeing.toFixed(2), hint: '0 to 1' },
-        { label: 'Home', value: h?.home != null ? `home ${h.home}${home ? ` (${home.owner === 'public' ? 'public' : 'private'}, rent ${money(home.rent)})` : ''}` : 'UNHOUSED' }] },
+        { label: 'Home', value: h?.home != null ? `home ${h.home}${home ? (home.owner === 'public' ? ' (public)' : ' (private)') : ''}` : 'UNHOUSED' },
+        ...(home ? [{ label: 'Rent', value: `${money(home.rent)}/month` }] : [])] },
     ],
   };
 }
@@ -103,7 +104,7 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
         { label: 'Owner', value: ownerText },
         ...(theHome && theHome.owner !== h.id ? [{ label: 'Rent', value: `${money(theHome.rent)}/month` }] : []),
         ...(owns.length ? [{ label: 'Lets out', value: `${owns.length} ${owns.length === 1 ? 'home' : 'homes'}` }] : []),
-        { label: 'Months behind on rent', value: String(h.arrearsMonths) }] },
+        { label: 'Rent arrears', value: `${h.arrearsMonths} ${h.arrearsMonths === 1 ? 'month' : 'months'}` }] },
       { heading: 'Wealth', rows: [
         { label: 'Savings', value: money(h.savings) }, { label: 'Debt', value: money(h.debt) }, { label: 'Net worth', value: money(h.netWorth) }] },
       { heading: 'Money (per month)', rows: [

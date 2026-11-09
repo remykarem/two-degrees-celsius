@@ -23,7 +23,7 @@
       <meter id="cb" min="0" max="1" low="0.25" high="0.5" optimum="1" value={snap.indicators.budgetShare}></meter>
       <span class="num">{Math.round(snap.indicators.budgetShare * 100)}% left</span>
     </div>
-    <div class="item">System: <strong>{SYSTEM_NAME[snap.system.current]}</strong>
+    <div class="item"><span class="long">System:</span> <strong>{SYSTEM_NAME[snap.system.current]}</strong>
       {#if snap.system.transition}<span class="dim">(switching to {SYSTEM_NAME[snap.system.transition.to]}, {snap.system.transition.monthsLeft} months left)</span>{/if}
     </div>
     <div class="spacer"></div>
@@ -44,5 +44,5 @@
   header { flex-wrap: wrap; gap: 6px 16px; }
   .num { font-weight: 600; }
   .short { display: none; }
-  @media (max-width: 1200px) { .long { display: none; } .short { display: inline; } meter { width: 70px; } header { gap: 4px 12px; padding: 6px 10px; } .dim { display: none; } }
+  @media (max-width: 1200px) { header { flex-wrap: nowrap; } .item { gap: 4px; } .long { display: none; } .short { display: inline; } meter { width: 70px; } header { gap: 4px 12px; padding: 6px 10px; } .dim { display: none; } }
 </style>

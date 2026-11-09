@@ -1,7 +1,7 @@
 <script lang="ts">
   import { paletteActions, totalPc, type Game } from '../store';
   import { Button } from '../ui-kit';
-  import { actionModel, costLine, estimatePc } from './costs';
+  import { costLine } from './costs';
   import { leadText, money } from './format';
   import { builtCount } from './inspect';
 

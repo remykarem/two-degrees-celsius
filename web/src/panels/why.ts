@@ -1,5 +1,5 @@
 import type { LeverInfo, Snapshot, TraceRecord } from '../contract';
-import { formatLever, money, pct, tonnes } from './format';
+import { formatLever, lobbyingDiffers, money, pct, tonnes } from './format';
 import type { WhyKind } from './metrics';
 
 export interface Bar { label: string; value: number; text: string; sub?: string; /** Second bar in the same row (lobbying: the effective value). */ pair?: number; tone?: 'plain' | 'sink' | 'muted' }
@@ -52,7 +52,7 @@ export function incomeByHousehold(trace: TraceRecord[], snap: Snapshot | null): 
 
 export function lobbyingBars(trace: TraceRecord[], levers: LeverInfo[]): { bars: Bar[]; netLobby: number | null } {
   const gaps = trace.filter((t): t is Extract<TraceRecord, { type: 'policy_gap' }> => t.type === 'policy_gap');
-  const bars = gaps.map((g) => {
+  const bars = gaps.filter((g) => lobbyingDiffers(g.nominal, g.effective)).map((g) => {
     const l = levers.find((x) => x.key === g.lever);
     const fmt = (v: number) => (l ? formatLever(l, v) : v.toFixed(2));
     const lost = g.nominal !== 0 ? (g.nominal - g.effective) / g.nominal : 0;
