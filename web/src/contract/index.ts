@@ -1,4 +1,4 @@
-// Snapshot contract v0.1 (docs/snapshot-contract.md section 4). Types only: no logic, no imports.
+// Snapshot contract v0.3 (docs/snapshot-contract.md section 4, amended by sections 9 and 10). Types only: no logic, no imports.
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
@@ -25,20 +25,30 @@ export type Command =
   | { type: 'place'; kind: InfraKind; count: number; tile?: { x: number; y: number } }
   | { type: 'remove'; kind: InfraKind; count: number };
 
+export type LeverUnit = 'usd' | 'usd_per_month' | 'usd_per_tonne' | 'fraction' | 'tonnes_per_month' | 'bool' | 'enum';
+export interface CostModel { base: number; unit: number; minSize: number }
+
 export interface LeverInfo {
   key: LeverKey;
   label: string;
-  unit: 'usd' | 'usd_per_tonne' | 'fraction' | 'tonnes' | 'bool' | 'enum';
+  unit: LeverUnit;
   min: number;
   max: number;
   step: number;
+  /** Base PC cost of a minimum-size change. A hint only: the real cost is base x max(|change| / unit, minSize) x (1 + opposition). */
   baseCostPc: number;
+  /** For hints ("about N PC"). CommandPreview.pc is the authority. */
+  costModel: CostModel;
+  /** True for levers where 0 means "off" (emissions_cap): the UI says "no cap", not "strictest". */
+  zeroMeansNone?: boolean;
   leadTime: number;
   lobbied: boolean;
   arrows: { metric: MetricKey; direction: 'up' | 'down' }[];
   availableIn: SystemKey[];
   /** For unit 'enum' levers: the modes in order (min/max/step are 0 and ignored). */
   options?: string[];
+  /** Enum options that are only available in some systems (for example commons 'community' is not available in Market). Not in section 10: see docs/web-notes-align.md. */
+  optionAvailableIn?: Record<string, SystemKey[]>;
 }
 
 export type ActionKey = 'switch_system' | `place:${InfraKind}` | `remove:${InfraKind}`;
@@ -46,6 +56,7 @@ export interface ActionInfo {
   key: ActionKey;
   label: string;
   baseCostPc: number;
+  costModel: CostModel;
   leadTime: number;
   /** Estimated dollars; 0 if none. preview() is the authority on actual cost. */
   moneyCost: number;
@@ -126,6 +137,8 @@ export interface HistoryPoint {
 
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
 
+export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number }
+
 export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
 
 export interface Snapshot {
@@ -133,6 +146,10 @@ export interface Snapshot {
   game: GameCalendar;
   turn: number;
   tick: number;
+  /** Built (finished) counts, derived by the wire layer from sim capacity. The UI derives its tile layout from these. */
+  buildings: Buildings;
+  /** True when the numbers come from the web mock rather than the real simulation. The UI shows a badge. Not in section 10. */
+  mock?: boolean;
   gameOver: null | { turn: number; outcome: GameOutcome };
   pc: { current: number; cap: number; regenNextTurn: number };
   system: { current: SystemKey; transition: null | { to: SystemKey; monthsLeft: number; total: number } };
@@ -167,13 +184,18 @@ export interface TurnResult {
   snapshot: Snapshot;
 }
 
+/** Section 10.8: any array may be missing or empty (the Rust side may start with only commutes and emissions). */
 export interface MonthFlows {
-  commutes: { household: number; firm: number; people: number }[];
-  purchases: { household: number; sector: 'goods' | 'food'; amount: number }[];
-  rent: { household: number; amount: number }[];
-  wages: { household: number; firm: number; amount: number }[];
-  emissions: { source: 'firm' | 'households' | 'sink'; id?: number; tonnes: number }[];
+  commutes?: { household: number; firm: number; people: number }[];
+  purchases?: { household: number; sector: 'goods' | 'food'; amount: number }[];
+  rent?: { household: number; amount: number }[];
+  wages?: { household: number; firm: number; amount: number }[];
+  emissions?: { source: 'firm' | 'households' | 'sink'; id?: number; tonnes: number }[];
 }
+
+/** Section 10.7: every fallible SimPort call returns this; Rust violations become error results, never exceptions. */
+export interface SimError { code: string; message: string }
+export type Result<T> = { ok: true; value: T } | { ok: false; error: SimError };
 
 export interface MonthFrame { month: 0 | 1 | 2; events: SimEvent[]; flows: MonthFlows }
 

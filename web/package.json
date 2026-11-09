@@ -8,7 +8,8 @@
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p tsconfig.node.json",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "sync-mock": "node scripts/sync-mock.mjs"
   },
   "dependencies": {
     "three": "^0.187.0"

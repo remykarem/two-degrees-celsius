@@ -14,6 +14,9 @@ export interface DraftItem { id: number; command: Command; preview: CommandPrevi
 
 export interface Playback { month: -1 | 0 | 1 | 2; skipped: boolean }
 
+/** A recoverable failure from the sim port. The screen offers retry (dismiss), load and new game. */
+export interface UiError { code: string; message: string; where: 'new_game' | 'preview' | 'end_turn' | 'cancel' | 'save' | 'load' }
+
 export interface GameState {
   phase: Phase;
   snapshot: Snapshot | null;
@@ -30,4 +33,7 @@ export interface GameState {
   buildKind: InfraKind | null;
   lens: Lens;
   camera: CameraAngle;
+  error: UiError | null;
+  /** Warnings the player dismissed, by crisis id -> turn. Reset by New game and Load. */
+  dismissedCrises: Record<string, number>;
 }

@@ -24,8 +24,8 @@ export interface MetricDef {
 
 export const METRICS: MetricDef[] = [
   { id: 'gdp', metric: 'gdp', tab: 'Economy', label: 'GDP (real, per year)', hint: 'Total output, adjusted for prices', value: (s) => s.indicators.gdpRealAnnual, fmt: money, series: (h) => h.gdpRealAnnual, goodUp: true, why: 'income' },
-  { id: 'gpi', metric: 'gpi', tab: 'Economy', label: 'GPI (per year)', hint: 'Genuine progress: output adjusted for social and environmental costs', value: (s) => s.indicators.gpiAnnual, fmt: money, series: (h) => h.gpiAnnual, goodUp: true, why: 'income' },
-  { id: 'unemployment', metric: 'unemployment', tab: 'Economy', label: 'Unemployment', hint: 'Share of the labour force without a job', value: (s) => s.indicators.unemployment, fmt: (v) => pct(v, 1), series: (h) => h.unemployment, goodUp: false, why: 'income' },
+  { id: 'gpi', metric: 'gpi', tab: 'Economy', label: 'GPI (per year)', hint: 'Genuine progress: output adjusted for social and environmental costs', value: (s) => s.indicators.gpiAnnual, fmt: money, series: (h) => h.gpiAnnual, goodUp: true, why: null },
+  { id: 'unemployment', metric: 'unemployment', tab: 'Economy', label: 'Unemployment', hint: 'Share of the labour force without a job', value: (s) => s.indicators.unemployment, fmt: (v) => pct(v, 1), series: (h) => h.unemployment, goodUp: false, why: null },
   { id: 'debt', metric: 'debt', tab: 'Economy', label: 'Public debt / GDP', hint: 'Government debt relative to a year of output', value: (s) => s.government.debtToGdp, fmt: (v) => pct(v, 1), series: (h) => h.debtToGdp, goodUp: false, why: null },
   { id: 'wage_share', metric: 'wage_share', tab: 'Economy', label: 'Wage share', hint: 'Share of income paid as wages', value: (s) => s.indicators.wageShare, fmt: (v) => pct(v, 1), series: null, goodUp: true, why: 'income' },
   { id: 'emissions', metric: 'emissions', tab: 'Ecology', label: 'Emissions (per month)', hint: 'Gross emissions in the latest month', value: (s) => s.nature.grossEmissionsMonthly, fmt: tonnes, series: (h) => h.emissions / 3, goodUp: false, why: 'emissions' },
@@ -34,8 +34,8 @@ export const METRICS: MetricDef[] = [
   { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', hint: 'Forest stock, as a share of the original', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
   { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', hint: 'Health of the shared land', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
   { id: 'gini', metric: 'gini', tab: 'Society', label: 'Inequality (Gini)', hint: '0 is perfectly equal, 1 is one person has everything', value: (s) => s.indicators.gini, fmt: (v) => v.toFixed(3), series: (h) => h.gini, goodUp: false, why: 'income' },
-  { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', hint: 'Average wellbeing, 0 to 1', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: 'income' },
-  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: 'lobbying' },
+  { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', hint: 'Average wellbeing, 0 to 1', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: null },
+  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null },
 ];
 
 export const metricById = (id: string) => METRICS.find((m) => m.id === id);

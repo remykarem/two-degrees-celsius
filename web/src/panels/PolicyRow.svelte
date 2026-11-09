@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { CommandPreview, LeverInfo } from '../contract';
+  import type { CommandPreview, LeverInfo, SystemKey } from '../contract';
   import { Segmented, Slider } from '../ui-kit';
-  import { formatLever, leadText, METRIC_LABEL } from './format';
-  import { arrowGlyph, blockText, lobbyNote, toNum } from './policy';
+  import { leverCostHint } from './costs';
+  import { formatLever, leadText, METRIC_LABEL, SYSTEM_NAME } from './format';
+  import { arrowGlyph, arrowsShown, blockText, lobbyNote, toNum } from './policy';
 
-  let { lever, nominal, effective, disabled, draftValue, preview, onset, onreset }: {
-    lever: LeverInfo; nominal: number | boolean | string; effective: number | null; disabled: string | null;
+  let { lever, nominal, effective, disabled, system, draftValue, preview, onset, onreset }: {
+    lever: LeverInfo; nominal: number | boolean | string; effective: number | null; disabled: string | null; system: SystemKey;
     draftValue: number | undefined; preview: CommandPreview | undefined; onset: (v: number) => void; onreset: () => void;
   } = $props();
 
@@ -13,7 +14,16 @@
   const shown = $derived(draftValue ?? current);
   const id = $derived(`lever-${lever.key}`);
   const note = $derived(lobbyNote(lever, current, shown, preview));
-  const options = $derived(lever.unit === 'bool' ? [{ value: '0', label: 'Off' }, { value: '1', label: 'On' }] : (lever.options ?? []).map((o, i) => ({ value: String(i), label: o[0]!.toUpperCase() + o.slice(1) })));
+  type Opt = { value: string; label: string; disabled?: boolean; title?: string };
+  const options = $derived<Opt[]>(lever.unit === 'bool' ? [{ value: '0', label: 'Off' }, { value: '1', label: 'On' }]
+    : (lever.options ?? []).map((o, i) => {
+        const where = lever.optionAvailableIn?.[o];
+        const off = !!where && !where.includes(system);
+        return { value: String(i), label: o[0]!.toUpperCase() + o.slice(1), disabled: off, title: off ? `Needs ${where!.map((s) => SYSTEM_NAME[s]).join(' or ')}` : undefined };
+      }));
+  const shown2 = $derived(arrowsShown(lever, current, draftValue));
+  const basisText = $derived(shown2.basis === 'raise' ? 'If raised:' : shown2.basis === 'raised' ? 'Your change (up):' : 'Your change (down):');
+  const hiddenOptions = $derived(options.filter((o) => o.disabled));
 </script>
 
 {#snippet resetBtn()}
@@ -32,12 +42,13 @@
   <div class="meta">
     {#if lever.unit !== 'bool' && lever.unit !== 'enum'}{@render resetBtn()}{/if}
     <span>Now <b>{formatLever(lever, nominal)}</b>{#if effective !== null && lever.lobbied} &nbsp;(about {formatLever(lever, effective)} in force){/if}</span>
-    <span>Base {lever.baseCostPc} PC, {leadText(lever.leadTime)}</span>
+    <span title="An estimate. The exact price (including lobbying opposition) appears once you draft the change.">{leverCostHint(lever)}; in force {leadText(lever.leadTime)}</span>
   </div>
-  {#if lever.arrows.length}
+  {#if hiddenOptions.length}<div class="why-off" role="note">{hiddenOptions.map((o) => `${o.label}: ${o.title ?? ''}`).join('. ')}.</div>{/if}
+  {#if shown2.arrows.length}
     <div class="arrows" aria-label="Expected effects">
-      <span class="dim">Expected:</span>
-      {#each lever.arrows as a (a.metric)}
+      <span class="dim">{basisText}</span>
+      {#each shown2.arrows as a (a.metric)}
         <span class="chip"><span aria-hidden="true">{arrowGlyph(a.direction)}</span> {METRIC_LABEL[a.metric]}<span class="sr-only"> {a.direction === 'up' ? 'rises' : 'falls'}</span></span>
       {/each}
     </div>
@@ -45,7 +56,7 @@
   {#if disabled}<div class="why-off" role="note">{disabled}</div>{/if}
   {#if preview}
     <div class="draft" class:bad={preview.blocked}>
-      {#if preview.blocked}Blocked: {blockText(preview.blocked)}{:else}Draft: costs {preview.pc} PC, in force {leadText(preview.leadTime)}{/if}
+      {#if preview.blocked}Blocked: {blockText(preview.blocked)}{:else}Draft: costs {Math.round(preview.pc * 10) / 10} PC{#if preview.opposition > 0} (includes {Math.round(preview.opposition * 100)}% lobbying opposition){/if}, in force {leadText(preview.leadTime)}{/if}
     </div>
   {/if}
   {#if note}<div class="lobby">{note}</div>{/if}

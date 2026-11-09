@@ -1,59 +1,88 @@
-import type { LeverKey, Snapshot } from '../../contract';
-import { DATA } from './data';
+import type { HouseholdView, LeverKey, Snapshot } from '../../contract';
+import { GEN, LEVERS, MOCK } from './data';
 import { effectiveValue, remainingBudget } from './dynamics';
-import type { MockState } from './state';
+import { SCHEMA_VERSION, type MockState } from './state';
+
+const gdpBase = () => GEN.derived.monthlyOutputValue * 12;
+const premiumAvg = () => GEN.derived.monthlyWageBill / (GEN.town.employed * GEN.firms[0]!.wage);
 
 export function buildSnapshot(s: MockState): Snapshot {
-  const d = DATA.dynamics;
   const rem = remainingBudget(s);
   const gdpReal = s.gdp / s.prices;
-  const employed = Math.round(s.unemployment === 1 ? 0 : DATA.households.reduce((a, h) => a + h.people, 0) * 0.5 * (1 - s.unemployment));
-  const labour = Math.round(DATA.households.reduce((a, h) => a + h.people, 0) * 0.5);
+  const labour = GEN.town.labourForce;
+  const employed = Math.round(labour * (1 - s.unemployment));
+  const idx = s.gdp / gdpBase();
   const policy = {} as Snapshot['policy'];
-  for (const l of DATA.levers) {
-    const nominal = l.key === 'commons_access' ? s.commonsMode : (s.policy[l.key] as number | boolean);
-    policy[l.key as LeverKey] = { nominal, effective: l.lobbied ? effectiveValue(s, l.key) : null };
-  }
-  const govMonthly = s.gdp / 12;
+  for (const l of LEVERS) policy[l.key as LeverKey] = { nominal: s.policy[l.key]!, effective: l.lobbied ? effectiveValue(s, l.key) : null };
+  const monthlyOutput = s.gdp / 12;
+  // Mock values computed from the mock state (never constants): the wage bill is employed x wage x the starting premium mix.
+  const wageBill = employed * s.wage * premiumAvg();
+  const wageShare = Math.min(1, wageBill / monthlyOutput);
+  const profitFirms = Math.max(0, monthlyOutput - wageBill);
+  const fossilCap = s.buildings.fossil_plant * GEN.build.plantCapacity;
+  const renewableCap = s.buildings.renewable_plant * GEN.build.plantCapacity;
+  const taxWage = Number(s.policy.tax_wage), taxProfit = Number(s.policy.tax_profit);
+  const govReceipts = wageBill * taxWage + profitFirms * taxProfit;
+
+  const households: HouseholdView[] = GEN.households.map((h) => {
+    const lf = Math.round(h.people * h.labourShare);
+    const emp = Math.round(lf * (1 - s.unemployment));
+    const wages = emp * s.wage * h.wagePremium;
+    const dividends = h.class === 'capitalist' ? profitFirms * 0.6 * (1 - taxProfit) : 0;
+    const rentPaid = h.class === 'rentier' ? 0 : h.people * h.renterShare * GEN.town.rentPrivate;
+    const rent = h.class === 'rentier' ? GEN.households.reduce((a, x) => a + (x.class === 'rentier' ? 0 : x.people * x.renterShare * GEN.town.rentPrivate), 0) : 0;
+    const benefits = (h.class === 'dependent' ? h.people : lf - emp) * Number(s.policy.benefit) + h.people * Number(s.policy.ubi);
+    const income = wages + dividends + rent + benefits;
+    return {
+      id: h.id, label: h.label, class: h.class, people: h.people, employed: emp, labourForce: lf,
+      savings: h.savings, debt: h.debt, wealthPerCapita: (h.savings + h.homeValue - h.debt) / h.people,
+      income: { wages, dividends, rent, interest: 0, benefits, taxPaid: wages * taxWage, rentPaid, loanPayments: h.debt * 0.003, spending: income * 0.85 },
+      wellbeing: s.wellbeing, politicalPower: h.class === 'capitalist' ? 0.4 : h.class === 'rentier' ? 0.3 : 0.05,
+      footprintTonnes: (s.lastMonthlyEmissions * MOCK.extra.householdEmissionShare! / (1 + MOCK.extra.householdEmissionShare!)) * (h.people / 1000),
+      foodMet: 0.95, housedShare: 0.95,
+    };
+  });
+
+  const activeFirms = GEN.firms.filter((_, i) => s.firmActive[i]);
+  const intensitySum = activeFirms.reduce((a, f) => a + f.output * f.intensity, 0) || 1;
+  const firmEmissions = s.lastMonthlyEmissions / (1 + MOCK.extra.householdEmissionShare!);
   return {
-    schemaVersion: s.schemaVersion, game: { ...DATA.game }, turn: s.turn, tick: s.tick, gameOver: s.gameOver,
-    pc: { current: s.pc, cap: DATA.pc.cap, regenNextTurn: DATA.pc.regenBase * s.legitimacy },
-    system: { current: s.system, transition: s.transition },
-    pending: s.pending.map((p) => ({ ...p })), policy, netLobby: s.netLobby, unionDensity: DATA.start.unionDensity!,
+    schemaVersion: SCHEMA_VERSION, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
+    buildings: { publicHousing: s.buildings.public_housing, fossilPlant: s.buildings.fossil_plant, renewablePlant: s.buildings.renewable_plant },
+    gameOver: s.gameOver,
+    pc: { current: s.pc, cap: GEN.pc.cap, regenNextTurn: GEN.pc.regenBase * s.legitimacy },
+    system: { current: s.system, transition: s.transition ? { ...s.transition } : null },
+    pending: s.pending.map((p) => ({ ...p, command: structuredClone(p.command) })), policy, netLobby: s.netLobby, unionDensity: GEN.town.unionDensity,
     indicators: {
       gdpAnnual: s.gdp, gdpRealAnnual: gdpReal, unemployment: s.unemployment, employed, labourForce: labour,
-      gini: s.gini, wageShare: 0.55, profitShare: 0.3, avgWellbeing: s.wellbeing,
-      remainingBudget: rem, budgetShare: rem / d.carbonBudget!,
-      temperature: d.temperatureBase! + s.cumulativeTonnes * d.temperaturePerTonne!,
-      gpiAnnual: gdpReal * s.wellbeing * (0.5 + 0.5 * s.forest), moneyInCirculation: s.gdp * 0.4, priceIndex: s.prices,
+      gini: s.gini, wageShare, profitShare: Math.max(0, 1 - wageShare), avgWellbeing: s.wellbeing,
+      remainingBudget: rem, budgetShare: rem / GEN.carbon.budget,
+      temperature: GEN.carbon.t0 + (GEN.carbon.tLimit - GEN.carbon.t0) * (s.cumulativeTonnes / GEN.carbon.budget),
+      gpiAnnual: gdpReal * (1 - s.gini) - 200 * s.lastMonthlyEmissions * 12 * 0, moneyInCirculation: GEN.town.bank.deposits * idx * s.prices, priceIndex: s.prices,
     },
-    households: DATA.households.map((h) => ({
-      id: h.id, label: h.label, class: h.cls, people: h.people,
-      employed: Math.round(h.people * 0.5 * (1 - s.unemployment)), labourForce: Math.round(h.people * 0.5),
-      savings: h.people * 1000, debt: h.people * 200, wealthPerCapita: 1000 * (h.cls === 'capitalist' ? 40 : h.cls === 'rentier' ? 25 : 2),
-      income: { wages: h.people * 160, dividends: 0, rent: 0, interest: 0, benefits: 0, taxPaid: h.people * 30, rentPaid: h.people * 40, loanPayments: 0, spending: h.people * 90 },
-      wellbeing: s.wellbeing, politicalPower: h.cls === 'capitalist' ? 0.4 : 0.1, footprintTonnes: s.lastMonthlyEmissions * 0.2 / DATA.households.length,
-      foodMet: 0.95, housedShare: 0.9,
-    })),
-    firms: DATA.firms.map((f, i) => ({
-      id: f.id, active: s.firmActive[i] ?? false, sector: f.sector, name: f.name, owner: { kind: 'household', id: 1 },
-      workers: s.firmActive[i] ? Math.round(employed / 2) : 0, wage: 1500, price: s.prices, output: govMonthly * 0.2, emissions: s.lastMonthlyEmissions * 0.4,
-      revenue: govMonthly * 0.2, profit: govMonthly * 0.03, capital: 1e6, debt: 1e5, greenTech: 0.1,
-    })),
-    bank: { equity: 5e5, loans: 2e6, deposits: 2.4e6, defaultRate: 0.02, failed: false },
-    government: { cash: s.cash, debt: s.debt, debtToGdp: s.debt / s.gdp, legitimacy: s.legitimacy, receipts: govMonthly * 0.25, spending: govMonthly * 0.25 },
+    households,
+    firms: GEN.firms.map((f, i) => {
+      const on = s.firmActive[i] ?? false;
+      const base = f.workers > 0 ? f.workers : GEN.firms.find((x) => x.sector === f.sector && x.workers > 0)?.workers ?? 0;
+      const workers = on ? Math.round((base * (1 - s.unemployment)) / (1 - GEN.town.unemployment)) : 0;
+      const output = on ? (f.output > 0 ? f.output : (GEN.firms.find((x) => x.sector === f.sector && x.output > 0)?.output ?? 0) * 0.5) * idx : 0;
+      const em = on ? firmEmissions * ((f.output || 1) * f.intensity / intensitySum) : 0;
+      return {
+        id: f.id, active: on, sector: f.sector, name: f.name, owner: { kind: 'household' as const, id: 0 }, workers, wage: s.wage, price: f.price * s.prices,
+        output, emissions: em, revenue: output * f.price * s.prices, profit: on ? profitFirms / activeFirms.length * 0.6 : 0, capital: f.capital * 1500, debt: f.debt, greenTech: 0,
+      };
+    }),
+    bank: { equity: s.bank.equity, loans: s.bank.loans, deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1), failed: s.bank.failed },
+    government: { cash: s.cash, debt: s.debt, debtToGdp: s.debt / s.gdp, legitimacy: s.legitimacy, receipts: govReceipts, spending: Number(s.policy.public_spending) + Number(s.policy.benefit) * (labour - employed) },
     nature: {
-      forest: s.forest, commons: s.commons, commonsAccess: s.commonsMode, cumulativeTonnes: s.cumulativeTonnes,
-      netEmissionsMonthly: s.lastMonthlyEmissions * 0.9, grossEmissionsMonthly: s.lastMonthlyEmissions, sinkMonthly: s.lastMonthlyEmissions * 0.1,
+      forest: s.forest, commons: s.commons, commonsAccess: s.policy.commons_access as 'open' | 'community', cumulativeTonnes: s.cumulativeTonnes,
+      netEmissionsMonthly: s.lastMonthlyEmissions - s.lastMonthlyEmissions * 0.1 * s.forest, grossEmissionsMonthly: s.lastMonthlyEmissions, sinkMonthly: s.lastMonthlyEmissions * 0.1 * s.forest,
     },
     housing: {
-      privateCap: DATA.start.privateHousing!, publicCap: s.infra.public_housing ?? 0, rentPrivate: 900, rentPublic: 450,
-      occupancy: 0.9, housedShare: 0.9,
+      privateCap: GEN.town.privateHousing, publicCap: s.buildings.public_housing, rentPrivate: GEN.town.rentPrivate, rentPublic: GEN.town.rentPublic,
+      occupancy: 0.95, housedShare: 0.95,
     },
-    energy: {
-      fossilCap: s.infra.fossil_plant ?? 0, renewableCap: s.infra.renewable_plant ?? 0,
-      fossilShare: (s.infra.fossil_plant ?? 0) / Math.max(1, (s.infra.fossil_plant ?? 0) + (s.infra.renewable_plant ?? 0)),
-    },
+    energy: { fossilCap, renewableCap, fossilShare: fossilCap / Math.max(1, fossilCap + renewableCap) },
     history: s.history.map((h) => ({ ...h })),
   };
 }

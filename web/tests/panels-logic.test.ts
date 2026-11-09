@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { SimEvent, Snapshot, TurnResult } from '../src/contract';
 import { BUDGET_WARNING, LEGITIMACY_WARNING, deriveCrises } from '../src/panels/crisis';
-import { groupLevers, leverStatus, lobbyNote, toCommandValue, toNum } from '../src/panels/policy';
+import { arrowFlip, estimatePc, leverCostHint } from '../src/panels/costs';
+import { leadRangeText, turnsUntil } from '../src/panels/format';
+import { arrowsShown, groupLevers, leverStatus, lobbyNote, toCommandValue, toNum } from '../src/panels/policy';
 import { comingNextTurn, eventLines, lobbyLines, mergeEvents, metricDeltas, rankEvents } from '../src/panels/results';
 import { generateStory } from '../src/panels/story';
 import { emissionsBars, incomeByType, lobbyingBars, whyData } from '../src/panels/why';
@@ -9,7 +11,7 @@ import { resolveInspect, builtCount } from '../src/panels/inspect';
 import { switchOptions } from '../src/panels/systemSwitch';
 import { SYSTEMS } from '../src/panels/content/systems';
 import { createSimPort } from '../src/sim-port';
-import { createGame, type Game } from '../src/store';
+import { createGame, quarterLabel, reconcileLayout, shownTurn, type Game } from '../src/store';
 
 function playTurns(g: Game, n: number, cmd?: () => void) {
   for (let i = 0; i < n && !g.state.get().snapshot!.gameOver; i++) {
@@ -85,9 +87,22 @@ describe('results sections', () => {
       rejected: [{ index: 0, command: { type: 'switch_system', to: 'coop' }, reason: 'insufficient_political_capital' }],
     });
     const lines = lobbyLines(r, levers, actions);
-    expect(lines[0]).toMatchObject({ kind: 'blocked' });
+    // Not enough political capital is NOT lobbying: it gets its own kind.
+    expect(lines[0]).toMatchObject({ kind: 'unaffordable' });
     expect(lines[0]!.text).toMatch(/Not enough political capital/);
+    expect(lines[1]).toMatchObject({ kind: 'weakened' });
     expect(lines[1]!.text).toBe('Carbon price: you set $50/t, about $31/t in force (38% lost to lobbying)');
+  });
+  it('rule blocks are separate from lobbying and from unaffordable, and zero gaps are not reported', () => {
+    const g = fresh();
+    const levers = g.state.get().levers, actions = g.state.get().actions;
+    const r = result([], {
+      policyGaps: [{ lever: 'carbon_price', nominal: 50, effective: 50 }, { lever: 'wealth_tax', nominal: 0, effective: 0 }, { lever: 'tax_profit', nominal: 0.3, effective: 0.25 }],
+      rejected: [{ index: 0, command: { type: 'set_policy', lever: 'campaign_cap', value: 0.5 }, reason: 'lever_unavailable' }, { index: 1, command: { type: 'switch_system', to: 'coop' }, reason: 'insufficient_funds' }],
+    });
+    const lines = lobbyLines(r, levers, actions);
+    expect(lines.map((l) => l.kind)).toEqual(['blocked', 'unaffordable', 'weakened']);
+    expect(lines.filter((l) => l.kind === 'weakened')).toHaveLength(1);
   });
   it('computes metric deltas with arrows and tones from two snapshots', () => {
     const g = fresh();
@@ -103,7 +118,8 @@ describe('results sections', () => {
   it('coming next turn splits pending by effective turn', () => {
     const s = structuredClone(fresh().state.get().snapshot!);
     const item = (id: number, t: number) => ({ id, command: { type: 'remove' as const, kind: 'fossil_plant' as const, count: 1 }, submittedTurn: 1, effectiveTurn: t, pcCost: 1, moneyCost: 0 });
-    s.pending = [item(1, s.turn + 1), item(2, s.turn + 3)];
+    // Items fire at the START of the next submit: effectiveTurn == snapshot.turn is "coming next turn".
+    s.pending = [item(1, s.turn), item(2, s.turn + 2)];
     const c = comingNextTurn(s);
     expect(c.next.map((p) => p.id)).toEqual([1]);
     expect(c.later).toBe(1);
@@ -187,12 +203,12 @@ describe('policy logic', () => {
     expect(toCommandValue(en, 0)).toEqual({ mode: 'open' });
     expect(toNum(en, 'community')).toBe(1);
   });
-  it('disables levers unavailable in the system and when PC is short', () => {
+  it('disables levers unavailable in the system; cost never locks a lever (preview() decides)', () => {
     const cap = levers.find((l) => l.key === 'campaign_cap')!;
     expect(leverStatus(cap, snapshot!, []).disabled).toMatch(/Not available in Market capitalism. Needs Regulated capitalism or Worker cooperatives/);
     const poor = structuredClone(snapshot!);
     poor.pc.current = 3;
-    expect(leverStatus(levers.find((l) => l.key === 'carbon_price')!, poor, []).disabled).toMatch(/Needs about 14 PC; you have 3/);
+    expect(leverStatus(levers.find((l) => l.key === 'carbon_price')!, poor, []).disabled).toBeNull();
     expect(leverStatus(levers.find((l) => l.key === 'carbon_price')!, snapshot!, []).disabled).toBeNull();
   });
   it('lobby note states what you set and what to expect', () => {
@@ -241,12 +257,15 @@ describe('inspector model', () => {
     const fossil = layout.placed.find((p) => p.kind === 'fossil_plant')!;
     const bm = resolveInspect(snapshot!, layout, fossil, []);
     expect(bm.removable).toEqual({ kind: 'fossil_plant', already: false, reason: null });
-    expect(builtCount(layout, 'fossil_plant', snapshot!.turn)).toBe(3);
+    expect(builtCount(snapshot, 'fossil_plant')).toBe(5);
     const queued = resolveInspect(snapshot!, layout, fossil, [{ id: 1, command: { type: 'remove', kind: 'fossil_plant', count: 1 }, preview: {} as never }]);
     expect(queued.removable!.already).toBe(true);
-    const under = resolveInspect(snapshot!, { ...layout, placed: [{ kind: 'renewable_plant', x: 7, y: 9, effectiveTurn: 9 }] }, { x: 7, y: 9 }, []);
+    const q = { id: 4, command: { type: 'place' as const, kind: 'renewable_plant' as const, count: 1, tile: { x: 7, y: 9 } }, submittedTurn: snapshot!.turn, effectiveTurn: snapshot!.turn + 2, pcCost: 2, moneyCost: 2e6 };
+    const withQ = { ...snapshot!, pending: [q] };
+    const under = resolveInspect(withQ, reconcileLayout(layout, withQ), { x: 7, y: 9 }, []);
     expect(under.removable).toBeUndefined();
-    expect(under.subtitle).toMatch(/Under construction, ready on turn 9/);
+    expect(under.title).toMatch(/Under construction/);
+    expect(under.sections[0]!.rows[0]!.value).toBe('in 3 turns');
     expect(resolveInspect(snapshot!, layout, { x: 7, y: 9 }, []).kind).toBe('empty');
   });
   it('a queued removal goes through the store as a draft', () => {
@@ -260,5 +279,69 @@ describe('inspector model', () => {
     g.continueFromResults();
     playTurns(g, 4);
     expect(g.state.get().layout.placed.length).toBeLessThan(before);
+  });
+});
+
+describe('v0.3 panels logic', () => {
+  const g = fresh();
+  const { levers, snapshot } = g.state.get();
+  const lv = (k: string) => levers.find((l) => l.key === k)!;
+  it('policy arrows describe raising and flip when the slider goes down', () => {
+    const cp = lv('carbon_price');
+    expect(arrowsShown(cp, 0, undefined)).toMatchObject({ basis: 'raise', arrows: cp.arrows });
+    expect(arrowsShown(cp, 50, 100).basis).toBe('raised');
+    const down = arrowsShown(cp, 100, 20);
+    expect(down.basis).toBe('lowered');
+    expect(down.arrows[0]).toMatchObject({ metric: 'emissions', direction: 'up' });
+    expect(arrowsShown(cp, 50, 50).basis).toBe('raise');
+  });
+  it('the emissions cap treats "no cap" as the loosest setting', () => {
+    const cap = lv('emissions_cap');
+    expect(arrowFlip(cap, 0, 200)).toBe(-1); // none -> a cap is TIGHTER
+    expect(arrowFlip(cap, 200, 0)).toBe(1);
+    expect(arrowFlip(cap, 300, 100)).toBe(-1);
+    expect(arrowsShown(cap, 0, 200).arrows[0]).toMatchObject({ metric: 'emissions', direction: 'down' });
+  });
+  it('only causal-model arrows: none for campaign_cap, nothing on gini for commons, nothing on prices for bailout', () => {
+    expect(lv('campaign_cap').arrows).toEqual([]);
+    expect(lv('commons_access').arrows.map((a) => a.metric)).toEqual(['commons']);
+    expect(lv('bailout').arrows.map((a) => a.metric)).not.toContain('prices');
+    for (const l of levers) for (const a of l.arrows) expect(['gdp', 'unemployment', 'gini', 'emissions', 'legitimacy', 'debt', 'wage_share', 'money', 'commons']).toContain(a.metric);
+  });
+  it('cost hints are estimates built from the cost model', () => {
+    expect(leverCostHint(lv('carbon_price'))).toBe('About 2 PC for a small change, 8 PC per $50/t of change');
+    expect(leverCostHint(lv('bailout'))).toBe('About 15 PC to switch');
+    expect(estimatePc({ base: 8, unit: 50, minSize: 0.25 }, 2)).toBe(16);
+  });
+  it('lead ranges read naturally', () => {
+    expect(leadRangeText([2, 3])).toBe('in 2 to 3 turns');
+    expect(leadRangeText([1, 3])).toBe('next turn to 3 turns');
+    expect(leadRangeText([2, 2])).toBe('in 2 turns');
+    expect(leadRangeText([])).toBe('');
+  });
+  it('turnsUntil counts a lead-1 item as next turn', () => {
+    expect(turnsUntil(snapshot!.turn, snapshot!.turn)).toBe(1);
+    expect(turnsUntil(snapshot!.turn + 2, snapshot!.turn)).toBe(3);
+  });
+  it('commons community option is greyed in Market with a reason', () => {
+    expect(lv('commons_access').optionAvailableIn).toEqual({ community: ['regulated', 'coop'] });
+  });
+  it('system copy does not claim the emissions cap is unlocked only by Regulated', () => {
+    expect(JSON.stringify(SYSTEMS.regulated)).not.toMatch(/Unlocks the emissions cap/);
+    expect(lv('emissions_cap').availableIn).toContain('market');
+  });
+  it('crisis text makes no unsupported causal claim', () => {
+    const snap = structuredClone(snapshot!);
+    snap.bank.failed = true;
+    snap.government.legitimacy = 0.1;
+    const cs = deriveCrises(snap, null);
+    expect(cs.find((c) => c.id === 'bank_failed')!.detail).not.toMatch(/frozen/);
+    expect(cs.find((c) => c.id === 'low_legitimacy')!.why).toBeUndefined();
+  });
+  it('shownTurn is the same for the top bar and the end screen at game over', () => {
+    const over = { ...snapshot!, turn: 161, gameOver: { turn: 160, outcome: 'survived' as const } };
+    expect(shownTurn(over)).toBe(160);
+    expect(quarterLabel(shownTurn(over), over.game)).toBe('Q4 2070');
+    expect(shownTurn({ ...snapshot!, turn: 7 })).toBe(7);
   });
 });

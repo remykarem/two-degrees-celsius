@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { quarterLabel, type Game } from '../store';
+  import { quarterLabel, shownTurn, type Game } from '../store';
   import { Button, Modal } from '../ui-kit';
   import { pct } from './format';
   import Sparkline from './Sparkline.svelte';
@@ -22,7 +22,7 @@
 </script>
 
 {#if $gs.phase === 'ended' && over && snap && story}
-  <Modal title="The end · {quarterLabel(Math.min(over.turn, snap.game.lastTurn), snap.game)} (turn {Math.min(over.turn, snap.game.lastTurn)})" size="lg" dismissible={false}>
+  <Modal title="The end · {quarterLabel(shownTurn(snap), snap.game)} (turn {shownTurn(snap)})" size="lg" dismissible={false}>
     <div class="banner {story.outcome}" role="status">
       <span class="icon" aria-hidden="true">{story.outcome === 'win' ? '✓' : '✕'}</span>
       <div><div class="verdict">{story.outcome === 'win' ? 'You won' : 'You lost'}</div><h3>{story.headline}</h3><p>{story.summary}</p></div>

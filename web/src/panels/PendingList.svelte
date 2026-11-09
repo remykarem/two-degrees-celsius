@@ -1,7 +1,7 @@
 <script lang="ts">
   import { quarterLabel, type Game } from '../store';
   import { Button } from '../ui-kit';
-  import { describeCommand, leadText } from './format';
+  import { describeCommand, leadText, turnsUntil } from './format';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -19,7 +19,7 @@
       {#each snap.pending as p (p.id)}
         <li>
           <span>{describeCommand(p.command, $gs.levers, $gs.actions)}</span>
-          <span class="dim">{leadText(p.effectiveTurn - snap.turn)} ({quarterLabel(p.effectiveTurn, snap.game)})</span>
+          <span class="dim">{leadText(turnsUntil(p.effectiveTurn, snap.turn))} ({quarterLabel(p.effectiveTurn, snap.game)})</span>
           {#if canCancel}<Button variant="ghost" title="Cancel and refund half the political capital; no money was charged yet" onclick={() => game.cancelPending(p.id)}>Cancel (+{(p.pcCost / 2).toFixed(1)} PC)</Button>{/if}
         </li>
       {/each}

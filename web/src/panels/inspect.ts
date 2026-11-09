@@ -1,6 +1,7 @@
 import type { ClassKey, FirmOwner, InfraKind, Snapshot } from '../contract';
+import { turnsUntil } from './format';
 import type { DraftItem, MapLayout, Placed, Scenery, Tile } from '../store';
-import { occupant, sameTile } from '../store';
+import { occupant, pendingAt, sameTile } from '../store';
 import { compact, money, pct, tonnes } from './format';
 
 export interface Row { label: string; value: string; hint?: string }
@@ -23,22 +24,31 @@ export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public 
 const OWNER_TEXT = (o: FirmOwner, s: Snapshot) =>
   o.kind === 'household' ? `${s.households.find((h) => h.id === o.id)?.label ?? `Household ${o.id}`}` : o.kind === 'workers' ? 'Its workers' : o.kind === 'state' ? 'The state' : 'The bank';
 
-export const isBuilt = (p: Placed, turn: number) => p.effectiveTurn <= turn;
-export const builtCount = (layout: MapLayout, kind: InfraKind, turn: number) => layout.placed.filter((p) => p.kind === kind && isBuilt(p, turn)).length;
+/** Finished buildings of a kind: the snapshot's count is the truth; the map just draws it. */
+export const builtCount = (snap: Snapshot | null, kind: InfraKind): number =>
+  !snap ? 0 : kind === 'public_housing' ? snap.buildings.publicHousing : kind === 'fossil_plant' ? snap.buildings.fossilPlant : snap.buildings.renewablePlant;
 
 export function resolveInspect(snap: Snapshot, layout: MapLayout, tile: Tile, draft: DraftItem[]): InspectModel {
   const o = occupant(layout, tile);
   const at = `Tile (${tile.x}, ${tile.y}). Position is cosmetic: it has no effect on the economy.`;
+  const queued = o ? null : pendingAt(layout, tile);
+  const q = queued === null ? undefined : snap.pending.find((x) => x.id === queued);
+  if (q && q.command.type === 'place') {
+    const left = turnsUntil(q.effectiveTurn, snap.turn);
+    return { kind: 'planned', title: `Under construction: ${INFRA_LABEL[q.command.kind]}`, subtitle: at, sections: [{ heading: 'Queued', rows: [
+      { label: 'Takes effect', value: left === 1 ? 'next turn' : `in ${left} turns` }, { label: 'PC paid', value: String(Math.round(q.pcCost * 10) / 10) }] }],
+      note: 'Cancel it from the pending list to get half the political capital back.' };
+  }
   if (!o) {
     const planned = draft.find((d) => d.command.type === 'place' && d.command.tile && sameTile(d.command.tile, tile));
     if (planned && planned.command.type === 'place') {
       return { kind: 'planned', title: `Planned: ${INFRA_LABEL[planned.command.kind]}`, subtitle: at, sections: [{ heading: 'Plan', rows: [
-        { label: 'Takes effect', value: planned.preview.leadTime ? `in ${planned.preview.leadTime} turns` : 'when you end the turn' }, { label: 'PC', value: String(planned.preview.pc) }] }],
+        { label: 'Takes effect', value: planned.preview.leadTime <= 1 ? 'next turn' : `in ${planned.preview.leadTime} turns` }, { label: 'PC', value: String(Math.round(planned.preview.pc * 10) / 10) }] }],
         note: 'Cancel it from the plan tray.' };
     }
     return { kind: 'empty', title: 'Empty tile', subtitle: at, sections: [], note: 'Pick a building in the build palette to place one here.' };
   }
-  if ('effectiveTurn' in o) return building(snap, layout, o, at, draft);
+  if (!('label' in o)) return building(snap, layout, o as Placed, at, draft);
   const sc = o as Scenery;
   switch (sc.kind) {
     case 'home': return household(snap, sc, at);
@@ -99,8 +109,8 @@ const government = (s: Snapshot, at: string): InspectModel => ({ kind: 'governme
   { heading: 'Politics', rows: [{ label: 'Net lobbying pressure', value: pct(s.netLobby) }, { label: 'Union density', value: pct(s.unionDensity) },
   { label: 'Political capital', value: `${Math.round(s.pc.current)} of ${s.pc.cap}` }] }] });
 
-function building(s: Snapshot, layout: MapLayout, p: Placed, at: string, draft: DraftItem[]): InspectModel {
-  const built = isBuilt(p, s.turn);
+function building(s: Snapshot, _layout: MapLayout, p: Placed, at: string, draft: DraftItem[]): InspectModel {
+  const built = true;
   const sections: Section[] = [];
   if (p.kind === 'public_housing') sections.push({ heading: 'Housing (whole town)', rows: [
     { label: 'Public capacity', value: compact(s.housing.publicCap) }, { label: 'Private capacity', value: compact(s.housing.privateCap) },
@@ -109,9 +119,9 @@ function building(s: Snapshot, layout: MapLayout, p: Placed, at: string, draft: 
   else sections.push({ heading: 'Energy (whole town)', rows: [
     { label: 'Fossil capacity', value: compact(s.energy.fossilCap) }, { label: 'Renewable capacity', value: compact(s.energy.renewableCap) }, { label: 'Fossil share', value: pct(s.energy.fossilShare) }] });
   const already = draft.some((d) => d.command.type === 'remove' && d.command.kind === p.kind);
-  const count = builtCount(layout, p.kind, s.turn);
+  const count = builtCount(s, p.kind);
   return {
-    kind: 'building', title: INFRA_LABEL[p.kind], subtitle: `${built ? 'Built' : `Under construction, ready on turn ${p.effectiveTurn}`}. ${at}`, sections,
+    kind: 'building', title: INFRA_LABEL[p.kind], subtitle: `Built. ${at}`, sections,
     removable: built ? { kind: p.kind, already, reason: count < 1 ? 'Nothing of that kind to remove' : null } : undefined,
     note: built ? 'Removal is queued like any move and costs political capital. The sim removes one of this kind; which tile is cosmetic.' : 'Cancel it from the pending list to get half the political capital back.',
   };

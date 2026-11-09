@@ -1,0 +1,517 @@
+{
+ "_note": "MOCK ONLY. Hand-authored lever presentation (ranges, labels, arrows) and the mock's invented dynamics. Real rules and numbers are in data.generated.json (from content/). Arrows are the effect of INCREASING the lever (or moving to the later option) and are limited to effects docs/causal-model.md supports.",
+ "levers": [
+  {
+   "key": "carbon_price",
+   "label": "Carbon price",
+   "unit": "usd_per_tonne",
+   "min": 0,
+   "max": 200,
+   "step": 5,
+   "lobbied": true,
+   "arrows": [
+    {
+     "metric": "emissions",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "emissions": -0.5,
+    "gdp": -0.012,
+    "legitimacy": -0.01
+   }
+  },
+  {
+   "key": "tax_wage",
+   "label": "Wage tax",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.6,
+   "step": 0.01,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "debt",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.05,
+    "gdp": -0.015
+   }
+  },
+  {
+   "key": "tax_profit",
+   "label": "Profit tax",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.6,
+   "step": 0.01,
+   "lobbied": true,
+   "arrows": [
+    {
+     "metric": "debt",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.04,
+    "gdp": -0.01
+   }
+  },
+  {
+   "key": "tax_capital",
+   "label": "Capital tax",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.8,
+   "step": 0.01,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "debt",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.05,
+    "gdp": -0.006
+   }
+  },
+  {
+   "key": "wealth_tax",
+   "label": "Wealth tax",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.05,
+   "step": 0.005,
+   "lobbied": true,
+   "arrows": [
+    {
+     "metric": "gini",
+     "direction": "down"
+    },
+    {
+     "metric": "debt",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.08,
+    "legitimacy": 0.01
+   }
+  },
+  {
+   "key": "wealth_threshold",
+   "label": "Wealth tax threshold",
+   "unit": "usd",
+   "min": 0,
+   "max": 5000000,
+   "step": 50000,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "gini",
+     "direction": "up"
+    },
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": 0.02
+   }
+  },
+  {
+   "key": "base_rate",
+   "label": "Interest base rate",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.15,
+   "step": 0.0025,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "gdp",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gdp": -0.1,
+    "unemployment": 0.2
+   }
+  },
+  {
+   "key": "min_wage",
+   "label": "Minimum wage",
+   "unit": "usd_per_month",
+   "min": 0,
+   "max": 3000,
+   "step": 50,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "wage_share",
+     "direction": "up"
+    },
+    {
+     "metric": "unemployment",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.04,
+    "unemployment": 0.03
+   }
+  },
+  {
+   "key": "benefit",
+   "label": "Unemployment benefit",
+   "unit": "usd_per_month",
+   "min": 0,
+   "max": 2000,
+   "step": 50,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "legitimacy": 0.03,
+    "gdp": -0.002
+   }
+  },
+  {
+   "key": "ubi",
+   "label": "Universal basic income",
+   "unit": "usd_per_month",
+   "min": 0,
+   "max": 1500,
+   "step": 50,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gini": -0.06,
+    "legitimacy": 0.04,
+    "gdp": -0.004
+   }
+  },
+  {
+   "key": "green_subsidy",
+   "label": "Green subsidy",
+   "unit": "fraction",
+   "min": 0,
+   "max": 0.8,
+   "step": 0.05,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "emissions",
+     "direction": "down"
+    },
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "emissions": -0.25,
+    "gdp": 0.004
+   }
+  },
+  {
+   "key": "campaign_cap",
+   "label": "Campaign finance cap",
+   "unit": "fraction",
+   "min": 0,
+   "max": 1,
+   "step": 0.05,
+   "lobbied": false,
+   "arrows": [],
+   "availableIn": [
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "legitimacy": -0.03
+   }
+  },
+  {
+   "key": "emissions_cap",
+   "label": "Emissions cap (per firm)",
+   "unit": "tonnes_per_month",
+   "min": 0,
+   "max": 600,
+   "step": 10,
+   "lobbied": true,
+   "arrows": [
+    {
+     "metric": "emissions",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {},
+   "zeroMeansNone": true
+  },
+  {
+   "key": "commons_harvest",
+   "label": "Commons harvest",
+   "unit": "fraction",
+   "min": 0,
+   "max": 1.5,
+   "step": 0.05,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "commons",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "legitimacy": 0.0
+   }
+  },
+  {
+   "key": "commons_access",
+   "label": "Commons access",
+   "unit": "enum",
+   "min": 0,
+   "max": 0,
+   "step": 0,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "commons",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {},
+   "options": [
+    "open",
+    "community"
+   ],
+   "optionAvailableIn": {
+    "community": [
+     "regulated",
+     "coop"
+    ]
+   }
+  },
+  {
+   "key": "bank_capital_ratio",
+   "label": "Bank capital ratio",
+   "unit": "fraction",
+   "min": 0.04,
+   "max": 0.3,
+   "step": 0.01,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "money",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gdp": -0.03
+   }
+  },
+  {
+   "key": "bailout",
+   "label": "Bank bailout",
+   "unit": "bool",
+   "min": 0,
+   "max": 1,
+   "step": 1,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "legitimacy",
+     "direction": "down"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {}
+  },
+  {
+   "key": "public_spending",
+   "label": "Public spending",
+   "unit": "usd_per_month",
+   "min": 0,
+   "max": 1000000,
+   "step": 25000,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "gdp",
+     "direction": "up"
+    },
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "gdp": 0.03,
+    "unemployment": -0.05,
+    "legitimacy": 0.02
+   }
+  },
+  {
+   "key": "job_guarantee",
+   "label": "Job guarantee",
+   "unit": "fraction",
+   "min": 0,
+   "max": 1,
+   "step": 0.05,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "unemployment",
+     "direction": "down"
+    },
+    {
+     "metric": "debt",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {
+    "unemployment": -0.06,
+    "legitimacy": 0.03
+   }
+  }
+ ],
+ "dynamics": {
+  "baseGrowth": 0.03,
+  "unemploymentPull": 0.2,
+  "noise": 0.004,
+  "legitimacyBase": -0.0004,
+  "legitimacyUnemploymentWeight": 0.01,
+  "forestDecayMonthly": 0.0007,
+  "firmFoundedTurn": 40,
+  "temperaturePerTonne": 2e-05,
+  "lobbyWander": 0.004
+ },
+ "extra": {
+  "householdEmissionShare": 0.25,
+  "gdpToMoney": 0.5,
+  "bankStress": 0.002,
+  "capStrictnessEmissions": -0.35,
+  "capStrictnessGdp": -0.012,
+  "startingNetLobby": 0.0,
+  "lobbyTargetFactor": 0.8,
+  "lobbyUnionWeight": 0.3,
+  "lobbySmoothing": 0.15,
+  "bankFailureUnemployment": 0.15,
+  "gdpToWageShare": 1
+ },
+ "infraEffect": {
+  "public_housing": {
+   "wellbeing": 0.01
+  },
+  "fossil_plant": {
+   "emissions": 0.04,
+   "gdp": 0.003
+  },
+  "renewable_plant": {
+   "emissions": -0.07,
+   "gdp": 0.002
+  }
+ }
+}

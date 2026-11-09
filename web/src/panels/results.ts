@@ -50,20 +50,33 @@ export function metricDeltas(before: Snapshot | null, after: Snapshot | null): D
 }
 
 
-export interface LobbyLine { kind: 'blocked' | 'weakened'; text: string }
-/** Rejected commands and lobbying gaps, worded from the payload. */
+export interface LobbyLine { kind: 'blocked' | 'unaffordable' | 'weakened'; text: string }
+const AFFORD: string[] = ['insufficient_political_capital', 'insufficient_funds'];
+/** Smallest gap worth reporting: the sim lists its lobbied levers every turn, even when nothing was lost. */
+const GAP_EPS = 1e-6;
+
+/**
+ * Rejected commands and lobbying gaps, worded from the payload. "Unaffordable" (not enough political capital or money) is NOT
+ * lobbying and is kept apart from commands the rules blocked and from policies lobbying weakened.
+ */
 export function lobbyLines(r: TurnResult, levers: LeverInfo[], actions: ActionInfo[]): LobbyLine[] {
-  const out: LobbyLine[] = r.rejected.map((x) => ({ kind: 'blocked' as const, text: `${describeCommand(x.command, levers, actions)}: ${REASON_TEXT[x.reason] ?? x.reason}` }));
+  const out: LobbyLine[] = r.rejected.map((x) => ({
+    kind: AFFORD.includes(x.reason) ? 'unaffordable' as const : 'blocked' as const,
+    text: `${describeCommand(x.command, levers, actions)}: ${REASON_TEXT[x.reason] ?? x.reason}`,
+  }));
   for (const g of r.policyGaps) {
+    if (Math.abs(g.nominal - g.effective) <= GAP_EPS * Math.max(1, Math.abs(g.nominal))) continue;
     const l = levers.find((x) => x.key === g.lever);
     const f = (v: number) => (l ? formatLever(l, v) : v.toFixed(2));
-    const lost = g.nominal !== 0 ? Math.max(0, (g.nominal - g.effective) / g.nominal) : 0;
+    // A lever whose value rose only counts as "lost" for the part between the old default and what you asked for; show the plain gap.
+    const lost = g.nominal !== 0 ? Math.abs((g.nominal - g.effective) / g.nominal) : 0;
     out.push({ kind: 'weakened', text: `${l?.label ?? g.lever}: you set ${f(g.nominal)}, about ${f(g.effective)} in force (${pct(lost)} lost to lobbying)` });
   }
   return out;
 }
 
 export function comingNextTurn(snap: Snapshot): { next: PendingItem[]; later: number } {
-  const next = snap.pending.filter((p) => p.effectiveTurn === snap.turn + 1);
+  // Pending items fire at the START of the next submit (Rust activate_due), so "coming next turn" is effectiveTurn == snapshot.turn.
+  const next = snap.pending.filter((p) => p.effectiveTurn <= snap.turn);
   return { next, later: snap.pending.length - next.length };
 }

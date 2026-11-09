@@ -1,21 +1,22 @@
-import type { Command, InfraKind, TurnResult } from '../contract';
+import type { Command, InfraKind, Result, TurnResult } from '../contract';
 import type { SimPort } from '../sim-port/port';
 import { withCommand, withoutItem, withPreviews } from './draft';
-import { initialLayout, sameTile, tileBlock, type Tile } from './layout';
+import { emptyLayout, reconcileLayout, sameTile, tileBlock, type BuildHint, type Tile } from './layout';
 import { nextPhase, type PhaseEvent } from './phase';
 import { writable, type Readable } from './readable';
-import type { CameraAngle, GameState, Lens } from './types';
+import { parseSave, SAVE_FORMAT, SAVE_VERSION, type SaveFile } from './save';
+import type { CameraAngle, GameState, Lens, UiError } from './types';
 
 export interface Game {
   state: Readable<GameState>;
   newGame(seed: number): void;
-  /** Stores */
   enterPlan(): void;
   cancelPlan(): void;
   draftCommand(c: Command): void;
   removeDraft(id: number): void;
   clearDraft(): void;
   cancelPending(id: number): void;
+  /** Plays the turn. Returns null (and sets `state.error`) when the sim refuses; never throws. */
   endTurn(): TurnResult | null;
   setPlaybackMonth(m: -1 | 0 | 1 | 2): void;
   finishPlayback(): void;
@@ -28,48 +29,52 @@ export interface Game {
   /** Tile click handler: places a draft when in build mode, otherwise selects. Returns an error text if invalid. */
   clickTile(t: Tile): string | null;
   tileError(t: Tile): string | null;
+  dismissError(): void;
+  dismissCrisis(id: string): void;
+  /** The save file as text, or null (with `state.error` set) when the sim cannot export. */
+  exportSave(): string | null;
+  /** Loads a save. Returns a friendly error message, or null on success. */
+  importSave(text: string): string | null;
+}
+
+/** Runs a port call, turning a thrown exception (a bug in a port) into an error result so the UI never crashes. */
+function safe<T>(f: () => Result<T>): Result<T> {
+  try { return f(); } catch (e) { return { ok: false, error: { code: 'internal', message: e instanceof Error ? e.message : String(e) } }; }
 }
 
 export function createGame(port: SimPort): Game {
   const store = writable<GameState>({
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
-    playback: { month: -1, skipped: false }, layout: initialLayout(), selection: null, hover: null,
-    buildKind: null, lens: 'none', camera: 0,
+    playback: { month: -1, skipped: false }, layout: emptyLayout(), selection: null, hover: null,
+    buildKind: null, lens: 'none', camera: 0, error: null, dismissedCrises: {},
   });
   const get = store.get;
   const patch = (p: Partial<GameState>) => store.set({ ...get(), ...p });
   let nextDraftId = 1;
 
+  const fail = (where: UiError['where'], e: { code: string; message: string }) => patch({ error: { ...e, where } });
   const fire = (e: PhaseEvent) => patch({ phase: nextPhase(get().phase, e) });
 
-  function refreshPreviews() {
-    const { draft } = get();
-    patch({ draft: draft.length ? withPreviews(draft, port.preview(draft.map((d) => d.command))) : draft });
+  /** Fresh previews for the current draft, as a partial state (so callers can merge it into one patch). */
+  function previewsFor(draft: GameState['draft']): Partial<GameState> {
+    if (!draft.length) return { draft };
+    const res = safe(() => port.preview(draft.map((d) => d.command)));
+    return res.ok ? { draft: withPreviews(draft, res.value) } : { draft, error: { ...res.error, where: 'preview' } };
   }
 
   const draftedTiles = () => get().draft.flatMap((d) => (d.command.type === 'place' && d.command.tile ? [d.command.tile] : []));
-
-  function applyResultToLayout(r: TurnResult) {
-    const layout = get().layout;
-    const placed = [...layout.placed, ...r.accepted.flatMap((a) =>
-      a.command.type === 'place' && a.command.tile ? [{ kind: a.command.kind, ...a.command.tile, effectiveTurn: a.effectiveTurn }] : [])];
-    for (const a of r.activated) {
-      if (a.command.type !== 'remove') continue;
-      const idx = placed.map((p) => p.kind).lastIndexOf(a.command.kind);
-      if (idx >= 0) placed.splice(idx, 1);
-    }
-    patch({ layout: { ...layout, placed } });
-  }
 
   return {
     state: { get, subscribe: store.subscribe },
 
     newGame(seed) {
-      const snapshot = port.init(seed);
+      const res = safe(() => port.init(seed));
+      if (!res.ok) return fail('new_game', res.error);
+      const snapshot = res.value;
       store.set({
-        ...get(), phase: 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
-        playback: { month: -1, skipped: false }, layout: initialLayout(), selection: null, hover: null,
-        buildKind: null,
+        ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
+        playback: { month: -1, skipped: false }, layout: reconcileLayout(null, snapshot), selection: null, hover: null,
+        buildKind: null, error: null, dismissedCrises: {},
       });
     },
 
@@ -82,47 +87,51 @@ export function createGame(port: SimPort): Game {
     draftCommand(c) {
       if (get().phase === 'review') fire('startPlan');
       if (get().phase !== 'plan') return;
-      patch({ draft: withCommand(get().draft, c, nextDraftId++) });
-      refreshPreviews();
+      patch(previewsFor(withCommand(get().draft, c, nextDraftId++)));
     },
     removeDraft(id) {
-      patch({ draft: withoutItem(get().draft, id) });
-      refreshPreviews();
+      patch(previewsFor(withoutItem(get().draft, id)));
     },
     clearDraft: () => patch({ draft: [] }),
 
     cancelPending(id) {
-      const { phase, layout, snapshot } = get();
+      const { phase, layout } = get();
       if (phase !== 'review' && phase !== 'plan') return;
-      const item = snapshot?.pending.find((p) => p.id === id);
-      const res = port.cancelPending(id);
-      const placed = item?.command.type === 'place' && item.command.tile
-        ? layout.placed.filter((p) => !(sameTile(p, item.command.type === 'place' ? item.command.tile! : p) && p.effectiveTurn === item.effectiveTurn))
-        : layout.placed;
-      patch({ snapshot: res.snapshot, layout: { ...layout, placed } });
-      refreshPreviews();
+      const res = safe(() => port.cancelPending(id));
+      if (!res.ok) return fail('cancel', res.error);
+      const next = reconcileLayout(layout, res.value.snapshot);
+      patch({ snapshot: res.value.snapshot, layout: next, ...previewsFor(get().draft) });
     },
 
     endTurn() {
-      const { phase, draft } = get();
+      const { phase, draft, layout, snapshot: before } = get();
       if (phase !== 'review' && phase !== 'plan') return null;
-      const result = port.submitTurn(draft.map((d) => d.command));
-      patch({ lastResult: result, previous: get().snapshot, snapshot: result.snapshot, draft: [], buildKind: null, playback: { month: -1, skipped: false } });
-      applyResultToLayout(result);
-      fire('endTurn');
+      const res = safe(() => port.submitTurn(draft.map((d) => d.command)));
+      if (!res.ok) { fail('end_turn', res.error); return null; }
+      const result = res.value;
+      // Tiles that queued builds were reserved on become their finished tiles.
+      const hints: BuildHint[] = result.activated.flatMap((a) => {
+        if (a.command.type !== 'place') return [];
+        const tile = layout.pendingTiles[a.id] ?? a.command.tile;
+        return tile ? [{ kind: a.command.kind, tile }] : [];
+      });
+      // ONE store update for the whole turn (snapshot, result, layout, draft and phase together).
+      store.set({
+        ...get(), lastResult: result, previous: before, snapshot: result.snapshot, draft: [], buildKind: null,
+        playback: { month: -1, skipped: false }, layout: reconcileLayout(layout, result.snapshot, hints),
+        phase: nextPhase(phase, 'endTurn'), error: null,
+      });
       return result;
     },
     setPlaybackMonth: (m) => patch({ playback: { ...get().playback, month: m } }),
     finishPlayback() {
       if (get().phase !== 'playback') return;
-      patch({ playback: { month: 2, skipped: true } });
-      fire('playbackDone');
+      patch({ playback: { month: 2, skipped: true }, phase: nextPhase('playback', 'playbackDone') });
     },
     continueFromResults() {
       const s = get();
       if (s.phase !== 'results') return;
-      if (s.snapshot?.gameOver) return fire('gameOver');
-      fire('continue');
+      fire(s.snapshot?.gameOver ? 'gameOver' : 'continue');
     },
 
     rotate: (dir) => patch({ camera: ((get().camera + dir + 4) % 4) as CameraAngle }),
@@ -139,9 +148,7 @@ export function createGame(port: SimPort): Game {
       patch({ buildKind: k });
     },
 
-    tileError(t) {
-      return tileBlock(get().layout, t, draftedTiles());
-    },
+    tileError: (t) => tileBlock(get().layout, t, draftedTiles()),
     clickTile(t) {
       const { buildKind } = get();
       if (!buildKind) {
@@ -151,6 +158,38 @@ export function createGame(port: SimPort): Game {
       const err = tileBlock(get().layout, t, draftedTiles());
       if (err) return err;
       this.draftCommand({ type: 'place', kind: buildKind, count: 1, tile: t });
+      return null;
+    },
+
+    dismissError: () => patch({ error: null }),
+    dismissCrisis(id) {
+      const turn = get().snapshot?.turn ?? 0;
+      patch({ dismissedCrises: { ...get().dismissedCrises, [id]: turn } });
+    },
+
+    exportSave() {
+      const s = get();
+      if (!s.snapshot) return null;
+      const res = safe(() => port.exportState());
+      if (!res.ok) { fail('save', res.error); return null; }
+      const file: SaveFile = {
+        format: SAVE_FORMAT, saveVersion: SAVE_VERSION, schemaVersion: s.snapshot.schemaVersion, simState: res.value, layout: s.layout,
+        lastResult: s.lastResult, previous: s.previous, uiPrefs: { lens: s.lens, camera: s.camera }, savedAt: new Date().toISOString(),
+      };
+      return JSON.stringify(file);
+    },
+    importSave(text) {
+      const parsed = parseSave(text);
+      if (!parsed.ok) return parsed.message;
+      const f = parsed.value;
+      const res = safe(() => port.importState(f.simState));
+      if (!res.ok) return res.error.message;
+      const snapshot = res.value;
+      store.set({
+        ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [],
+        lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false }, layout: reconcileLayout(f.layout, snapshot),
+        selection: null, hover: null, buildKind: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
+      });
       return null;
     },
   };

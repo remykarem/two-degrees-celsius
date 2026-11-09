@@ -61,7 +61,7 @@
             {#each levers as l (l.key)}
               {@const p = snap.policy[l.key]}
               {@const st = leverStatus(l, snap, $gs.draft)}
-              <PolicyRow lever={l} nominal={p.nominal} effective={p.effective} disabled={canEdit ? st.disabled : 'Locked while the turn plays out'}
+              <PolicyRow lever={l} system={snap.system.current} nominal={p.nominal} effective={p.effective} disabled={canEdit ? st.disabled : 'Locked while the turn plays out'}
                 draftValue={draftNumber(l, $gs.draft)} preview={draftOf(l.key)?.preview} onset={(v) => setLever(l, v)} onreset={() => resetLever(l)} />
             {/each}
           </ul>

@@ -6,22 +6,21 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  let dismissed = $state<Record<string, number>>({});
   const turn = $derived($gs.snapshot?.turn ?? 0);
   const crises = $derived(deriveCrises($gs.snapshot, $gs.lastResult));
-  const visible = $derived($gs.phase === 'ended' ? [] : crises.filter((c) => !(c.severity === 'warning' && dismissed[c.id] === turn)));
-  const hasCritical = $derived(visible.some((c) => c.severity === 'critical'));
+  const visible = $derived($gs.phase === 'ended' ? [] : crises.filter((c) => !(c.severity === 'warning' && $gs.dismissedCrises[c.id] === turn)));
 </script>
 
-<div class="banners" aria-live={hasCritical ? 'assertive' : 'polite'} role={hasCritical ? 'alert' : 'status'}>
+<!-- The region keeps one stable role. A critical banner carries role="alert" itself, so it is announced when it appears and not re-announced when warnings come and go. -->
+<div class="banners" role="status" aria-live="polite">
   {#each visible as c (c.id)}
-    <div class="crisis {c.severity}">
+    <div class="crisis {c.severity}" role={c.severity === 'critical' ? 'alert' : undefined}>
       <span class="icon" aria-hidden="true">{c.severity === 'critical' ? '⛔' : '⚠'}</span>
       <span class="sev">{c.severity === 'critical' ? 'Crisis' : 'Warning'}</span>
       <strong>{c.title}.</strong>
       <span class="detail">{c.detail}</span>
       {#if c.why}<button class="link" onclick={() => setUi({ why: { kind: c.why! } })}>why?</button>{/if}
-      {#if c.severity === 'warning'}<button class="x" aria-label="Dismiss warning for this turn" onclick={() => (dismissed[c.id] = turn)}>✕</button>{/if}
+      {#if c.severity === 'warning'}<button class="x" aria-label="Dismiss warning for this turn" onclick={() => game.dismissCrisis(c.id)}>✕</button>{/if}
     </div>
   {/each}
 </div>

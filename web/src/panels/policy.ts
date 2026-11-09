@@ -1,5 +1,6 @@
 import type { CommandPreview, LeverInfo, LeverKey, Snapshot, SystemKey } from '../contract';
 import type { DraftItem } from '../store';
+import { arrowFlip } from './costs';
 import { formatLever, REASON_TEXT, SYSTEM_NAME } from './format';
 
 export interface LeverGroup { id: string; label: string; blurb: string; keys: LeverKey[] }
@@ -63,9 +64,8 @@ export function leverStatus(l: LeverInfo, snap: Snapshot, draft: DraftItem[]): L
   if (!l.availableIn.includes(system)) {
     const where = l.availableIn.map((s) => SYSTEM_NAME[s]).join(' or ');
     disabled = `Not available in ${SYSTEM_NAME[system]}. Needs ${where}.`;
-  } else if (draftNumber(l, draft) === undefined && l.baseCostPc > pcFree + 1e-9) {
-    disabled = `Needs about ${l.baseCostPc} PC; you have ${Math.floor(pcFree)} free this turn.`;
   }
+  // No cost-based lock: the real price (lobbying opposition, size of the change) is only known from preview(), which blocks the draft if you cannot pay.
   return { disabled, pcFree };
 }
 
@@ -77,4 +77,12 @@ export function lobbyNote(l: LeverInfo, current: number, drafted: number, previe
 }
 
 export const blockText = (r: string) => REASON_TEXT[r] ?? r;
+/** Arrows for the row: what RAISING the lever does, flipped when the drafted value is below the current one. */
+export function arrowsShown(l: LeverInfo, current: number, drafted: number | undefined): { arrows: LeverInfo['arrows']; basis: 'raise' | 'raised' | 'lowered' } {
+  if (drafted === undefined) return { arrows: l.arrows, basis: 'raise' };
+  const f = arrowFlip(l, current, drafted);
+  if (f === 0) return { arrows: l.arrows, basis: 'raise' };
+  if (f === 1) return { arrows: l.arrows, basis: 'raised' };
+  return { arrows: l.arrows.map((a) => ({ metric: a.metric, direction: a.direction === 'up' ? 'down' as const : 'up' as const })), basis: 'lowered' };
+}
 export const arrowGlyph = (d: 'up' | 'down') => (d === 'up' ? '▲' : '▼');

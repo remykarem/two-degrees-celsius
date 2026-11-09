@@ -2,7 +2,7 @@
   import { totalMoney, totalPc, type Game } from '../store';
   import { Button } from '../ui-kit';
   import EndTurn from './EndTurn.svelte';
-  import { describeCommand, leadText, money } from './format';
+  import { describeCommand, leadRangeText, leadText, money } from './format';
   import { blockText } from './policy';
 
   let { game }: { game: Game } = $props();
@@ -14,14 +14,14 @@
   const left = $derived(pcNow - spend);
   const blocked = $derived($gs.draft.filter((d) => d.preview.blocked).length);
   const leads = $derived($gs.draft.filter((d) => !d.preview.blocked).map((d) => d.preview.leadTime));
-  const leadRange = $derived(leads.length ? (Math.min(...leads) === Math.max(...leads) ? leadText(leads[0]!) : `${leadText(Math.min(...leads))} to ${leadText(Math.max(...leads))}`) : '');
+  const leadRange = $derived(leadRangeText(leads));
 </script>
 
 <section aria-label="Plan this turn" data-coach="plan">
   <div class="head">
     <h2>Plan this turn</h2>
     <span class="sum num" class:neg={left < 0} title="Political capital now, after this plan">PC {r1(pcNow)} → {r1(left)}</span>
-    <span class="sum num" title="Money is charged when each item takes effect, not now">Money −{money(totalMoney($gs.draft))} on activation</span>
+    <span class="sum num" title="Money is charged when each item takes effect, not now (the sim checks it against cash plus the bank's lending room)">Money −{money(totalMoney($gs.draft))} on activation</span>
     {#if leadRange}<span class="sum dim">Takes effect {leadRange}</span>{/if}
     <span class="spacer"></span>
     {#if $gs.draft.length}<Button variant="ghost" onclick={() => game.clearDraft()}>Clear plan</Button>{/if}
@@ -41,7 +41,7 @@
             <span class="why"><span aria-hidden="true">⚠ </span>Blocked: {blockText(d.preview.blocked)}</span>
           {:else}
             <span class="dim">{leadText(d.preview.leadTime)}</span>
-            <span class="num">−{d.preview.pc} PC</span>
+            <span class="num">−{Math.round(d.preview.pc * 10) / 10} PC</span>
             {#if d.preview.money > 0}<span class="num">−{money(d.preview.money)}</span>{/if}
           {/if}
           <button class="x" aria-label="Remove from plan: {text}" onclick={() => game.removeDraft(d.id)}>✕</button>

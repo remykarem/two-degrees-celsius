@@ -42,6 +42,8 @@ export interface CameraInfo { angle: CameraAngle; zoom: number; zoomMin: number;
 export interface PlaybackProgress { active: boolean; month: -1 | 0 | 1 | 2; monthT: number; overall: number }
 export interface SceneStats { drawCalls: number; triangles: number; instances: number; entities: number }
 
+export type GlState = 'ok' | 'lost' | 'unavailable';
+
 export type SceneCommand = { type: 'zoom'; factor: number } | { type: 'reset' };
 
 export interface SceneBus {
@@ -51,6 +53,10 @@ export interface SceneBus {
   camera: Writable<CameraInfo>;
   playback: Writable<PlaybackProgress>;
   stats: Writable<SceneStats>;
+  /** WebGL health, so the panels can show a message when the context is lost. */
+  gl: Writable<GlState>;
+  /** Short plain-text messages for a screen-reader live region (keyboard cursor moves, placements). */
+  announce: Writable<string>;
   /** Panels call these (zoom buttons, reset button); the scene executes them. */
   requestZoom(factor: number): void;
   requestReset(): void;
@@ -67,6 +73,8 @@ export function createSceneBus(): SceneBus {
     camera: writable<CameraInfo>({ angle: 0, zoom: 1, zoomMin: 0.7, zoomMax: 3.2, panned: false, reducedMotion: false }),
     playback: writable<PlaybackProgress>({ active: false, month: -1, monthT: 0, overall: 0 }),
     stats: writable<SceneStats>({ drawCalls: 0, triangles: 0, instances: 0, entities: 0 }),
+    gl: writable<GlState>('ok'),
+    announce: writable<string>(''),
     requestZoom: (factor) => send({ type: 'zoom', factor }),
     requestReset: () => send({ type: 'reset' }),
     onCommand(fn) { listeners.add(fn); return () => listeners.delete(fn); },

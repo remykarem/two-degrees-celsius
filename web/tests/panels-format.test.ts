@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compact, formatLever, money, pct, signed, tonnes, trendOf } from '../src/panels/format';
 import type { LeverInfo } from '../src/contract';
 
-const lever = (p: Partial<LeverInfo>): LeverInfo => ({ key: 'tax_wage', label: 'x', unit: 'fraction', min: 0, max: 1, step: 0.01, baseCostPc: 1, leadTime: 1, lobbied: false, arrows: [], availableIn: ['market'], ...p });
+const lever = (p: Partial<LeverInfo>): LeverInfo => ({ key: 'tax_wage', label: 'x', unit: 'fraction', min: 0, max: 1, step: 0.01, baseCostPc: 1, costModel: { base: 1, unit: 1, minSize: 0.25 }, leadTime: 1, lobbied: false, arrows: [], availableIn: ['market'], ...p });
 
 describe('number formatting', () => {
   it('compacts magnitudes', () => {
@@ -29,7 +29,10 @@ describe('number formatting', () => {
   it('formats levers by unit', () => {
     expect(formatLever(lever({ unit: 'fraction' }), 0.25)).toBe('25%');
     expect(formatLever(lever({ unit: 'usd_per_tonne' }), 50)).toBe('$50/t');
-    expect(formatLever(lever({ unit: 'tonnes' }), 0)).toBe('no cap');
+    expect(formatLever(lever({ unit: 'tonnes_per_month', zeroMeansNone: true }), 0)).toBe('no cap');
+    expect(formatLever(lever({ unit: 'tonnes_per_month', zeroMeansNone: true }), 120)).toBe('120 t/month');
+    expect(formatLever(lever({ unit: 'tonnes_per_month' }), 0)).toBe('0 t/month');
+    expect(formatLever(lever({ unit: 'usd_per_month' }), 1200)).toBe('$1.2k/month');
     expect(formatLever(lever({ unit: 'bool' }), true)).toBe('on');
     expect(formatLever(lever({ unit: 'enum', options: ['open', 'community'] }), 1)).toBe('community');
     expect(formatLever(lever({ unit: 'usd' }), 12.5)).toBe('$12.5');

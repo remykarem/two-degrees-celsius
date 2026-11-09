@@ -37,19 +37,19 @@ export const SYSTEMS: Record<SystemKey, SystemCopy> = {
     ],
   },
   regulated: {
-    key: 'regulated', name: 'Regulated capitalism', tagline: 'Owners still profit, but wages have a higher floor and carbon is cheaper to police.',
+    key: 'regulated', name: 'Regulated capitalism', tagline: 'Owners still profit, but wages have a higher floor and lobbying is capped.',
     transitionMonths: 12, outputHit: 0.05,
     facts: [
       { label: 'Dividends go to', value: 'Owners' },
       { label: 'Wages', value: 'Market wages with a higher floor' },
       { label: 'Investment hurdle', value: '5% expected return, with the green subsidy switched on' },
       { label: 'Credit', value: 'Normal terms' },
-      { label: 'Lobbying power', value: 'Lower (cap 0.4); a campaign-spending cap becomes available' },
+      { label: 'Lobbying power', value: 'Lower (cap 0.4); a campaign-spending cap becomes available and the commons can be community-managed' },
       { label: 'Commons default', value: 'A community cap is allowed' },
     ],
     resistance: { label: 'Who resists', value: 'Capitalists resist the change.' },
     tradeoffs: [
-      { label: 'Strength', value: 'Unlocks the emissions cap and campaign cap levers, and weakens lobbying.' },
+      { label: 'Strength', value: 'Unlocks the campaign-spending cap and community management of the commons, and lowers the ceiling on lobbying (0.4 instead of 0.6). The emissions cap works in every system.' },
       { label: 'Cost', value: 'About 12 months of transition with roughly 5% less output.' },
       { label: 'Trade-off', value: 'Lower GDP growth than market capitalism, in return for a better chance of staying inside the carbon budget (a design target, not a promise).' },
     ],

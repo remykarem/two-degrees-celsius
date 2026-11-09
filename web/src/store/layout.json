@@ -1,189 +1,236 @@
 {
+ "_note": "Geometry only. Buildings, homes and firms are DERIVED from the snapshot (src/store/layout.ts). Slots are positions, not buildings.",
  "gridSize": 12,
- "scenery": [
+ "bank": {
+  "x": 6,
+  "y": 4
+ },
+ "government": {
+  "x": 5,
+  "y": 6
+ },
+ "forest": [
   {
-   "kind": "home",
-   "ref": 1,
-   "x": 2,
-   "y": 2,
-   "label": "Owners homes"
-  },
-  {
-   "kind": "home",
-   "ref": 2,
-   "x": 3,
-   "y": 2,
-   "label": "Landlords homes"
-  },
-  {
-   "kind": "home",
-   "ref": 3,
-   "x": 2,
-   "y": 4,
-   "label": "Managers homes"
-  },
-  {
-   "kind": "home",
-   "ref": 4,
-   "x": 3,
-   "y": 4,
-   "label": "Workers homes"
-  },
-  {
-   "kind": "home",
-   "ref": 5,
-   "x": 4,
-   "y": 3,
-   "label": "Dependents homes"
-  },
-  {
-   "kind": "firm",
-   "ref": 1,
-   "x": 8,
-   "y": 3,
-   "label": "Factory"
-  },
-  {
-   "kind": "firm",
-   "ref": 2,
-   "x": 9,
-   "y": 6,
-   "label": "Farm"
-  },
-  {
-   "kind": "firm",
-   "ref": 3,
-   "x": 8,
-   "y": 5,
-   "label": "Workshop (dormant slot)"
-  },
-  {
-   "kind": "bank",
-   "x": 6,
-   "y": 4,
-   "label": "Bank"
-  },
-  {
-   "kind": "government",
-   "x": 5,
-   "y": 6,
-   "label": "Town hall"
-  },
-  {
-   "kind": "forest",
    "x": 0,
-   "y": 9,
-   "label": "Forest"
+   "y": 9
   },
   {
-   "kind": "forest",
    "x": 1,
-   "y": 9,
-   "label": "Forest"
+   "y": 9
   },
   {
-   "kind": "forest",
    "x": 0,
-   "y": 10,
-   "label": "Forest"
+   "y": 10
   },
   {
-   "kind": "forest",
    "x": 1,
-   "y": 10,
-   "label": "Forest"
+   "y": 10
   },
   {
-   "kind": "forest",
    "x": 2,
-   "y": 10,
-   "label": "Forest"
+   "y": 10
   },
   {
-   "kind": "forest",
    "x": 0,
-   "y": 11,
-   "label": "Forest"
+   "y": 11
   },
   {
-   "kind": "forest",
    "x": 1,
-   "y": 11,
-   "label": "Forest"
+   "y": 11
   },
   {
-   "kind": "forest",
    "x": 2,
-   "y": 11,
-   "label": "Forest"
+   "y": 11
   },
   {
-   "kind": "forest",
    "x": 3,
-   "y": 11,
-   "label": "Forest"
-  },
-  {
-   "kind": "commons",
-   "x": 10,
-   "y": 9,
-   "label": "Commons"
-  },
-  {
-   "kind": "commons",
-   "x": 11,
-   "y": 9,
-   "label": "Commons"
-  },
-  {
-   "kind": "commons",
-   "x": 10,
-   "y": 10,
-   "label": "Commons"
-  },
-  {
-   "kind": "commons",
-   "x": 11,
-   "y": 10,
-   "label": "Commons"
+   "y": 11
   }
  ],
- "placed": [
+ "commons": [
   {
-   "kind": "public_housing",
-   "x": 4,
-   "y": 7,
-   "effectiveTurn": 0
-  },
-  {
-   "kind": "public_housing",
-   "x": 5,
-   "y": 8,
-   "effectiveTurn": 0
-  },
-  {
-   "kind": "fossil_plant",
    "x": 10,
-   "y": 1,
-   "effectiveTurn": 0
+   "y": 9
   },
   {
-   "kind": "fossil_plant",
    "x": 11,
-   "y": 1,
-   "effectiveTurn": 0
+   "y": 9
   },
   {
-   "kind": "fossil_plant",
    "x": 10,
-   "y": 2,
-   "effectiveTurn": 0
+   "y": 10
   },
   {
-   "kind": "renewable_plant",
-   "x": 0,
-   "y": 1,
-   "effectiveTurn": 0
+   "x": 11,
+   "y": 10
   }
- ]
+ ],
+ "homeSlots": [
+  {
+   "x": 2,
+   "y": 2
+  },
+  {
+   "x": 3,
+   "y": 2
+  },
+  {
+   "x": 2,
+   "y": 4
+  },
+  {
+   "x": 3,
+   "y": 4
+  },
+  {
+   "x": 4,
+   "y": 3
+  },
+  {
+   "x": 1,
+   "y": 3
+  },
+  {
+   "x": 4,
+   "y": 5
+  },
+  {
+   "x": 2,
+   "y": 6
+  },
+  {
+   "x": 1,
+   "y": 5
+  }
+ ],
+ "firmSlots": [
+  {
+   "x": 8,
+   "y": 3
+  },
+  {
+   "x": 9,
+   "y": 6
+  },
+  {
+   "x": 8,
+   "y": 5
+  },
+  {
+   "x": 9,
+   "y": 4
+  },
+  {
+   "x": 7,
+   "y": 2
+  },
+  {
+   "x": 7,
+   "y": 7
+  }
+ ],
+ "buildZones": {
+  "fossil_plant": [
+   {
+    "x": 10,
+    "y": 1
+   },
+   {
+    "x": 11,
+    "y": 1
+   },
+   {
+    "x": 10,
+    "y": 2
+   },
+   {
+    "x": 11,
+    "y": 2
+   },
+   {
+    "x": 9,
+    "y": 1
+   },
+   {
+    "x": 9,
+    "y": 2
+   },
+   {
+    "x": 10,
+    "y": 0
+   },
+   {
+    "x": 11,
+    "y": 0
+   },
+   {
+    "x": 9,
+    "y": 0
+   }
+  ],
+  "renewable_plant": [
+   {
+    "x": 0,
+    "y": 1
+   },
+   {
+    "x": 1,
+    "y": 1
+   },
+   {
+    "x": 0,
+    "y": 2
+   },
+   {
+    "x": 1,
+    "y": 2
+   },
+   {
+    "x": 0,
+    "y": 0
+   },
+   {
+    "x": 1,
+    "y": 0
+   },
+   {
+    "x": 2,
+    "y": 0
+   },
+   {
+    "x": 3,
+    "y": 0
+   }
+  ],
+  "public_housing": [
+   {
+    "x": 4,
+    "y": 7
+   },
+   {
+    "x": 5,
+    "y": 8
+   },
+   {
+    "x": 4,
+    "y": 8
+   },
+   {
+    "x": 3,
+    "y": 8
+   },
+   {
+    "x": 6,
+    "y": 8
+   },
+   {
+    "x": 3,
+    "y": 7
+   },
+   {
+    "x": 6,
+    "y": 7
+   }
+  ]
+ }
 }

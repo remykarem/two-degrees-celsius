@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { MonthFrame } from '../src/contract';
 import { createSimPort } from '../src/sim-port';
-import { initialLayout } from '../src/store/layout';
+import { reconcileLayout } from '../src/store/layout';
+import { ok } from './helpers';
 import { allocate, CAPS, commuteFraction, ctxFromSnapshot, emissionsFromSnapshot, planEmitters, planFlowLoop, planFrame, pointAt, smokeCounts, smokeParticle, trackProgress } from '../src/scene/flows';
 
 const sim = createSimPort();
-const s0 = sim.init(11);
-const result = sim.submitTurn([]);
-const layout = initialLayout();
+const s0 = ok(sim.init(11));
+const result = ok(sim.submitTurn([]));
+const layout = reconcileLayout(null, result.snapshot);
 const ctx = ctxFromSnapshot(layout, result.snapshot);
 const frame = result.months[0]!;
 
@@ -66,7 +67,7 @@ describe('frame planner', () => {
   });
   it('maps events to effects at the right tile', () => {
     const f: MonthFrame = { month: 2, flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] },
-      events: [{ type: 'firm_closed', importance: 3, firm: 1 }, { type: 'bank_failed', importance: 3 }, { type: 'policy_blocked', importance: 1, reason: 'invalid_command' }] };
+      events: [{ type: 'firm_closed', importance: 3, firm: 0 }, { type: 'bank_failed', importance: 3 }, { type: 'policy_blocked', importance: 1, reason: 'invalid_command' }] };
     const fx = planFrame(f, ctx).fx;
     expect(fx.map((x) => x.type).sort()).toEqual(['bank', 'closed']);
     expect(fx.find((x) => x.type === 'closed')!.tile).toMatchObject({ x: 8, y: 3 });
@@ -81,20 +82,20 @@ describe('frame planner', () => {
 
 describe('emitters and smoke', () => {
   it('scale with emissions and skip closed firms', () => {
-    const em = planEmitters([{ source: 'firm', id: 1, tonnes: 10 }, { source: 'firm', id: 2, tonnes: 5 }], ctx);
-    const f1 = em.find((e) => e.id === 'f1')!, f2 = em.find((e) => e.id === 'f2')!;
+    const em = planEmitters([{ source: 'firm', id: 0, tonnes: 10 }, { source: 'firm', id: 1, tonnes: 5 }], ctx);
+    const f1 = em.find((e) => e.id === 'f0')!, f2 = em.find((e) => e.id === 'f1')!;
     expect(f1.rate).toBe(1);
     expect(f2.rate).toBeCloseTo(0.5);
-    const closed = planEmitters([{ source: 'firm', id: 1, tonnes: 10 }], { ...ctx, firms: ctx.firms.map((f) => ({ ...f, active: false })) });
-    expect(closed.find((e) => e.id === 'f1')).toBeUndefined();
+    const closed = planEmitters([{ source: 'firm', id: 0, tonnes: 10 }], { ...ctx, firms: ctx.firms.map((f) => ({ ...f, active: false })) });
+    expect(closed.find((e) => e.id === 'f0')).toBeUndefined();
   });
   it('fossil plants smoke more with a higher fossil share; pending ones do not', () => {
     const lo = planEmitters([], { ...ctx, fossilShare: 0 }).filter((e) => e.id.startsWith('p'));
     const hi = planEmitters([], { ...ctx, fossilShare: 1 }).filter((e) => e.id.startsWith('p'));
-    expect(lo).toHaveLength(3);
+    expect(lo).toHaveLength(5); // the five starting fossil plants
     expect(hi[0]!.rate).toBeGreaterThan(lo[0]!.rate);
-    const pending = { ...ctx, layout: { ...layout, placed: layout.placed.map((p) => ({ ...p, effectiveTurn: 99 })) } };
-    expect(planEmitters([], pending)).toHaveLength(0);
+    const none = { ...ctx, layout: { ...layout, placed: [] } };
+    expect(planEmitters([], none)).toHaveLength(0);
   });
   it('ambient emissions come from the snapshot', () => {
     expect(emissionsFromSnapshot(s0).some((e) => e.source === 'firm')).toBe(true);
@@ -126,5 +127,34 @@ describe('path and timing helpers', () => {
     expect(trackProgress(t, 0.1)).toBeNull();
     expect(trackProgress(t, 0.4)).toBeCloseTo(0.5);
     expect(trackProgress(t, 0.9)).toBeNull();
+  });
+});
+
+describe('empty and partial flows (contract v0.3 section 10.8)', () => {
+  const empty: MonthFrame = { month: 0, events: [], flows: {} };
+  it('plans an empty frame without throwing', () => {
+    const plan = planFrame(empty, ctx);
+    expect(plan.tracks).toEqual([]);
+    expect(plan.emitters.every((e) => e.id.startsWith('p'))).toBe(true); // only the fossil plants smoke
+    expect(plan.fx).toEqual([]);
+  });
+  it('plans a frame with only commutes and emissions', () => {
+    const h = ctx.households[0]!.id, f = ctx.firms.find((x) => x.active)!.id;
+    const partial: MonthFrame = { month: 1, events: [], flows: { commutes: [{ household: h, firm: f, people: 5 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
+    const plan = planFrame(partial, ctx);
+    expect(plan.tracks.every((t) => t.kind === 'figure')).toBe(true);
+    expect(plan.tracks.length).toBeGreaterThan(0);
+    expect(plan.emitters.length).toBeGreaterThan(0);
+  });
+  it('tolerates empty arrays, no events array, and a loop made only of empty frames', () => {
+    const arrays: MonthFrame = { month: 2, events: [], flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] } };
+    expect(planFrame(arrays, ctx).tracks).toEqual([]);
+    expect(planFrame({ month: 0, flows: {} } as unknown as MonthFrame, ctx).fx).toEqual([]);
+    expect(planFlowLoop([empty, empty, empty], ctx)).toEqual([]);
+    expect(planEmitters(undefined, ctx).filter((e) => e.kind !== 'smoke')).toEqual([]);
+  });
+  it('the flow loop uses the last frame that has flows', () => {
+    const loop = planFlowLoop([result.months[0]!, result.months[1]!, empty], ctx);
+    expect(loop.length).toBeGreaterThan(0);
   });
 });

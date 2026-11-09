@@ -16,6 +16,8 @@
   const deltas = $derived(metricDeltas($gs.previous, r?.snapshot ?? null));
   const events = $derived(eventLines(r?.months.flatMap((m) => m.events) ?? [], r?.snapshot ?? null));
   const lobby = $derived(r ? lobbyLines(r, $gs.levers, $gs.actions) : []);
+  const weakened = $derived(lobby.filter((l) => l.kind === 'weakened'));
+  const refused = $derived(lobby.filter((l) => l.kind !== 'weakened'));
   const soon = $derived(r ? comingNextTurn(r.snapshot) : { next: [], later: 0 });
   const over = $derived(!!r?.snapshot.gameOver);
   const toggle = (k: WhyKind | null) => { if (k) why = why === k ? null : k; };
@@ -65,9 +67,13 @@
         </ul>
         {#if events.more}<p class="dim">and {events.more} more minor events</p>{/if}
 
-        {#if lobby.length}
-          <h3>Weakened or blocked by lobbying</h3>
-          <ul>{#each lobby as l, i (i)}<li><span class="tagl">{l.kind === 'blocked' ? 'Blocked' : 'Weakened'}</span> {l.text}</li>{/each}</ul>
+        {#if weakened.length}
+          <h3>Weakened by lobbying</h3>
+          <ul>{#each weakened as l, i (i)}<li><span class="tagl">Weakened</span> {l.text}</li>{/each}</ul>
+        {/if}
+        {#if refused.length}
+          <h3>Not carried out</h3>
+          <ul>{#each refused as l, i (i)}<li><span class="tagl">{l.kind === 'unaffordable' ? 'Could not afford' : 'Blocked by the rules'}</span> {l.text}</li>{/each}</ul>
         {/if}
         {#if r.activated.length}
           <h3>Now in force</h3>

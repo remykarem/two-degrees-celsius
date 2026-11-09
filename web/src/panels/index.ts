@@ -14,3 +14,4 @@ export { default as CrisisBanner } from './CrisisBanner.svelte';
 export { default as SystemModal } from './SystemModal.svelte';
 export { default as WhyModal } from './WhyModal.svelte';
 export { default as Onboarding } from './Onboarding.svelte';
+export { default as ErrorScreen } from './ErrorScreen.svelte';

@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
 import { LENSES } from '../src/store';
-import { initialLayout } from '../src/store/layout';
+import { reconcileLayout } from '../src/store/layout';
+import { ok } from './helpers';
 import { planEntities } from '../src/scene/entities';
 import { entityTints, legendFor, ramp, RAMP, tileTints, emitterWeights, employmentShare, type LensCtx } from '../src/scene/lenses';
 import { CLASS_COLOR, hex } from '../src/scene/palette';
 import { pathTiles } from '../src/scene/paths';
 
-const layout = initialLayout();
-const snapshot = createSimPort().init(3);
+const snapshot = ok(createSimPort().init(3));
+const layout = reconcileLayout(null, snapshot);
 const descs = planEntities(layout, snapshot);
 const ctx: LensCtx = { descs, snapshot, layout, roads: pathTiles(layout) };
 

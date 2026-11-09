@@ -13,9 +13,11 @@
   <section class="ticker" aria-label="Quarter playback">
     <div class="head">
       <strong role="status">{$gs.playback.month < 0 ? 'Starting…' : `Month ${$gs.playback.month + 1} of 3`}</strong>
-      <Button onclick={() => game.finishPlayback()}>Skip ▸▸</Button>
+      <span data-focus="skip"><Button onclick={() => game.finishPlayback()}>Skip ▸▸</Button></span>
     </div>
-    <ul role="log" aria-live="polite" aria-relevant="additions">{#each lines as l, i (i)}<li class:big={l.importance >= 2}><span class="m">M{l.month + 1}</span> {l.text}</li>{/each}</ul>
+    <ul>{#each lines as l, i (i)}<li class:big={l.importance >= 2}><span class="m">M{l.month + 1}</span> {l.text}</li>{/each}</ul>
+    <!-- Screen readers hear only notable events (importance 2 and 3); the minor ones are visual only. -->
+    <ul class="sr-only" role="log" aria-live="polite" aria-relevant="additions">{#each lines.filter((l) => l.importance >= 2) as l, i (i)}<li>Month {l.month + 1}: {l.text}</li>{/each}</ul>
   </section>
 {/if}
 

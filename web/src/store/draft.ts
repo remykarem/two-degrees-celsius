@@ -1,20 +1,23 @@
 import type { Command, CommandPreview } from '../contract';
 import type { DraftItem } from './types';
 
-/** Key that identifies "the same slot" in a plan: one draft per lever, one per tile, one per system switch. */
-export function slotKey(c: Command): string {
+/**
+ * Key that identifies "the same slot" in a plan: one draft per lever, one per tile, one per system switch.
+ * A tile-less `place` never shares a slot: `unique` (the draft id) keeps two of them apart.
+ */
+export function slotKey(c: Command, unique: number | string = ''): string {
   switch (c.type) {
     case 'set_policy': return `policy:${c.lever}`;
     case 'switch_system': return 'system';
-    case 'place': return `place:${c.tile?.x},${c.tile?.y}`;
+    case 'place': return c.tile ? `place:${c.tile.x},${c.tile.y}` : `place:${c.kind}#${unique}`;
     case 'remove': return `remove:${c.kind}`;
   }
 }
 
 /** Replaces any draft in the same slot, then appends. Pure. */
 export function withCommand(draft: DraftItem[], c: Command, nextId: number): DraftItem[] {
-  const k = slotKey(c);
-  const kept = draft.filter((d) => slotKey(d.command) !== k);
+  const k = slotKey(c, nextId);
+  const kept = draft.filter((d) => slotKey(d.command, d.id) !== k);
   return [...kept, { id: nextId, command: c, preview: placeholderPreview(c) }];
 }
 

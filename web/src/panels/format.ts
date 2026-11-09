@@ -44,11 +44,13 @@ export function trendOf(from: number, to: number): Trend {
 export function formatLever(l: LeverInfo, v: number | boolean | string): string {
   if (typeof v === 'boolean') return v ? 'on' : 'off';
   if (typeof v === 'string') return v;
+  if (l.zeroMeansNone && v === 0) return 'no cap';
   switch (l.unit) {
     case 'fraction': return pct(v, l.step < 0.01 ? 2 : 0);
     case 'usd': return money(v);
+    case 'usd_per_month': return `${money(v)}/month`;
     case 'usd_per_tonne': return `$${compact(v)}/t`;
-    case 'tonnes': return v === 0 ? 'no cap' : `${v} t`;
+    case 'tonnes_per_month': return l.zeroMeansNone && v === 0 ? 'no cap' : `${compact(v)} t/month`;
     case 'bool': return v ? 'on' : 'off';
     case 'enum': return l.options?.[v] ?? String(v);
   }
@@ -112,4 +114,12 @@ export function briefingLines(r: TurnResult | null, levers: LeverInfo[], actions
   return lines.length ? lines.slice(0, 5) : ['A quiet quarter.'];
 }
 
+/** Turns until a queued item takes effect. It fires at the start of the submit of turn `effectiveTurn`, so effectiveTurn == snapshot.turn is "next turn". */
+export const turnsUntil = (effectiveTurn: number, snapTurn: number) => Math.max(1, effectiveTurn - snapTurn + 1);
+/** "next turn", "in 3 turns", or a range like "in 2 to 3 turns". */
+export function leadRangeText(leads: number[]): string {
+  if (!leads.length) return '';
+  const lo = Math.min(...leads), hi = Math.max(...leads);
+  return lo === hi ? leadText(lo) : lo <= 0 || lo === 1 ? `${leadText(lo)} to ${hi} turns` : `in ${lo} to ${hi} turns`;
+}
 export const leadText = (n: number) => (n <= 0 ? 'immediately' : n === 1 ? 'next turn' : `in ${n} turns`);

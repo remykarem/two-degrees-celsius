@@ -99,7 +99,7 @@ function window01(seed: number): [number, number] {
 }
 
 /** Emissions list for a frame -> emitters (chimneys, house puffs, forest sinks, fossil plants). */
-export function planEmitters(emissions: MonthFlows['emissions'], c: PlanCtx): Emitter[] {
+export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [], c: PlanCtx): Emitter[] {
   const n = c.layout.gridSize;
   const max = Math.max(1e-9, ...emissions.map((e) => Math.max(0, e.tonnes)));
   const maxSink = Math.max(1e-9, ...emissions.map((e) => Math.max(0, -e.tonnes)));
@@ -117,13 +117,13 @@ export function planEmitters(emissions: MonthFlows['emissions'], c: PlanCtx): Em
     }
   }
   for (const p of c.layout.placed) {
-    if (p.kind === 'fossil_plant' && p.effectiveTurn <= c.turn) out.push({ id: `p${p.x},${p.y}`, kind: 'smoke', at: centreOf(p, n), top: 1.1, rate: 0.3 + 0.6 * c.fossilShare });
+    if (p.kind === 'fossil_plant') out.push({ id: `p${p.x},${p.y}`, kind: 'smoke', at: centreOf(p, n), top: 1.1, rate: 0.3 + 0.6 * c.fossilShare });
   }
   return out;
 }
 
 /** Emissions as a flow list straight from a snapshot, used for ambient smoke outside playback. */
-export function emissionsFromSnapshot(s: Snapshot): MonthFlows['emissions'] {
+export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emissions']> {
   const sum = s.households.reduce((a, h) => a + h.footprintTonnes, 0);
   return [
     ...s.firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: f.active ? f.emissions : 0 })),
@@ -160,7 +160,8 @@ export function planFx(events: SimEvent[], c: PlanCtx): Fx[] {
 
 /** One month of flows -> tracks (figures, goods, tokens) + emitters + effects. Pure and deterministic. */
 export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
-  const f = frame.flows;
+  // Contract v0.3 section 10.8: every flow list may be missing or empty.
+  const f = { commutes: [], purchases: [], rent: [], wages: [], emissions: [], ...frame.flows } as Required<MonthFrame['flows']>;
   const tracks: Track[] = [];
   const seed0 = frame.month * 1009 + c.turn * 31;
   const bank = firstOf(c, 'bank'), gov = firstOf(c, 'government');
@@ -217,13 +218,14 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
     }
   });
 
-  return { tracks, emitters: planEmitters(f.emissions, c), fx: planFx(frame.events, c) };
+  return { tracks, emitters: planEmitters(f.emissions, c), fx: planFx(frame.events ?? [], c) };
 }
 
 /** Looping token streams for the money-flow lens: all three months of the last turn merged into one repeating loop. */
 export function planFlowLoop(frames: MonthFrame[], c: PlanCtx): Track[] {
   if (frames.length === 0) return [];
-  const first = frames[frames.length - 1]!;
+  const hasFlows = (m: MonthFrame) => Object.values(m.flows ?? {}).some((a) => (a?.length ?? 0) > 0);
+  const first = [...frames].reverse().find(hasFlows) ?? frames[frames.length - 1]!;
   return planFrame({ ...first, events: [] }, c).tracks.filter((t) => t.kind === 'token');
 }
 

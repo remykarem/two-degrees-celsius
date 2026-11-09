@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
-import { initialLayout } from '../src/store/layout';
+import { reconcileLayout } from '../src/store/layout';
+import { ok } from './helpers';
 import { planEntities, entityAt, factsFor } from '../src/scene/entities';
 import { MODELS } from '../src/scene/models';
 import { route, pathTiles, blockedTiles } from '../src/scene/paths';
 import { CLASS_COLOR } from '../src/scene/palette';
 import { tileOf, worldOf, hash01 } from '../src/scene/coords';
 
-const snap = () => createSimPort().init(7);
+const snap = () => ok(createSimPort().init(7));
 
 describe('layout to entity mapping', () => {
-  const layout = initialLayout();
   const s = snap();
+  const layout = reconcileLayout(null, s);
   const descs = planEntities(layout, s);
 
   it('makes one entity per scenery and placed item with unique keys', () => {
@@ -23,7 +24,7 @@ describe('layout to entity mapping', () => {
   });
   it('homes get a distinct model per class', () => {
     const homes = descs.filter((d) => d.ref.kind === 'home');
-    expect(homes).toHaveLength(5);
+    expect(homes).toHaveLength(6);
     expect(new Set(homes.map((h) => h.model)).size).toBe(new Set(homes.map((h) => h.household?.class)).size);
     const classes = ['capitalist', 'rentier', 'manager', 'worker', 'dependent'] as const;
     for (const c of classes) expect(MODELS[`home_${c}`]).toBeDefined();
@@ -39,11 +40,13 @@ describe('layout to entity mapping', () => {
     expect(firms.some((f) => f.model === 'firm_food')).toBe(true);
   });
   it('queued builds are pending with turns remaining; finished ones are normal', () => {
-    const l = { ...layout, placed: [...layout.placed, { kind: 'renewable_plant' as const, x: 6, y: 8, effectiveTurn: s.turn + 3 }] };
-    const d = planEntities(l, s);
+    const q = { id: 9, command: { type: 'place' as const, kind: 'renewable_plant' as const, count: 1, tile: { x: 6, y: 8 } }, submittedTurn: s.turn, effectiveTurn: s.turn + 2, pcCost: 2, moneyCost: 2e6 };
+    const s2 = { ...s, pending: [q] };
+    const l = reconcileLayout(layout, s2);
+    const d = planEntities(l, s2);
     const p = d.find((x) => x.ref.tile.x === 6 && x.ref.tile.y === 8)!;
     expect(p.state).toBe('pending');
-    expect(p.turnsLeft).toBe(3);
+    expect(p.turnsLeft).toBe(3); // fires at the start of submit turn+2, so three turns away counting this one
     expect(p.ref.pendingTurns).toBe(3);
     expect(d.filter((x) => x.state === 'pending')).toHaveLength(1);
   });
@@ -80,7 +83,7 @@ describe('coords and paths', () => {
     for (let i = 0; i < 50; i++) { const h = hash01(i); expect(h).toBeGreaterThanOrEqual(0); expect(h).toBeLessThan(1); }
   });
   it('routes avoid buildings and join both ends', () => {
-    const l = initialLayout();
+    const l = reconcileLayout(null, snap());
     const home = l.scenery.find((s) => s.kind === 'home')!, firm = l.scenery.find((s) => s.kind === 'firm')!;
     const r = route(l, home, firm);
     expect(r[0]).toEqual({ x: home.x, y: home.y });
@@ -90,7 +93,7 @@ describe('coords and paths', () => {
     for (let i = 1; i < r.length; i++) expect(Math.abs(r[i]!.x - r[i - 1]!.x) + Math.abs(r[i]!.y - r[i - 1]!.y)).toBe(1);
   });
   it('footpaths never sit under buildings', () => {
-    const l = initialLayout();
+    const l = reconcileLayout(null, snap());
     const p = pathTiles(l), b = blockedTiles(l);
     expect(p.size).toBeGreaterThan(5);
     for (const k of p) expect(b.has(k)).toBe(false);

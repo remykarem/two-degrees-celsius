@@ -34,9 +34,9 @@ const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing
 
 export const infraModel = (k: InfraKind): ModelId => INFRA_MODEL[k];
 
-/** Pending-turns for a placed building: from the snapshot's pending list when it names the tile, else from effectiveTurn. */
+/** Turns until a queued item takes effect: it fires at the start of the submit of turn `effectiveTurn`, so effectiveTurn == turn is "next turn". */
 export function turnsLeft(effectiveTurn: number, turn: number): number {
-  return Math.max(0, effectiveTurn - turn);
+  return Math.max(1, effectiveTurn - turn + 1);
 }
 
 /**
@@ -81,13 +81,18 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
   }
 
   for (const p of layout.placed) {
-    const left = turnsLeft(p.effectiveTurn, turn);
-    const pend = snap?.pending.find((q) => q.command.type === 'place' && q.command.tile && q.command.tile.x === p.x && q.command.tile.y === p.y);
-    const tl = pend ? turnsLeft(pend.effectiveTurn, turn) : left;
-    const pending = tl > 0;
     out.push({
-      key: `p:${tileKey(p)}`, ...at(p), state: pending ? 'pending' : 'normal', turnsLeft: tl, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
-      ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL[p.kind], ...(pending ? { pendingTurns: tl } : {}) },
+      key: `p:${tileKey(p)}`, ...at(p), state: 'normal', turnsLeft: 0, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
+      ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL[p.kind] },
+    });
+  }
+  for (const q of snap?.pending ?? []) {
+    const tile = layout.pendingTiles[q.id];
+    if (q.command.type !== 'place' || !tile) continue;
+    const tl = turnsLeft(q.effectiveTurn, turn);
+    out.push({
+      key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: INFRA_MODEL[q.command.kind], tint: KIND_TINT[q.command.kind]!,
+      ref: { kind: q.command.kind, id: null, tile: { x: tile.x, y: tile.y }, label: INFRA_LABEL[q.command.kind], pendingTurns: tl },
     });
   }
 
@@ -95,7 +100,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     const c = d.command;
     if (c.type !== 'place' || !c.tile) continue;
     out.push({
-      key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: d.preview.leadTime, model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
+      key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
       ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL[c.kind]} (planned)`, pendingTurns: d.preview.leadTime },
     });
   }
