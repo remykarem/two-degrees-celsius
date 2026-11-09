@@ -48,6 +48,19 @@ fn add_debt(s: &mut State, a: Account, d: Cents) {
 pub struct ApplyStats {
     /// Money that a payer could not cover and that was therefore not paid.
     pub clamped: Cents,
+    /// The single largest clamp this tick: what it was for and by how much.
+    pub worst: Option<(&'static str, Cents)>,
+}
+
+impl ApplyStats {
+    fn clamp(&mut self, what: &'static str, short: Cents) {
+        if short > Cents::ZERO {
+            self.clamped += short;
+            if self.worst.is_none_or(|(_, w)| short > w) {
+                self.worst = Some((what, short));
+            }
+        }
+    }
 }
 
 pub fn apply(
@@ -63,7 +76,7 @@ pub fn apply(
         apply_money(s, p, op, &mut ledger, stats);
     }
     for c in d.changes {
-        apply_change(s, c);
+        apply_change(s, c, p.class.history_months);
     }
     events.extend(d.events);
     trace.extend(d.trace);
@@ -79,7 +92,7 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             kind,
         } => {
             let amt = amount.min(balance(s, from)).max(Cents::ZERO);
-            st.clamped += amount - amt;
+            st.clamp(flow_name(kind), amount - amt);
             if amt == Cents::ZERO {
                 return;
             }
@@ -106,6 +119,7 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
                 .min(balance(s, from))
                 .min(debt_of(s, from))
                 .max(Cents::ZERO);
+            st.clamp("repayment", amount.min(debt_of(s, from)) - amt);
             if amt == Cents::ZERO {
                 return;
             }
@@ -120,7 +134,7 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
         }
         MoneyOp::PayInterest { from, amount } => {
             let amt = amount.min(balance(s, from)).max(Cents::ZERO);
-            st.clamped += amount - amt;
+            st.clamp("interest", amount - amt);
             if amt == Cents::ZERO {
                 return;
             }
@@ -134,6 +148,7 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
         }
         MoneyOp::DepositInterest { to, amount } => {
             let amt = amount.min(s.bank.equity).max(Cents::ZERO);
+            st.clamp("deposit interest", amount - amt);
             if amt == Cents::ZERO {
                 return;
             }
@@ -167,6 +182,12 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             s.bank.loans += amount;
             s.bank.equity += amount;
         }
+        MoneyOp::CapitalizeInterest { amount } => {
+            let amt = amount.max(Cents::ZERO);
+            s.gov.debt += amt;
+            s.bank.loans += amt;
+            s.bank.equity += amt;
+        }
         MoneyOp::Haircut { rate } => {
             let r = rate.0.clamp(0.0, 1.0);
             let mut total = Cents::ZERO;
@@ -196,6 +217,19 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
 }
 
 /// Record household income by type, so the inspector and class function can read it.
+fn flow_name(k: FlowKind) -> &'static str {
+    match k {
+        FlowKind::Wage => "wage",
+        FlowKind::Dividend => "dividend",
+        FlowKind::Rent => "rent",
+        FlowKind::Benefit => "benefit",
+        FlowKind::Tax => "tax",
+        FlowKind::Purchase => "purchase",
+        FlowKind::Lobby => "lobby",
+        FlowKind::Neutral => "neutral",
+    }
+}
+
 fn record_flow(s: &mut State, from: Account, to: Account, amt: Cents, kind: FlowKind) {
     if let Account::Household(h) = to {
         let inc = &mut s.households[h.idx()].income;
@@ -219,7 +253,7 @@ fn record_flow(s: &mut State, from: Account, to: Account, amt: Cents, kind: Flow
     }
 }
 
-fn apply_change(s: &mut State, c: Delta) {
+fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
     match c {
         Delta::Employment { h, f, n } => s.households[h.idx()].employment[f.idx()] = n,
         Delta::Firm(id, p) => {
@@ -227,15 +261,16 @@ fn apply_change(s: &mut State, c: Delta) {
             set_fields!(f, p; active, owner, capital, workers, wage, price, inventory, output,
                 emissions, green_tech, tfp, sales_hist, sales_units, revenue, profit, unfilled,
                 over_target_months, distress_months, wage_shortfall, plan_invest, loan_request,
-                loan_rate, amort, green_plan, closed_tick, excess_demand, carbon_cost, profit_ema);
+                loan_rate, amort, green_plan, closed_tick, excess_demand, carbon_cost, profit_ema,
+                expected_sales, capex, tax_paid, markup, capital_per_sale);
         }
         Delta::Household(id, p) => {
             let h = &mut s.households[id.idx()];
             set_fields!(h, p; weight, skill, class, wellbeing, political_power, last_disposable,
-                food_met, housed_share, consumption, footprint, wealth_pc, arrears);
+                food_met, housed_share, consumption, footprint, wealth_pc, arrears, jg);
             if let Some(x) = p.push_income_hist {
                 h.income_hist.push(x);
-                if h.income_hist.len() > 6 {
+                if h.income_hist.len() > hist_len {
                     h.income_hist.remove(0);
                 }
             }
@@ -244,7 +279,10 @@ fn apply_change(s: &mut State, c: Delta) {
             set_fields!(s.bank, p; default_rate, failed, bailout_this_tick, lent_this_tick);
         }
         Delta::Gov(p) => {
-            set_fields!(s.gov, p; legitimacy, purchases_budget, tax_revenue, spending, pending_build);
+            set_fields!(s.gov, p; legitimacy, unfunded, receipts, tax_revenue, spending, pending_build);
+            if let Some(x) = p.unfunded_add {
+                s.gov.unfunded_total += x;
+            }
         }
         Delta::Nature(n) => s.nature = n,
         Delta::Housing(h) => s.housing = h,
@@ -294,7 +332,7 @@ pub fn set_policy(s: &mut State, c: PolicyChange) {
         PolicyChange::CommonsAccess(a) => s.nature.commons_access = a,
         PolicyChange::BankCapitalRatio(v) => pol.bank_capital_ratio = Rate(v.0.clamp(0.01, 1.0)),
         PolicyChange::Bailout(b) => pol.bailout = b,
-        PolicyChange::PublicSpending(v) => pol.public_spending = clamp01(v),
+        PolicyChange::PublicSpending(v) => pol.public_spending = v.max(Cents::ZERO),
         PolicyChange::JobGuarantee(v) => pol.job_guarantee = clamp01(v),
     }
 }

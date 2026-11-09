@@ -18,6 +18,10 @@ pub struct RunParams {
     /// Settling months run before tick 0 so the run starts from a working economy.
     pub warmup_ticks: u32,
     pub stop_on_loss: bool,
+    /// Any payment that cannot be made in full is a check failure when set (tests set it).
+    pub strict_flows: bool,
+    /// Shortfall (dollars) tolerated per tick before `strict_flows` fires: rounding only.
+    pub flow_tolerance_usd: f64,
 }
 
 /// Political-capital cost and lead time of one kind of command.
@@ -59,13 +63,6 @@ impl TurnParams {
 pub struct LabourParams {
     /// Expected sales growth aspiration per month.
     pub growth_aspiration: f64,
-    pub wage_up: f64,
-    pub wage_down: f64,
-    /// Unemployment above which wages are cut.
-    pub wage_cut_unemployment: f64,
-    /// Unemployment below which filled firms raise wages a little.
-    pub wage_tight_unemployment: f64,
-    pub wage_tight_up: f64,
     pub fire_after_months: u32,
     pub max_fire_share: f64,
     /// Largest share of its current workforce a firm can add in one month.
@@ -79,6 +76,16 @@ pub struct LabourParams {
     pub inventory_adjust: f64,
     /// Output per worker assumed for a firm with no workers.
     pub min_workers: f64,
+    /// Wage change per month = `wage_k * (u_ref - unemployment)`, capped at `wage_cap`.
+    pub wage_k: f64,
+    pub u_ref: f64,
+    pub wage_cap: f64,
+    /// Weight of the newest month in expected sales (exponential average).
+    pub expected_smoothing: f64,
+    /// A firm can always hire at least this many people in a month.
+    pub min_hire: f64,
+    pub skill_min: f64,
+    pub skill_max: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -118,14 +125,16 @@ impl ClassShares {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GoodsParams {
+    /// Share of the gap between price and (1 + markup) x unit cost closed per month.
     pub price_adjust: f64,
-    pub price_band: f64,
+    /// Smallest price (dollars), a guard against dividing by zero.
+    pub min_price_usd: f64,
     pub holding_cost: f64,
     pub price_elasticity: f64,
     /// Propensity to consume out of last month's disposable income, by class.
     pub propensity: ClassShares,
     pub food_need_units_pc: f64,
-    /// Monthly spending out of savings.
+    /// Monthly consumption out of net wealth by the capitalist and rentier classes.
     pub wealth_consumption_rate: f64,
     pub rent_up: f64,
     pub rent_down: f64,
@@ -157,13 +166,22 @@ pub struct CreditParams {
     pub bank_buffer: f64,
     pub bailout_target_ratio: f64,
     pub max_firm_leverage: f64,
+    /// Not implemented in v1: must be false. Reserved for household borrowing.
+    pub household_credit: bool,
+    /// Depositor haircut = shortfall / deposits x this margin, so equity is restored.
+    pub haircut_margin: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InvestParams {
     pub retain_share: f64,
+    /// Share of the gap between desired and actual capital closed per month (accelerator).
+    pub accelerator: f64,
+    /// Expansion investment is at most this share of capital value per month.
     pub max_invest_share: f64,
+    /// Share of the landlord's savings that can go to new housing in a month.
+    pub housing_budget_share: f64,
     pub depreciation: f64,
     pub capital_price_usd: f64,
     pub green_step: f64,
@@ -224,12 +242,6 @@ pub struct GovParams {
     pub legit_bailout: f64,
     pub legit_debt: f64,
     pub collapse_unemployment: f64,
-    /// Government purchases rise (fall) by this factor per unit of unemployment above (below) the target.
-    pub stabilizer: f64,
-    pub unemployment_target: f64,
-    /// Debt-to-GDP ratio above which purchases are cut back, and how fast.
-    pub debt_brake_start: f64,
-    pub debt_brake_slope: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -238,7 +250,12 @@ pub struct ClassParams {
     pub capital_share_threshold: f64,
     pub rentier_share_threshold: f64,
     pub skill_threshold: f64,
-    pub skilled_wage_usd: f64,
+    /// Managers earn more than this multiple of the average base wage.
+    pub skilled_wage_ratio: f64,
+    /// A cohort counts as employed when at least this share of its labour force works.
+    pub employed_share_min: f64,
+    /// Months of income history the class function averages over.
+    pub history_months: usize,
     pub startup_cost_usd: f64,
     pub startup_buffer_usd: f64,
     pub startup_capital_share: f64,
@@ -252,6 +269,8 @@ pub struct ClassParams {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LobbyParams {
+    /// Largest net lobbying pressure.
+    pub max_net: f64,
     pub spend_rate: f64,
     pub k: f64,
     pub labour_u: f64,
@@ -303,7 +322,6 @@ pub struct SystemConfig {
     pub name: String,
     pub dividend_rule: DividendRule,
     pub payout_ratio: f64,
-    pub wage_down: f64,
     /// Multiplier on the minimum wage lever.
     pub min_wage_multiplier: f64,
     pub invest_hurdle: f64,
@@ -406,7 +424,7 @@ pub struct PolicyInit {
     pub commons_harvest: f64,
     pub bank_capital_ratio: f64,
     pub bailout: bool,
-    pub public_spending: f64,
+    pub public_spending_usd: f64,
     pub job_guarantee: f64,
 }
 
@@ -416,8 +434,6 @@ pub struct InitialTown {
     pub cohorts: Vec<CohortInit>,
     pub firms: Vec<FirmInit>,
     pub bank_owner: usize,
-    /// Government goods purchases planned for the first month.
-    pub gov_purchases_usd: f64,
     pub gov_cash_usd: f64,
     pub gov_debt_usd: f64,
     pub legitimacy: f64,
@@ -533,6 +549,9 @@ impl Params {
                 Some(_) => {}
             }
         }
+        if self.credit.household_credit {
+            errs.push("credit.household_credit is not implemented in v1; it must be false".into());
+        }
         let mut pos = |name: &str, v: f64| {
             if !(v.is_finite() && v > 0.0) {
                 errs.push(format!("{name} must be positive and finite (got {v})"));
@@ -541,7 +560,7 @@ impl Params {
         pos("run.turns", self.run.turns as f64);
         pos("run.ticks_per_turn", self.run.ticks_per_turn as f64);
         pos("turn.pc_cap", self.turn.pc_cap);
-        pos("labour.wage_up", self.labour.wage_up);
+        pos("labour.wage_cap", self.labour.wage_cap);
         pos("production.alpha_k", self.production.alpha_k);
         pos("production.beta_n", self.production.beta_n);
         pos("nature.forest_max", self.nature.forest_max);

@@ -49,6 +49,8 @@ pub struct Household {
     pub skill: Rate,
     /// Employed people per firm slot.
     pub employment: Vec<People>,
+    /// People in the government job guarantee.
+    pub jg: People,
     pub income: IncomeFlows,
     /// Last six months of (capital income, gross income).
     pub income_hist: Vec<(Cents, Cents)>,
@@ -64,7 +66,12 @@ pub struct Household {
 }
 
 impl Household {
+    /// All people in work: in firms or in the job guarantee.
     pub fn employed(&self) -> People {
+        People(self.employment.iter().map(|p| p.0).sum::<f64>() + self.jg.0)
+    }
+    /// People employed by firms.
+    pub fn employed_in_firms(&self) -> People {
         People(self.employment.iter().map(|p| p.0).sum())
     }
     pub fn labour_force(&self) -> People {
@@ -111,6 +118,16 @@ pub struct Firm {
     pub loan_rate: Rate,
     pub green_plan: bool,
     pub excess_demand: Rate,
+    /// Exponentially smoothed sales in units (the basis of production and employment).
+    pub expected_sales: Units,
+    /// Price markup over unit cost, set at the start so the initial price is on target.
+    pub markup: Rate,
+    /// Capital per unit of expected sales (accelerator target), set at the start.
+    pub capital_per_sale: f64,
+    /// Spent this tick on capital goods bought from the goods sector.
+    pub capex: Cents,
+    /// Profit tax actually paid this tick.
+    pub tax_paid: Cents,
     pub closed_tick: Option<u32>,
 }
 
@@ -133,8 +150,12 @@ pub struct Government {
     pub legitimacy: Rate,
     pub tax_revenue: Cents,
     pub spending: Cents,
-    /// Goods and food purchases planned for the next goods market.
-    pub purchases_budget: Cents,
+    /// Goods purchases that were budgeted but could not be funded this tick.
+    pub unfunded: Cents,
+    /// Running total of unfunded spending and unpaid interest.
+    pub unfunded_total: Cents,
+    /// Real receipts this tick (taxes and carbon revenue).
+    pub receipts: Cents,
     pub pending_build: Vec<(InfraKind, u32)>,
 }
 
@@ -204,7 +225,7 @@ pub struct Policy {
     pub commons_harvest: Rate,
     pub bank_capital_ratio: Rate,
     pub bailout: bool,
-    pub public_spending: Rate,
+    pub public_spending: Cents,
     /// Share of the unemployed the government employs at the minimum wage.
     pub job_guarantee: Rate,
 }

@@ -30,7 +30,7 @@ pub fn classify_with(s: &State, p: &Params, h: &Household, hist: &[(Cents, Cents
     let capital_share = safe_div(capital, gross, 0.0);
     if owns_assets(s, h) && capital_share > p.class.capital_share_threshold {
         let cap_now = h.income.capital_income().as_f64();
-        return if h.income.rent_received.as_f64() > 0.5 * cap_now {
+        return if h.income.rent_received.as_f64() > p.class.rentier_share_threshold * cap_now {
             Class::Rentier
         } else {
             Class::Capitalist
@@ -38,7 +38,7 @@ pub fn classify_with(s: &State, p: &Params, h: &Household, hist: &[(Cents, Cents
     }
     let lf = h.labour_force().0;
     let employed = h.employed().0;
-    if lf > 0.0 && employed >= 0.5 * lf {
+    if lf > 0.0 && employed >= p.class.employed_share_min * lf {
         // Average wage of an employed person, from the wages firms pay.
         let wage_bill: f64 = s
             .firms
@@ -46,7 +46,16 @@ pub fn classify_with(s: &State, p: &Params, h: &Household, hist: &[(Cents, Cents
             .map(|f| f.wage.dollars() * h.employment[f.id.idx()].0 * h.wage_premium.0)
             .sum();
         let wage_pc = wage_bill / employed.max(1e-9);
-        if h.skill.0 > p.class.skill_threshold && wage_pc > p.class.skilled_wage_usd {
+        // Skilled means paid well above the going base wage, so the test follows the wage level.
+        let (num, den) = s
+            .firms
+            .iter()
+            .filter(|f| f.active)
+            .fold((0.0, 0.0), |(n, d), f| {
+                (n + f.wage.dollars() * f.workers.0, d + f.workers.0)
+            });
+        let base_wage = safe_div(num, den, 0.0);
+        if h.skill.0 > p.class.skill_threshold && wage_pc > p.class.skilled_wage_ratio * base_wage {
             Class::Manager
         } else {
             Class::Worker
@@ -84,7 +93,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     for h in &s.households {
         let mut hist = h.income_hist.clone();
         hist.push((h.income.capital_income(), h.income.gross_income()));
-        if hist.len() > 6 {
+        if hist.len() > cp.history_months {
             hist.remove(0);
         }
         let class = classify_with(s, p, h, &hist);
@@ -209,7 +218,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                 .collect();
             let n = peers.len() as f64;
             let avg = |g: &dyn Fn(&Firm) -> f64| peers.iter().map(|f| g(f)).sum::<f64>() / n;
-            let sales0 = 0.15 * avg(&|f| f.sales_hist.iter().sum::<f64>() / 3.0);
+            let sales0 = 0.15 * avg(&|f| f.expected_sales.0);
             d.firm(
                 slot.id,
                 FirmPatch {
@@ -224,6 +233,9 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                     tfp: Some(Rate(avg(&|f| f.tfp.0))),
                     green_tech: Some(Rate(avg(&|f| f.green_tech.0))),
                     sales_hist: Some([sales0; 3]),
+                    expected_sales: Some(Units(sales0)),
+                    markup: Some(Rate(avg(&|f| f.markup.0))),
+                    capital_per_sale: Some(avg(&|f| f.capital_per_sale)),
                     loan_rate: Some(Rate(base_rate)),
                     closed_tick: Some(None),
                     distress_months: Some(0),

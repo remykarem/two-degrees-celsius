@@ -106,6 +106,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             FirmPatch {
                 profit: Some(profit),
                 carbon_cost: Some(carbon),
+                tax_paid: Some(tax),
                 wage_shortfall: Some(scale < 1.0),
                 ..FirmPatch::default()
             },
@@ -122,13 +123,23 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let me = Account::Household(h.id);
         let private = s.housing.rent_private.scale(housed * (1.0 - share_pub));
         let public = s.housing.rent_public.scale(housed * share_pub);
+        // Rent is paid out of savings; what cannot be paid is reported as a shortfall.
+        let pay_private = private.min(h.savings.max(Cents::ZERO));
+        let pay_public = public.min((h.savings - pay_private).max(Cents::ZERO));
         d.transfer(
             me,
             Account::Household(s.housing.owner),
-            private,
+            pay_private,
             FlowKind::Rent,
         );
-        d.transfer(me, Account::Government, public, FlowKind::Rent);
+        d.transfer(me, Account::Government, pay_public, FlowKind::Rent);
+        let short = private + public - pay_private - pay_public;
+        if short > Cents::ZERO {
+            d.events.push(Event::RentShortfall {
+                household: h.id,
+                amount: short,
+            });
+        }
     }
     d
 }

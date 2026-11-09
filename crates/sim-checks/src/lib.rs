@@ -55,6 +55,7 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
         add(format!("household {i} food_met"), h.food_met.0);
         add(format!("household {i} housed_share"), h.housed_share.0);
         add(format!("household {i} footprint"), h.footprint.0);
+        add(format!("household {i} jg"), h.jg.0);
         for (f, e) in h.employment.iter().enumerate() {
             add(format!("household {i} employment[{f}]"), e.0);
         }
@@ -71,6 +72,8 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
         add(format!("firm {i} intensity_base"), f.intensity_base.0);
         add(format!("firm {i} loan_rate"), f.loan_rate.0);
         add(format!("firm {i} excess_demand"), f.excess_demand.0);
+        add(format!("firm {i} expected_sales"), f.expected_sales.0);
+        add(format!("firm {i} markup"), f.markup.0);
         for (k, x) in f.sales_hist.iter().enumerate() {
             add(format!("firm {i} sales_hist[{k}]"), *x);
         }
@@ -93,6 +96,7 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
     add("bank default_rate".into(), s.bank.default_rate.0);
     add("union_density".into(), s.union_density.0);
     add("net_lobby".into(), s.net_lobby.0);
+    add("political_capital".into(), s.political_capital);
     add("output_penalty".into(), s.output_penalty.0);
     add(
         "indicators unemployment".into(),
@@ -105,6 +109,71 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
     add("indicators real gdp".into(), s.indicators.gdp_real_annual);
     add("indicators price_index".into(), s.indicators.price_index);
     v
+}
+
+/// Net financial position of each sector, computed from balances alone (never from the
+/// money ledger): deposits minus debts for households, firms and government, plus bank equity.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SectorBalances {
+    pub households: Cents,
+    pub firms: Cents,
+    pub government: Cents,
+    pub bank: Cents,
+}
+
+impl SectorBalances {
+    pub fn of(s: &State) -> SectorBalances {
+        SectorBalances {
+            households: Cents::sum(s.households.iter().map(|h| h.savings - h.debt)),
+            firms: Cents::sum(s.firms.iter().map(|f| f.cash - f.debt)),
+            government: s.gov.cash - s.gov.debt,
+            bank: s.bank.equity,
+        }
+    }
+    pub fn total(&self) -> Cents {
+        self.households + self.firms + self.government + self.bank
+    }
+}
+
+/// Sector-balance identity (model doc section 8): every financial asset is someone's
+/// liability, so the sector net positions sum to zero at all times, and therefore household
+/// saving = firm financing need (investment) + government deficit + change in bank equity.
+/// Computed from state before and after a system, independent of the apply ledger.
+pub fn check_sector_balance(
+    before: &SectorBalances,
+    after: &SectorBalances,
+    tick: u32,
+    system: SystemId,
+) -> Result<(), Violation> {
+    if after.total() != Cents::ZERO {
+        return fail(
+            tick,
+            system,
+            format!(
+                "sector net positions sum to {} (households {}, firms {}, government {}, bank {})",
+                after.total().0,
+                after.households.0,
+                after.firms.0,
+                after.government.0,
+                after.bank.0
+            ),
+        );
+    }
+    let saving = after.households - before.households;
+    let firm_need = before.firms - after.firms;
+    let deficit = before.government - after.government;
+    let bank_gain = after.bank - before.bank;
+    if saving != firm_need + deficit - bank_gain {
+        return fail(
+            tick,
+            system,
+            format!(
+                "household saving {} != firm need {} + government deficit {} - bank gain {}",
+                saving.0, firm_need.0, deficit.0, bank_gain.0
+            ),
+        );
+    }
+    Ok(())
 }
 
 fn fail(tick: u32, system: SystemId, what: String) -> Result<(), Violation> {
@@ -287,6 +356,23 @@ pub fn check_money(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sector_identity_detects_a_leak() {
+        let a = SectorBalances {
+            households: Cents(100),
+            firms: Cents(-60),
+            government: Cents(-50),
+            bank: Cents(10),
+        };
+        assert!(check_sector_balance(&a, &a, 1, SystemId::Goods).is_ok());
+        let leak = SectorBalances {
+            households: Cents(150),
+            ..a
+        };
+        let err = check_sector_balance(&a, &leak, 1, SystemId::Goods).unwrap_err();
+        assert!(err.what.contains("sum to"));
+    }
 
     #[test]
     fn money_conserved_ok() {

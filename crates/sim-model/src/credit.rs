@@ -160,6 +160,17 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     });
     eq += gov_pay;
     dep -= gov_pay;
+    // Interest the treasury cannot pay is added to its debt, and reported.
+    let unpaid = gov_due - gov_pay;
+    if unpaid > Cents::ZERO {
+        d.money.push(MoneyOp::CapitalizeInterest { amount: unpaid });
+        eq += unpaid;
+        loans += unpaid;
+        d.changes.push(Delta::Gov(GovPatch {
+            unfunded_add: Some(unpaid),
+            ..GovPatch::default()
+        }));
+    }
 
     // ---- Interest on deposits (households) ----
     let r_d = (base - cp.deposit_spread).max(0.0);
@@ -188,7 +199,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             }));
             d.events.push(Event::BankBailout { amount });
         } else {
-            let rate = (-eq.as_f64()) / dep.as_f64().max(1.0) * 1.01 + 1e-9;
+            let rate = (-eq.as_f64()) / dep.as_f64().max(1.0) * cp.haircut_margin;
             d.money.push(MoneyOp::Haircut { rate: Rate(rate) });
             d.changes.push(Delta::Bank(BankPatch {
                 failed: Some(true),

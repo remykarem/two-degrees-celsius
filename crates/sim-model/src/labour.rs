@@ -61,8 +61,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let n_now: f64 = (0..n_h).map(|h| emp[h][fi]).sum();
         let general_now = n_now - skilled_now;
 
-        let avg_sales = f.sales_hist.iter().sum::<f64>() / 3.0;
-        let expected = avg_sales * (1.0 + lp.growth_aspiration);
+        let expected = f.expected_sales.0 * (1.0 + lp.growth_aspiration);
         let inv_target = lp.inventory_cover * expected;
         let needed = (expected + lp.inventory_adjust * (inv_target - f.inventory.0)).max(0.0);
         let n_ref = n_now.max(lp.min_workers);
@@ -83,7 +82,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         ] {
             let mut vac = (want - have)
                 .max(0.0)
-                .min((lp.max_hire_share * have).max(2.0));
+                .min((lp.max_hire_share * have).max(lp.min_hire));
             for &h in order {
                 if vac <= 1e-9 {
                     break;
@@ -145,19 +144,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             over = 0;
         }
 
-        // Wage adjustment: the reserve-army effect.
-        // Raises are only given by firms that made a profit last month.
-        let can_pay = f.profit > Cents::ZERO;
-        let mut w = f.wage.as_f64();
-        if unfilled {
-            if can_pay {
-                w *= lp.wage_up;
-            }
-        } else if unemployment > lp.wage_cut_unemployment {
-            w *= c.wage_down;
-        } else if unemployment < lp.wage_tight_unemployment && can_pay {
-            w *= lp.wage_tight_up;
-        }
+        // Wage adjustment follows employment: w *= 1 + k (u_ref - u), capped each month.
+        let step = (lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap);
+        let w = f.wage.as_f64() * (1.0 + step);
         let wage = Cents::from_f64(w).max(min_wage);
         let n_new: f64 = (0..n_h).map(|h| emp[h][fi]).sum();
         d.firm(
@@ -185,14 +174,17 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             }
         }
         let hh = &s.households[h];
+        // Job guarantee: the government employs a share of those left without a firm job.
+        let jg = (s.policy.job_guarantee.0 * free_people(s, &emp, h)).max(0.0);
         if hh.labour_share.0 > 0.0 {
             let e = (emp[h].iter().sum::<f64>() / hh.labour_force().0.max(1e-9)).clamp(0.0, 1.0);
             let skill = (hh.skill.0 * (1.0 + lp.skill_gain * e - lp.skill_loss * (1.0 - e)))
-                .clamp(0.05, 1.0);
+                .clamp(lp.skill_min, lp.skill_max);
             d.household(
                 hh.id,
                 HouseholdPatch {
                     skill: Some(Rate(skill)),
+                    jg: Some(People(jg)),
                     ..HouseholdPatch::default()
                 },
             );

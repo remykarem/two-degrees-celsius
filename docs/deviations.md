@@ -1,31 +1,54 @@
 # Deviations from docs/causal-model.md
 
-Status: milestone 1 is a WIP. The model is unstable and not calibrated (see tuning-log.md).
+Status: milestone 1 is a WIP. The demand side was redesigned (model doc section 8, items 1-9) and the game is turn-based. The model is steerable but not calibrated (see tuning-log.md). The `Status` column marks what the redesign changed.
 
-| # | Deviation | Reason / symptom it was meant to fix |
+| # | Deviation | Reason / symptom it was meant to fix | Status |
+|---|---|---|---|
+| 1 | Government goods purchases = `public_spending` x monthly GDP x unemployment stabiliser x debt brake (not in doc; doc has only benefits, upkeep, builds, subsidy, UBI). | Taxes were saved or repaid, draining demand; the circular flow did not close and unemployment hit 40-60%. Balanced-budget variants were procyclical and spiralled into depression. Brake added because gov debt reached 4x GDP. | SUPERSEDED: removed with the stabiliser and debt brake. G is now the player's `public_spending` lever (dollars per month), no hidden reaction rule. |
+| 2 | 24-month warm-up before tick 0 (`run.warmup_ticks`). | The hand-written initial town was not a stationary state; the first year was a recession. | KEPT (48 ticks; the town is still not a stationary state under the new rules). |
+| 3 | Capital price 1500/unit, depreciation 0.8%/month (doc 0.4%). | Return on capital was 40-60% with low prices, and wealth Gini at start was 0.6; 1500 gives Gini 0.40. Higher depreciation keeps investment (a demand source) large. | KEPT. |
+| 4 | Investment: scaled by (return - threshold)/return_scale, capped at a share of capital value, profit and plan exponentially smoothed. | Raw rule gave 12-month boom-bust cycles with unemployment swinging 0-40%. | SUPERSEDED: replaced by replacement + accelerator investment (item 3), profit gate is soft and affects expansion only. |
+| 5 | Wage rises (vacancies, tight labour) only if the firm made a profit last month; extra small rise when unemployment < 5%. | Wages rose while profits were negative, causing squeeze and layoffs. Doc has only +2% (here +1%) and -0.5%. | SUPERSEDED: replaced by `w *= 1 + k (u_ref - u)` capped at 1% per month (item 6). |
+| 6 | Hire cap 10% and fire cap 6% of workforce per month; target workers include an inventory adjustment. | Violent hire/fire oscillation. | PARTLY SUPERSEDED: hire and fire caps stay; the firing hysteresis counter is now 1 month (`fire_after_months` = 1) because expected-sales smoothing does the damping. |
+| 7 | Skilled/general job tiers: 16% of jobs go to premium-wage cohorts (managers). | Cheapest-first hiring left managers permanently unemployed. | KEPT. |
+| 8 | Inventory holding cost is physical spoilage (2%/month), not money. | A money cost needs a recipient; spoilage keeps conservation simple. | KEPT. |
+| 9 | No inter-firm input costs. | Closed economy, one firm per sector; nothing to buy from. | KEPT. |
+| 10 | Carbon price applies to firm emissions only, not households. | Doc formula ambiguous (P_c x sum E). | KEPT. |
+| 11 | Households do not take new loans; existing household debt amortises. | Doc gives no household borrowing rule. | KEPT. `credit.household_credit` flag exists and must be false. |
+| 12 | Bank holds only loans; equity = loans - deposits (checked exactly). Initial loans are set above deposits. Deposit interest paid to households only. Bailout swaps government bonds for equity; failure without bailout is a deposit haircut. | Simplest stock-flow-consistent reading of S5. | KEPT. Unpaid government interest is now capitalised into debt (`CapitalizeInterest`) and reported. |
+| 13 | Investment spending, subsidies and startup capital are paid to households as wages (construction work). | Closed economy: money must go somewhere. | PARTLY SUPERSEDED: capital investment now buys capital goods from the Factory (item 1). Green investment, landlord housing, startup capital and government builds are still paid to households as construction wages. |
+| 14 | Founding probability is `mobility_rate x weight x (return - rate) / founders_per_firm` per month, with 5 founders moving to the capitalist cohort. | Discretises the doc's fractional weight transfer. | KEPT. |
+| 15 | Class function works per cohort: employed if >= half the labour force; manager needs skill > 0.7 and wage > 2500. | Cohorts are groups, not individuals. | CHANGED: the Manager wage test is relative (`class.skilled_wage_ratio` x average base wage, was a flat $2,500), so it follows the wage level; thresholds moved to params. |
+| 16 | Gini is computed between cohorts only (within-cohort inequality ignored); owner-occupied homes added as wealth. | Cohort agents. | KEPT. |
+| 17 | Goods allocation across firms in a sector by stock and price^-2, two passes. | Needed once dormant slots become firms. | KEPT. |
+| 18 | Effective (post-lobbying) policy takes effect the tick after it is computed. | S9b runs at the end of the tick. | KEPT. |
+| 19 | Campaign cap and community commons cannot be set under Market. | Doc table lists them as available only in other systems. | KEPT (checked at queue time and again at activation). |
+| 20 | Tax rates default to wage 28%, capital 40%, profit 25% (doc has no values). | Chosen to balance the budget with deficit 1; not validated. | KEPT. |
+| 21 | Initial disposable income, government purchases and investment plans are seeded in initial_town.json. | First-month spending needs a previous month. | CHANGED: seeded incomes are the tick-1 fixed point of the new rules; government purchases are now the lever `public_spending` (initial 450,000 dollars per month, chosen so the start has about 10% unemployment, not calibrated). |
+
+## New deviations from the redesign and turn layer
+| # | Deviation | Reason |
 |---|---|---|
-| 1 | Government goods purchases = `public_spending` x monthly GDP x unemployment stabiliser x debt brake (not in doc; doc has only benefits, upkeep, builds, subsidy, UBI). | Taxes were saved or repaid, draining demand; the circular flow did not close and unemployment hit 40-60%. Balanced-budget variants were procyclical and spiralled into depression. Brake added because gov debt reached 4x GDP. |
-| 2 | 24-month warm-up before tick 0 (`run.warmup_ticks`). | The hand-written initial town was not a stationary state; the first year was a recession. |
-| 3 | Capital price 1500/unit, depreciation 0.8%/month (doc 0.4%). | Return on capital was 40-60% with low prices, and wealth Gini at start was 0.6; 1500 gives Gini 0.40. Higher depreciation keeps investment (a demand source) large. |
-| 4 | Investment: scaled by (return - threshold)/return_scale, capped at a share of capital value, profit and plan exponentially smoothed. | Raw rule gave 12-month boom-bust cycles with unemployment swinging 0-40%. |
-| 5 | Wage rises (vacancies, tight labour) only if the firm made a profit last month; extra small rise when unemployment < 5%. | Wages rose while profits were negative, causing squeeze and layoffs. Doc has only +2% (here +1%) and -0.5%. |
-| 6 | Hire cap 10% and fire cap 6% of workforce per month; target workers include an inventory adjustment. | Violent hire/fire oscillation. |
-| 7 | Skilled/general job tiers: 16% of jobs go to premium-wage cohorts (managers). | Cheapest-first hiring left managers permanently unemployed. |
-| 8 | Inventory holding cost is physical spoilage (2%/month), not money. | A money cost needs a recipient; spoilage keeps conservation simple. |
-| 9 | No inter-firm input costs. | Closed economy, one firm per sector; nothing to buy from. |
-| 10 | Carbon price applies to firm emissions only, not households. | Doc formula ambiguous (P_c x sum E). |
-| 11 | Households do not take new loans; existing household debt amortises. | Doc gives no household borrowing rule. |
-| 12 | Bank holds only loans; equity = loans - deposits (checked exactly). Initial loans are set above deposits. Deposit interest paid to households only. Bailout swaps government bonds for equity; failure without bailout is a deposit haircut. | Simplest stock-flow-consistent reading of S5. |
-| 13 | Investment spending, subsidies and startup capital are paid to households as wages (construction work). | Closed economy: money must go somewhere. |
-| 14 | Founding probability is `mobility_rate x weight x (return - rate) / founders_per_firm` per month, with 5 founders moving to the capitalist cohort. | Discretises the doc's fractional weight transfer. |
-| 15 | Class function works per cohort: employed if >= half the labour force; manager needs skill > 0.7 and wage > 2500. | Cohorts are groups, not individuals. |
-| 16 | Gini is computed between cohorts only (within-cohort inequality ignored); owner-occupied homes added as wealth. | Cohort agents. |
-| 17 | Goods allocation across firms in a sector by stock and price^-2, two passes. | Needed once dormant slots become firms. |
-| 18 | Effective (post-lobbying) policy takes effect the tick after it is computed. | S9b runs at the end of the tick. |
-| 19 | Campaign cap and community commons cannot be set under Market. | Doc table lists them as available only in other systems. |
-| 20 | Tax rates default to wage 28%, capital 40%, profit 25% (doc has no values). | Chosen to balance the budget with deficit 1; not validated. |
-| 21 | Initial disposable income, government purchases and investment plans are seeded in initial_town.json. | First-month spending needs a previous month. |
+| 22 | A turn is 3 monthly ticks; the model is still monthly. Lead times, PC and costs are in `content/params.json` under `turn`. Switching system has lead time 1 turn, then the 12/24-month transition, so the player waits 1 turn more than SPEC 4.1's "4 to 8 turns of transition". | Simplest reading. |
+| 23 | Lobbying (S9b) still computes the effective policy every tick, not "when a command activates". The turn summary reports nominal vs effective at the end of the turn. | Keeps S9b as one system; the turn summary shows the same gap. |
+| 24 | PC cost size = change / `unit` per lever (minimum `min_size`), measured against the latest pending value of the same lever. Opposition (net lobbying) is added only to changes that hurt capital: raising carbon price, wealth tax or profit tax, tightening the emissions cap. | Doc says "size of the change" and "opposition" without defining them. |
+| 25 | Money cost of a build is checked at queue time against treasury cash plus bank lending room, minus builds already queued. The build is paid when it is delivered. | No spec for funds checks. |
+| 26 | Capital goods are bought in the goods market S3 (firms, households and government are buyers); the Factory sells them out of the same inventory. Capital arrives in S6 the same tick. Capital purchases are inside sales revenue, so GDP no longer adds them again. | Item 1. |
+| 27 | Accelerator target uses a fixed capital-to-expected-sales ratio per firm set at the start (`capital_per_sale`), not a Cobb-Douglas inversion. | Simplest reading of `desired_K = expected_sales / capital_productivity`. |
+| 28 | Expected sales is an exponential average of demand in units (what buyers wanted, including stock-outs), `labour.expected_smoothing` = 0.3. | Using units sold would underestimate demand when stock runs out. |
+| 29 | Prices follow `(1 + markup) x (wage bill + carbon cost) / output`, 5% of the gap per month. The markup is per firm, set at the start so the initial price is on target. | Item 6; the carbon cost passes through to prices. |
+| 30 | Wealth effect (0.2%/month of net wealth) applies to the Capitalist and Rentier classes only, not all cohorts. | Item 4. |
+| 31 | Job guarantee: the government employs `job_guarantee` share of the people left without a firm job, at the minimum wage. They count as employed. Costs are paid through the normal government budget. | Item 8. |
+| 32 | Government financing order: committed payments (benefits, UBI, JG, upkeep and builds) are funded from cash plus taxes plus borrowing, within the bank's lending room (firms' loans come first, S5 runs before S8). If funds fall short, payments are cut pro rata and a `SpendingCut` event plus `gov.unfunded_total` record it. G (goods purchases) next month is held back in cash; any part the treasury cannot fund is reported the same way. | Review items 2 and 5: nothing vanishes silently, and the bank limit breaks the borrowing loop. |
+| 33 | Rent, taxes, lobbying and the green subsidy are limited to what the payer holds, and shortfalls are reported (`RentShortfall`, `SpendingCut`) or borne by the other party. `run.strict_flows` (on in content) makes any larger unexpected clamp in `apply` a check failure. | Review item 2. |
+| 34 | Tax revenue reported by S8 is what was actually received (household taxes paid, firms' carbon cost and profit tax actually paid in S4). | Review item 3. |
+| 35 | Sector-balance check (`sim-checks::check_sector_balance`): net financial positions of households, firms, government and bank sum to zero after every system, computed from balances only, and household saving = firm need + government deficit - bank gain. The older money-ledger check stays; it is weaker because the ledger comes from `apply`. | Item in model doc section 8 and review item 1. |
+| 36 | Hard-coded numbers moved to params: lobby.max_net, labour.min_hire/skill_min/skill_max, class.employed_share_min/history_months, invest.housing_budget_share, credit.haircut_margin, goods.min_price_usd. Class rentier test uses `rentier_share_threshold`. | Review item 4. |
+| 37 | Green investment spending (10% of annual revenue per 5% step) is a lumpy stimulus paid as wages. Under an announced carbon price firms invest early, which causes a boom-bust in employment (0% to 18% in the first two years). Not changed; to be tuned. | Observation, not a fix. |
+| 38 | `golden_snapshot_seed_42` is ignored until the model is calibrated, and `default_market_run_lands_near_the_design_targets` is ignored because section 9 replaced its targets. | Phase 1 scope. |
 
 ## Open problems
-- Unemployment is not self-stabilising: it settles wherever government plus investment spending put it, with 12-month cycles in some configurations.
-- Targets not met; see tuning-log.md. The `tests/scenarios.rs` target tests probably fail.
+- Baseline A (no action) is stable in employment (about 3% to 10%) but the government runs a deficit (debt/GDP 1 to 4) and legitimacy reaches 0 around year 10 through the debt term and Gini. Fiscal defaults (tax rates, G) are not calibrated.
+- With `public_spending` = 0 unemployment reaches 50% and Gini 0.8: private demand alone does not sustain the economy; the player must use G (this is the intended "steerable" design, but the default may be too dependent on it).
+- Wages sit at the minimum wage floor for most of the run and prices fall (price index about 0.5 by year 40): the wage rule is symmetric around `u_ref`, so productivity gains pass into prices.
+- Carbon budget is exhausted around year 38, later than the 22 to 35 target.

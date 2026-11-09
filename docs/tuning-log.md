@@ -46,3 +46,10 @@ growth_aspiration 0.001, stabilizer 3.6, payout 0.647, min_wage 1142, repay_shar
 ## Not done
 Carbon budget B0 (currently 400000 t) was not calibrated to year 28. No search config met all targets. The
 chosen parameters in content/ are NOT the search winners.
+
+## Stage C (redesign) setup changes, second builder
+Not a calibration. Done only to get a consistent starting state under the new rules.
+- `initial_income_usd` for the six cohorts set to the tick-1 disposable income of the new model (122106, 5203, 233719, 345114, 345114, 85060).
+- `public_spending_usd` 330,000 (the old tick-1 value) gave 20% unemployment after warm-up; 450,000 gives about 10%. Chosen by two trial runs, not searched.
+- `run.warmup_ticks` 48 (was 0 in the WIP commit): the first year without warm-up is a 40% unemployment shock because the hand-written town is not a fixed point.
+- New parameters with first-guess values: `labour.wage_k` 0.1, `u_ref` 0.07, `wage_cap` 0.01, `expected_smoothing` 0.3, `goods.price_adjust` 0.05, `invest.accelerator` 0.05, `max_invest_share` 0.02, `goods.wealth_consumption_rate` 0.002.

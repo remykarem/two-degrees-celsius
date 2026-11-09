@@ -40,6 +40,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             footprint: Tonnes::ZERO,
             wealth_pc: Cents::ZERO,
             arrears: false,
+            jg: People::ZERO,
         })
         .collect();
     let forest_health = p.initial.forest / p.nature.forest_max;
@@ -58,6 +59,18 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             f.initial_output / denom
         } else {
             // Dormant slots use the sector's first active firm's productivity when founded.
+            0.0
+        };
+        let wage_bill: f64 = f.wage_usd
+            * t.cohorts
+                .iter()
+                .enumerate()
+                .map(|(h, c)| f.employment[h] * c.wage_premium)
+                .sum::<f64>();
+        let unit_cost = safe_div(wage_bill, f.initial_output, 0.0);
+        let markup = if f.active && unit_cost > 0.0 {
+            f.price_usd / unit_cost - 1.0
+        } else {
             0.0
         };
         let loan_rate = rate_f(p);
@@ -96,6 +109,11 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             loan_rate: Rate(loan_rate),
             green_plan: false,
             excess_demand: Rate::ZERO,
+            expected_sales: Units(f.initial_output),
+            markup: Rate(markup),
+            capital_per_sale: safe_div(f.capital_units, f.initial_output, 0.0),
+            capex: Cents::ZERO,
+            tax_paid: Cents::ZERO,
             closed_tick: None,
         });
     }
@@ -117,7 +135,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         commons_harvest: Rate(pol.commons_harvest),
         bank_capital_ratio: Rate(pol.bank_capital_ratio),
         bailout: pol.bailout,
-        public_spending: Rate(pol.public_spending),
+        public_spending: Cents::from_dollars(pol.public_spending_usd),
         job_guarantee: Rate(pol.job_guarantee),
     };
     let effective = EffectivePolicy {
@@ -154,7 +172,9 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             legitimacy: Rate(t.legitimacy),
             tax_revenue: Cents::ZERO,
             spending: Cents::ZERO,
-            purchases_budget: Cents::from_dollars(t.gov_purchases_usd),
+            unfunded: Cents::ZERO,
+            unfunded_total: Cents::ZERO,
+            receipts: Cents::ZERO,
             pending_build: Vec::new(),
         },
         nature: Nature {

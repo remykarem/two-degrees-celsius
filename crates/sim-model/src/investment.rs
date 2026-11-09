@@ -3,7 +3,7 @@
 //! the landlord builds housing when rents justify it.
 
 use crate::government::labour_weights;
-use crate::util::{apportion, cfg, monthly};
+use crate::util::{announced_carbon_price, apportion, cash_reserve, cfg};
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
@@ -19,36 +19,22 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 
     for f in s.firms.iter().filter(|f| f.active) {
         let acct = Account::Firm(f.id);
-        let wage_bill = f.wage.scale(f.workers.0);
-        let service = f.debt.scale(monthly(f.loan_rate.0)) + f.amort.min(f.debt);
-        let reserve = (wage_bill + service).scale(ip.min_cash_months);
-        let mut cash = f.cash;
+        let reserve = cash_reserve(s, p, f);
+        let cash = f.cash;
+        let mut cash = cash;
         let mut k = f.capital.0 * (1.0 - ip.depreciation);
 
-        // Execute last tick's capital plan (a loan may have arrived in S5).
-        let mut avail = (cash - reserve).max(Cents::ZERO);
-        if f.green_plan {
-            avail = avail.scale(1.0 - c.green_cash_share);
-        }
-        let spend_k = f.plan_invest.min(avail);
-        if spend_k > Cents::ZERO {
-            for (h, part) in apportion(spend_k, &lw).into_iter().enumerate() {
-                d.transfer(
-                    acct,
-                    Account::Household(HouseholdId(h as u32)),
-                    part,
-                    FlowKind::Wage,
-                );
-            }
-            k += spend_k.as_f64() / kp;
-            cash -= spend_k;
-            d.changes.push(Delta::Gdp(GdpPart::Investment, spend_k));
-            clear_usd += spend_k.dollars() * p.nature.forest_clear_per_build;
+        // Capital goods bought from the goods sector in S3 this tick add to the capital stock.
+        // The payment is already the goods sector's revenue, so it is not added to GDP again.
+        if f.capex > Cents::ZERO {
+            k += f.capex.as_f64() / kp;
+            clear_usd += f.capex.dollars() * p.nature.forest_clear_per_build;
         }
 
         // Green investment: pays off when the carbon bill over the payback period exceeds the cost,
         // or when an emissions cap binds.
-        let annual_carbon = f.carbon_cost.as_f64() * 12.0;
+        // Firms read an announced (pending) carbon price with a discount.
+        let annual_carbon = f.emissions.0 * 12.0 * announced_carbon_price(s, p).as_f64();
         let cost = f.revenue.scale(12.0 * ip.green_cost_share);
         let cap = s.effective.emissions_cap.0;
         let cap_binding = cap > 0.0 && f.emissions.0 >= 0.999 * cap;
@@ -59,8 +45,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let mut green_plan = false;
         if worthwhile {
             let sub = s.policy.green_subsidy.0;
-            let firm_share = cost.scale(1.0 - sub);
-            let gov_share = cost - firm_share;
+            // The subsidy is limited to the treasury's cash; the firm bears any remainder.
+            let gov_share = cost.scale(sub).min(s.gov.cash.max(Cents::ZERO));
+            let firm_share = cost - gov_share;
             if cash - reserve >= firm_share {
                 for (h, part) in apportion(firm_share, &lw).into_iter().enumerate() {
                     d.transfer(
@@ -86,17 +73,22 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             }
         }
 
-        // Plan next tick's capital investment.
+        // Plan next tick's capital goods purchase: replacement plus an accelerator term toward the
+        // capital that expected sales call for. Profit against the hurdle gates expansion only.
         let k_value = (k * kp).max(1.0);
         let profit_ema = Cents::from_f64(
             (1.0 - ip.smoothing) * f.profit_ema.as_f64() + ip.smoothing * f.profit.as_f64(),
         );
         let ret = 12.0 * profit_ema.as_f64() / k_value;
         let thr = f.loan_rate.0 + c.invest_hurdle;
+        let gate = (0.5 + (ret - thr) / (2.0 * ip.return_scale)).clamp(0.0, 1.0);
         let distressed = f.distress_months > 0 || f.wage_shortfall;
-        let (plan, request) = if ret > thr && !distressed {
-            let intensity = ((ret - thr) / ip.return_scale).clamp(0.0, 1.0);
-            let target = Cents::from_f64(k_value * ip.max_invest_share * intensity);
+        let gap = f.expected_sales.0 * f.capital_per_sale - k;
+        let wanted =
+            ip.depreciation * k + ip.accelerator * gap * if gap > 0.0 { gate } else { 1.0 };
+        let units = wanted.clamp(0.0, (ip.depreciation + ip.max_invest_share) * k);
+        let (plan, request) = if !distressed && f.capital_per_sale > 0.0 {
+            let target = Cents::from_f64(units * kp);
             let mut free = (cash - reserve).max(Cents::ZERO);
             if green_plan {
                 free = free.scale(1.0 - c.green_cash_share);
@@ -106,9 +98,6 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         } else {
             (Cents::ZERO, Cents::ZERO)
         };
-        let plan = Cents::from_f64(
-            (1.0 - ip.smoothing) * f.plan_invest.as_f64() + ip.smoothing * plan.as_f64(),
-        );
         d.firm(
             f.id,
             FirmPatch {
@@ -135,7 +124,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let rent_yield = 12.0 * s.housing.rent_private.as_f64() / housing_cost.as_f64();
     let needed = renters / ip.housing_target_occupancy - rental_cap;
     if needed >= 1.0 && rent_yield > s.policy.base_rate.0 + ip.housing_hurdle {
-        let budget = owner.savings.scale(0.5);
+        let budget = owner.savings.scale(ip.housing_budget_share);
         let units = needed.min(budget.as_f64() / housing_cost.as_f64()).floor();
         if units >= 1.0 {
             let spend = housing_cost.scale(units);

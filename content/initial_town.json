@@ -13,7 +13,7 @@
       "savings_usd": 1000000,
       "debt_usd": 0,
       "home_value_usd": 0,
-      "initial_income_usd": 115000
+      "initial_income_usd": 122106
     },
     {
       "label": "B (landlord)",
@@ -28,7 +28,7 @@
       "savings_usd": 300000,
       "debt_usd": 4000000,
       "home_value_usd": 0,
-      "initial_income_usd": 16000
+      "initial_income_usd": 5203
     },
     {
       "label": "C (manager)",
@@ -43,7 +43,7 @@
       "savings_usd": 3000000,
       "debt_usd": 1500000,
       "home_value_usd": 12000000,
-      "initial_income_usd": 291000
+      "initial_income_usd": 233719
     },
     {
       "label": "D (worker)",
@@ -58,7 +58,7 @@
       "savings_usd": 3500000,
       "debt_usd": 1200000,
       "home_value_usd": 14000000,
-      "initial_income_usd": 440000
+      "initial_income_usd": 345114
     },
     {
       "label": "E (worker)",
@@ -73,7 +73,7 @@
       "savings_usd": 3500000,
       "debt_usd": 1200000,
       "home_value_usd": 14000000,
-      "initial_income_usd": 440000
+      "initial_income_usd": 345114
     },
     {
       "label": "F (dependent)",
@@ -88,7 +88,7 @@
       "savings_usd": 220000,
       "debt_usd": 0,
       "home_value_usd": 0,
-      "initial_income_usd": 94000
+      "initial_income_usd": 85060
     }
   ],
   "firms": [
@@ -182,7 +182,6 @@
     }
   ],
   "bank_owner": 0,
-  "gov_purchases_usd": 350000,
   "gov_cash_usd": 400000,
   "gov_debt_usd": 3000000,
   "legitimacy": 0.7,
@@ -212,7 +211,7 @@
     "commons_harvest": 1.0,
     "bank_capital_ratio": 0.1,
     "bailout": false,
-    "public_spending": 0.2,
-    "job_guarantee": 0.0
+    "job_guarantee": 0.0,
+    "public_spending_usd": 450000.0
   }
 }

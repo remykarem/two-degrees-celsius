@@ -31,7 +31,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             .iter()
             .filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier))
         {
-            let spend = h.income.capital_income().scale(share);
+            let spend = h
+                .income
+                .capital_income()
+                .scale(share)
+                .min(h.savings.max(Cents::ZERO));
             total_spend += spend.dollars();
             d.transfer(
                 Account::Household(h.id),
@@ -51,7 +55,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         .clamp(lp.union_min, lp.union_max)
         .max(c.union_floor);
     let lobby_labour = union * s.indicators.wage_share.0 * lp.labour_u;
-    let net = (lobby_capital - lobby_labour).clamp(0.0, 0.95);
+    let net = (lobby_capital - lobby_labour).clamp(0.0, lp.max_net);
 
     let eff = EffectivePolicy {
         carbon_price: s.policy.carbon_price.scale(1.0 - net),

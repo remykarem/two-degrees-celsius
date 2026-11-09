@@ -1,8 +1,9 @@
 //! S3 goods and housing market: households buy food (a need) and goods (discretionary),
 //! prices adjust to excess demand, rents adjust to occupancy.
 
-use crate::util::apportion;
+use crate::util::{apportion, capex_available, paid_workers};
 use libm::pow;
+use sim_metrics::cohort_wealth;
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
@@ -15,7 +16,7 @@ struct Allocation {
 
 /// Split a sector's total budget (cents) over its firms. Cheaper firms with more stock
 /// get more; stock limits are respected over two passes.
-fn allocate(firms: &[&Firm], budget: f64, elasticity: f64) -> Allocation {
+fn allocate(firms: &[&Firm], budget: f64, elasticity: f64, min_price: f64) -> Allocation {
     let n = firms.len();
     let mut a = Allocation {
         sold: vec![0.0; n],
@@ -26,7 +27,10 @@ fn allocate(firms: &[&Firm], budget: f64, elasticity: f64) -> Allocation {
         return a;
     }
     let avail0: Vec<f64> = firms.iter().map(|f| f.inventory.0).collect();
-    let prices: Vec<f64> = firms.iter().map(|f| f.price.as_f64().max(1.0)).collect();
+    let prices: Vec<f64> = firms
+        .iter()
+        .map(|f| f.price.as_f64().max(min_price))
+        .collect();
     let tot_avail: f64 = avail0.iter().sum();
     let pbar = if tot_avail > 0.0 {
         avail0.iter().zip(&prices).map(|(q, p)| q * p).sum::<f64>() / tot_avail
@@ -127,6 +131,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         }
     };
     let p_food = avg_price(Sector::Food);
+    let wealth = cohort_wealth(s, p);
     let mut food_budget = vec![0.0; n_h];
     let mut goods_budget = vec![0.0; n_h];
     let mut need_units = vec![0.0; n_h];
@@ -137,19 +142,50 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         food_budget[i] = need_cost.min(savings);
         let c = gp.propensity.get(h.class);
         let disposable = h.last_disposable.as_f64().max(0.0);
-        let wish = c * (disposable - need_cost).max(0.0) + gp.wealth_consumption_rate * savings;
+        // Wealth effect: capital-owning classes also consume out of net wealth.
+        let wealth_spend = if matches!(h.class, Class::Capitalist | Class::Rentier) {
+            gp.wealth_consumption_rate * wealth[i].max(0.0)
+        } else {
+            0.0
+        };
+        let wish = c * (disposable - need_cost).max(0.0) + wealth_spend;
         goods_budget[i] = wish.min(savings - food_budget[i]).max(0.0);
     }
-    let gov_budget = s
-        .gov
-        .purchases_budget
-        .min(s.gov.cash)
-        .max(Cents::ZERO)
-        .as_f64();
+    // Firms buy capital goods from the goods sector (investment is demand).
+    let capex_budget: Vec<f64> = s
+        .firms
+        .iter()
+        .map(|f| {
+            if f.active {
+                capex_available(s, p, f).min(f.plan_invest).as_f64()
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    // Government purchases are the player's G lever, funded in S8; any part the treasury cannot
+    // fund is reported, never silently dropped.
+    let wanted = s.policy.public_spending.max(Cents::ZERO);
+    let gov_budget_c = wanted.min(s.gov.cash.max(Cents::ZERO));
+    let gov_budget = gov_budget_c.as_f64();
+    let unfunded = wanted - gov_budget_c;
+    if unfunded > Cents::ZERO {
+        d.events.push(Event::SpendingCut {
+            shortfall: unfunded,
+        });
+    }
+    d.changes.push(Delta::Gov(GovPatch {
+        unfunded: Some(unfunded),
+        unfunded_add: Some(unfunded),
+        ..GovPatch::default()
+    }));
 
     // ---- Markets ----
+    let n_f = s.firms.len();
     let mut parts_food_units = vec![0.0; n_h];
     let mut consumption = vec![Cents::ZERO; n_h];
+    let mut capex_paid = vec![Cents::ZERO; n_f];
+    let min_price = gp.min_price_usd * 100.0;
     for sector in [Sector::Food, Sector::Goods] {
         let firms: Vec<&Firm> = s
             .firms
@@ -159,16 +195,23 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         if firms.is_empty() {
             continue;
         }
-        let (hb, gb): (&Vec<f64>, f64) = match sector {
-            Sector::Food => (&food_budget, 0.0),
-            Sector::Goods => (&goods_budget, gov_budget),
-        };
-        let mut buyers: Vec<f64> = hb.clone();
-        buyers.push(gb);
+        // Buyers in order: household cohorts, firms (capital goods), government.
+        let mut buyers: Vec<f64> = Vec::with_capacity(n_h + n_f + 1);
+        match sector {
+            Sector::Food => {
+                buyers.extend(&food_budget);
+                buyers.extend(std::iter::repeat_n(0.0, n_f + 1));
+            }
+            Sector::Goods => {
+                buyers.extend(&goods_budget);
+                buyers.extend(&capex_budget);
+                buyers.push(gov_budget);
+            }
+        }
         let budget: f64 = buyers.iter().sum();
-        let alloc = allocate(&firms, budget, gp.price_elasticity);
+        let alloc = allocate(&firms, budget, gp.price_elasticity, min_price);
         for (i, f) in firms.iter().enumerate() {
-            let price = f.price.as_f64().max(1.0);
+            let price = f.price.as_f64().max(min_price);
             let revenue = Cents(alloc.spent[i].floor() as i64);
             let sold_units = alloc.sold[i];
             let parts = apportion(revenue, &buyers);
@@ -184,6 +227,15 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     if sector == Sector::Food {
                         parts_food_units[b] += part.as_f64() / price;
                     }
+                } else if b < n_h + n_f {
+                    let buyer = FirmId((b - n_h) as u32);
+                    d.transfer(
+                        Account::Firm(buyer),
+                        Account::Firm(f.id),
+                        *part,
+                        FlowKind::Purchase,
+                    );
+                    capex_paid[buyer.idx()] += *part;
                 } else {
                     d.transfer(
                         Account::Government,
@@ -193,7 +245,16 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     );
                 }
             }
-            // Price signal: demand against the month's supply.
+            // Price follows unit cost plus a markup, closing a share of the gap each month.
+            let wage_bill = f.wage.as_f64() * paid_workers(s, f);
+            let unit_cost = safe_div(wage_bill + f.carbon_cost.as_f64(), f.output.0, 0.0);
+            let target = (1.0 + f.markup.0) * unit_cost;
+            let new_price = if unit_cost > 0.0 {
+                Cents::from_f64(price + gp.price_adjust * (target - price))
+                    .max(Cents::from_f64(min_price))
+            } else {
+                f.price
+            };
             let supply = if f.output.0 > 0.0 {
                 f.output.0
             } else {
@@ -204,8 +265,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             } else {
                 1.0
             };
-            let adj = (gp.price_adjust * excess).clamp(-gp.price_band, gp.price_band);
-            let new_price = Cents::from_f64(price * (1.0 + adj)).max(Cents(1));
+            let lam = p.labour.expected_smoothing;
+            let expected = lam * alloc.demand_units[i] + (1.0 - lam) * f.expected_sales.0;
             let h = f.sales_hist;
             d.firm(
                 f.id,
@@ -216,10 +277,20 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     sales_units: Some(Units(sold_units)),
                     revenue: Some(revenue),
                     excess_demand: Some(Rate(excess)),
+                    expected_sales: Some(Units(expected)),
                     ..FirmPatch::default()
                 },
             );
         }
+    }
+    for f in s.firms.iter().filter(|f| f.active) {
+        d.firm(
+            f.id,
+            FirmPatch {
+                capex: Some(capex_paid[f.id.idx()]),
+                ..FirmPatch::default()
+            },
+        );
     }
     // Inactive firms record zero sales.
     for f in s.firms.iter().filter(|f| !f.active) {

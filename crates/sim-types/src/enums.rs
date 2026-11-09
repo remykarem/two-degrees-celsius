@@ -80,8 +80,8 @@ pub enum PolicyChange {
     CommonsAccess(CommonsAccess),
     BankCapitalRatio(Rate),
     Bailout(bool),
-    /// Government goods purchases as a share of monthly GDP (the G lever).
-    PublicSpending(Rate),
+    /// Government goods purchases per month (the G lever), in cents.
+    PublicSpending(Cents),
     /// Share of the unemployed the government hires at the minimum wage.
     JobGuarantee(Rate),
 }
@@ -117,6 +117,7 @@ impl PolicyChange {
     pub fn value(&self) -> Option<f64> {
         Some(match *self {
             PolicyChange::CarbonPrice(c)
+            | PolicyChange::PublicSpending(c)
             | PolicyChange::WealthThreshold(c)
             | PolicyChange::MinWage(c)
             | PolicyChange::Benefit(c)
@@ -130,7 +131,6 @@ impl PolicyChange {
             | PolicyChange::CampaignCap(r)
             | PolicyChange::CommonsHarvest(r)
             | PolicyChange::BankCapitalRatio(r)
-            | PolicyChange::PublicSpending(r)
             | PolicyChange::JobGuarantee(r) => r.0,
             PolicyChange::EmissionsCap(t) => t.0,
             PolicyChange::CommonsAccess(_) | PolicyChange::Bailout(_) => return None,
@@ -338,6 +338,15 @@ pub enum Event {
         id: u32,
     },
     BankFailed,
+    /// A household could not pay all its rent; the landlord loses the shortfall.
+    RentShortfall {
+        household: HouseholdId,
+        amount: Cents,
+    },
+    /// Government spending that could not be funded this tick.
+    SpendingCut {
+        shortfall: Cents,
+    },
     BankBailout {
         amount: Cents,
     },

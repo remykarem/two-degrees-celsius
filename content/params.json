@@ -2,8 +2,10 @@
   "run": {
     "turns": 160,
     "ticks_per_turn": 3,
-    "warmup_ticks": 0,
-    "stop_on_loss": false
+    "warmup_ticks": 48,
+    "stop_on_loss": false,
+    "strict_flows": true,
+    "flow_tolerance_usd": 1.0
   },
   "turn": {
     "pc_start": 60.0,
@@ -117,7 +119,7 @@
       "public_spending": {
         "base_cost": 5,
         "lead_time": 1,
-        "unit": 0.05,
+        "unit": 100000.0,
         "min_size": 0.25
       },
       "job_guarantee": {
@@ -171,13 +173,8 @@
     }
   },
   "labour": {
-    "growth_aspiration": 0.003,
-    "wage_up": 1.01,
-    "wage_down": 0.995,
-    "wage_cut_unemployment": 0.08,
-    "wage_tight_unemployment": 0.05,
-    "wage_tight_up": 1.002,
-    "fire_after_months": 2,
+    "growth_aspiration": 0.001,
+    "fire_after_months": 1,
     "max_fire_share": 0.06,
     "max_hire_share": 0.1,
     "skill_gain": 0.001,
@@ -185,7 +182,14 @@
     "skilled_share": 0.16,
     "inventory_cover": 0.5,
     "inventory_adjust": 0.1,
-    "min_workers": 1.0
+    "min_workers": 1.0,
+    "wage_k": 0.1,
+    "u_ref": 0.07,
+    "wage_cap": 0.01,
+    "expected_smoothing": 0.3,
+    "min_hire": 2.0,
+    "skill_min": 0.05,
+    "skill_max": 1.0
   },
   "production": {
     "alpha_k": 0.3,
@@ -196,8 +200,7 @@
     "tfp_growth_food": 0.0008
   },
   "goods": {
-    "price_adjust": 0.1,
-    "price_band": 0.05,
+    "price_adjust": 0.05,
     "holding_cost": 0.02,
     "price_elasticity": 2.0,
     "propensity": {
@@ -208,12 +211,13 @@
       "dependent": 1.0
     },
     "food_need_units_pc": 25.0,
-    "wealth_consumption_rate": 0.004,
+    "wealth_consumption_rate": 0.002,
     "rent_up": 0.01,
     "rent_down": 0.005,
     "occupancy_trigger": 0.95,
     "min_rent_usd": 20.0,
-    "housing_depreciation": 0.001
+    "housing_depreciation": 0.001,
+    "min_price_usd": 0.01
   },
   "income": {
     "cash_reserve_months": 1.0
@@ -228,11 +232,13 @@
     "bank_payout": 0.5,
     "bank_buffer": 0.25,
     "bailout_target_ratio": 0.12,
-    "max_firm_leverage": 0.6
+    "max_firm_leverage": 0.6,
+    "household_credit": false,
+    "haircut_margin": 1.01
   },
   "invest": {
     "retain_share": 0.7,
-    "max_invest_share": 0.012,
+    "max_invest_share": 0.02,
     "depreciation": 0.008,
     "capital_price_usd": 1500.0,
     "green_step": 0.05,
@@ -244,7 +250,9 @@
     "housing_hurdle": 0.05,
     "housing_target_occupancy": 0.93,
     "return_scale": 0.3,
-    "smoothing": 0.15
+    "smoothing": 0.15,
+    "accelerator": 0.05,
+    "housing_budget_share": 0.5
   },
   "nature": {
     "forest_growth": 0.004,
@@ -281,17 +289,12 @@
     "legit_gini_threshold": 0.45,
     "legit_bailout": 0.05,
     "legit_debt": 0.02,
-    "collapse_unemployment": 0.35,
-    "stabilizer": 3.0,
-    "unemployment_target": 0.08,
-    "debt_brake_start": 1.5,
-    "debt_brake_slope": 1.0
+    "collapse_unemployment": 0.35
   },
   "class": {
     "capital_share_threshold": 0.5,
     "rentier_share_threshold": 0.5,
     "skill_threshold": 0.7,
-    "skilled_wage_usd": 2500.0,
     "startup_cost_usd": 250000.0,
     "startup_buffer_usd": 10000.0,
     "startup_capital_share": 0.5,
@@ -299,7 +302,10 @@
     "mobility_rate": 0.005,
     "fall_fraction": 0.25,
     "min_cohort_weight": 5.0,
-    "startup_hurdle_floor": 0.0
+    "startup_hurdle_floor": 0.0,
+    "skilled_wage_ratio": 1.5,
+    "employed_share_min": 0.5,
+    "history_months": 6
   },
   "lobby": {
     "spend_rate": 0.02,
@@ -308,7 +314,8 @@
     "union_adjust": 0.002,
     "union_min": 0.05,
     "union_max": 0.6,
-    "union_target_unemployment": 0.06
+    "union_target_unemployment": 0.06,
+    "max_net": 0.95
   },
   "wellbeing": {
     "needs_usd_pc": 1500.0,

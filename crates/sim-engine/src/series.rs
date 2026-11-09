@@ -63,7 +63,7 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
         s.firms[0].inventory.0,
         s.firms[0].profit.dollars(),
         s.gdp_parts.investment.dollars(),
-        s.gov.purchases_budget.dollars(),
+        s.policy.public_spending.dollars(),
         s.bank.lent_this_tick.dollars(),
         s.households[0].savings.dollars(),
         s.pending.len()

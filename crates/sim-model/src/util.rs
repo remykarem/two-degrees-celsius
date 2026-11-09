@@ -17,6 +17,45 @@ pub fn is_skilled(h: &Household) -> bool {
     h.wage_premium.0 > 1.0
 }
 
+/// People on a firm's payroll weighted by their wage premium (the wage bill divided by the base wage).
+pub fn paid_workers(s: &State, f: &Firm) -> f64 {
+    s.households
+        .iter()
+        .map(|h| h.employment[f.id.idx()].0 * h.wage_premium.0)
+        .sum()
+}
+
+/// Cash a firm keeps back for payroll and debt service before it spends on capital.
+pub fn cash_reserve(s: &State, p: &Params, f: &Firm) -> Cents {
+    let wage_bill = f.wage.scale(paid_workers(s, f));
+    let service = f.debt.scale(monthly(f.loan_rate.0)) + f.amort.min(f.debt);
+    (wage_bill + service).scale(p.invest.min_cash_months)
+}
+
+/// Cash a firm can spend on capital goods this tick.
+pub fn capex_available(s: &State, p: &Params, f: &Firm) -> Cents {
+    let avail = (f.cash - cash_reserve(s, p, f)).max(Cents::ZERO);
+    if f.green_plan {
+        avail.scale(1.0 - cfg(s, p).green_cash_share)
+    } else {
+        avail
+    }
+}
+
+/// Carbon price firms plan with: the effective price, pulled toward a still-pending price
+/// by `announce_discount`.
+pub fn announced_carbon_price(s: &State, p: &Params) -> Cents {
+    let now = s.effective.carbon_price;
+    let pending = s.pending.iter().rev().find_map(|x| match x.command {
+        Command::SetPolicy(PolicyChange::CarbonPrice(c)) => Some(c),
+        _ => None,
+    });
+    match pending {
+        Some(c) => now + (c - now).scale(p.turn.announce_discount),
+        None => now,
+    }
+}
+
 /// Split `total` cents across `weights` so the parts sum exactly to `total`
 /// (largest remainder method, ties broken by index). Non-positive weights get zero.
 pub fn apportion(total: Cents, weights: &[f64]) -> Vec<Cents> {

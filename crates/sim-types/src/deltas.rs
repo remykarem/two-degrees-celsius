@@ -30,6 +30,8 @@ pub enum MoneyOp {
     WriteOff { who: Account, amount: Cents },
     /// Government bonds swapped for bank equity. Money unchanged.
     Bailout { amount: Cents },
+    /// Unpaid government interest added to its debt (bank loans and equity rise). Money unchanged.
+    CapitalizeInterest { amount: Cents },
     /// Savers lose `rate` of every deposit after a bank failure. Destroys money.
     Haircut { rate: Rate },
     /// Debt moves with people between cohorts. Money unchanged.
@@ -69,6 +71,11 @@ pub struct FirmPatch {
     pub green_plan: Option<bool>,
     pub closed_tick: Option<Option<u32>>,
     pub excess_demand: Option<Rate>,
+    pub expected_sales: Option<Units>,
+    pub markup: Option<Rate>,
+    pub capital_per_sale: Option<f64>,
+    pub capex: Option<Cents>,
+    pub tax_paid: Option<Cents>,
     pub carbon_cost: Option<Cents>,
     pub profit_ema: Option<Cents>,
 }
@@ -89,6 +96,7 @@ pub struct HouseholdPatch {
     pub footprint: Option<Tonnes>,
     pub wealth_pc: Option<Cents>,
     pub arrears: Option<bool>,
+    pub jg: Option<People>,
 }
 
 /// Partial update of the bank's statistics (stocks change only through `MoneyOp`).
@@ -104,12 +112,15 @@ pub struct BankPatch {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct GovPatch {
     pub legitimacy: Option<Rate>,
-    pub purchases_budget: Option<Cents>,
+    pub unfunded: Option<Cents>,
+    pub unfunded_add: Option<Cents>,
+    pub receipts: Option<Cents>,
     pub tax_revenue: Option<Cents>,
     pub spending: Option<Cents>,
     pub pending_build: Option<Vec<(InfraKind, u32)>>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Delta {
     Employment {

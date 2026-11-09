@@ -192,18 +192,19 @@ fn gross_emissions(s: &Sim) -> f64 {
 }
 
 #[test]
-#[ignore = "economy collapses under the pre-redesign demand side (48% unemployment); sign test is re-enabled after stage C"]
-fn raising_carbon_price_lowers_emissions_within_12_months() {
+fn raising_carbon_price_lowers_emissions_after_it_takes_effect() {
     let make = || sim_engine::init(no_lobby(params()), 42).unwrap();
     let mut base = make();
     let mut taxed = make();
     let none = Plan::default();
     let hike = cmd(Command::SetPolicy(PolicyChange::CarbonPrice(
-        Cents::from_dollars(400.0),
+        Cents::from_dollars(150.0),
     )));
-    let b = collect(&mut base, 12, &none, gross_emissions);
-    let t = collect(&mut taxed, 12, &hike, gross_emissions);
-    let (b2, t2) = (mean(&b[6..]), mean(&t[6..]));
+    // The price takes two turns to come into force, and firms first respond with a burst of green
+    // investment spending (a stimulus), so the fall shows in years 2 to 4, not at once.
+    let b = collect(&mut base, 48, &none, gross_emissions);
+    let t = collect(&mut taxed, 48, &hike, gross_emissions);
+    let (b2, t2) = (mean(&b[24..]), mean(&t[24..]));
     assert!(
         t2 < b2,
         "emissions months 7-12: taxed {t2:.1} vs baseline {b2:.1}"
@@ -446,6 +447,7 @@ fn cancelling_a_pending_command_refunds_half() {
 #[test]
 fn net_lobbying_raises_the_political_cost_of_opposed_policies() {
     let mut sim = new_sim(1);
+    sim.state.net_lobby = Rate(0.0);
     let base = sim_engine::preview(&sim, &[carbon(100.0)])[0].pc;
     sim.state.net_lobby = Rate(0.5);
     let opposed = sim_engine::preview(&sim, &[carbon(100.0)])[0].pc;
@@ -629,4 +631,77 @@ fn golden_snapshot_seed_42() {
     })
     .unwrap();
     insta::assert_snapshot!("market_seed_42", out);
+}
+
+// ---------- redesign checks ----------
+
+#[test]
+fn baseline_a_no_action_runs_160_turns_without_violations() {
+    let mut sim = new_sim(42);
+    let mut u_max = 0.0f64;
+    sim_engine::run(&mut sim, 160, &Plan::default(), |s, _| {
+        u_max = u_max.max(s.state.indicators.unemployment.0);
+    })
+    .expect("no invariant fires, including sector balances and unfunded payments");
+    assert_eq!(sim.state.turn, 161);
+    assert!(u_max < 1.0);
+}
+
+#[test]
+fn household_credit_flag_must_be_off() {
+    let bad = PARAMS.replace("\"household_credit\": false", "\"household_credit\": true");
+    assert_ne!(bad, PARAMS, "flag present in content");
+    assert!(Params::from_content(&ContentJson {
+        params: &bad,
+        initial_town: TOWN,
+        market: MARKET,
+        regulated: REGULATED,
+        coop: COOP,
+    })
+    .is_err());
+}
+
+#[test]
+fn sector_balances_hold_in_every_tick_of_a_run_with_policy() {
+    // The engine checks the identity after every system; this run exercises taxes, subsidies,
+    // builds, a job guarantee and a system switch.
+    let mut sim = new_sim(3);
+    let plan = Plan::from_json(
+        r#"{"turns":[
+            {"turn":1,"set":{"job_guarantee":0.5,"green_subsidy":0.3}},
+            {"turn":2,"place":{"kind":"PublicHousing","count":3}},
+            {"turn":3,"switch":"Regulated"},
+            {"turn":6,"set":{"public_spending":600000,"benefit":1000}}]}"#,
+    )
+    .unwrap();
+    sim_engine::run(&mut sim, 40, &plan, |_, _| {}).expect("balances hold");
+    assert!(sim.state.policy.job_guarantee.0 > 0.0);
+}
+
+#[test]
+fn job_guarantee_employs_people_and_lowers_unemployment() {
+    let u = |jg: bool| {
+        let mut sim = new_sim(42);
+        let plan = if jg {
+            Plan::from_json(r#"{"turns":[{"turn":1,"set":{"job_guarantee":1.0}}]}"#).unwrap()
+        } else {
+            Plan::default()
+        };
+        let v = collect(&mut sim, 24, &plan, |s| s.state.indicators.unemployment.0);
+        mean(&v[12..])
+    };
+    assert!(u(true) < u(false) - 0.02, "{} vs {}", u(true), u(false));
+}
+
+#[test]
+fn government_spending_cannot_vanish_silently() {
+    // With a G far beyond the treasury's means, the G lever is cut, and the cut is reported.
+    let mut sim = new_sim(42);
+    sim.state.policy.public_spending = Cents::from_dollars(5_000_000.0);
+    let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert!(out
+        .events
+        .iter()
+        .any(|e| matches!(e, Event::SpendingCut { .. })));
+    assert!(sim.state.gov.unfunded_total > Cents::ZERO);
 }

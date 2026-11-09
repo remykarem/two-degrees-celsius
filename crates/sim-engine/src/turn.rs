@@ -25,7 +25,7 @@ fn active_value(p: &Policy, c: &PolicyChange) -> Option<f64> {
         PolicyChange::EmissionsCap(_) => p.emissions_cap.0,
         PolicyChange::CommonsHarvest(_) => p.commons_harvest.0,
         PolicyChange::BankCapitalRatio(_) => p.bank_capital_ratio.0,
-        PolicyChange::PublicSpending(_) => p.public_spending.0,
+        PolicyChange::PublicSpending(_) => p.public_spending.dollars(),
         PolicyChange::JobGuarantee(_) => p.job_guarantee.0,
         PolicyChange::CommonsAccess(_) | PolicyChange::Bailout(_) => return None,
     })

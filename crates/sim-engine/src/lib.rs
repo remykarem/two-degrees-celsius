@@ -11,7 +11,9 @@ pub mod turn;
 
 use apply::ApplyStats;
 use serde::Serialize;
-use sim_checks::{check_money, check_state, MoneyLedger, Violation};
+use sim_checks::{
+    check_money, check_sector_balance, check_state, MoneyLedger, SectorBalances, Violation,
+};
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
@@ -110,6 +112,7 @@ fn run_system(
     out: &mut StepOutput,
 ) -> Result<(), Violation> {
     let before = sim.state.total_deposits();
+    let balances_before = SectorBalances::of(&sim.state);
     let deltas = f(&sim.state, &sim.params, &mut sim.rng);
     let mut stats = ApplyStats::default();
     let ledger = apply::apply(
@@ -121,6 +124,20 @@ fn run_system(
         &mut stats,
     );
     sim.clamped_total += stats.clamped;
+    let tick = sim.state.tick;
+    if sim.params.run.strict_flows && stats.clamped.dollars() > sim.params.run.flow_tolerance_usd {
+        let (what, short) = stats.worst.unwrap_or(("payment", stats.clamped));
+        return Err(Violation {
+            tick,
+            system: id,
+            what: format!(
+                "unfunded payments: ${:.2} could not be paid (largest: {what}, ${:.2} short)",
+                stats.clamped.dollars(),
+                short.dollars()
+            ),
+        });
+    }
+    check_sector_balance(&balances_before, &SectorBalances::of(&sim.state), tick, id)?;
     verify(sim, id, before, ledger)
 }
 

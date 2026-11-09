@@ -19,9 +19,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let gp = &p.government;
     let gov = Account::Government;
-    let n_h = s.households.len();
 
-    // ---- Taxes ----
+    // ---- Taxes: only what households can actually pay is sent, and that is what is reported ----
     let wealth = cohort_wealth(s, p);
     let mut taxes = Cents::ZERO;
     for (i, h) in s.households.iter().enumerate() {
@@ -31,26 +30,30 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let pc = wealth[i] / 100.0 / h.weight.0.max(1e-9);
         let over = (pc - s.policy.wealth_threshold.dollars()).max(0.0);
         let wealth_tax = Cents::from_dollars(over * h.weight.0 * s.effective.wealth_tax.0 / 12.0);
+        let mut left = h.savings.max(Cents::ZERO);
         for amt in [wage_tax, cap_tax, wealth_tax] {
-            let paid = amt.min(h.savings.max(Cents::ZERO));
+            let paid = amt.min(left);
+            left -= paid;
             taxes += paid;
-            d.transfer(me, gov, amt, FlowKind::Tax);
+            d.transfer(me, gov, paid, FlowKind::Tax);
         }
     }
-    // Firm-side revenue already collected in S4 this tick.
-    let t_prof = s.effective.tax_profit.0;
-    let firm_side: Cents = Cents::sum(s.firms.iter().filter(|f| f.active).map(|f| {
-        f.carbon_cost
-            + f.profit
-                .max(Cents::ZERO)
-                .scale(safe_div(t_prof, 1.0 - t_prof, 0.0))
-    }));
-    let revenue = taxes + firm_side;
+    // Firm-side receipts were collected in S4 this tick: the amounts actually paid.
+    let firm_side = Cents::sum(
+        s.firms
+            .iter()
+            .filter(|f| f.active)
+            .map(|f| f.carbon_cost + f.tax_paid),
+    );
+    let receipts = taxes + firm_side;
 
-    // ---- Planned spending ----
+    // ---- Committed spending this tick ----
     let mut spend = Deltas::new();
     let mut benefits = Cents::ZERO;
     let mut ubi = Cents::ZERO;
+    let mut jg_wages = Cents::ZERO;
+    let min_wage = s.policy.min_wage.scale(cfg(s, p).min_wage_multiplier);
+    let mut pay: Vec<(Account, Cents, FlowKind)> = Vec::new();
     for h in &s.households {
         let unemployed = (h.labour_force().0 - h.employed().0).max(0.0);
         let nonlabour = if h.nonlabour_benefit {
@@ -60,10 +63,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         };
         let b = s.policy.benefit.scale(unemployed + nonlabour);
         let u = s.policy.ubi.scale(h.weight.0);
-        spend.transfer(gov, Account::Household(h.id), b, FlowKind::Benefit);
-        spend.transfer(gov, Account::Household(h.id), u, FlowKind::Benefit);
+        let j = min_wage.scale(h.jg.0);
+        let me = Account::Household(h.id);
+        pay.push((me, b + u, FlowKind::Benefit));
+        pay.push((me, j, FlowKind::Wage));
         benefits += b;
         ubi += u;
+        jg_wages += j;
     }
     let lw = labour_weights(s);
     let plants = (s.energy.fossil_cap.0 + s.energy.renewable_cap.0) / gp.plant_capacity;
@@ -94,52 +100,57 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         nature.pending_clearing += Units(cost.dollars() * p.nature.forest_clear_per_build);
     }
     let services = upkeep + build_cost;
-    // Goods purchases next month: the public_spending share of GDP, scaled up when unemployment
-    // is above target and down when below (automatic stabiliser), and cut back as debt rises
-    // past the brake threshold. Deficits are financed by borrowing from the bank.
-    let gap = s.indicators.unemployment.0 - gp.unemployment_target;
-    let cycle = (1.0 + gp.stabilizer * gap).clamp(0.5, 1.6);
-    let gdp_annual = s.indicators.gdp_annual.dollars().max(1.0);
-    let debt_ratio = s.gov.debt.dollars() / gdp_annual;
-    let brake = (1.0 - gp.debt_brake_slope * (debt_ratio - gp.debt_brake_start)).clamp(0.2, 1.0);
-    let purchases_next = s
-        .indicators
-        .gdp_month
-        .scale(s.policy.public_spending.0 * cycle * brake);
-    // ---- Borrow to cover the plan, or repay a share of any surplus ----
-    let outflow = benefits + ubi + services + purchases_next;
-    let target_cash = outflow.scale(gp.cash_target_months);
+    for (h, part) in apportion(services, &lw).into_iter().enumerate() {
+        pay.push((
+            Account::Household(HouseholdId(h as u32)),
+            part,
+            FlowKind::Wage,
+        ));
+    }
+    let committed = Cents::sum(pay.iter().map(|x| x.1));
+
+    // ---- Funding: cash and taxes first, then borrowing within the bank's lending limit ----
+    // The goods purchases of next month (the G lever) are held back in cash.
+    let g_next = s.policy.public_spending.scale(gp.cash_target_months);
     let available = s.gov.cash + taxes;
-    let need = outflow + target_cash - available;
+    let need = committed + g_next - available;
+    let mut borrowed = Cents::ZERO;
     if need > Cents::ZERO {
         let kappa = s.policy.bank_capital_ratio.0;
         let max_loans = s.bank.equity.max(Cents::ZERO).scale(1.0 / kappa);
         let headroom = (max_loans - s.bank.loans).max(Cents::ZERO);
-        let borrow = need.min(headroom);
+        borrowed = need.min(headroom);
         d.money.push(MoneyOp::Lend {
             to: gov,
-            amount: borrow,
+            amount: borrowed,
         });
     } else {
-        let surplus = -need;
-        let repay = surplus.scale(gp.repay_share).min(s.gov.debt);
+        let repay = (-need).scale(gp.repay_share).min(s.gov.debt);
         d.money.push(MoneyOp::Repay {
             from: gov,
             amount: repay,
         });
     }
-
-    // ---- Pay for services and construction as wages to labour ----
-    for (h, part) in apportion(services, &lw).into_iter().enumerate() {
-        spend.transfer(
-            gov,
-            Account::Household(HouseholdId(h as u32)),
-            part,
-            FlowKind::Wage,
-        );
+    // Committed payments that the treasury cannot fund are cut pro rata, and reported.
+    let funds = available + borrowed;
+    let ratio = if committed > funds {
+        safe_div(funds.as_f64(), committed.as_f64(), 0.0)
+    } else {
+        1.0
+    };
+    let mut paid_total = Cents::ZERO;
+    for (to, amt, kind) in pay {
+        let a = amt.scale(ratio).min(amt);
+        paid_total += a;
+        spend.transfer(gov, to, a, kind);
+    }
+    let shortfall = committed - paid_total;
+    if shortfall > Cents::ZERO {
+        d.events.push(Event::SpendingCut { shortfall });
     }
     d.money.extend(spend.money);
-    d.changes.push(Delta::Gdp(GdpPart::GovServices, services));
+    d.changes
+        .push(Delta::Gdp(GdpPart::GovServices, services + jg_wages));
     if !s.gov.pending_build.is_empty() {
         d.changes.push(Delta::Housing(housing));
         d.changes.push(Delta::Energy(energy));
@@ -159,13 +170,14 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     if let Some(t) = &s.transition {
         l -= cfg(s, p).resistance.max(p.systems.get(t.to).resistance);
     }
-    let _ = n_h;
     d.changes.push(Delta::Gov(GovPatch {
         legitimacy: Some(Rate(l.clamp(0.0, 1.0))),
-        tax_revenue: Some(revenue),
-        spending: Some(outflow),
-        purchases_budget: Some(purchases_next),
+        tax_revenue: Some(receipts),
+        receipts: Some(receipts),
+        spending: Some(paid_total),
+        unfunded_add: Some(shortfall),
         pending_build: Some(Vec::new()),
+        ..GovPatch::default()
     }));
     d
 }
