@@ -1,70 +1,119 @@
 <script lang="ts">
-  import type { HistoryPoint } from '../contract';
-  import type { Game } from '../store';
-  import { money, pct } from './format';
+  import { quarterLabel, type Game } from '../store';
+  import { ARROW, money, pct, TREND_WORD } from './format';
+  import { historyChange, METRIC_TABS, metricById, metricsFor, runway, runwayText, type MetricTab } from './metrics';
+  import RunwayChart from './RunwayChart.svelte';
   import Sparkline from './Sparkline.svelte';
+  import { setUi } from './ui';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  type Tab = 'Economy' | 'Ecology' | 'Society';
-  let tab = $state<Tab>('Economy');
-  const tabs: Tab[] = ['Economy', 'Ecology', 'Society'];
+  let tab = $state<MetricTab>('Economy');
 
-  interface Row { label: string; series: ((h: HistoryPoint) => number) | null; now: string }
-  const rows = $derived.by((): Row[] => {
-    const s = $gs.snapshot;
-    if (!s) return [];
-    const i = s.indicators;
-    const all: Record<Tab, Row[]> = {
-      Economy: [
-        { label: 'GDP (real, yearly)', series: (h) => h.gdpRealAnnual, now: money(i.gdpRealAnnual) },
-        { label: 'GPI (yearly)', series: (h) => h.gpiAnnual, now: money(i.gpiAnnual) },
-        { label: 'Unemployment', series: (h) => h.unemployment, now: pct(i.unemployment, 1) },
-        { label: 'Public debt / GDP', series: (h) => h.debtToGdp, now: pct(s.government.debtToGdp, 1) },
-      ],
-      Ecology: [
-        { label: 'Emissions (per quarter, t)', series: (h) => h.emissions, now: s.nature.grossEmissionsMonthly.toFixed(0) + '/mo' },
-        { label: 'Carbon budget left', series: (h) => h.budgetShare, now: pct(i.budgetShare) },
-        { label: 'Temperature (C above base)', series: null, now: i.temperature.toFixed(2) },
-        { label: 'Forest', series: null, now: pct(s.nature.forest) },
-      ],
-      Society: [
-        { label: 'Inequality (Gini)', series: (h) => h.gini, now: i.gini.toFixed(2) },
-        { label: 'Wellbeing', series: (h) => h.avgWellbeing, now: i.avgWellbeing.toFixed(2) },
-        { label: 'Legitimacy', series: (h) => h.legitimacy, now: pct(s.government.legitimacy) },
-      ],
-    };
-    return all[tab];
-  });
+  const snap = $derived($gs.snapshot);
+  const history = $derived(snap?.history ?? []);
+  const defs = $derived(metricsFor(tab).filter((m) => !(tab === 'Economy' && (m.id === 'gdp' || m.id === 'gpi'))));
+  const rw = $derived(snap ? runway(snap) : null);
+  const turnLabel = (t: number) => (snap ? quarterLabel(t, snap.game) : String(t));
+  const gdp = $derived(metricById('gdp')!);
+  const gpi = $derived(metricById('gpi')!);
+
+  function onTabKey(e: KeyboardEvent) {
+    const i = METRIC_TABS.indexOf(tab);
+    const n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? METRIC_TABS.length - 1 : -1;
+    if (n < 0) return;
+    e.preventDefault();
+    tab = METRIC_TABS[(n + METRIC_TABS.length) % METRIC_TABS.length]!;
+    queueMicrotask(() => document.getElementById(`tab-${tab}`)?.focus());
+  }
 </script>
 
 <aside aria-label="Metrics">
-  <div role="tablist" aria-label="Metric groups">
-    {#each tabs as t (t)}
-      <button role="tab" aria-selected={tab === t} class:on={tab === t} onclick={() => (tab = t)}>{t}</button>
+  <div role="tablist" aria-label="Metric groups" tabindex="-1" onkeydown={onTabKey}>
+    {#each METRIC_TABS as t (t)}
+      <button role="tab" id="tab-{t}" aria-selected={tab === t} aria-controls="metrics-body" tabindex={tab === t ? 0 : -1} class:on={tab === t} onclick={() => (tab = t)}>{t}</button>
     {/each}
   </div>
-  <ul>
-    {#each rows as r (r.label)}
-      <li>
-        <span class="label">{r.label}</span>
-        <Sparkline label={r.label} values={r.series ? ($gs.snapshot?.history ?? []).map(r.series) : []} />
-        <span class="num">{r.now}</span>
-      </li>
-    {/each}
-  </ul>
-  {#if !($gs.snapshot?.history.length)}<p class="dim">Trend lines appear after the first turn.</p>{/if}
+
+  {#if snap}
+    <div id="metrics-body" role="tabpanel" aria-labelledby="tab-{tab}">
+      {#if tab === 'Economy'}
+        <section class="pair" aria-label="GDP beside GPI">
+          <div><div class="k">GDP</div><div class="big">{money(snap.indicators.gdpRealAnnual)}</div></div>
+          <div><div class="k">GPI</div><div class="big">{money(snap.indicators.gpiAnnual)}</div></div>
+          <div class="ratio">GPI is {pct(snap.indicators.gdpRealAnnual > 0 ? snap.indicators.gpiAnnual / snap.indicators.gdpRealAnnual : 0)} of GDP.
+            GPI is output adjusted for social and environmental costs.</div>
+          {#if history.length > 1}
+            <svg viewBox="0 0 270 44" width="100%" height="44" role="img" aria-label="GDP and GPI trend on one scale">
+              {#each [gdp, gpi] as d, k (d.id)}
+                {@const vals = history.map((h) => d.series!(h))}
+                {@const lo = Math.min(...history.map((h) => Math.min(h.gdpRealAnnual, h.gpiAnnual)))}
+                {@const hi = Math.max(...history.map((h) => Math.max(h.gdpRealAnnual, h.gpiAnnual)))}
+                <polyline fill="none" stroke={k === 0 ? 'var(--series-1)' : 'var(--series-2)'} stroke-width="1.6" stroke-dasharray={k === 0 ? undefined : '4 2'}
+                  points={vals.map((v, i) => `${(2 + (i / (vals.length - 1)) * 266).toFixed(1)},${(42 - ((v - lo) / (hi - lo || 1)) * 40).toFixed(1)}`).join(' ')} />
+              {/each}
+            </svg>
+            <div class="legend"><span class="s1"></span>GDP <span class="s2"></span>GPI (dashed)</div>
+          {/if}
+          <button class="why" onclick={() => setUi({ why: { kind: 'income', metric: 'gdp' } })}>Why is this changing?</button>
+        </section>
+      {/if}
+
+      <ul>
+        {#each defs as m (m.id)}
+          {@const ch = historyChange(m, history)}
+          <li>
+            <div class="head">
+              <span class="label" title={m.hint}>{m.label}</span>
+              {#if m.why}<button class="why" aria-label="Why is {m.label} changing?" onclick={() => setUi({ why: { kind: m.why!, metric: m.metric } })}>why?</button>{/if}
+            </div>
+            <div class="line">
+              <span class="num">{m.fmt(m.value(snap))}</span>
+              {#if ch}<span class="chg {ch.tone}" title="Change since last turn: {TREND_WORD[ch.trend]}"><span aria-hidden="true">{ARROW[ch.trend]}</span><span class="sr-only">{TREND_WORD[ch.trend]} since last turn</span></span>{:else}<span class="chg"></span>{/if}
+              <Sparkline label={m.label} values={m.series ? history.map(m.series) : []} tone={ch?.tone ?? 'neutral'} w={110} />
+            </div>
+          </li>
+        {/each}
+      </ul>
+
+      {#if tab === 'Ecology'}
+        <section class="runway" aria-label="Carbon budget runway">
+          <h3>Carbon budget runway</h3>
+          {#if rw}
+            <RunwayChart runway={rw} label={turnLabel} width={270} />
+            <p class="rtext">{runwayText(rw, turnLabel)}</p>
+          {:else}<p class="rtext">The carbon budget is spent.</p>{/if}
+        </section>
+      {/if}
+      {#if !history.length}<p class="dim">Trend lines appear after the first turn.</p>{/if}
+    </div>
+  {/if}
 </aside>
 
 <style>
-  aside { padding: 10px; background: var(--surface); border-left: 1px solid var(--border); overflow: auto; }
-  [role='tablist'] { display: flex; gap: 4px; margin-bottom: 8px; }
-  button { font: inherit; padding: 4px 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
-  button.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
-  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-  li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  aside { padding: 10px; background: var(--surface); border-left: 1px solid var(--border); overflow: auto; min-width: 0; }
+  [role='tablist'] { display: flex; gap: 4px; margin-bottom: 10px; }
+  [role='tab'] { flex: 1; padding: 5px 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+  [role='tab'].on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; padding: 8px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 10px; }
+  .k { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+  .big { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
+  .ratio { grid-column: 1 / -1; font-size: 12px; color: var(--text-dim); }
+  .pair svg { grid-column: 1 / -1; }
+  .legend { grid-column: 1 / -1; font-size: 11px; color: var(--text-dim); }
+  .legend span { display: inline-block; width: 14px; border-top: 2px solid var(--series-1); margin: 0 4px 3px 0; }
+  .legend .s2 { border-color: var(--series-2); border-top-style: dashed; margin-left: 8px; }
+  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
   .label { font-size: 13px; }
-  .num { font-family: var(--font-mono); min-width: 64px; text-align: right; }
+  .line { display: grid; grid-template-columns: 78px 18px 1fr; align-items: center; gap: 4px; }
+  .num { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .chg { text-align: center; font-size: 12px; color: var(--text-dim); }
+  .chg.good { color: var(--good); } .chg.bad { color: var(--bad); }
+  .why { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0 2px; font-size: 12px; }
+  .pair .why { grid-column: 1 / -1; justify-self: start; }
+  .runway { margin-top: 12px; }
+  .rtext { font-size: 12px; margin: 4px 0 0; }
   .dim { color: var(--text-dim); font-size: 12px; }
 </style>

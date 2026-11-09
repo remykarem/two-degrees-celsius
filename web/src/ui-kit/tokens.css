@@ -35,3 +35,22 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 h2, h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Extra tokens (panels). Light first, dark ready. */
+:root {
+  --good-bg: #e3f3ea; --bad-bg: #fbe7e5; --warn-bg: #fbf0d2; --info-bg: #e6edfb;
+  --scrim: rgba(20, 24, 16, 0.45);
+  --series-1: #1d4ed8; --series-2: #b45309; --series-3: #1b7f45; --muted-bar: #8b9482;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --good-bg: #17301f; --bad-bg: #3a1c19; --warn-bg: #3a2f0f; --info-bg: #182340; --scrim: rgba(0, 0, 0, 0.6);
+    --series-1: #7aa2ff; --series-2: #f0a35e; --series-3: #5fcf8a; --muted-bar: #7c8573;
+  }
+}
+:root[data-theme='dark'] {
+  --good-bg: #17301f; --bad-bg: #3a1c19; --warn-bg: #3a2f0f; --info-bg: #182340; --scrim: rgba(0, 0, 0, 0.6);
+  --series-1: #7aa2ff; --series-2: #f0a35e; --series-3: #5fcf8a; --muted-bar: #7c8573;
+}
+button { font: inherit; }
+.coach-hl { outline: 3px solid var(--warn) !important; outline-offset: 2px; border-radius: var(--radius); }

@@ -16,12 +16,29 @@ export const REASON_TEXT: Record<string, string> = {
   invalid_command: 'Invalid value',
 };
 
+export const SYSTEM_NAME = { market: 'Market capitalism', regulated: 'Regulated capitalism', coop: 'Worker cooperatives' } as const;
 export const pct = (v: number, d = 0) => `${(v * 100).toFixed(d)}%`;
 export const money = (v: number) => `${v < 0 ? '-' : ''}$${compact(Math.abs(v))}`;
+/** 1234 -> 1.2k, 56000 -> 56k, 2.5e6 -> 2.5M, 12.5 -> 12.5, 0 -> 0. */
 export function compact(v: number): string {
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(v >= 1e4 ? 0 : 1)}k`;
-  return v.toFixed(0);
+  if (v >= 1e6) return `${trim((v / 1e6).toFixed(2))}M`;
+  if (v >= 1e4) return `${(v / 1e3).toFixed(0)}k`;
+  if (v >= 1e3) return `${trim((v / 1e3).toFixed(1))}k`;
+  if (v >= 100) return v.toFixed(0);
+  return trim(v.toFixed(v >= 10 ? 1 : 2));
+}
+const trim = (s: string) => (s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s);
+/** Tonnes with a unit: 1200 -> "1.2k t". */
+export const tonnes = (v: number) => `${v < 0 ? '-' : ''}${compact(Math.abs(v))} t`;
+export const signed = (v: number, f: (x: number) => string) => (v > 0 ? `+${f(v)}` : v < 0 ? `-${f(-v)}` : f(0));
+export type Trend = 'up' | 'down' | 'flat';
+export const ARROW: Record<Trend, string> = { up: '▲', down: '▼', flat: '■' };
+export const TREND_WORD: Record<Trend, string> = { up: 'up', down: 'down', flat: 'unchanged' };
+/** Direction of a change, flat when the move is below 0.1% of the larger magnitude. */
+export function trendOf(from: number, to: number): Trend {
+  const d = to - from;
+  const scale = Math.max(Math.abs(from), Math.abs(to), 1e-9);
+  return Math.abs(d) / scale < 1e-3 ? 'flat' : d > 0 ? 'up' : 'down';
 }
 
 export function formatLever(l: LeverInfo, v: number | boolean | string): string {
@@ -30,8 +47,8 @@ export function formatLever(l: LeverInfo, v: number | boolean | string): string 
   switch (l.unit) {
     case 'fraction': return pct(v, l.step < 0.01 ? 2 : 0);
     case 'usd': return money(v);
-    case 'usd_per_tonne': return `$${v}/t`;
-    case 'tonnes': return v === 0 ? 'none' : `${v} t`;
+    case 'usd_per_tonne': return `$${compact(v)}/t`;
+    case 'tonnes': return v === 0 ? 'no cap' : `${v} t`;
     case 'bool': return v ? 'on' : 'off';
     case 'enum': return l.options?.[v] ?? String(v);
   }
@@ -46,7 +63,7 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
       const v = typeof c.value === 'object' ? c.value.mode : c.value;
       return `${l?.label ?? c.lever} -> ${l && typeof v !== 'string' ? formatLever(l, v) : String(v)}`;
     }
-    case 'switch_system': return `Switch system to ${c.to}`;
+    case 'switch_system': return `Switch system to ${SYSTEM_NAME[c.to]}`;
     case 'place': return `Build ${actionLabel(actions, `place:${c.kind}`)}${c.tile ? ` @ (${c.tile.x},${c.tile.y})` : ''}`;
     case 'remove': return actionLabel(actions, `remove:${c.kind}`);
   }
@@ -73,8 +90,8 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
     case 'spending_cut': return `Spending cut by ${money(e.shortfall)}`;
     case 'bank_bailout': return `Bank bailed out for ${money(e.amount)}`;
     case 'class_changed': return `${hh(e.household)} moved to the ${e.to} class`;
-    case 'system_switch_started': return `Switch to the ${e.to} system began`;
-    case 'system_switch_completed': return `Now a ${e.to} system`;
+    case 'system_switch_started': return `The switch to ${SYSTEM_NAME[e.to]} began`;
+    case 'system_switch_completed': return `The town is now ${SYSTEM_NAME[e.to]}`;
     case 'budget_exhausted': return 'The carbon budget is exhausted';
     case 'collapse': return `The town collapsed: ${e.reason.replaceAll('_', ' ')}`;
   }
