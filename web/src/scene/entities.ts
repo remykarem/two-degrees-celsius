@@ -1,30 +1,123 @@
-import * as THREE from 'three';
-import type { GameState } from '../store';
-import { worldOf } from './coords';
-import { INFRA, SCENERY } from './palette';
+import type { ClassKey, FirmView, HouseholdView, InfraKind, Snapshot } from '../contract';
+import type { DraftItem, MapLayout, Tile } from '../store';
+import type { EntityRef } from '../store/scene-bus';
+import { tileKey, worldOf } from './coords';
+import type { ModelId } from './models';
+import { homeTint, mix, WALL } from './palette';
 
-const boxGeo = new THREE.BoxGeometry(0.8, 1, 0.8);
+export type EntityState = 'normal' | 'pending' | 'draft';
 
-function box(color: number, height: number, tile: { x: number; y: number }, size: number, opacity = 1) {
-  const mat = new THREE.MeshLambertMaterial({ color, transparent: opacity < 1, opacity });
-  const m = new THREE.Mesh(boxGeo, mat);
-  m.scale.y = height;
-  const [x, , z] = worldOf(tile, size, height / 2);
-  m.position.set(x, height / 2 + 0.02, z);
-  return m;
+/** Everything the renderer needs to draw one tile's entity. Pure data. */
+export interface EntityDesc {
+  key: string;
+  ref: EntityRef;
+  model: ModelId;
+  tint: number;
+  /** World position of the tile centre. */
+  x: number;
+  z: number;
+  state: EntityState;
+  turnsLeft: number;
+  household?: HouseholdView;
+  firm?: FirmView;
+  /** 0..1 forest or commons stock where relevant. */
+  stock?: number;
 }
 
-/** Rebuilds the building meshes for the current layout and draft. Cheap enough for 144 tiles. */
-export function buildEntities(s: GameState, turn: number): THREE.Group {
-  const g = new THREE.Group();
-  const n = s.layout.gridSize;
-  for (const sc of s.layout.scenery) g.add(box(SCENERY[sc.kind].color, SCENERY[sc.kind].height, sc, n));
-  for (const p of s.layout.placed) {
-    const building = p.effectiveTurn > turn;
-    g.add(box(INFRA[p.kind].color, INFRA[p.kind].height, p, n, building ? 0.45 : 1));
+const KIND_TINT: Record<string, number> = {
+  firm: 0xd5d8de, bank: WALL, government: WALL, forest: 0x7fb871, commons: 0xb4d891,
+  public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc,
+};
+
+const INFRA_MODEL: Record<InfraKind, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant' };
+const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant' };
+
+export const infraModel = (k: InfraKind): ModelId => INFRA_MODEL[k];
+
+/** Pending-turns for a placed building: from the snapshot's pending list when it names the tile, else from effectiveTurn. */
+export function turnsLeft(effectiveTurn: number, turn: number): number {
+  return Math.max(0, effectiveTurn - turn);
+}
+
+/**
+ * Layout + snapshot + draft -> entity descriptions. Scenery comes from the UI-owned layout; what each one looks like comes from
+ * the snapshot (household class, firm sector and whether it is active, commons access, forest stock).
+ */
+export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: DraftItem[] = []): EntityDesc[] {
+  const n = layout.gridSize;
+  const turn = snap?.turn ?? 1;
+  const out: EntityDesc[] = [];
+  const at = (t: Tile) => { const [x, , z] = worldOf(t, n); return { x, z }; };
+
+  for (const sc of layout.scenery) {
+    const base = { key: `s:${tileKey(sc)}`, x: at(sc).x, z: at(sc).z, state: 'normal' as const, turnsLeft: 0 };
+    const ref = (label = sc.label): EntityRef => ({ kind: sc.kind, id: sc.ref ?? null, tile: { x: sc.x, y: sc.y }, label });
+    switch (sc.kind) {
+      case 'home': {
+        const hh = snap?.households.find((h) => h.id === sc.ref);
+        const cls: ClassKey = hh?.class ?? 'worker';
+        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: `home_${cls}` as ModelId, tint: homeTint(cls), household: hh });
+        break;
+      }
+      case 'firm': {
+        const f = snap?.firms.find((x) => x.id === sc.ref);
+        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : 'firm_goods';
+        const label = f && f.active ? f.name : f ? `${f.name} (closed)` : sc.label;
+        out.push({ ...base, ref: ref(label), model, tint: KIND_TINT.firm!, firm: f });
+        break;
+      }
+      case 'bank': out.push({ ...base, ref: ref(), model: 'bank', tint: KIND_TINT.bank! }); break;
+      case 'government': out.push({ ...base, ref: ref(), model: 'government', tint: KIND_TINT.government! }); break;
+      case 'forest':
+        out.push({ ...base, ref: ref(), model: `forest_${(sc.x * 7 + sc.y * 3) % 3}` as ModelId, tint: KIND_TINT.forest!, stock: snap?.nature.forest });
+        break;
+      case 'commons': {
+        const nat = snap?.nature;
+        const model: ModelId = !nat ? 'commons_open' : nat.commons < 0.12 ? 'commons_collapsed' : (`commons_${nat.commonsAccess === 'enclosed' ? 'enclosed' : nat.commonsAccess}` as ModelId);
+        out.push({ ...base, ref: ref(), model, tint: KIND_TINT.commons!, stock: nat?.commons });
+        break;
+      }
+    }
   }
-  for (const d of s.draft) {
-    if (d.command.type === 'place' && d.command.tile) g.add(box(INFRA[d.command.kind].color, INFRA[d.command.kind].height, d.command.tile, n, 0.5));
+
+  for (const p of layout.placed) {
+    const left = turnsLeft(p.effectiveTurn, turn);
+    const pend = snap?.pending.find((q) => q.command.type === 'place' && q.command.tile && q.command.tile.x === p.x && q.command.tile.y === p.y);
+    const tl = pend ? turnsLeft(pend.effectiveTurn, turn) : left;
+    const pending = tl > 0;
+    out.push({
+      key: `p:${tileKey(p)}`, ...at(p), state: pending ? 'pending' : 'normal', turnsLeft: tl, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
+      ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL[p.kind], ...(pending ? { pendingTurns: tl } : {}) },
+    });
   }
-  return g;
+
+  for (const d of draft) {
+    const c = d.command;
+    if (c.type !== 'place' || !c.tile) continue;
+    out.push({
+      key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: d.preview.leadTime, model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
+      ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL[c.kind]} (planned)`, pendingTurns: d.preview.leadTime },
+    });
+  }
+  return out;
+}
+
+/** Entity occupying a tile (planned drafts excluded), for hover and selection reporting. */
+export function entityAt(descs: EntityDesc[], t: Tile): EntityDesc | null {
+  return descs.find((d) => d.state !== 'draft' && d.ref.tile.x === t.x && d.ref.tile.y === t.y) ?? null;
+}
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+const num = (v: number) => (Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v * 10) / 10));
+
+/** Short facts about an entity for the inspector (plain strings; the panels decide how to show them). */
+export function factsFor(d: EntityDesc): { label: string; value: string }[] {
+  const f: { label: string; value: string }[] = [];
+  if (d.state !== 'normal') f.push({ label: d.state === 'pending' ? 'Under construction' : 'Planned', value: `${d.turnsLeft} turn${d.turnsLeft === 1 ? '' : 's'} left` });
+  const h = d.household;
+  if (h) f.push({ label: 'Class', value: h.class }, { label: 'People', value: String(h.people) }, { label: 'Employed', value: `${h.employed} of ${h.labourForce}` }, { label: 'Savings per person', value: `$${num(h.wealthPerCapita)}` }, { label: 'Wellbeing', value: pct(h.wellbeing) });
+  const fm = d.firm;
+  if (fm) f.push({ label: 'Sector', value: fm.sector }, { label: 'Status', value: fm.active ? 'trading' : 'closed' }, ...(fm.active ? [{ label: 'Workers', value: String(fm.workers) }, { label: 'Emissions', value: `${num(fm.emissions)} t/month` }] : []));
+  if (d.stock !== undefined) f.push({ label: d.ref.kind === 'forest' ? 'Forest stock' : 'Commons stock', value: pct(d.stock) });
+  return f;
 }
