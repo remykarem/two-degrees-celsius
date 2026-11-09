@@ -47,15 +47,6 @@ pub fn apply_commands(s: &mut State, p: &Params, cmds: &[Command], events: &mut 
                     events.push(Event::SystemSwitchStarted { to });
                 }
             }
-            Command::SetSpeed(v) => {
-                if (1..=4).contains(&v) {
-                    s.speed = v;
-                } else {
-                    events.push(Event::PolicyBlocked {
-                        reason: BlockReason::InvalidSpeed,
-                    });
-                }
-            }
             Command::Place { kind, count } => {
                 if count > 0 {
                     s.gov.pending_build.push((kind, count));

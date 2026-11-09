@@ -1,9 +1,9 @@
-use sim_engine::Script;
+use sim_engine::Plan;
 use sim_params::{ContentJson, Params};
 use std::fs;
 fn main() {
     let a: Vec<String> = std::env::args().collect();
-    let ticks: u32 = a.get(1).and_then(|x| x.parse().ok()).unwrap_or(24);
+    let turns: u32 = a.get(1).and_then(|x| x.parse().ok()).unwrap_or(8);
     let every: u32 = a.get(2).and_then(|x| x.parse().ok()).unwrap_or(1);
     let d = "content/";
     let r = |n: &str| fs::read_to_string(format!("{d}{n}")).unwrap();
@@ -16,11 +16,11 @@ fn main() {
     })
     .unwrap();
     let script = match a.get(3) {
-        Some(f) => Script::from_json(&fs::read_to_string(f).unwrap()).unwrap(),
-        None => Script::default(),
+        Some(f) => Plan::from_json(&fs::read_to_string(f).unwrap()).unwrap(),
+        None => Plan::default(),
     };
     let mut sim = sim_engine::init(p, 42).unwrap();
-    let res = sim_engine::run(&mut sim, ticks, &script, |s, _| {
+    let res = sim_engine::run(&mut sim, turns, &script, |s, _| {
         let st = &s.state;
         if st.tick % every != 0 {
             return;

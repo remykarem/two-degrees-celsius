@@ -11,10 +11,47 @@ use sim_types::{Class, EconomicSystem, Sector};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RunParams {
-    pub ticks: u32,
+    /// Length of a game in turns.
+    pub turns: u32,
+    /// Monthly ticks per turn (one quarter).
+    pub ticks_per_turn: u32,
     /// Settling months run before tick 0 so the run starts from a working economy.
     pub warmup_ticks: u32,
     pub stop_on_loss: bool,
+}
+
+/// Political-capital cost and lead time of one kind of command.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LeverCfg {
+    pub base_cost: f64,
+    /// Turns between queueing and taking effect.
+    pub lead_time: u32,
+    /// Change that counts as size 1 (friendly units: dollars, fractions, tonnes).
+    pub unit: f64,
+    /// Smallest size charged for any change.
+    pub min_size: f64,
+}
+
+/// Turn structure, political capital and policy delay (SPEC 4.1, model doc section 7).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TurnParams {
+    pub pc_start: f64,
+    pub pc_cap: f64,
+    /// Regeneration per turn is `pc_base * legitimacy`.
+    pub pc_base: f64,
+    /// Share of PC returned when a pending command is cancelled.
+    pub cancel_refund: f64,
+    /// Weight of a still-pending carbon price in firms' expectations.
+    pub announce_discount: f64,
+    pub levers: std::collections::BTreeMap<String, LeverCfg>,
+}
+
+impl TurnParams {
+    pub fn lever(&self, key: &str) -> &LeverCfg {
+        &self.levers[key]
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -370,6 +407,7 @@ pub struct PolicyInit {
     pub bank_capital_ratio: f64,
     pub bailout: bool,
     pub public_spending: f64,
+    pub job_guarantee: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -399,6 +437,7 @@ pub struct InitialTown {
 #[serde(deny_unknown_fields)]
 pub struct Params {
     pub run: RunParams,
+    pub turn: TurnParams,
     pub labour: LabourParams,
     pub production: ProductionParams,
     pub goods: GoodsParams,
@@ -428,6 +467,7 @@ pub struct ContentJson<'a> {
 #[serde(deny_unknown_fields)]
 struct CoreParams {
     run: RunParams,
+    turn: TurnParams,
     labour: LabourParams,
     production: ProductionParams,
     goods: GoodsParams,
@@ -457,6 +497,7 @@ impl Params {
             serde_json::from_str(c.coop).map_err(|e| format!("systems/coop.json: {e}"))?;
         let p = Params {
             run: core.run,
+            turn: core.turn,
             labour: core.labour,
             production: core.production,
             goods: core.goods,
@@ -483,11 +524,23 @@ impl Params {
     /// Check ranges and internal consistency of the initial town.
     pub fn validate(&self) -> Result<(), String> {
         let mut errs: Vec<String> = Vec::new();
+        for k in sim_types::LEVER_KEYS {
+            match self.turn.levers.get(k) {
+                None => errs.push(format!("turn.levers is missing '{k}'")),
+                Some(l) if !(l.unit > 0.0 && l.base_cost >= 0.0 && l.min_size >= 0.0) => errs.push(
+                    format!("turn.levers.{k} has a non-positive unit or negative cost"),
+                ),
+                Some(_) => {}
+            }
+        }
         let mut pos = |name: &str, v: f64| {
             if !(v.is_finite() && v > 0.0) {
                 errs.push(format!("{name} must be positive and finite (got {v})"));
             }
         };
+        pos("run.turns", self.run.turns as f64);
+        pos("run.ticks_per_turn", self.run.ticks_per_turn as f64);
+        pos("turn.pc_cap", self.turn.pc_cap);
         pos("labour.wage_up", self.labour.wage_up);
         pos("production.alpha_k", self.production.alpha_k);
         pos("production.beta_n", self.production.beta_n);

@@ -1,6 +1,6 @@
 {
   "name": "Worker cooperatives from year 1, no carbon price",
-  "actions": [
-    { "tick": 12, "switch": "Coop" }
+  "turns": [
+    { "turn": 5, "switch": "Coop" }
   ]
 }

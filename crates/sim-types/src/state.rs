@@ -205,6 +205,8 @@ pub struct Policy {
     pub bank_capital_ratio: Rate,
     pub bailout: bool,
     pub public_spending: Rate,
+    /// Share of the unemployed the government employs at the minimum wage.
+    pub job_guarantee: Rate,
 }
 
 /// Policy as actually applied after lobbying (S9b).
@@ -249,11 +251,29 @@ pub struct GdpParts {
     pub gov_services: Cents,
 }
 
+/// A queued player command waiting for its lead time to end.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PendingCommand {
+    pub id: u32,
+    pub command: Command,
+    pub submitted_turn: u32,
+    pub effective_turn: u32,
+    pub pc_cost: f64,
+    /// Money the command will cost when it takes effect (builds).
+    pub money_cost: Cents,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct State {
     pub schema_version: u32,
     pub tick: u32,
-    pub speed: u8,
+    /// Current turn, 1-based. 161 means the game is over.
+    pub turn: u32,
+    pub political_capital: f64,
+    /// Commands queued but not yet active. Systems never read these (except firms
+    /// reading an announced carbon price).
+    pub pending: Vec<PendingCommand>,
+    pub next_pending_id: u32,
     pub system: EconomicSystem,
     pub transition: Option<Transition>,
     /// Temporary productivity penalty during a system transition.

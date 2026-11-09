@@ -1,6 +1,175 @@
 {
-  "run": { "ticks": 480,
-    "warmup_ticks": 0, "stop_on_loss": false },
+  "run": {
+    "turns": 160,
+    "ticks_per_turn": 3,
+    "warmup_ticks": 0,
+    "stop_on_loss": false
+  },
+  "turn": {
+    "pc_start": 60.0,
+    "pc_cap": 100.0,
+    "pc_base": 8.0,
+    "cancel_refund": 0.5,
+    "announce_discount": 0.5,
+    "levers": {
+      "carbon_price": {
+        "base_cost": 8,
+        "lead_time": 2,
+        "unit": 50,
+        "min_size": 0.25
+      },
+      "tax_wage": {
+        "base_cost": 6,
+        "lead_time": 1,
+        "unit": 0.05,
+        "min_size": 0.25
+      },
+      "tax_profit": {
+        "base_cost": 6,
+        "lead_time": 1,
+        "unit": 0.05,
+        "min_size": 0.25
+      },
+      "tax_capital": {
+        "base_cost": 6,
+        "lead_time": 1,
+        "unit": 0.05,
+        "min_size": 0.25
+      },
+      "wealth_tax": {
+        "base_cost": 8,
+        "lead_time": 1,
+        "unit": 0.01,
+        "min_size": 0.25
+      },
+      "wealth_threshold": {
+        "base_cost": 3,
+        "lead_time": 1,
+        "unit": 100000,
+        "min_size": 0.25
+      },
+      "base_rate": {
+        "base_cost": 4,
+        "lead_time": 1,
+        "unit": 0.02,
+        "min_size": 0.25
+      },
+      "min_wage": {
+        "base_cost": 5,
+        "lead_time": 1,
+        "unit": 200,
+        "min_size": 0.25
+      },
+      "benefit": {
+        "base_cost": 5,
+        "lead_time": 1,
+        "unit": 100,
+        "min_size": 0.25
+      },
+      "ubi": {
+        "base_cost": 8,
+        "lead_time": 1,
+        "unit": 100,
+        "min_size": 0.25
+      },
+      "green_subsidy": {
+        "base_cost": 5,
+        "lead_time": 1,
+        "unit": 0.2,
+        "min_size": 0.25
+      },
+      "campaign_cap": {
+        "base_cost": 8,
+        "lead_time": 1,
+        "unit": 0.5,
+        "min_size": 0.25
+      },
+      "emissions_cap": {
+        "base_cost": 8,
+        "lead_time": 2,
+        "unit": 500,
+        "min_size": 0.25
+      },
+      "commons_harvest": {
+        "base_cost": 4,
+        "lead_time": 1,
+        "unit": 0.5,
+        "min_size": 0.25
+      },
+      "commons_access": {
+        "base_cost": 6,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "bank_capital_ratio": {
+        "base_cost": 5,
+        "lead_time": 1,
+        "unit": 0.05,
+        "min_size": 0.25
+      },
+      "bailout": {
+        "base_cost": 15,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "public_spending": {
+        "base_cost": 5,
+        "lead_time": 1,
+        "unit": 0.05,
+        "min_size": 0.25
+      },
+      "job_guarantee": {
+        "base_cost": 6,
+        "lead_time": 1,
+        "unit": 0.25,
+        "min_size": 0.25
+      },
+      "switch_system": {
+        "base_cost": 45,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "place_public_housing": {
+        "base_cost": 1,
+        "lead_time": 3,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "place_fossil_plant": {
+        "base_cost": 12,
+        "lead_time": 4,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "place_renewable_plant": {
+        "base_cost": 2,
+        "lead_time": 4,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "remove_public_housing": {
+        "base_cost": 2,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "remove_fossil_plant": {
+        "base_cost": 1,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      },
+      "remove_renewable_plant": {
+        "base_cost": 3,
+        "lead_time": 1,
+        "unit": 1.0,
+        "min_size": 1.0
+      }
+    }
+  },
   "labour": {
     "growth_aspiration": 0.003,
     "wage_up": 1.01,
@@ -10,12 +179,12 @@
     "wage_tight_up": 1.002,
     "fire_after_months": 2,
     "max_fire_share": 0.06,
-    "max_hire_share": 0.10,
+    "max_hire_share": 0.1,
     "skill_gain": 0.001,
     "skill_loss": 0.005,
     "skilled_share": 0.16,
     "inventory_cover": 0.5,
-    "inventory_adjust": 0.10,
+    "inventory_adjust": 0.1,
     "min_workers": 1.0
   },
   "production": {
@@ -27,11 +196,17 @@
     "tfp_growth_food": 0.0008
   },
   "goods": {
-    "price_adjust": 0.10,
+    "price_adjust": 0.1,
     "price_band": 0.05,
     "holding_cost": 0.02,
     "price_elasticity": 2.0,
-    "propensity": { "capitalist": 0.40, "rentier": 0.45, "manager": 0.70, "worker": 0.95, "dependent": 1.0 },
+    "propensity": {
+      "capitalist": 0.4,
+      "rentier": 0.45,
+      "manager": 0.7,
+      "worker": 0.95,
+      "dependent": 1.0
+    },
     "food_need_units_pc": 25.0,
     "wealth_consumption_rate": 0.004,
     "rent_up": 0.01,
@@ -40,7 +215,9 @@
     "min_rent_usd": 20.0,
     "housing_depreciation": 0.001
   },
-  "income": { "cash_reserve_months": 1.0 },
+  "income": {
+    "cash_reserve_months": 1.0
+  },
   "credit": {
     "spread_base": 0.005,
     "spread_leverage": 0.02,
@@ -59,14 +236,14 @@
     "depreciation": 0.008,
     "capital_price_usd": 1500.0,
     "green_step": 0.05,
-    "green_cost_share": 0.10,
+    "green_cost_share": 0.1,
     "green_payback_years": 5.0,
     "green_max": 0.8,
     "min_cash_months": 1.0,
     "housing_cost_usd": 14000.0,
     "housing_hurdle": 0.05,
     "housing_target_occupancy": 0.93,
-    "return_scale": 0.30,
+    "return_scale": 0.3,
     "smoothing": 0.15
   },
   "nature": {
@@ -99,7 +276,7 @@
     "plant_capacity": 20.0,
     "legit_wellbeing": 0.01,
     "legit_unemployment": 0.02,
-    "legit_unemployment_threshold": 0.10,
+    "legit_unemployment_threshold": 0.1,
     "legit_gini": 0.02,
     "legit_gini_threshold": 0.45,
     "legit_bailout": 0.05,
@@ -135,14 +312,17 @@
   },
   "wellbeing": {
     "needs_usd_pc": 1500.0,
-    "w_consumption": 0.30,
-    "w_employment": 0.20,
-    "w_housing": 0.20,
+    "w_consumption": 0.3,
+    "w_employment": 0.2,
+    "w_housing": 0.2,
     "w_environment": 0.15,
     "w_security": 0.15,
     "security_months": 3.0,
     "smoothing": 0.3,
     "pollution_scale": 2000.0
   },
-  "metrics": { "scc_usd": 200.0, "depletion_usd_per_unit": 5.0 }
+  "metrics": {
+    "scc_usd": 200.0,
+    "depletion_usd_per_unit": 5.0
+  }
 }

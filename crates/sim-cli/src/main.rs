@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use clap::Parser;
-use sim_engine::{series, Script, Sim};
+use sim_engine::{series, Plan, Sim};
 use sim_params::{ContentJson, Params};
 use sim_types::*;
 use std::fs;
@@ -17,12 +17,12 @@ struct Args {
     /// Random seed.
     #[arg(long, default_value_t = 42)]
     seed: u64,
-    /// Number of monthly ticks (default: from params.json, 480).
+    /// Number of turns (default: from params.json, 160).
     #[arg(long)]
-    ticks: Option<u32>,
-    /// JSON file of scripted player actions.
+    turns: Option<u32>,
+    /// JSON turn plan: the player's commands per turn number.
     #[arg(long)]
-    script: Option<PathBuf>,
+    plan: Option<PathBuf>,
     /// Write the per-tick series to this CSV file.
     #[arg(long)]
     csv: Option<PathBuf>,
@@ -126,12 +126,12 @@ fn summary_line(sim: &Sim) -> String {
 
 fn run(args: Args) -> Result<(), String> {
     let params = load_params(&args.content, &args.overrides)?;
-    let ticks = args.ticks.unwrap_or(params.run.ticks);
-    let script = match &args.script {
+    let turns = args.turns.unwrap_or(params.run.turns);
+    let plan = match &args.plan {
         Some(p) => {
-            Script::from_json(&fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?)?
+            Plan::from_json(&fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?)?
         }
-        None => Script::default(),
+        None => Plan::default(),
     };
     let mut sim = sim_engine::init(params, args.seed)?;
     let mut csv = String::new();
@@ -139,13 +139,13 @@ fn run(args: Args) -> Result<(), String> {
     csv.push('\n');
     if !args.quiet {
         println!(
-            "seed {}  ticks {}  script {}",
+            "seed {}  turns {}  plan {}",
             args.seed,
-            ticks,
-            if script.name.is_empty() {
+            turns,
+            if plan.name.is_empty() {
                 "(none)"
             } else {
-                &script.name
+                &plan.name
             }
         );
         println!(
@@ -164,14 +164,14 @@ fn run(args: Args) -> Result<(), String> {
     }
     let mut exhausted: Option<u32> = None;
     let mut events_count = 0usize;
-    sim_engine::run(&mut sim, ticks, &script, |s, out| {
+    sim_engine::run(&mut sim, turns, &plan, |s, out| {
         csv.push_str(&series::csv_row(s, &out.trace));
         csv.push('\n');
         events_count += out.events.len();
         if exhausted.is_none() && matches!(s.state.outcome, Some((_, Outcome::BudgetExhausted))) {
             exhausted = s.state.outcome.map(|(t, _)| t);
         }
-        if !args.quiet && s.state.tick % 60 == 0 {
+        if !args.quiet && s.state.tick % 12 == 0 {
             println!("{}", summary_line(s));
         }
     })

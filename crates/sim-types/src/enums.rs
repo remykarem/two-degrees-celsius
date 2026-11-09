@@ -1,4 +1,5 @@
 use crate::ids::*;
+use crate::state::Policy;
 use crate::units::*;
 use serde::{Deserialize, Serialize};
 
@@ -79,8 +80,127 @@ pub enum PolicyChange {
     CommonsAccess(CommonsAccess),
     BankCapitalRatio(Rate),
     Bailout(bool),
+    /// Government goods purchases as a share of monthly GDP (the G lever).
     PublicSpending(Rate),
+    /// Share of the unemployed the government hires at the minimum wage.
+    JobGuarantee(Rate),
 }
+
+impl PolicyChange {
+    /// Key used in content tables and plan files.
+    pub fn key(&self) -> &'static str {
+        match self {
+            PolicyChange::CarbonPrice(_) => "carbon_price",
+            PolicyChange::TaxWage(_) => "tax_wage",
+            PolicyChange::TaxProfit(_) => "tax_profit",
+            PolicyChange::TaxCapital(_) => "tax_capital",
+            PolicyChange::WealthTax(_) => "wealth_tax",
+            PolicyChange::WealthThreshold(_) => "wealth_threshold",
+            PolicyChange::BaseRate(_) => "base_rate",
+            PolicyChange::MinWage(_) => "min_wage",
+            PolicyChange::Benefit(_) => "benefit",
+            PolicyChange::Ubi(_) => "ubi",
+            PolicyChange::GreenSubsidy(_) => "green_subsidy",
+            PolicyChange::CampaignCap(_) => "campaign_cap",
+            PolicyChange::EmissionsCap(_) => "emissions_cap",
+            PolicyChange::CommonsHarvest(_) => "commons_harvest",
+            PolicyChange::CommonsAccess(_) => "commons_access",
+            PolicyChange::BankCapitalRatio(_) => "bank_capital_ratio",
+            PolicyChange::Bailout(_) => "bailout",
+            PolicyChange::PublicSpending(_) => "public_spending",
+            PolicyChange::JobGuarantee(_) => "job_guarantee",
+        }
+    }
+
+    /// The new value in friendly units (dollars, tonnes, fractions); `None` for
+    /// non-numeric levers, whose size of change is 1.
+    pub fn value(&self) -> Option<f64> {
+        Some(match *self {
+            PolicyChange::CarbonPrice(c)
+            | PolicyChange::WealthThreshold(c)
+            | PolicyChange::MinWage(c)
+            | PolicyChange::Benefit(c)
+            | PolicyChange::Ubi(c) => c.dollars(),
+            PolicyChange::TaxWage(r)
+            | PolicyChange::TaxProfit(r)
+            | PolicyChange::TaxCapital(r)
+            | PolicyChange::WealthTax(r)
+            | PolicyChange::BaseRate(r)
+            | PolicyChange::GreenSubsidy(r)
+            | PolicyChange::CampaignCap(r)
+            | PolicyChange::CommonsHarvest(r)
+            | PolicyChange::BankCapitalRatio(r)
+            | PolicyChange::PublicSpending(r)
+            | PolicyChange::JobGuarantee(r) => r.0,
+            PolicyChange::EmissionsCap(t) => t.0,
+            PolicyChange::CommonsAccess(_) | PolicyChange::Bailout(_) => return None,
+        })
+    }
+
+    /// Does raising (or for the emissions cap, lowering) this lever hurt the capital-owning classes?
+    /// Those changes face lobbying opposition (S9b) and cost more political capital.
+    pub fn opposed_by_capital(&self, active: &Policy) -> bool {
+        match *self {
+            PolicyChange::CarbonPrice(c) => c > active.carbon_price,
+            PolicyChange::WealthTax(r) => r > active.wealth_tax,
+            PolicyChange::TaxProfit(r) => r > active.tax_profit,
+            PolicyChange::EmissionsCap(t) => {
+                t.0 > 0.0 && (active.emissions_cap.0 <= 0.0 || t < active.emissions_cap)
+            }
+            _ => false,
+        }
+    }
+}
+
+impl Command {
+    /// Key of the lever table in `content/params.json` (`turn.levers`).
+    pub fn lever_key(&self) -> &'static str {
+        match self {
+            Command::SetPolicy(c) => c.key(),
+            Command::SwitchSystem(_) => "switch_system",
+            Command::Place { kind, .. } => match kind {
+                InfraKind::PublicHousing => "place_public_housing",
+                InfraKind::FossilPlant => "place_fossil_plant",
+                InfraKind::RenewablePlant => "place_renewable_plant",
+            },
+            Command::Remove { kind, .. } => match kind {
+                InfraKind::PublicHousing => "remove_public_housing",
+                InfraKind::FossilPlant => "remove_fossil_plant",
+                InfraKind::RenewablePlant => "remove_renewable_plant",
+            },
+        }
+    }
+}
+
+/// Every key the lever table must define.
+pub const LEVER_KEYS: [&str; 26] = [
+    "carbon_price",
+    "tax_wage",
+    "tax_profit",
+    "tax_capital",
+    "wealth_tax",
+    "wealth_threshold",
+    "base_rate",
+    "min_wage",
+    "benefit",
+    "ubi",
+    "green_subsidy",
+    "campaign_cap",
+    "emissions_cap",
+    "commons_harvest",
+    "commons_access",
+    "bank_capital_ratio",
+    "bailout",
+    "public_spending",
+    "job_guarantee",
+    "switch_system",
+    "place_public_housing",
+    "place_fossil_plant",
+    "place_renewable_plant",
+    "remove_public_housing",
+    "remove_fossil_plant",
+    "remove_renewable_plant",
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Command {
@@ -88,7 +208,6 @@ pub enum Command {
     Remove { kind: InfraKind, count: u32 },
     SetPolicy(PolicyChange),
     SwitchSystem(EconomicSystem),
-    SetSpeed(u8),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -214,6 +333,10 @@ pub enum Event {
     PolicyBlocked {
         reason: BlockReason,
     },
+    /// A pending command became active.
+    CommandActivated {
+        id: u32,
+    },
     BankFailed,
     BankBailout {
         amount: Cents,
@@ -277,6 +400,8 @@ pub enum BlockReason {
     TransitionInProgress,
     NothingToRemove,
     SameSystem,
-    InvalidSpeed,
     LeverUnavailable,
+    InsufficientPoliticalCapital,
+    InsufficientFunds,
+    InvalidCommand,
 }

@@ -118,6 +118,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         bank_capital_ratio: Rate(pol.bank_capital_ratio),
         bailout: pol.bailout,
         public_spending: Rate(pol.public_spending),
+        job_guarantee: Rate(pol.job_guarantee),
     };
     let effective = EffectivePolicy {
         carbon_price: policy.carbon_price,
@@ -128,7 +129,10 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
     let mut s = State {
         schema_version: SCHEMA_VERSION,
         tick: 0,
-        speed: 1,
+        turn: 1,
+        political_capital: p.turn.pc_start,
+        pending: Vec::new(),
+        next_pending_id: 1,
         system: EconomicSystem::Market,
         transition: None,
         output_penalty: Rate::ZERO,

@@ -1,6 +1,6 @@
 //! Scenario runs, invariant tests, sign tests and the golden snapshot for the whole simulation.
 
-use sim_engine::{series, Script, Sim};
+use sim_engine::{series, Plan, Sim};
 use sim_model::class::classify;
 use sim_params::{ContentJson, Params};
 use sim_types::*;
@@ -29,10 +29,11 @@ fn new_sim(seed: u64) -> Sim {
     sim_engine::init(params(), seed).expect("init")
 }
 
-/// Run `n` ticks, collecting one value per tick with `f`.
-fn collect(sim: &mut Sim, n: u32, script: &Script, f: impl Fn(&Sim) -> f64) -> Vec<f64> {
+/// Run `n` ticks (rounded up to whole turns), collecting one value per tick with `f`.
+fn collect(sim: &mut Sim, n: u32, script: &Plan, f: impl Fn(&Sim) -> f64) -> Vec<f64> {
     let mut v = Vec::new();
-    sim_engine::run(sim, n, script, |s, _| v.push(f(s))).expect("checks pass");
+    sim_engine::run(sim, n.div_ceil(3), script, |s, _| v.push(f(s))).expect("checks pass");
+    v.truncate(n as usize);
     v
 }
 
@@ -40,11 +41,11 @@ fn mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len().max(1) as f64
 }
 
-fn cmd(c: Command) -> Script {
-    Script {
+fn cmd(c: Command) -> Plan {
+    Plan {
         name: "test".into(),
-        actions: vec![sim_engine::script::Action {
-            tick: 0,
+        turns: vec![sim_engine::plan::PlanTurn {
+            turn: 1,
             command: Some(c),
             ..Default::default()
         }],
@@ -86,7 +87,7 @@ fn bad_content_is_rejected() {
         coop: COOP,
     });
     assert!(r.is_err());
-    let unknown = PARAMS.replace("\"ticks\": 480,", "\"ticks\": 480, \"bogus\": 1,");
+    let unknown = PARAMS.replace("\"turns\": 160,", "\"turns\": 160, \"bogus\": 1,");
     assert!(Params::from_content(&ContentJson {
         params: &unknown,
         initial_town: TOWN,
@@ -104,8 +105,8 @@ fn money_conserved_and_stocks_sane_over_full_run() {
     // The engine runs sim-checks after every system: finite numbers, non-negative stocks,
     // exact money conservation, constant population. Any violation aborts the run.
     let mut sim = new_sim(42);
-    let ticks = sim.params.run.ticks;
-    sim_engine::run(&mut sim, ticks, &Script::default(), |_, _| {}).expect("no invariant violated");
+    let turns = sim.params.run.turns;
+    sim_engine::run(&mut sim, turns, &Plan::default(), |_, _| {}).expect("no invariant violated");
     assert_eq!(sim.state.tick, 480);
     let s = &sim.state;
     assert_eq!(s.bank.equity, s.bank.loans - s.bank.deposits);
@@ -117,9 +118,9 @@ fn money_conserved_and_stocks_sane_over_full_run() {
 fn same_seed_gives_identical_state() {
     let mut a = new_sim(7);
     let mut b = new_sim(7);
-    let sc = Script::from_json(SCENARIO_REGULATED).unwrap();
-    sim_engine::run(&mut a, 480, &sc, |_, _| {}).unwrap();
-    sim_engine::run(&mut b, 480, &sc, |_, _| {}).unwrap();
+    let sc = Plan::from_json(SCENARIO_REGULATED).unwrap();
+    sim_engine::run(&mut a, 160, &sc, |_, _| {}).unwrap();
+    sim_engine::run(&mut b, 160, &sc, |_, _| {}).unwrap();
     assert_eq!(
         serde_json::to_string(&a.state).unwrap(),
         serde_json::to_string(&b.state).unwrap()
@@ -131,7 +132,7 @@ fn same_seed_gives_identical_state() {
 fn class_labels_match_the_class_function_every_tick() {
     let mut sim = new_sim(42);
     for _ in 0..480 {
-        sim_engine::step(&mut sim, &[]).unwrap();
+        sim_engine::step(&mut sim).unwrap();
         let s = &sim.state;
         for h in &s.households {
             assert_eq!(
@@ -174,7 +175,7 @@ fn bank_failure_is_resolved_not_hidden() {
         sim.state.bank.equity.is_negative(),
         "setup must make the bank insolvent"
     );
-    let out = sim_engine::step(&mut sim, &[]).expect("engine resolves the failure");
+    let out = sim_engine::step(&mut sim).expect("engine resolves the failure");
     assert!(out.events.contains(&Event::BankFailed));
     assert!(!sim.state.bank.equity.is_negative());
 }
@@ -196,7 +197,7 @@ fn raising_carbon_price_lowers_emissions_within_12_months() {
     let make = || sim_engine::init(no_lobby(params()), 42).unwrap();
     let mut base = make();
     let mut taxed = make();
-    let none = Script::default();
+    let none = Plan::default();
     let hike = cmd(Command::SetPolicy(PolicyChange::CarbonPrice(
         Cents::from_dollars(400.0),
     )));
@@ -215,7 +216,7 @@ fn raising_minimum_wage_raises_wage_share_and_does_not_lower_unemployment() {
     let mut high = new_sim(42);
     let wage = base.state.firms[0].wage;
     let up = cmd(Command::SetPolicy(PolicyChange::MinWage(wage.scale(1.5))));
-    let none = Script::default();
+    let none = Plan::default();
     let ws = |s: &Sim| s.state.indicators.wage_share.0;
     let un = |s: &Sim| s.state.indicators.unemployment.0;
     let (wb, wh) = (
@@ -246,7 +247,7 @@ fn raising_minimum_wage_raises_wage_share_and_does_not_lower_unemployment() {
 fn raising_base_rate_lowers_credit_and_investment() {
     let invest = |s: &Sim| s.state.gdp_parts.investment.dollars();
     let lent = |s: &Sim| s.state.bank.lent_this_tick.dollars();
-    let none = Script::default();
+    let none = Plan::default();
     let hike = cmd(Command::SetPolicy(PolicyChange::BaseRate(Rate(0.15))));
     let (mut a, mut b) = (new_sim(42), new_sim(42));
     let (ia, ib) = (
@@ -275,7 +276,7 @@ fn raising_base_rate_lowers_credit_and_investment() {
 #[test]
 fn harvesting_above_sustainable_yield_eventually_lowers_the_commons() {
     let commons = |s: &Sim| s.state.nature.commons.0;
-    let none = Script::default();
+    let none = Plan::default();
     let heavy = cmd(Command::SetPolicy(PolicyChange::CommonsHarvest(Rate(3.0))));
     let (mut a, mut b) = (new_sim(42), new_sim(42));
     let ca = collect(&mut a, 240, &none, commons);
@@ -295,7 +296,7 @@ fn raising_the_lobbying_cap_lowers_the_effective_carbon_price() {
         let mut sim = new_sim(42);
         sim.state.policy.carbon_price = Cents::from_dollars(100.0);
         sim.state.policy.campaign_cap = Rate(cap);
-        let v = collect(&mut sim, 12, &Script::default(), |s| {
+        let v = collect(&mut sim, 12, &Plan::default(), |s| {
             s.state.effective.carbon_price.dollars()
         });
         *v.last().unwrap()
@@ -312,23 +313,21 @@ fn raising_the_lobbying_cap_lowers_the_effective_carbon_price() {
 #[test]
 fn market_cannot_set_campaign_cap_but_regulated_can() {
     let mut sim = new_sim(1);
-    let out = sim_engine::step(
+    let out = sim_engine::submit_turn(
         &mut sim,
         &[Command::SetPolicy(PolicyChange::CampaignCap(Rate(0.01)))],
     )
     .unwrap();
-    assert!(out
-        .events
-        .iter()
-        .any(|e| matches!(e, Event::PolicyBlocked { .. })));
+    assert_eq!(out.rejected.len(), 1);
+    assert_eq!(out.rejected[0].reason, BlockReason::LeverUnavailable);
     assert_eq!(sim.state.policy.campaign_cap, Rate(1.0));
 }
 
 #[test]
-#[ignore = "scripted by tick; rewritten as a turn-plan test in stage B"]
 fn switching_system_is_slow_and_changes_ownership() {
     let mut sim = new_sim(42);
-    let sc = Script::from_json(SCENARIO_COOP).unwrap();
+    let sc = Plan::from_json(SCENARIO_COOP).unwrap();
+    // The switch is queued in turn 5, activates in turn 6 and then takes 8 turns.
     sim_engine::run(&mut sim, 6, &sc, |_, _| {}).unwrap();
     assert_eq!(
         sim.state.system,
@@ -340,7 +339,7 @@ fn switching_system_is_slow_and_changes_ownership() {
         sim.state.output_penalty.0 > 0.0,
         "temporary productivity drop"
     );
-    sim_engine::run(&mut sim, 40, &sc, |_, _| {}).unwrap();
+    sim_engine::run(&mut sim, 12, &sc, |_, _| {}).unwrap();
     assert_eq!(sim.state.system, EconomicSystem::Coop);
     assert!(sim
         .state
@@ -348,6 +347,148 @@ fn switching_system_is_slow_and_changes_ownership() {
         .iter()
         .filter(|f| f.active)
         .all(|f| f.owner == Owner::Workers));
+}
+
+// ---------- turn layer ----------
+
+fn carbon(d: f64) -> Command {
+    Command::SetPolicy(PolicyChange::CarbonPrice(Cents::from_dollars(d)))
+}
+
+#[test]
+fn queued_policy_is_pending_then_active_after_its_lead_time() {
+    let mut sim = new_sim(1);
+    let lead = sim.params.turn.lever("carbon_price").lead_time;
+    assert_eq!(lead, 2);
+    let pc0 = sim.state.political_capital;
+    let out = sim_engine::submit_turn(&mut sim, &[carbon(80.0)]).unwrap();
+    assert_eq!(out.accepted.len(), 1);
+    assert_eq!(sim.state.pending.len(), 1);
+    assert_eq!(out.accepted[0].effective_turn, 1 + lead);
+    assert_eq!(
+        sim.state.policy.carbon_price,
+        Cents::ZERO,
+        "systems read only active values"
+    );
+    assert!(
+        out.pc_after < pc0 + sim.params.turn.pc_base,
+        "cost was charged"
+    );
+    let snap = serde_json::to_value(sim_engine::snapshot(&sim)).unwrap();
+    assert_eq!(snap["pending"].as_array().unwrap().len(), 1);
+    sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert_eq!(
+        sim.state.policy.carbon_price,
+        Cents::ZERO,
+        "still pending after one turn"
+    );
+    let out = sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert_eq!(out.activated.len(), 1);
+    assert_eq!(sim.state.policy.carbon_price, Cents::from_dollars(80.0));
+    assert!(sim.state.pending.is_empty());
+}
+
+#[test]
+fn preview_matches_submit_and_does_not_mutate() {
+    let mut sim = new_sim(1);
+    let before = serde_json::to_string(&sim.state).unwrap();
+    let cmds = [
+        carbon(100.0),
+        Command::Place {
+            kind: InfraKind::RenewablePlant,
+            count: 1,
+        },
+    ];
+    let costs = sim_engine::preview(&sim, &cmds);
+    assert_eq!(before, serde_json::to_string(&sim.state).unwrap());
+    let pc0 = sim.state.political_capital;
+    let out = sim_engine::submit_turn(&mut sim, &cmds).unwrap();
+    let charged: f64 = out.accepted.iter().map(|c| c.pc_cost).sum();
+    assert!((charged - costs.iter().map(|c| c.pc).sum::<f64>()).abs() < 1e-9);
+    let regen = sim.params.turn.pc_base * sim.state.gov.legitimacy.0;
+    assert!((out.pc_after - (pc0 - charged + regen).min(sim.params.turn.pc_cap)).abs() < 0.5);
+}
+
+#[test]
+fn unaffordable_commands_are_rejected_and_reported() {
+    let mut sim = new_sim(1);
+    sim.state.political_capital = 5.0;
+    let out = sim_engine::submit_turn(
+        &mut sim,
+        &[Command::SwitchSystem(EconomicSystem::Regulated)],
+    )
+    .unwrap();
+    assert_eq!(out.rejected.len(), 1);
+    assert_eq!(
+        out.rejected[0].reason,
+        BlockReason::InsufficientPoliticalCapital
+    );
+    assert!(sim.state.pending.is_empty());
+    assert!(out
+        .events
+        .iter()
+        .any(|e| matches!(e, Event::PolicyBlocked { .. })));
+}
+
+#[test]
+fn cancelling_a_pending_command_refunds_half() {
+    let mut sim = new_sim(1);
+    let out = sim_engine::submit_turn(&mut sim, &[carbon(80.0)]).unwrap();
+    let c = out.accepted[0];
+    let pc = sim.state.political_capital;
+    let refund = sim_engine::cancel_pending(&mut sim, c.id).unwrap();
+    assert!((refund - 0.5 * c.pc_cost).abs() < 1e-9);
+    assert!((sim.state.political_capital - (pc + refund)).abs() < 1e-9);
+    assert!(sim.state.pending.is_empty());
+    assert!(sim_engine::cancel_pending(&mut sim, c.id).is_err());
+}
+
+#[test]
+fn net_lobbying_raises_the_political_cost_of_opposed_policies() {
+    let mut sim = new_sim(1);
+    let base = sim_engine::preview(&sim, &[carbon(100.0)])[0].pc;
+    sim.state.net_lobby = Rate(0.5);
+    let opposed = sim_engine::preview(&sim, &[carbon(100.0)])[0].pc;
+    assert!((opposed - 1.5 * base).abs() < 1e-9);
+    let other = sim_engine::preview(
+        &sim,
+        &[Command::SetPolicy(PolicyChange::Benefit(
+            Cents::from_dollars(300.0),
+        ))],
+    )[0]
+    .pc;
+    sim.state.net_lobby = Rate(0.0);
+    let other0 = sim_engine::preview(
+        &sim,
+        &[Command::SetPolicy(PolicyChange::Benefit(
+            Cents::from_dollars(300.0),
+        ))],
+    )[0]
+    .pc;
+    assert!(
+        (other - other0).abs() < 1e-9,
+        "benefits are not lobbied against"
+    );
+}
+
+#[test]
+fn political_capital_is_capped_and_regenerates_with_legitimacy() {
+    let mut sim = new_sim(1);
+    for _ in 0..20 {
+        sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    }
+    assert!(sim.state.political_capital <= sim.params.turn.pc_cap + 1e-9);
+    sim.state.political_capital = 10.0;
+    sim.state.gov.legitimacy = Rate(1.0);
+    let hi = {
+        let mut a = sim.clone();
+        sim_engine::submit_turn(&mut a, &[]).unwrap();
+        a.state.political_capital
+    };
+    sim.state.gov.legitimacy = Rate(0.1);
+    sim.state.political_capital = 10.0;
+    sim_engine::submit_turn(&mut sim, &[]).unwrap();
+    assert!(hi > sim.state.political_capital);
 }
 
 // ---------- calibration targets and scenario summaries ----------
@@ -364,13 +505,13 @@ struct Summary {
     legitimacy_end: f64,
 }
 
-fn summarise(script: &Script, seed: u64) -> Summary {
+fn summarise(script: &Plan, seed: u64) -> Summary {
     let mut sim = new_sim(seed);
     let mut u = Vec::new();
     let mut g = Vec::new();
     let mut gdp = Vec::new();
     let mut exhausted = None;
-    sim_engine::run(&mut sim, 480, script, |s, _| {
+    sim_engine::run(&mut sim, 160, script, |s, _| {
         u.push(s.state.indicators.unemployment.0);
         g.push(s.state.indicators.gini.0);
         gdp.push(s.state.indicators.gdp_real_annual);
@@ -399,7 +540,7 @@ fn summarise(script: &Script, seed: u64) -> Summary {
 #[test]
 #[ignore = "targets superseded by causal-model section 9 (baseline runs)"]
 fn default_market_run_lands_near_the_design_targets() {
-    let s = summarise(&Script::default(), 42);
+    let s = summarise(&Plan::default(), 42);
     println!(
         "market: unemployment mean {:.3} max {:.3}, gini {:.3} -> {:.3}, gdp cagr {:.4}, exhausted {:?}, outcome {:?}",
         s.unemployment_mean, s.unemployment_max, s.gini_start, s.gini_end, s.gdp_cagr, s.exhausted_year, s.final_outcome
@@ -432,8 +573,8 @@ fn default_market_run_lands_near_the_design_targets() {
 
 #[test]
 fn regulated_scenario_emits_less_than_market() {
-    let market = summarise(&Script::default(), 42);
-    let reg = summarise(&Script::from_json(SCENARIO_REGULATED).unwrap(), 42);
+    let market = summarise(&Plan::default(), 42);
+    let reg = summarise(&Plan::from_json(SCENARIO_REGULATED).unwrap(), 42);
     println!(
         "regulated: unemployment mean {:.3}, gini end {:.3}, gdp cagr {:.4}, emissions {:.0} vs market {:.0}, exhausted {:?}, outcome {:?}",
         reg.unemployment_mean, reg.gini_end, reg.gdp_cagr, reg.emissions_total, market.emissions_total, reg.exhausted_year, reg.final_outcome
@@ -444,8 +585,8 @@ fn regulated_scenario_emits_less_than_market() {
 
 #[test]
 fn coop_scenario_has_lower_inequality_than_market() {
-    let market = summarise(&Script::default(), 42);
-    let coop = summarise(&Script::from_json(SCENARIO_COOP).unwrap(), 42);
+    let market = summarise(&Plan::default(), 42);
+    let coop = summarise(&Plan::from_json(SCENARIO_COOP).unwrap(), 42);
     println!(
         "coop: unemployment mean {:.3}, gini end {:.3} vs market {:.3}, gdp cagr {:.4} vs {:.4}, emissions {:.0} vs {:.0}, exhausted {:?}",
         coop.unemployment_mean, coop.gini_end, market.gini_end, coop.gdp_cagr, market.gdp_cagr, coop.emissions_total, market.emissions_total, coop.exhausted_year
@@ -466,8 +607,8 @@ fn coop_scenario_has_lower_inequality_than_market() {
 
 #[test]
 fn carbon_price_script_runs() {
-    let s = summarise(&Script::from_json(SCENARIO_CARBON).unwrap(), 42);
-    let market = summarise(&Script::default(), 42);
+    let s = summarise(&Plan::from_json(SCENARIO_CARBON).unwrap(), 42);
+    let market = summarise(&Plan::default(), 42);
     assert!(s.emissions_total < market.emissions_total);
 }
 
@@ -480,7 +621,7 @@ fn golden_snapshot_seed_42() {
     let mut out = String::new();
     out.push_str(series::CSV_HEADER);
     out.push('\n');
-    sim_engine::run(&mut sim, 480, &Script::default(), |s, o| {
+    sim_engine::run(&mut sim, 160, &Plan::default(), |s, o| {
         if s.state.tick % 24 == 0 {
             out.push_str(&series::csv_row(s, &o.trace));
             out.push('\n');

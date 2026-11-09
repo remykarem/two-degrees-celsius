@@ -6,12 +6,14 @@ pub mod deltas;
 pub mod enums;
 pub mod ids;
 pub mod state;
+pub mod turn;
 pub mod units;
 
 pub use deltas::*;
 pub use enums::*;
 pub use ids::*;
 pub use state::*;
+pub use turn::*;
 pub use units::*;
 
 /// Version of the serialised state layout.

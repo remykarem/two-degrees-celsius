@@ -1,6 +1,6 @@
 {
   "name": "Market capitalism, carbon price of 150 dollars per tonne at year 5",
-  "actions": [
-    { "tick": 60, "set": { "carbon_price": 150 } }
+  "turns": [
+    { "turn": 21, "set": { "carbon_price": 150 } }
   ]
 }

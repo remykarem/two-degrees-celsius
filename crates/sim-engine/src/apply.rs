@@ -295,6 +295,7 @@ pub fn set_policy(s: &mut State, c: PolicyChange) {
         PolicyChange::BankCapitalRatio(v) => pol.bank_capital_ratio = Rate(v.0.clamp(0.01, 1.0)),
         PolicyChange::Bailout(b) => pol.bailout = b,
         PolicyChange::PublicSpending(v) => pol.public_spending = clamp01(v),
+        PolicyChange::JobGuarantee(v) => pol.job_guarantee = clamp01(v),
     }
 }
 

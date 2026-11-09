@@ -5,8 +5,9 @@
 pub mod apply;
 pub mod commands;
 pub mod init;
-pub mod script;
+pub mod plan;
 pub mod series;
+pub mod turn;
 
 use apply::ApplyStats;
 use serde::Serialize;
@@ -15,7 +16,8 @@ use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
 
-pub use script::Script;
+pub use plan::Plan;
+pub use turn::{cancel_pending, preview};
 
 /// A running simulation: state, parameters and the random number generator.
 #[derive(Clone, Debug)]
@@ -58,14 +60,21 @@ pub struct StepOutput {
 #[derive(Serialize)]
 pub struct Snapshot<'a> {
     pub schema_version: u32,
+    pub turn: u32,
     pub tick: u32,
+    pub political_capital: f64,
+    /// Scheduled policies and builds, with their effective turns.
+    pub pending: &'a [PendingCommand],
     pub state: &'a State,
 }
 
 pub fn snapshot(sim: &Sim) -> Snapshot<'_> {
     Snapshot {
         schema_version: SCHEMA_VERSION,
+        turn: sim.state.turn,
         tick: sim.state.tick,
+        political_capital: sim.state.political_capital,
+        pending: &sim.state.pending,
         state: &sim.state,
     }
 }
@@ -88,7 +97,7 @@ pub fn init(params: Params, seed: u64) -> Result<Sim, String> {
         .map_err(|v| v.to_string())?;
     // Settle: run the economy for a while with no player input, then start the clock.
     for _ in 0..sim.params.run.warmup_ticks {
-        step(&mut sim, &[]).map_err(|v| v.to_string())?;
+        step(&mut sim).map_err(|v| v.to_string())?;
     }
     sim.reset_clock();
     Ok(sim)
@@ -121,14 +130,9 @@ fn verify(sim: &Sim, id: SystemId, before: Cents, ledger: MoneyLedger) -> Result
     check_money(before, sim.state.total_deposits(), ledger, tick, id)
 }
 
-/// Advance one monthly tick.
-pub fn step(sim: &mut Sim, cmds: &[Command]) -> Result<StepOutput, Violation> {
+/// Advance one monthly tick. Commands are handled by the turn layer, never here.
+pub fn step(sim: &mut Sim) -> Result<StepOutput, Violation> {
     let mut out = StepOutput::default();
-    // Commands are applied directly by the engine, then checked.
-    let before = sim.state.total_deposits();
-    commands::apply_commands(&mut sim.state, &sim.params, cmds, &mut out.events);
-    verify(sim, SystemId::Commands, before, MoneyLedger::default())?;
-
     for (id, f) in sim_model::TICK_ORDER {
         run_system(sim, id, f, &mut out)?;
     }
@@ -193,17 +197,78 @@ fn check_outcome(sim: &mut Sim, events: &mut Vec<Event>) {
     }
 }
 
-/// Run `ticks` ticks, feeding scripted commands, calling `on_tick` after each.
+/// Play one turn: charge and queue the commands, activate what is due, run the ticks,
+/// then regenerate political capital. `on_tick` sees every tick's output.
+pub fn submit_turn_with(
+    sim: &mut Sim,
+    cmds: &[Command],
+    mut on_tick: impl FnMut(&Sim, &StepOutput),
+) -> Result<TurnOutput, Violation> {
+    let mut out = TurnOutput {
+        turn: sim.state.turn,
+        pc_before: sim.state.political_capital,
+        ..TurnOutput::default()
+    };
+    let (accepted, rejected) = turn::queue(sim, cmds);
+    out.accepted = accepted;
+    out.rejected = rejected;
+    for r in &out.rejected {
+        out.events.push(Event::PolicyBlocked { reason: r.reason });
+    }
+    let before = sim.state.total_deposits();
+    out.activated = turn::activate_due(sim, &mut out.events);
+    verify(sim, SystemId::Commands, before, MoneyLedger::default())?;
+    for _ in 0..sim.params.run.ticks_per_turn {
+        let t = step(sim)?;
+        on_tick(sim, &t);
+        out.events.extend(t.events);
+        out.trace.extend(t.trace);
+    }
+    // Nominal vs effective for the lobbied levers, as of the end of the turn.
+    let (pol, eff) = (&sim.state.policy, &sim.state.effective);
+    out.policy_gaps = vec![
+        PolicyGapSummary {
+            lever: Lever::CarbonPrice,
+            nominal: pol.carbon_price.dollars(),
+            effective: eff.carbon_price.dollars(),
+        },
+        PolicyGapSummary {
+            lever: Lever::WealthTax,
+            nominal: pol.wealth_tax.0,
+            effective: eff.wealth_tax.0,
+        },
+        PolicyGapSummary {
+            lever: Lever::ProfitTax,
+            nominal: pol.tax_profit.0,
+            effective: eff.tax_profit.0,
+        },
+        PolicyGapSummary {
+            lever: Lever::EmissionsCap,
+            nominal: pol.emissions_cap.0,
+            effective: eff.emissions_cap.0,
+        },
+    ];
+    turn::regenerate(&mut sim.state, &sim.params.turn);
+    sim.state.turn += 1;
+    out.pc_after = sim.state.political_capital;
+    Ok(out)
+}
+
+/// Play one turn with the given commands (see `submit_turn_with`).
+pub fn submit_turn(sim: &mut Sim, cmds: &[Command]) -> Result<TurnOutput, Violation> {
+    submit_turn_with(sim, cmds, |_, _| {})
+}
+
+/// Play `turns` turns from a plan, calling `on_tick` after each monthly tick.
 pub fn run(
     sim: &mut Sim,
-    ticks: u32,
-    script: &Script,
+    turns: u32,
+    plan: &Plan,
     mut on_tick: impl FnMut(&Sim, &StepOutput),
 ) -> Result<(), Violation> {
-    for _ in 0..ticks {
-        let cmds = script.commands_at(sim.state.tick);
-        let out = step(sim, &cmds)?;
-        on_tick(sim, &out);
+    for _ in 0..turns {
+        let cmds = plan.commands_at(sim.state.turn);
+        submit_turn_with(sim, &cmds, &mut on_tick)?;
         if sim.params.run.stop_on_loss && sim.state.outcome.is_some() {
             break;
         }

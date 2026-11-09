@@ -1,4 +1,4 @@
-//! Scripted player actions: "set carbon price at tick 60". Pure parsing, no I/O.
+//! A turn plan: the player's commands per turn number, read from JSON. Pure parsing, no I/O.
 
 use serde::{Deserialize, Serialize};
 use sim_types::*;
@@ -13,15 +13,18 @@ pub struct PlaceSpec {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Action {
-    pub tick: u32,
-    /// Friendly lever settings: name -> value (dollars for money, fractions for rates).
+pub struct PlanTurn {
+    /// Turn number, 1-based.
+    pub turn: u32,
+    /// Lever settings: name -> value (dollars for money, fractions for rates).
     #[serde(default)]
     pub set: BTreeMap<String, f64>,
     #[serde(default)]
     pub switch: Option<EconomicSystem>,
     #[serde(default)]
     pub place: Option<PlaceSpec>,
+    #[serde(default)]
+    pub remove: Option<PlaceSpec>,
     /// A raw command, exactly as the engine's `Command` type serialises.
     #[serde(default)]
     pub command: Option<Command>,
@@ -29,14 +32,14 @@ pub struct Action {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Script {
+pub struct Plan {
     #[serde(default)]
     pub name: String,
     #[serde(default)]
-    pub actions: Vec<Action>,
+    pub turns: Vec<PlanTurn>,
 }
 
-fn lever(name: &str, v: f64) -> Result<PolicyChange, String> {
+pub fn lever(name: &str, v: f64) -> Result<PolicyChange, String> {
     let c = Cents::from_dollars;
     Ok(match name {
         "carbon_price" => PolicyChange::CarbonPrice(c(v)),
@@ -56,6 +59,7 @@ fn lever(name: &str, v: f64) -> Result<PolicyChange, String> {
         "bank_capital_ratio" => PolicyChange::BankCapitalRatio(Rate(v)),
         "bailout" => PolicyChange::Bailout(v > 0.5),
         "public_spending" => PolicyChange::PublicSpending(Rate(v)),
+        "job_guarantee" => PolicyChange::JobGuarantee(Rate(v)),
         "commons_community_cap" => {
             PolicyChange::CommonsAccess(CommonsAccess::Community { cap: Rate(v) })
         }
@@ -63,26 +67,24 @@ fn lever(name: &str, v: f64) -> Result<PolicyChange, String> {
     })
 }
 
-impl Script {
-    pub fn from_json(text: &str) -> Result<Script, String> {
-        let s: Script = serde_json::from_str(text).map_err(|e| format!("script: {e}"))?;
-        s.commands_at_all()?;
-        Ok(s)
-    }
-
-    fn commands_at_all(&self) -> Result<(), String> {
-        for a in &self.actions {
-            for (k, v) in &a.set {
+impl Plan {
+    pub fn from_json(text: &str) -> Result<Plan, String> {
+        let s: Plan = serde_json::from_str(text).map_err(|e| format!("plan: {e}"))?;
+        for t in &s.turns {
+            if t.turn == 0 {
+                return Err("plan: turns are numbered from 1".into());
+            }
+            for (k, v) in &t.set {
                 lever(k, *v)?;
             }
         }
-        Ok(())
+        Ok(s)
     }
 
-    /// Commands to run at the start of the given tick, in script order.
-    pub fn commands_at(&self, tick: u32) -> Vec<Command> {
+    /// Commands to submit in the given turn, in plan order.
+    pub fn commands_at(&self, turn: u32) -> Vec<Command> {
         let mut out = Vec::new();
-        for a in self.actions.iter().filter(|a| a.tick == tick) {
+        for a in self.turns.iter().filter(|a| a.turn == turn) {
             for (k, v) in &a.set {
                 if let Ok(c) = lever(k, *v) {
                     out.push(Command::SetPolicy(c));
@@ -91,13 +93,25 @@ impl Script {
             if let Some(sys) = a.switch {
                 out.push(Command::SwitchSystem(sys));
             }
-            if let Some(p) = &a.place {
-                if let Some(kind) = p.kind {
-                    out.push(Command::Place {
-                        kind,
-                        count: p.count.unwrap_or(1),
-                    });
-                }
+            if let Some(PlaceSpec {
+                kind: Some(kind),
+                count,
+            }) = &a.place
+            {
+                out.push(Command::Place {
+                    kind: *kind,
+                    count: count.unwrap_or(1),
+                });
+            }
+            if let Some(PlaceSpec {
+                kind: Some(kind),
+                count,
+            }) = &a.remove
+            {
+                out.push(Command::Remove {
+                    kind: *kind,
+                    count: count.unwrap_or(1),
+                });
             }
             if let Some(c) = a.command {
                 out.push(c);
@@ -113,23 +127,24 @@ mod tests {
 
     #[test]
     fn parses_set_and_switch() {
-        let s = Script::from_json(
-            r#"{"actions":[{"tick":60,"set":{"carbon_price":100}},{"tick":12,"switch":"Regulated"}]}"#,
+        let s = Plan::from_json(
+            r#"{"turns":[{"turn":20,"set":{"carbon_price":100}},{"turn":5,"switch":"Regulated"}]}"#,
         )
         .unwrap();
         assert_eq!(
-            s.commands_at(60),
+            s.commands_at(20),
             vec![Command::SetPolicy(PolicyChange::CarbonPrice(Cents(10_000)))]
         );
         assert_eq!(
-            s.commands_at(12),
+            s.commands_at(5),
             vec![Command::SwitchSystem(EconomicSystem::Regulated)]
         );
-        assert!(s.commands_at(5).is_empty());
+        assert!(s.commands_at(7).is_empty());
     }
 
     #[test]
-    fn rejects_unknown_lever() {
-        assert!(Script::from_json(r#"{"actions":[{"tick":1,"set":{"magic":1}}]}"#).is_err());
+    fn rejects_unknown_lever_and_turn_zero() {
+        assert!(Plan::from_json(r#"{"turns":[{"turn":1,"set":{"magic":1}}]}"#).is_err());
+        assert!(Plan::from_json(r#"{"turns":[{"turn":0}]}"#).is_err());
     }
 }
