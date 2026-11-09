@@ -130,7 +130,7 @@
     "leadTime": 1,
     "costModel": {
       "base": 3.0,
-      "unit": 100000.0,
+      "unit": 20000.0,
       "minSize": 0.25
     },
     "lobbied": false,
@@ -308,7 +308,7 @@
     "leadTime": 2,
     "costModel": {
       "base": 8.0,
-      "unit": 500.0,
+      "unit": 10.0,
       "minSize": 0.25
     },
     "zeroMeansNone": true,
@@ -439,7 +439,7 @@
     "leadTime": 1,
     "costModel": {
       "base": 5.0,
-      "unit": 100000.0,
+      "unit": 2000.0,
       "minSize": 0.25
     },
     "lobbied": false,

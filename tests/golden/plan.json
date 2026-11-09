@@ -14,7 +14,18 @@
    {
     "type": "place",
     "kind": "renewable_plant",
-    "count": 2
+    "tile": {
+     "x": 11,
+     "y": 6
+    }
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 4,
+     "y": 6
+    }
    },
    {
     "type": "set_policy",
@@ -31,7 +42,18 @@
    {
     "type": "place",
     "kind": "public_housing",
-    "count": 5
+    "tile": {
+     "x": 3,
+     "y": 5
+    }
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 9,
+     "y": 6
+    }
    }
   ],
   [
@@ -44,6 +66,22 @@
     "type": "set_policy",
     "lever": "campaign_cap",
     "value": 0.4
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 0,
+     "y": 0
+    }
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 9,
+     "y": 3
+    }
    }
   ],
   [
@@ -61,7 +99,10 @@
    {
     "type": "place",
     "kind": "renewable_plant",
-    "count": 1
+    "tile": {
+     "x": 11,
+     "y": 4
+    }
    }
   ],
   [],
@@ -81,8 +122,10 @@
   [
    {
     "type": "remove",
-    "kind": "fossil_plant",
-    "count": 1
+    "tile": {
+     "x": 10,
+     "y": 2
+    }
    },
    {
     "type": "set_policy",
@@ -116,7 +159,18 @@
    {
     "type": "place",
     "kind": "public_housing",
-    "count": 300
+    "tile": {
+     "x": 4,
+     "y": 3
+    }
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 12,
+     "y": 12
+    }
    }
   ],
   [],

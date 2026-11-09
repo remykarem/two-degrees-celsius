@@ -56,3 +56,46 @@ Only effects stated in `docs/causal-model.md` (S5/S7/S8, sign tests in section 5
 8. Rejected `index` refers to the submitted list (including wire-invalid commands); accepted `PendingItem.command` has no `tile` (the sim has none).
 9. Costs are measured against the latest pending value of the same lever, so a batch's second command depends on the first (preview does the same).
 10. (Phase 1: every plan collapsed on legitimacy around turns 38-41.) After the Phase 2 balancing, no action ends in `budget_exhausted` around turn 100, and baseline B survives 160 turns. The tests assert `history.length == turns played` and halting.
+
+# Town v2 (contract v1.0)
+
+The wire layer was ported to the Town v2 simulation (individual people, households, homes, a 12 x 12 map, roads, plant emissions, a Shop). Contract section 11 of `docs/snapshot-contract.md` is implemented; the sections above are historical where they differ (cohort households, derived building counts, `count`-based place/remove, empty purchases are all gone). `schemaVersion` is 2 (`sim_types::SCHEMA_VERSION`).
+
+## Wire shapes (all camelCase, money in dollars)
+- `Snapshot` gains `map { width, height, tiles[] }` (row-major, `tiles[y*width+x]`; tile = `{x, y, kind, ref?, buildable, emissionsMonthly?}`), `people[]`, `households[]` (new shape), `homes[]`, `plants[]`. `ref` is the home, firm or plant id. `buildable` is "the tile is empty"; the exact answer including queued builds is `validTiles(kind)`. Plant tiles carry `emissionsMonthly`.
+- `people[]`: `id, label, household, ageBand, skill, job {firm} | null, wage, commuteTiles, commuteMinutes, wellbeing` plus `inLabourForce, jobGuarantee, effectiveHours` (extras). `job` is null for a job-guarantee worker (`jobGuarantee: true`).
+- `households[]`: `id, label, members[], home | null, class, savings, debt, netWorth, income{...}, politicalPower, arrearsMonths` plus `wellbeing, footprintTonnes, foodMet`. `homes[]`: `id, tile, owner (household id | "public"), household | null, rent, value`.
+- `buildings` is now a summary counted from the map: `publicHousing, fossilPlant, renewablePlant, road`. The old capacity-derivation (`PUBLIC_HOUSING_PER_BUILDING`, `plant_capacity`) is gone.
+- `firms[]` gain `tile`; names are Factory, Farm, Shop (a second Shop for the dormant slot is "Shop 2"); `sector` adds `services`.
+- `housing`: `homes, rentPrivate, rentPublic, occupancy, unhousedHouseholds` (capacities removed). `energy`: `fossilCap, renewableCap, fossilShare, demand, supply, delivered, served, gridIntensity`.
+- `indicators` and every `HistoryPoint` gain `avgIncomePerPerson, medianIncomePerPerson, topHouseholdWealthShare`. `MetricKey` gains `avg_income, median_income, top_wealth_share`.
+- Commands: `{type:"place", kind:"public_housing"|"fossil_plant"|"renewable_plant"|"road", tile}` (tile required: a missing tile is `bad_request`), `{type:"remove", tile}`. Pending items keep their tile. Tile integers are accepted as i32 on the wire; off-map values (negative, > 255 or beyond the grid) become `tile_invalid` without reaching the engine.
+- `BlockReason` adds `tile_occupied`, `tile_invalid`. `CommandPreview` adds `tileValid` and `tileReason` (`tile_occupied | tile_invalid | nothing_to_remove` when not valid; always valid for non-tile commands). `Api::valid_tiles(kind)` / `WasmSim.valid_tiles(kind)` returns `{x,y}[]` in row-major order: empty tiles with nothing queued on them (scenery, occupied tiles and queued tiles are excluded). It is the same for all four kinds today.
+- Events: `commuted{person,firm,tiles,minutes}`, `person_hired{person,firm}`, `person_fired{person,firm}`, `purchase{household,firm,amount}`, `household_moved{household,to}` (`to` = home id), `household_evicted{household}`, plus `built{kind,tile}`, `removed{tile}`, `electricity_rationed{served}` (the sim raises them; the contract did not list them). The v0.x `hired` / `fired` are gone. Importance: 3 evicted (and the old game-shaping set); 2 moved, fired, built, removed, rationed; 1 commuted, hired, purchase.
+- Emissions: source `plant` carries `id` (plant id) and `tile`, in `flows.emissions` and `trace`.
+
+## Frames (what is real, what is empty)
+All five flow lists are real in Town v2; none is always empty any more.
+- `commutes`: one per person with a firm job, each month: `{person, household, firm, from, to, tiles, minutes}`. `from` is the home tile (`null` for the unhoused household), `to` the firm tile. The sim does not expose the route, so there is **no tile path** (contract said "if the sim exposes it"). The scene can draw an L-shaped or straight line; `tiles` and `minutes` are the sim's cheapest-route cost.
+- `purchases`: `{household, firm, sector, amount}` from the tick's `purchase` events (a household buys from each firm it spends at).
+- `wages`: `{person, household, firm, amount}` = the wage each employed person was paid this tick. Job-guarantee workers have no firm and no row.
+- `rent`: `{household, home, amount}` rent paid this tick.
+- `emissions`: the tick's trace: firm (direct), households, plant (with tile), sink (negative).
+
+## Save and load
+`export_state` has `schemaVersion: 2`. Any other version (including every v1 save) is refused with code `schema_mismatch` and the message "save has schemaVersion ..., this build reads 2". Import then checks the params hash, and a structural pass over the whole save before anything indexes it: counts of people/households/firms and the map size against the content, ids equal positions, and every person, household, home, plant, firm, owner, map cell, pending command and queued build refers to something that exists on the map. Then `sim-checks` (`check_state`, which includes the people/homes/tiles invariants). A failed import leaves the game untouched.
+
+## Metadata
+`content/levers.json` gained `place:road` and `remove:road` actions and a `tileRule` text on every place/remove action. `ActionInfo` gains `needsTile` and `tileRule`; `place:road` money is `params.government.road_cost_usd`. Costs, lead times and cost models still come only from `params.turn.levers` (`place_road`, `remove_road` were already there). The 19 lever entries and arrows are unchanged: no road lever exists and `docs/causal-model.md` states no new lever-to-metric sign.
+
+## Fixtures and golden
+`docs/fixtures/` is regenerated by `cargo run -p sim-api --example fixtures`: `snapshot-turn1.json`, `turn-result.json` (carbon price 50, a road at (4,6), a renewable plant at (10,5), and a campaign cap the Market refuses), `levers.json`, `actions.json` and new `tiles.json` (`validTiles` per kind at the start). `tests/golden/plan.json` was rewritten for tile commands (including a removal, an occupied tile, a forest tile and an off-map tile) and `tests/golden/seed7.json` regenerated; the golden file layout is unchanged.
+
+## Contract issues
+1. No commute path: `from`/`to` tiles only (the sim exposes distance and time, not the route).
+2. `household_moved.to` is a home id (contract left it open). `built`, `removed`, `electricity_rationed` events and `plants[]` are additions.
+3. `buildable` on a tile is static (empty); it ignores queued builds. `validTiles` is the authority.
+4. `place_public_housing` etc. are all valid on any empty tile; the sim has no per-kind terrain rules, so `validTiles` is identical for the four kinds.
+5. `remove` is priced by the kind on the tile (`remove_<kind>`); the wire `remove` has no kind. A wire-invalid remove previews with the `remove_road` lead time.
+6. Wage flows are per person (`person` added to the old `{household, firm, amount}`); commutes lost `people` (they are per person now).
+7. Game over, history, and the halt-at-first-outcome behaviour are as before. Balance is untouched: the scripted plan in `tests/game.rs` halts on a bank-failure collapse around turn 27, the mild plan on legitimacy around turn 150, and no action on the carbon budget around turn 124 (seed 42).

@@ -14,24 +14,27 @@
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": false
   },
   {
     "key": "place:public_housing",
     "label": "Build public housing",
-    "baseCostPc": 1.0,
+    "baseCostPc": 3.0,
     "leadTime": 3,
     "costModel": {
-      "base": 1.0,
+      "base": 3.0,
       "unit": 1.0,
       "minSize": 1.0
     },
-    "moneyCost": 14000.0,
+    "moneyCost": 40000.0,
     "availableIn": [
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
   },
   {
     "key": "place:fossil_plant",
@@ -43,12 +46,14 @@
       "unit": 1.0,
       "minSize": 1.0
     },
-    "moneyCost": 2000000.0,
+    "moneyCost": 40000.0,
     "availableIn": [
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
   },
   {
     "key": "place:renewable_plant",
@@ -60,20 +65,41 @@
       "unit": 1.0,
       "minSize": 1.0
     },
-    "moneyCost": 2000000.0,
+    "moneyCost": 40000.0,
     "availableIn": [
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
+  },
+  {
+    "key": "place:road",
+    "label": "Build road",
+    "baseCostPc": 0.5,
+    "leadTime": 2,
+    "costModel": {
+      "base": 0.5,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "moneyCost": 2500.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ],
+    "needsTile": true,
+    "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
   },
   {
     "key": "remove:public_housing",
     "label": "Demolish public housing",
-    "baseCostPc": 2.0,
+    "baseCostPc": 3.0,
     "leadTime": 1,
     "costModel": {
-      "base": 2.0,
+      "base": 3.0,
       "unit": 1.0,
       "minSize": 1.0
     },
@@ -82,7 +108,9 @@
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "a tile that holds a public housing (fixed town buildings cannot be removed)"
   },
   {
     "key": "remove:fossil_plant",
@@ -99,7 +127,9 @@
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "a tile that holds a fossil plant (fixed town buildings cannot be removed)"
   },
   {
     "key": "remove:renewable_plant",
@@ -116,6 +146,27 @@
       "market",
       "regulated",
       "coop"
-    ]
+    ],
+    "needsTile": true,
+    "tileRule": "a tile that holds a renewable plant (fixed town buildings cannot be removed)"
+  },
+  {
+    "key": "remove:road",
+    "label": "Remove road",
+    "baseCostPc": 0.25,
+    "leadTime": 1,
+    "costModel": {
+      "base": 0.25,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ],
+    "needsTile": true,
+    "tileRule": "a tile that holds a road (fixed town buildings cannot be removed)"
   }
 ]
