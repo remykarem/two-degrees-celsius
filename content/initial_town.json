@@ -196,7 +196,7 @@
   "union_density": 0.2,
   "policy": {
     "carbon_price_usd": 0,
-    "tax_wage": 0.28,
+    "tax_wage": 0.3,
     "tax_profit": 0.25,
     "tax_capital": 0.4,
     "wealth_tax": 0.0,
@@ -212,6 +212,6 @@
     "bank_capital_ratio": 0.1,
     "bailout": false,
     "job_guarantee": 0.0,
-    "public_spending_usd": 450000.0
+    "public_spending_usd": 400000.0
   }
 }

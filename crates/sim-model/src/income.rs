@@ -65,10 +65,17 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 .revenue
                 .scale(12.0 * p.invest.green_cost_share * (1.0 - s.policy.green_subsidy.0));
         }
-        let dividends = profit
+        let regular = profit
             .max(Cents::ZERO)
             .scale(payout)
             .min((cash - reserve).max(Cents::ZERO));
+        // Idle cash well above what payroll and debt service need is distributed too.
+        let idle_line =
+            reserve + (wages_paid + interest_due + amort_due).scale(p.income.excess_cash_months);
+        let excess = (cash - regular - idle_line)
+            .max(Cents::ZERO)
+            .scale(p.income.excess_payout_rate);
+        let dividends = regular + excess;
         match f.owner {
             Owner::Household(h) => d.transfer(
                 firm_acct,

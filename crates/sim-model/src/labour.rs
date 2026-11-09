@@ -144,8 +144,15 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             over = 0;
         }
 
-        // Wage adjustment follows employment: w *= 1 + k (u_ref - u), capped each month.
-        let step = (lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap);
+        // Wage adjustment follows employment: w *= 1 + trend + k (u_ref - u), capped each month.
+        // The trend is the sector's productivity growth, so that wages and prices do not drift apart.
+        let trend = lp.inflation_anchor
+            + lp.productivity_passthrough
+                * match f.sector {
+                    Sector::Goods => p.production.tfp_growth_goods,
+                    Sector::Food => p.production.tfp_growth_food,
+                };
+        let step = (trend + lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap);
         let w = f.wage.as_f64() * (1.0 + step);
         let wage = Cents::from_f64(w).max(min_wage);
         let n_new: f64 = (0..n_h).map(|h| emp[h][fi]).sum();

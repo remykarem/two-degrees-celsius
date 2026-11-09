@@ -1,7 +1,7 @@
 {
   "name": "Market capitalism",
   "dividend_rule": "Owner",
-  "payout_ratio": 0.6,
+  "payout_ratio": 0.7,
   "min_wage_multiplier": 1.0,
   "invest_hurdle": 0.05,
   "credit_spread_add": 0.0,

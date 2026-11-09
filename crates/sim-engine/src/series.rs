@@ -3,7 +3,7 @@
 use crate::Sim;
 use sim_types::*;
 
-pub const CSV_HEADER: &str = "tick,turn,pc,year,gdp_annual,gdp_real_annual,unemployment,gini,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_goods,em_food,em_households,forest,commons,system,employed,wage_goods,price_goods,inventory_goods,profit_goods,investment,gov_purchases,lent,top_savings,pending";
+pub const CSV_HEADER: &str = "tick,turn,pc,year,gdp_annual,gdp_real_annual,unemployment,gini,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_goods,em_food,em_households,forest,commons,system,employed,wage_goods,price_goods,inventory_goods,profit_goods,investment,gov_purchases,lent,top_savings,pending,gov_receipts,gov_spending,gov_cash";
 
 /// Emissions by source this tick, read from the trace.
 pub fn emissions_by_source(sim: &Sim, trace: &[TraceRecord]) -> (f64, f64, f64) {
@@ -28,7 +28,7 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
     let i = &s.indicators;
     let (g, f, h) = emissions_by_source(sim, trace);
     format!(
-        "{},{},{:.1},{:.3},{:.0},{:.0},{:.5},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?},{:.1},{:.2},{:.3},{:.1},{:.0},{:.0},{:.0},{:.0},{:.0},{}",
+        "{},{},{:.1},{:.3},{:.0},{:.0},{:.5},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?},{:.1},{:.2},{:.3},{:.1},{:.0},{:.0},{:.0},{:.0},{:.0},{},{:.0},{:.0},{:.0}",
         s.tick,
         s.turn,
         s.political_capital,
@@ -66,6 +66,9 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
         s.policy.public_spending.dollars(),
         s.bank.lent_this_tick.dollars(),
         s.households[0].savings.dollars(),
-        s.pending.len()
+        s.pending.len(),
+        s.gov.receipts.dollars(),
+        s.gov.spending.dollars(),
+        s.gov.cash.dollars()
     )
 }

@@ -80,6 +80,12 @@ pub struct LabourParams {
     pub wage_k: f64,
     pub u_ref: f64,
     pub wage_cap: f64,
+    /// Share of the sector's productivity growth that is passed into the nominal wage every month
+    /// (so that at `u_ref` real wages follow productivity and prices stay flat). 0 reproduces v0.2.
+    pub productivity_passthrough: f64,
+    /// Monthly nominal wage growth that firms and workers expect on top of productivity
+    /// (the nominal anchor; about 2% a year). Without it the price level drifts downward.
+    pub inflation_anchor: f64,
     /// Weight of the newest month in expected sales (exponential average).
     pub expected_smoothing: f64,
     /// A firm can always hire at least this many people in a month.
@@ -148,6 +154,10 @@ pub struct GoodsParams {
 pub struct IncomeParams {
     /// Months of wage bill and debt service a firm keeps before paying dividends.
     pub cash_reserve_months: f64,
+    /// Cash above this many months of payroll and debt service (on top of the reserve) is
+    /// treated as idle and paid out as dividends at `excess_payout_rate` per month.
+    pub excess_cash_months: f64,
+    pub excess_payout_rate: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
