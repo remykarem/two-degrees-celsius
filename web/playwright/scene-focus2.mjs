@@ -33,6 +33,7 @@ await page.waitForTimeout(400);
 const frames = await page.evaluate(() => new Promise((res) => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 2500) requestAnimationFrame(f); else res({ n, ms: performance.now() - t0 }); }; requestAnimationFrame(f); }));
 console.log('rAF during playback', JSON.stringify(frames), 'frame ms', (frames.ms / frames.n).toFixed(1));
 console.log('stats', JSON.stringify(await bus()));
+await zoom(2);
 await shot('mid-commute-a');
 await page.waitForTimeout(900);
 await shot('mid-commute-b');
