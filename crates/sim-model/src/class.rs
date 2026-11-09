@@ -89,7 +89,10 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         }
         let class = classify_with(s, p, h, &hist);
         if class != h.class {
-            d.events.push(Event::ClassChanged { household: h.id, to: class });
+            d.events.push(Event::ClassChanged {
+                household: h.id,
+                to: class,
+            });
         }
         d.household(
             h.id,
@@ -104,8 +107,14 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     // ---- Down: owners of firms that failed this tick, with negative net wealth ----
     let wealth = cohort_wealth(s, p);
     let mut touched: Vec<HouseholdId> = Vec::new();
-    for f in s.firms.iter().filter(|f| f.closed_tick == Some(s.tick) && !f.active) {
-        let Owner::Household(o) = f.owner else { continue };
+    for f in s
+        .firms
+        .iter()
+        .filter(|f| f.closed_tick == Some(s.tick) && !f.active)
+    {
+        let Owner::Household(o) = f.owner else {
+            continue;
+        };
         let h = &s.households[o.idx()];
         if touched.contains(&o) || wealth[o.idx()] >= 0.0 {
             continue;
@@ -114,7 +123,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
             .households
             .iter()
             .filter(|x| x.class == Class::Worker && x.id != o && !touched.contains(&x.id))
-            .max_by(|a, b| a.weight.0.partial_cmp(&b.weight.0).unwrap_or(std::cmp::Ordering::Equal));
+            .max_by(|a, b| {
+                a.weight
+                    .0
+                    .partial_cmp(&b.weight.0)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
         let Some(dest) = dest else { continue };
         let people = (cp.fall_fraction * h.weight.0).min(h.weight.0 - cp.min_cohort_weight);
         if people > 0.0 {
@@ -141,7 +155,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         .households
         .iter()
         .filter(|h| h.class == Class::Capitalist && !touched.contains(&h.id))
-        .max_by(|a, b| a.weight.0.partial_cmp(&b.weight.0).unwrap_or(std::cmp::Ordering::Equal));
+        .max_by(|a, b| {
+            a.weight
+                .0
+                .partial_cmp(&b.weight.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
     // Best dormant slot: the one whose sector has the highest return and a model firm to copy.
     let slot = s
         .firms
@@ -165,7 +184,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
             // Fund the firm: part cash, part construction of its first capital.
             let capital_part = startup.scale(cp.startup_capital_share);
             let cash_part = startup - capital_part;
-            d.transfer(Account::Household(own.id), Account::Firm(slot.id), cash_part, FlowKind::Neutral);
+            d.transfer(
+                Account::Household(own.id),
+                Account::Firm(slot.id),
+                cash_part,
+                FlowKind::Neutral,
+            );
             let lw = labour_weights(s);
             for (h, part) in apportion(capital_part, &lw).into_iter().enumerate() {
                 d.transfer(
@@ -175,10 +199,14 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                     FlowKind::Wage,
                 );
             }
-            d.changes.push(Delta::Gdp(GdpPart::Investment, capital_part));
+            d.changes
+                .push(Delta::Gdp(GdpPart::Investment, capital_part));
             // Copy prices, wages and technology from the sector's incumbents.
-            let peers: Vec<&Firm> =
-                s.firms.iter().filter(|f| f.active && f.sector == slot.sector).collect();
+            let peers: Vec<&Firm> = s
+                .firms
+                .iter()
+                .filter(|f| f.active && f.sector == slot.sector)
+                .collect();
             let n = peers.len() as f64;
             let avg = |g: &dyn Fn(&Firm) -> f64| peers.iter().map(|f| g(f)).sum::<f64>() / n;
             let sales0 = 0.15 * avg(&|f| f.sales_hist.iter().sum::<f64>() / 3.0);
@@ -187,7 +215,9 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                 FirmPatch {
                     active: Some(true),
                     owner: Some(Owner::Household(own.id)),
-                    capital: Some(Units(capital_part.as_f64() / (p.invest.capital_price_usd * 100.0))),
+                    capital: Some(Units(
+                        capital_part.as_f64() / (p.invest.capital_price_usd * 100.0),
+                    )),
                     wage: Some(Cents::from_f64(avg(&|f| f.wage.as_f64()))),
                     price: Some(Cents::from_f64(avg(&|f| f.price.as_f64()))),
                     inventory: Some(Units(sales0)),
@@ -209,7 +239,14 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
 
 /// Move `people` from one cohort to another, with their savings and debt per head.
 /// Their jobs go with them when `scale_jobs` is set (workers who leave to found firms).
-fn move_people(d: &mut Deltas, s: &State, from: &Household, to: &Household, people: f64, scale_jobs: bool) {
+fn move_people(
+    d: &mut Deltas,
+    s: &State,
+    from: &Household,
+    to: &Household,
+    people: f64,
+    scale_jobs: bool,
+) {
     let share = people / from.weight.0;
     d.transfer(
         Account::Household(from.id),
@@ -217,14 +254,34 @@ fn move_people(d: &mut Deltas, s: &State, from: &Household, to: &Household, peop
         from.savings.scale(share),
         FlowKind::Neutral,
     );
-    d.money.push(MoneyOp::MoveDebt { from: from.id, to: to.id, amount: from.debt.scale(share) });
-    d.household(from.id, HouseholdPatch { weight: Some(from.weight - People(people)), ..HouseholdPatch::default() });
-    d.household(to.id, HouseholdPatch { weight: Some(to.weight + People(people)), ..HouseholdPatch::default() });
+    d.money.push(MoneyOp::MoveDebt {
+        from: from.id,
+        to: to.id,
+        amount: from.debt.scale(share),
+    });
+    d.household(
+        from.id,
+        HouseholdPatch {
+            weight: Some(from.weight - People(people)),
+            ..HouseholdPatch::default()
+        },
+    );
+    d.household(
+        to.id,
+        HouseholdPatch {
+            weight: Some(to.weight + People(people)),
+            ..HouseholdPatch::default()
+        },
+    );
     if scale_jobs {
         for f in &s.firms {
             let e = from.employment[f.id.idx()].0;
             if e > 0.0 {
-                d.changes.push(Delta::Employment { h: from.id, f: f.id, n: People(e * (1.0 - share)) });
+                d.changes.push(Delta::Employment {
+                    h: from.id,
+                    f: f.id,
+                    n: People(e * (1.0 - share)),
+                });
             }
         }
     }

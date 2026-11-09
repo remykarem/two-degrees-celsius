@@ -44,8 +44,8 @@ fn read(dir: &Path, name: &str) -> Result<String, String> {
 
 /// Apply `a.b.c=value` to a JSON document. The value is parsed as JSON, else kept as a string.
 fn set_path(doc: &mut serde_json::Value, path: &str, value: &str) -> Result<(), String> {
-    let v: serde_json::Value =
-        serde_json::from_str(value).unwrap_or_else(|_| serde_json::Value::String(value.to_string()));
+    let v: serde_json::Value = serde_json::from_str(value)
+        .unwrap_or_else(|_| serde_json::Value::String(value.to_string()));
     let mut cur = doc;
     let parts: Vec<&str> = path.split('.').collect();
     for (i, key) in parts.iter().enumerate() {
@@ -55,7 +55,9 @@ fn set_path(doc: &mut serde_json::Value, path: &str, value: &str) -> Result<(), 
         } else {
             cur.get_mut(*key)
         };
-        let Some(next) = next else { return Err(format!("no such parameter '{path}'")) };
+        let Some(next) = next else {
+            return Err(format!("no such parameter '{path}'"));
+        };
         if last {
             *next = v;
             return Ok(());
@@ -75,10 +77,15 @@ fn load_params(dir: &Path, overrides: &[String]) -> Result<Params, String> {
         ("coop", "systems/coop.json"),
     ] {
         let text = read(dir, file)?;
-        docs.push((prefix, serde_json::from_str(&text).map_err(|e| format!("{file}: {e}"))?));
+        docs.push((
+            prefix,
+            serde_json::from_str(&text).map_err(|e| format!("{file}: {e}"))?,
+        ));
     }
     for o in overrides {
-        let (path, value) = o.split_once('=').ok_or_else(|| format!("bad --set '{o}'"))?;
+        let (path, value) = o
+            .split_once('=')
+            .ok_or_else(|| format!("bad --set '{o}'"))?;
         let (prefix, rest) = path.split_once('.').unwrap_or((path, ""));
         let target = docs
             .iter_mut()

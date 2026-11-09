@@ -81,7 +81,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             (true, &skilled_order, skilled_now, target_skilled),
             (false, &general_order, general_now, target_general),
         ] {
-            let mut vac = (want - have).max(0.0).min((lp.max_hire_share * have).max(2.0));
+            let mut vac = (want - have)
+                .max(0.0)
+                .min((lp.max_hire_share * have).max(2.0));
             for &h in order {
                 if vac <= 1e-9 {
                     break;

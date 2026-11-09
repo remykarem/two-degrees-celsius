@@ -9,7 +9,10 @@ use sim_types::*;
 
 /// Cohorts that supply labour, as weights for paying construction and maintenance work.
 pub fn labour_weights(s: &State) -> Vec<f64> {
-    s.households.iter().map(|h| h.weight.0 * h.labour_share.0).collect()
+    s.households
+        .iter()
+        .map(|h| h.weight.0 * h.labour_share.0)
+        .collect()
 }
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
@@ -37,7 +40,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     // Firm-side revenue already collected in S4 this tick.
     let t_prof = s.effective.tax_profit.0;
     let firm_side: Cents = Cents::sum(s.firms.iter().filter(|f| f.active).map(|f| {
-        f.carbon_cost + f.profit.max(Cents::ZERO).scale(safe_div(t_prof, 1.0 - t_prof, 0.0))
+        f.carbon_cost
+            + f.profit
+                .max(Cents::ZERO)
+                .scale(safe_div(t_prof, 1.0 - t_prof, 0.0))
     }));
     let revenue = taxes + firm_side;
 
@@ -47,7 +53,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut ubi = Cents::ZERO;
     for h in &s.households {
         let unemployed = (h.labour_force().0 - h.employed().0).max(0.0);
-        let nonlabour = if h.nonlabour_benefit { h.weight.0 - h.labour_force().0 } else { 0.0 };
+        let nonlabour = if h.nonlabour_benefit {
+            h.weight.0 - h.labour_force().0
+        } else {
+            0.0
+        };
         let b = s.policy.benefit.scale(unemployed + nonlabour);
         let u = s.policy.ubi.scale(h.weight.0);
         spend.transfer(gov, Account::Household(h.id), b, FlowKind::Benefit);
@@ -92,7 +102,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let gdp_annual = s.indicators.gdp_annual.dollars().max(1.0);
     let debt_ratio = s.gov.debt.dollars() / gdp_annual;
     let brake = (1.0 - gp.debt_brake_slope * (debt_ratio - gp.debt_brake_start)).clamp(0.2, 1.0);
-    let purchases_next = s.indicators.gdp_month.scale(s.policy.public_spending.0 * cycle * brake);
+    let purchases_next = s
+        .indicators
+        .gdp_month
+        .scale(s.policy.public_spending.0 * cycle * brake);
     // ---- Borrow to cover the plan, or repay a share of any surplus ----
     let outflow = benefits + ubi + services + purchases_next;
     let target_cash = outflow.scale(gp.cash_target_months);
@@ -103,16 +116,27 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let max_loans = s.bank.equity.max(Cents::ZERO).scale(1.0 / kappa);
         let headroom = (max_loans - s.bank.loans).max(Cents::ZERO);
         let borrow = need.min(headroom);
-        d.money.push(MoneyOp::Lend { to: gov, amount: borrow });
+        d.money.push(MoneyOp::Lend {
+            to: gov,
+            amount: borrow,
+        });
     } else {
         let surplus = -need;
         let repay = surplus.scale(gp.repay_share).min(s.gov.debt);
-        d.money.push(MoneyOp::Repay { from: gov, amount: repay });
+        d.money.push(MoneyOp::Repay {
+            from: gov,
+            amount: repay,
+        });
     }
 
     // ---- Pay for services and construction as wages to labour ----
     for (h, part) in apportion(services, &lw).into_iter().enumerate() {
-        spend.transfer(gov, Account::Household(HouseholdId(h as u32)), part, FlowKind::Wage);
+        spend.transfer(
+            gov,
+            Account::Household(HouseholdId(h as u32)),
+            part,
+            FlowKind::Wage,
+        );
     }
     d.money.extend(spend.money);
     d.changes.push(Delta::Gdp(GdpPart::GovServices, services));
@@ -125,8 +149,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     // ---- Legitimacy ----
     let i = &s.indicators;
     let gdp_annual = i.gdp_annual.dollars().max(1.0);
-    let mut l = s.gov.legitimacy.0
-        + gp.legit_wellbeing * (i.avg_wellbeing.0 - 0.5)
+    let mut l = s.gov.legitimacy.0 + gp.legit_wellbeing * (i.avg_wellbeing.0 - 0.5)
         - gp.legit_unemployment * (i.unemployment.0 - gp.legit_unemployment_threshold).max(0.0)
         - gp.legit_gini * (i.gini.0 - gp.legit_gini_threshold).max(0.0)
         - gp.legit_debt * (s.gov.debt.dollars() / gdp_annual - 1.0).max(0.0);

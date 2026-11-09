@@ -18,13 +18,27 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         .households
         .iter()
         .filter(|h| h.class == Class::Manager)
-        .max_by(|a, b| a.weight.0.partial_cmp(&b.weight.0).unwrap_or(std::cmp::Ordering::Equal));
+        .max_by(|a, b| {
+            a.weight
+                .0
+                .partial_cmp(&b.weight.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
     let mut total_spend = 0.0;
     if let Some(lob) = lobbyist {
-        for h in s.households.iter().filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier)) {
+        for h in s
+            .households
+            .iter()
+            .filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier))
+        {
             let spend = h.income.capital_income().scale(share);
             total_spend += spend.dollars();
-            d.transfer(Account::Household(h.id), Account::Household(lob.id), spend, FlowKind::Lobby);
+            d.transfer(
+                Account::Household(h.id),
+                Account::Household(lob.id),
+                spend,
+                FlowKind::Lobby,
+            );
         }
     }
     let gdp_month = s.indicators.gdp_month.dollars().max(1.0);
@@ -33,9 +47,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     // Organised labour pushes back; union density rises when unemployment is low and in co-ops.
     let u = s.indicators.unemployment.0;
     let drift = lp.union_adjust * (lp.union_target_unemployment - u) / lp.union_target_unemployment;
-    let union = (s.union_density.0 + drift).clamp(lp.union_min, lp.union_max).max(c.union_floor);
+    let union = (s.union_density.0 + drift)
+        .clamp(lp.union_min, lp.union_max)
+        .max(c.union_floor);
     let lobby_labour = union * s.indicators.wage_share.0 * lp.labour_u;
-    let net = (lobby_capital - lobby_labour).max(0.0).min(0.95);
+    let net = (lobby_capital - lobby_labour).clamp(0.0, 0.95);
 
     let eff = EffectivePolicy {
         carbon_price: s.policy.carbon_price.scale(1.0 - net),
@@ -48,12 +64,25 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         },
     };
     for (lever, nominal, effective) in [
-        (Lever::CarbonPrice, s.policy.carbon_price.dollars(), eff.carbon_price.dollars()),
+        (
+            Lever::CarbonPrice,
+            s.policy.carbon_price.dollars(),
+            eff.carbon_price.dollars(),
+        ),
         (Lever::WealthTax, s.policy.wealth_tax.0, eff.wealth_tax.0),
         (Lever::ProfitTax, s.policy.tax_profit.0, eff.tax_profit.0),
-        (Lever::EmissionsCap, s.policy.emissions_cap.0, eff.emissions_cap.0),
+        (
+            Lever::EmissionsCap,
+            s.policy.emissions_cap.0,
+            eff.emissions_cap.0,
+        ),
     ] {
-        d.trace.push(TraceRecord::PolicyGap { lever, nominal, effective, net_lobby: Rate(net) });
+        d.trace.push(TraceRecord::PolicyGap {
+            lever,
+            nominal,
+            effective,
+            net_lobby: Rate(net),
+        });
     }
     d.changes.push(Delta::Effective(eff));
     d.changes.push(Delta::UnionDensity(Rate(union)));

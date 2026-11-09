@@ -14,25 +14,43 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     let mut firm_e = 0.0;
     for f in s.firms.iter().filter(|f| f.active) {
         firm_e += f.emissions.0;
-        d.trace.push(TraceRecord::Emissions { source: EmissionSource::Firm(f.id), tonnes: f.emissions });
+        d.trace.push(TraceRecord::Emissions {
+            source: EmissionSource::Firm(f.id),
+            tonnes: f.emissions,
+        });
     }
     let mut hh_e = 0.0;
     for h in &s.households {
         let cons_pc = h.consumption.dollars() / h.weight.0.max(1e-9);
         let fp = h.weight.0
             * (np.household_footprint_base
-                + np.household_footprint_consumption * (cons_pc / np.footprint_ref_consumption_usd) * grid);
+                + np.household_footprint_consumption
+                    * (cons_pc / np.footprint_ref_consumption_usd)
+                    * grid);
         hh_e += fp;
-        d.household(h.id, HouseholdPatch { footprint: Some(Tonnes(fp)), ..HouseholdPatch::default() });
+        d.household(
+            h.id,
+            HouseholdPatch {
+                footprint: Some(Tonnes(fp)),
+                ..HouseholdPatch::default()
+            },
+        );
     }
-    d.trace.push(TraceRecord::Emissions { source: EmissionSource::Households, tonnes: Tonnes(hh_e) });
+    d.trace.push(TraceRecord::Emissions {
+        source: EmissionSource::Households,
+        tonnes: Tonnes(hh_e),
+    });
 
     // Harvests by the farm, under the commons access rule.
     let msy = np.commons_growth * np.commons_max / 4.0;
     let mut harvest_c = 0.0;
     let mut harvest_f = 0.0;
     let mut enclosure_firms: Vec<FirmId> = Vec::new();
-    for f in s.firms.iter().filter(|f| f.active && f.sector == Sector::Food) {
+    for f in s
+        .firms
+        .iter()
+        .filter(|f| f.active && f.sector == Sector::Food)
+    {
         harvest_f += f.output.0 * np.farm_harvest_forest;
         harvest_c += f.output.0 * np.farm_harvest_commons * s.policy.commons_harvest.0;
         enclosure_firms.push(f.id);
@@ -78,7 +96,10 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     n.net_emissions = Tonnes(firm_e + hh_e - sink);
     n.cumulative = Tonnes((n.cumulative.0 + n.net_emissions.0).max(0.0));
     n.atmosphere = Tonnes((n.atmosphere.0 + n.net_emissions.0).max(0.0));
-    d.trace.push(TraceRecord::Emissions { source: EmissionSource::Sink, tonnes: Tonnes(-sink) });
+    d.trace.push(TraceRecord::Emissions {
+        source: EmissionSource::Sink,
+        tonnes: Tonnes(-sink),
+    });
 
     if n.forest.0 < 0.995 * f0 && f0 > 0.0 {
         d.events.push(Event::ForestShrank { stock: n.forest });

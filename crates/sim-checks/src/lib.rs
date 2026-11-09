@@ -234,7 +234,19 @@ pub fn check_state(
             ),
         );
     }
-    if s.bank.equity.is_negative() {
+    // The credit system resolves a negative equity (haircut or bailout), so the stage
+    // that follows it is the first place where it must be non-negative.
+    let resolved_by_now = !matches!(
+        system,
+        SystemId::Commands
+            | SystemId::Policy
+            | SystemId::Labour
+            | SystemId::Production
+            | SystemId::Nature
+            | SystemId::Goods
+            | SystemId::Income
+    );
+    if resolved_by_now && s.bank.equity.is_negative() {
         return fail(tick, system, "bank equity negative and unresolved".into());
     }
     Ok(())
