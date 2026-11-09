@@ -1,59 +1,69 @@
 <script lang="ts">
-  import type { CommandPreview, LeverInfo, SystemKey } from '../contract';
-  import { Slider } from '../ui-kit';
-  import { formatLever, leadText, METRIC_LABEL, REASON_TEXT } from './format';
+  import type { CommandPreview, LeverInfo } from '../contract';
+  import { Segmented, Slider } from '../ui-kit';
+  import { formatLever, leadText, METRIC_LABEL } from './format';
+  import { arrowGlyph, blockText, lobbyNote, toNum } from './policy';
 
-  let { lever, nominal, effective, system, draftValue, preview, onset }: {
-    lever: LeverInfo; nominal: number | boolean | string; effective: number | null; system: SystemKey;
-    draftValue: number | undefined; preview: CommandPreview | undefined; onset: (v: number) => void;
+  let { lever, nominal, effective, disabled, draftValue, preview, onset, onreset }: {
+    lever: LeverInfo; nominal: number | boolean | string; effective: number | null; disabled: string | null;
+    draftValue: number | undefined; preview: CommandPreview | undefined; onset: (v: number) => void; onreset: () => void;
   } = $props();
 
-  const nominalNum = $derived(typeof nominal === 'boolean' ? (nominal ? 1 : 0) : typeof nominal === 'string' ? Math.max(0, lever.options?.indexOf(nominal) ?? 0) : nominal);
-  const shown = $derived(draftValue ?? nominalNum);
-  const available = $derived(lever.availableIn.includes(system));
+  const current = $derived(toNum(lever, nominal));
+  const shown = $derived(draftValue ?? current);
   const id = $derived(`lever-${lever.key}`);
-  const lobbyNote = $derived(lever.lobbied && preview && !preview.blocked && preview.opposition > 0
-    ? `You set ${formatLever(lever, shown)}; expect about ${formatLever(lever, nominalNum + (shown - nominalNum) * (1 - preview.opposition))} in force (lobbying)` : '');
+  const note = $derived(lobbyNote(lever, current, shown, preview));
+  const options = $derived(lever.unit === 'bool' ? [{ value: '0', label: 'Off' }, { value: '1', label: 'On' }] : (lever.options ?? []).map((o, i) => ({ value: String(i), label: o[0]!.toUpperCase() + o.slice(1) })));
 </script>
 
-<li class:drafted={draftValue !== undefined}>
-  {#if !available}
-    <div class="name">{lever.label}</div>
-    <div class="note">Not available in the {system} system</div>
-  {:else if lever.unit === 'bool'}
-    <label class="check"><input type="checkbox" checked={shown === 1} onchange={(e) => onset((e.currentTarget as HTMLInputElement).checked ? 1 : 0)} /> {lever.label}</label>
-  {:else if lever.unit === 'enum'}
-    <label class="check" for={id}>{lever.label}</label>
-    <select {id} value={String(shown)} onchange={(e) => onset(Number((e.currentTarget as HTMLSelectElement).value))}>
-      {#each lever.options ?? [] as o, i (o)}<option value={String(i)}>{o}</option>{/each}
-    </select>
+{#snippet resetBtn()}
+  {#if draftValue !== undefined}<button class="reset" onclick={onreset} aria-label="Reset {lever.label} to {formatLever(lever, nominal)}">Reset</button>{/if}
+{/snippet}
+
+<li class:drafted={draftValue !== undefined} class:off={!!disabled}>
+  {#if lever.unit === 'bool' || lever.unit === 'enum'}
+    <div class="top"><span class="name">{lever.label}</span>{@render resetBtn()}</div>
+    <Segmented label={lever.label} {options} value={String(shown)} disabled={!!disabled} onchange={(v) => onset(Number(v))} />
   {:else}
-    <Slider {id} label={lever.label} value={shown} min={lever.min} max={lever.max} step={lever.step}
+    <Slider {id} label={lever.label} value={shown} min={lever.min} max={lever.max} step={lever.step} disabled={!!disabled}
       format={(v) => formatLever(lever, v)} onchange={onset} />
   {/if}
-  {#if available}
-    <div class="meta">
-      <span>Now {formatLever(lever, nominal)}{#if effective !== null}&nbsp;(in force ~{formatLever(lever, effective)}){/if}</span>
-      <span>Base {lever.baseCostPc} PC · {leadText(lever.leadTime)}{lever.lobbied ? ' · lobbied' : ''}</span>
-      <span class="arrows">{#each lever.arrows as a (a.metric)}<span title="{METRIC_LABEL[a.metric]} {a.direction === 'up' ? 'rises' : 'falls'}">{a.direction === 'up' ? '▲' : '▼'} {METRIC_LABEL[a.metric]}</span>{/each}</span>
+
+  <div class="meta">
+    {#if lever.unit !== 'bool' && lever.unit !== 'enum'}{@render resetBtn()}{/if}
+    <span>Now <b>{formatLever(lever, nominal)}</b>{#if effective !== null && lever.lobbied} &nbsp;(about {formatLever(lever, effective)} in force){/if}</span>
+    <span>Base {lever.baseCostPc} PC, {leadText(lever.leadTime)}</span>
+  </div>
+  {#if lever.arrows.length}
+    <div class="arrows" aria-label="Expected effects">
+      <span class="dim">Expected:</span>
+      {#each lever.arrows as a (a.metric)}
+        <span class="chip"><span aria-hidden="true">{arrowGlyph(a.direction)}</span> {METRIC_LABEL[a.metric]}<span class="sr-only"> {a.direction === 'up' ? 'rises' : 'falls'}</span></span>
+      {/each}
     </div>
-    {#if preview}
-      <div class="draft" class:bad={preview.blocked}>
-        {#if preview.blocked}Blocked: {REASON_TEXT[preview.blocked]}{:else}Draft: {preview.pc} PC, takes effect {leadText(preview.leadTime)}{/if}
-      </div>
-    {/if}
-    {#if lobbyNote}<div class="note">{lobbyNote}</div>{/if}
   {/if}
+  {#if disabled}<div class="why-off" role="note">{disabled}</div>{/if}
+  {#if preview}
+    <div class="draft" class:bad={preview.blocked}>
+      {#if preview.blocked}Blocked: {blockText(preview.blocked)}{:else}Draft: costs {preview.pc} PC, in force {leadText(preview.leadTime)}{/if}
+    </div>
+  {/if}
+  {#if note}<div class="lobby">{note}</div>{/if}
 </li>
 
 <style>
-  li { padding: 8px 0; border-bottom: 1px solid var(--border); list-style: none; }
-  li.drafted { background: var(--surface-2); margin: 0 -8px; padding: 8px; border-radius: var(--radius); }
-  .meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-  .arrows span { margin-right: 8px; }
-  .draft { font-size: 12px; font-weight: 600; margin-top: 2px; }
-  .draft.bad { color: var(--bad); }
-  .note { font-size: 12px; color: var(--warn); }
+  li { padding: 8px 6px; border-bottom: 1px solid var(--border); list-style: none; }
+  li.drafted { background: var(--info-bg); border-left: 3px solid var(--accent); border-radius: var(--radius); }
+  li.off .name { color: var(--text-dim); }
+  .top { display: flex; justify-content: space-between; align-items: center; min-height: 20px; }
   .name { font-weight: 600; }
-  .check { font-weight: 600; }
+  .reset { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); font-size: 11px; padding: 0 8px; cursor: pointer; }
+  .meta { align-items: center; display: flex; flex-wrap: wrap; gap: 0 12px; font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .arrows { display: flex; flex-wrap: wrap; gap: 2px 6px; font-size: 12px; margin-top: 2px; align-items: center; }
+  .chip { border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; background: var(--surface); }
+  .dim { color: var(--text-dim); }
+  .draft { font-size: 12px; font-weight: 600; margin-top: 3px; }
+  .draft.bad { color: var(--bad); }
+  .lobby { font-size: 12px; margin-top: 2px; padding: 2px 6px; background: var(--warn-bg); border-radius: var(--radius); }
+  .why-off { font-size: 12px; margin-top: 3px; color: var(--warn); }
 </style>

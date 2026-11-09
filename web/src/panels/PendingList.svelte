@@ -1,24 +1,26 @@
 <script lang="ts">
-  import { type Game } from '../store';
+  import { quarterLabel, type Game } from '../store';
   import { Button } from '../ui-kit';
-  import { describeCommand } from './format';
+  import { describeCommand, leadText } from './format';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const canCancel = $derived($gs.phase === 'review' || $gs.phase === 'plan');
+  const snap = $derived($gs.snapshot);
 </script>
 
-<section aria-label="Pending items and event log">
+<section aria-label="Pending items">
   <h2>Pending</h2>
-  {#if !$gs.snapshot?.pending.length}
-    <span class="dim">Nothing scheduled.</span>
+  {#if !snap?.pending.length}
+    <span class="dim">Nothing scheduled. Items you queue take effect after their lead time and appear here.</span>
   {:else}
     <ul>
-      {#each $gs.snapshot.pending as p (p.id)}
+      {#each snap.pending as p (p.id)}
         <li>
-          {describeCommand(p.command, $gs.levers, $gs.actions)} · effective turn {p.effectiveTurn}
-          {#if canCancel}<Button variant="ghost" title="Cancel and refund 50% of the PC" onclick={() => game.cancelPending(p.id)}>Cancel (refund {(p.pcCost / 2).toFixed(1)} PC)</Button>{/if}
+          <span>{describeCommand(p.command, $gs.levers, $gs.actions)}</span>
+          <span class="dim">{leadText(p.effectiveTurn - snap.turn)} ({quarterLabel(p.effectiveTurn, snap.game)})</span>
+          {#if canCancel}<Button variant="ghost" title="Cancel and refund half the political capital; no money was charged yet" onclick={() => game.cancelPending(p.id)}>Cancel (+{(p.pcCost / 2).toFixed(1)} PC)</Button>{/if}
         </li>
       {/each}
     </ul>
