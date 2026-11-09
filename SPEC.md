@@ -1,7 +1,7 @@
 # Ecological Economics Simulation Game: Spec (v0.1)
 
 Working title: *TBD*
-Status: draft for discussion. No code written yet.
+Status: draft v0.2. Milestone 1 (Rust simulation) is in progress; the demand side of the model is being redesigned (see `docs/causal-model.md` sections 7 to 9). The game is **turn-based** (section 4.1).
 
 ---
 
@@ -10,6 +10,8 @@ Status: draft for discussion. No code written yet.
 A 3D-ish, rotatable, single-town simulation in which the player acts as the town's **planner**. The player places things on the map, sets policy, and can **switch the economic system itself** (for example from market capitalism to cooperatives or state ownership). The town is made of agents who earn, spend, borrow, pollute and change class over time.
 
 **Goal:** keep cumulative emissions under the town's share of the 1.5°C carbon budget, while keeping the town livable (employment, wellbeing, inequality within limits).
+
+**Format:** turn-based. Each turn is one quarter. The player reviews the town, spends a limited budget of **political capital** on placements, policies and system changes (which take effect after a delay), then ends the turn and watches a quarter play out. About 160 turns make a game (40 years).
 
 **Tone:** critical. The default rules should make visible how profit-driven growth, debt, inequality and political capture push emissions up. Alternative systems should show different trade-offs, not a magic fix.
 
@@ -22,7 +24,9 @@ A 3D-ish, rotatable, single-town simulation in which the player acts as the town
 | Dimension | Decision |
 |---|---|
 | World | One town on a tile grid |
-| Time | Monthly tick; a run is 40 years = 480 ticks. About 30 min at 1x (about 4 s per tick), 8 to 15 min at 2x to 4x. All tunable. |
+| Time | **Turn-based.** 1 turn = 1 quarter = 3 monthly ticks inside the simulation. A game = 40 years = 160 turns (480 ticks). A turn is a few minutes of play; all tunable. |
+| Player budget | **Political capital** per turn limits what the player can change (section 4.1) |
+| Delay | Policies and builds take effect after a lead time of one or more turns (section 4.1) |
 | Agents | 10 individually-behaving agents (see section 5) |
 | Money | Banks create money by lending (endogenous money) |
 | Win/lose | Stay within the carbon budget while meeting livability floors |
@@ -54,12 +58,40 @@ A 3D-ish, rotatable, single-town simulation in which the player acts as the town
 
 ## 4. Player actions
 
-1. **Place** entities on the map (build cost, upkeep, attributes).
-2. **Govern** by setting policy levers.
-3. **Switch system** (expensive, slow to take effect, politically contested).
+1. **Place** entities on the map (money cost, upkeep, build time; some also cost political capital).
+2. **Govern** by queuing changes to policy levers (each costs political capital and takes effect after a delay).
+3. **Switch system** (very expensive in political capital, slow transition, politically contested).
 4. **Inspect** any agent or tile to see its attributes, income sources, and recent decisions. Inspection is **read-only**: the player never edits an agent's attributes directly during play. All influence is indirect, through placement, policy and system switching. (A separate sandbox mode could allow direct edits later.)
 5. **Rotate** the map in 90° steps (four views), pan and zoom.
-6. **Control time**: pause, 1x, 2x, 4x.
+6. **End turn**: confirm the queued moves and let the quarter play out. (There is no real-time speed control. An optional animation-speed setting only affects the playback.)
+
+### 4.1 Turn structure, political capital and delay
+
+**Each turn has four phases:**
+1. **Review:** the player sees the town, the metrics, last turn's events, the list of scheduled (pending) policies and builds, and their political capital.
+2. **Plan:** the player queues commands. Each shows its political-capital and money cost before it is confirmed. A command cannot be queued if the player cannot afford it. Queued commands can be cancelled before ending the turn for a full refund.
+3. **End turn:** the engine checks and applies the commands, then runs 3 monthly ticks.
+4. **Playback:** animations of the quarter's events, then a results summary (what changed, what was blocked or watered down by lobbying, new pending items becoming active).
+
+**Political capital (PC)** [all numbers are placeholders, tunable in `content/`]:
+- Starts at about 60, capped at 100. Unspent PC carries over up to the cap.
+- Regenerates each turn by `base (about 8) × legitimacy`, so a town in crisis gives the player less room to act.
+- Cost of a command = `base cost of the lever × size of the change × (1 + opposition)`, where opposition is the current net lobbying against that kind of policy (model doc S9b). Policies that hurt powerful classes cost more.
+- Placing ordinary infrastructure costs money only. Controversial actions also cost PC: fossil power plant, enclosing the commons, bank bailout, switching economic system.
+
+**Delay (lead time before taking effect)** [placeholders]:
+
+| Action | Lead time |
+|---|---|
+| Tax rates, minimum wage, benefits, subsidies | 1 turn |
+| Interest rate | 1 turn |
+| Carbon price or emissions cap | 2 turns (announced, then in force) |
+| Road, clinic or school | 2 turns |
+| Public housing | 3 turns |
+| Power plant | 4 turns |
+| Switch economic system | 4 to 8 turns of transition (model doc section 3) |
+
+Pending items are visible to the player and to the agents; firms may respond to an announced policy before it takes effect. A pending command can be cancelled before it takes effect, for a 50% PC refund.
 
 ---
 
@@ -169,7 +201,7 @@ Show time-series sparklines and a few headline numbers. The contrast metric is t
 ## 10. Win / lose
 
 - **Lose:** the cumulative emissions budget is exhausted, or the town collapses (unemployment or inequality beyond a threshold, bank failure cascade, legitimacy at zero).
-- **Win:** reach the end of the run (target year) with the budget intact and livability floors met.
+- **Win:** reach the end of turn 160 (the target year) with the budget intact and livability floors met.
 - **Scoring (optional):** a final score combining budget left, wellbeing, and equality, so "win" has degrees.
 
 **Carbon budget approach:** give the town a per-capita share of the remaining 1.5°C global budget, scaled to the town. Display a derived temperature estimate for context. This is more defensible than treating one town as the whole world.
@@ -177,6 +209,8 @@ Show time-series sparklines and a few headline numbers. The contrast metric is t
 ---
 
 ## 11. Simulation: the monthly tick
+
+**Turn vs tick.** The player acts once per turn (one quarter). The engine then runs 3 monthly ticks. The sequence below is what happens in each tick. Before the first tick of a turn the engine also processes the turn's commands: validates political capital, queues commands with their lead times, and activates any pending items whose lead time has ended.
 
 Order matters. Suggested sequence per tick:
 
@@ -201,7 +235,7 @@ Order matters. Suggested sequence per tick:
 
 - **View:** 3D-ish tile map, orthographic or low-perspective camera, **four 90° rotation snaps**.
 - **Style:** procedural, low-poly, toy-like geometry (similar in spirit to learn-esp32), no model files.
-- **Animations (presentation only, driven by tick events):**
+- **Animations (presentation only; played back after End turn from the events of the quarter's three ticks):**
   - households travelling home to work, shops, and back
   - goods moving from factories to shops
   - money flows (wages, rent, loan payments) as small tokens
@@ -219,7 +253,7 @@ Desktop-first, one screen, no page navigation. The map is always visible.
 
 ```
 +------------------------------------------------------------------+
-| Jan 2031 | ⏸ 1x 2x 4x | Carbon budget [██████░░░░] 61% | System: Market capitalism |
+| Q1 2031 · Turn 1/160 | PC 62/100 | Carbon budget [██████░░░░] 61% | System: Market | [End turn] |
 +--------+-----------------------------------------+---------------+
 | BUILD  |                                         | METRICS       |
 | palette|          3D MAP (rotatable)             | Economy  Eco  |
@@ -234,7 +268,7 @@ Desktop-first, one screen, no page navigation. The map is always visible.
 +------------------------------------------------------------------+
 ```
 
-**Top bar:** date, pause and speed, the **carbon budget gauge** (the most important number in the game, always visible), and the current economic system (click to switch).
+**Top bar:** quarter and turn counter, **political capital** meter, the **carbon budget gauge** (the most important number in the game, always visible), the current economic system (click to switch), and the **End turn** button.
 
 **Left rail, build palette:** placeable things grouped as Homes, Firms, Infrastructure, Nature. Select, then click a tile. Shows cost and a short effect preview on hover.
 
@@ -242,7 +276,7 @@ Desktop-first, one screen, no page navigation. The map is always visible.
 
 **Floating inspector:** appears on selecting an agent or tile. Shows attributes, income split (wages / profit / rent / interest), class, and its last few decisions. Read-only.
 
-**Policy drawer:** slides in from the right. Sliders for tax rates, carbon cap and price, interest rate, minimum wage and so on. Each change shows a predicted direction of effect (up/down arrows), not exact numbers.
+**Policy drawer:** slides in from the right. Sliders for tax rates, carbon cap and price, interest rate, minimum wage and so on. Each change shows its political-capital cost, its lead time ("takes effect in 2 turns") and a predicted direction of effect (up/down arrows), not exact numbers. A **pending list** shows everything scheduled and when it will take effect.
 
 **System switcher:** a modal comparing the available systems, with costs, transition time and who will resist. Confirmation is required, since switching is expensive.
 
@@ -256,7 +290,7 @@ Desktop-first, one screen, no page navigation. The map is always visible.
 
 **Onboarding:** a guided first scenario that pauses at key moments to explain one concept each.
 
-**Accessibility:** colour-blind-safe palettes (never colour alone for class or status), keyboard control for camera and pause, a light theme first and dark later.
+**Accessibility:** colour-blind-safe palettes (never colour alone for class or status), keyboard control for camera and End turn, a light theme first and dark later.
 
 ## 13. Technical approach (decided: Option B, Rust simulation + TypeScript web front end)
 
@@ -309,7 +343,7 @@ repo/
     sim-model/    the causal rules: one module per system (see 13.2). Pure functions.
     sim-metrics/  derived indicators (GDP, Gini, GPI, budget, temperature)
     sim-checks/   invariants: money conservation, finite numbers, non-negative stocks
-    sim-engine/   tick loop, system ordering, command handling, event and trace collection
+    sim-engine/   turn loop, policy queue with lead times, political capital, tick loop, system ordering, event and trace collection
     sim-cli/      binary: headless runs, CSV output, scripted scenarios   (milestone 1)
     sim-wasm/     thin wasm-bindgen wrapper for the browser               (milestone 4)
   content/        data, not code: params, economic-system configs, scenarios, causal map (JSON)
@@ -338,11 +372,12 @@ Only `sim-cli` does file I/O. Only `sim-wasm` knows about the browser. The other
 
 ```
 init(config, seed)           -> Sim
-step(&mut sim, commands)     -> StepOutput { events, trace }
-snapshot(&sim)               -> Snapshot        (state view + metrics, JSON)
+submit_turn(&mut sim, commands) -> TurnOutput { rejected, events, trace }   (validates PC, queues, then runs 3 ticks)
+preview(&sim, commands)         -> CommandCosts     (PC, money, lead time, without changing state)
+snapshot(&sim)                  -> Snapshot         (state view + metrics + pending list, JSON)
 ```
 
-- **Commands in:** place, remove, set policy, switch system, set speed.
+- **Commands in:** place, remove, set policy, switch system. (No speed command; the game is turn-based.)
 - **Events out:** "household 4 commuted to firm 7", "forest stock fell", "bank loan defaulted". The renderer animates these.
 - **Trace out:** contribution records that explain *why* a number changed (see 13.2).
 - **In the browser:** the simulation state lives inside WASM memory. Each tick the front end receives a JSON snapshot and the events. The data is small, so the cost is negligible.
@@ -391,10 +426,10 @@ This one file is used for three things:
 
 ## 14. Milestones
 
-1. **Headless model (no graphics).** A *headless run* executes the simulation with no map, UI or browser: a command (for example `sim --seed 42`) runs 480 ticks, optionally with scripted player actions ("raise the carbon price in year 5"), and prints or writes a CSV of the key series (GDP, unemployment, Gini, emissions, remaining budget, bank equity).
+1. **Headless model (no graphics).** A *headless run* executes the simulation with no map, UI or browser: a command (for example `sim --seed 42`) plays 160 turns (480 ticks) driven by a scripted **turn plan** (a JSON file of commands per turn, for example "turn 20: queue a carbon price of 50"), and prints or writes a CSV of the key series (GDP, unemployment, Gini, emissions, remaining budget, bank equity).
    - **Why first:** it tests whether the economy behaves sensibly before any graphics exist (no collapse in year 3, no money from nowhere), it is where parameters get tuned toward the targets in `docs/causal-model.md` section 5, and it becomes the test suite (invariants, sign tests, golden snapshot).
    - **Contents:** the Rust workspace (`sim-types`, `sim-rng`, `sim-params`, `sim-checks`, `sim-engine`, `sim-model`, `sim-metrics`, `sim-cli`), then the ten systems added one at a time, checking the numbers after each. Command: `cargo run -p sim-cli -- --seed 42`.
-   - **Done when:** a seeded 40-year run prints a summary, invariant tests pass, and the default run lands near the calibration targets.
+   - **Done when:** a seeded 160-turn run prints a summary, invariant tests pass, and the three baseline runs in `docs/causal-model.md` section 9 behave as specified (no-action run degrades but does not crash; a scripted sensible-play run survives; a scripted neglect run fails). The economy does **not** need to be self-stabilising with no player input, because the player steers every turn. It must be steerable.
 2. **Natural capital and carbon budget:** emissions, sinks, forest, budget depletion.
 3. **Class, mobility and political power.**
 4. **`sim-wasm` glue, tile map and static 3D view** with rotation and entity placement. Includes running the golden snapshot in WASM.
@@ -420,6 +455,7 @@ The main risk is that the model produces boring or degenerate behaviour (everyth
 **Open questions**
 1. ~~How long should a run take?~~ Decided: 40 years, 480 ticks, about 30 min at 1x.
 2. ~~Direct agent editing?~~ Decided: indirect only during play.
+2b. ~~Turn length, player limits, delay?~~ Decided: one quarter per turn; political-capital budget; policies take effect after a delay.
 3. What does the player see when they lose: a summary screen explaining which loops caused the failure?
 4. Should random events (floods, recessions, price shocks) exist?
 5. ~~Named agents or abstract labels?~~ Decided: abstract labels.

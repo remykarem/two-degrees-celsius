@@ -254,7 +254,7 @@ A system is a config that overrides parameters and some rule choices.
 
 ## 5. Targets and tests
 
-**Design targets (tuning goals, not facts):**
+**Design targets (v0.1; superseded by section 9 below, which reflects the turn-based game):**
 - Default market run, no policy: budget gone around year 28 (±5), unemployment between 6% and 12%, Gini rises from about 0.40 to 0.55, GDP grows about 2% a year.
 - A competent player can stay inside the budget in regulated capitalism, at the cost of lower GDP growth, and fighting lobbying.
 - Cooperatives give lower Gini and slower growth, and are not a free pass on emissions.
@@ -278,3 +278,65 @@ A system is a config that overrides parameters and some rule choices.
 ## 6. Deliberately left out of v1
 
 Trade and migration, inflation beyond relative prices, stock markets, multiple firms per sector, demographics (births and deaths), technology spillovers, taxes on goods, random events. Each can be added as a new system later without changing the others.
+
+---
+
+## 7. S0: turns, political capital and policy delay
+
+The game is turn-based (SPEC 4.1). One turn = 1 quarter = 3 ticks. This system runs once per turn, before the first tick.
+
+```
+submit_turn(commands):
+  for each command c in order:
+      cost = lever_base_cost(c) · size(c) · (1 + net_lobby_against(c))      # PC; net_lobby from S9b
+      reject c if cost > PC  or money_cost(c) > available funds
+      PC −= cost;  push c onto pending queue with effective_turn = current_turn + lead_time(c)
+  activate every pending item whose effective_turn == current_turn
+  run 3 ticks
+  PC = min(PC_cap, PC + pc_base · legitimacy)
+```
+- Policy values the model uses each tick are the **active** values. Pending items change nothing until activated.
+- Agents may respond to *announced* policies (firms read the pending carbon price when deciding investment), using a discount of 0.5 on a policy that is still pending.
+- Lobbying (S9b) is evaluated when a command activates: `effective = nominal · (1 − net_lobby)`. The turn summary reports nominal vs effective.
+- Cancelling a pending command refunds 50% of its PC.
+- Parameters (placeholders in `content/`): `pc_start 60`, `pc_cap 100`, `pc_base 8`, `lead_time` per lever, `lever_base_cost` per lever.
+
+---
+
+## 8. Revision v0.2: the demand side (replaces parts of S1, S3, S5, S6, S8)
+
+**Problem found in the first build:** rich households saved most of their income, nothing recycled those savings into spending, and the economy slid to wherever government and investment spending happened to land. Parameter searching could not fix it.
+
+**Fix: make every payment someone's income, and send savings round the circle.** Rules:
+
+1. **Investment is demand.** Firm investment buys capital goods from the Factory. That spending is the Factory's revenue and pays its workers. So saving, if lent out, becomes someone else's income.
+2. **Savings recycle through the bank.** Household saving builds deposits. The bank lends against deposits and equity (S5). Firms borrow to invest. This is how the savings of the rich re-enter the circle.
+3. **Accelerator investment.** `I_f = replacement (δ·K) + a · (desired_K − K)`, with `desired_K = expected_sales / capital_productivity` and `a` smoothed (about 5% of the gap per month). Investment is driven by expected demand and capacity utilisation, not only by profit. Profit and the interest rate gate it (S6 hurdle).
+4. **Wealth effect on consumption.** Capitalist and landlord cohorts also consume `c_w ≈ 0.2% per month` of net wealth, so wealth cannot be hoarded without limit. Their `propensity_to_consume` applies to income as before.
+5. **Government spending is a player policy, not a reaction rule.** Real purchases `G` are set by a lever (queued like any policy). Automatic stabilisers remain: benefits per unemployed person and income-linked taxes. The government has **no hidden rule** reacting to its own revenue or debt (that caused spirals). Debt consequences work through bank lending limits and legitimacy (S8).
+6. **Wages and prices.** Wage growth follows employment: `w ← w · (1 + k · (u_ref − u))`, with `k` small and the monthly change capped at ±1%. Prices follow unit labour cost plus a markup: `p → (1 + μ) · ULC`, adjusting 5% of the gap per month. Inventories absorb short-run mismatches. Remove the older price and wage rules where they conflict.
+7. **Production follows expected sales.** `expected_sales` is an exponential average (λ ≈ 0.3). Employment follows output. Smoothing is what stops 12-month boom-bust cycles. Some cycle is allowed; violent limit cycles are not.
+8. **Job guarantee (optional player lever).** The government can hire up to X% of the unemployed at the minimum wage. It costs PC, is off by default, and is a *policy*, not a hidden stabiliser. (This is the legitimate version of the shortcut: the player chooses it and pays for it.)
+9. **Household credit** is off in v1 (a flag `household_credit` exists in params). Revisit if demand still collapses.
+
+**Conservation:** with these rules the sector balances should sum to zero each tick: household saving = firm investment financed + government deficit + change in bank-held assets. Add this identity to `sim-checks`.
+
+---
+
+## 9. Revised targets and baseline runs
+
+Because the player steers every turn, the model does not need to be stable on its own. It needs to be **steerable**: sensible play works, neglect fails, and nothing crashes or produces `NaN`.
+
+**Three baseline runs (each a scripted turn plan, 160 turns, fixed seed):**
+
+| Run | Script | Required behaviour |
+|---|---|---|
+| **A. No action** | Player queues nothing | Does not crash or break invariants. Carbon budget is exhausted between roughly turns 90 and 140 (year 22 to 35). Inequality rises. Unemployment cycles within roughly 4% to 15%. |
+| **B. Sensible play** | Ramp the carbon price, green subsidy, public housing, benefits, some commons protection, modest redistribution, all within the PC budget | Survives all 160 turns with budget intact, legitimacy above 0.3, unemployment below 15% most of the time. Proves the game is winnable. |
+| **C. Neglect and extraction** | Build fossil plants, enclose the commons, cut taxes and benefits | Fails (budget gone or collapse) by roughly year 30 or earlier. |
+
+**Plus (still required):** the money-conservation identity and sector balances, determinism, non-negativity, finite numbers, the sign tests in section 5, and a golden snapshot of run A.
+
+**Soft targets for run A (informal):** GDP growth around 1% to 2% a year when not in recession; Gini starting near 0.40 and rising to 0.50 to 0.60. If these cannot be reached without implausible rules, say so rather than forcing it.
+
+**Winnable but not trivial:** at least one plausible strategy (for example, only a carbon tax and nothing else) should *fail*, so the player has to combine tools.
