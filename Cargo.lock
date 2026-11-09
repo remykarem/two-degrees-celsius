@@ -505,6 +505,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sim-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sim-checks",
+ "sim-engine",
+ "sim-metrics",
+ "sim-params",
+ "sim-rng",
+ "sim-types",
+]
+
+[[package]]
 name = "sim-checks"
 version = "0.1.0"
 dependencies = [

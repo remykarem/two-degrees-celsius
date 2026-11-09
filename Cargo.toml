@@ -8,6 +8,7 @@ members = [
   "crates/sim-metrics",
   "crates/sim-checks",
   "crates/sim-engine",
+  "crates/sim-api",
   "crates/sim-cli",
 ]
 
@@ -30,6 +31,7 @@ sim-model = { path = "crates/sim-model" }
 sim-metrics = { path = "crates/sim-metrics" }
 sim-checks = { path = "crates/sim-checks" }
 sim-engine = { path = "crates/sim-engine" }
+sim-api = { path = "crates/sim-api" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

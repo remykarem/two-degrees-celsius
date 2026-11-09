@@ -1,0 +1,21 @@
+[package]
+name = "sim-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+# float_roundtrip: exported saves must restore every f64 bit-for-bit.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+sim-types.workspace = true
+sim-rng.workspace = true
+sim-params.workspace = true
+sim-metrics.workspace = true
+sim-checks.workspace = true
+sim-engine.workspace = true
+
+[dev-dependencies]
