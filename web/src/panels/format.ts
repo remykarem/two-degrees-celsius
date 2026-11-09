@@ -71,14 +71,17 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
   }
 }
 
+/** People are floats in the real sim (2.0000000000000057); show at most one decimal. */
+const n = (v: number) => String(Math.round(v * 10) / 10);
+
 /** All event wording lives here: the contract carries payloads only. */
 export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
   const hh = (id: number) => snap?.households.find((h) => h.id === id)?.label ?? `household ${id}`;
   const firm = (id: number) => snap?.firms.find((f) => f.id === id)?.name ?? `firm ${id}`;
   switch (e.type) {
-    case 'commuted': return `${e.people} ${hh(e.household)} commute to ${firm(e.firm)}`;
-    case 'hired': return `${firm(e.firm)} hired ${e.people}`;
-    case 'fired': return `${firm(e.firm)} laid off ${e.people}`;
+    case 'commuted': return `${n(e.people)} ${hh(e.household)} commute to ${firm(e.firm)}`;
+    case 'hired': return `${firm(e.firm)} hired ${n(e.people)}`;
+    case 'fired': return `${firm(e.firm)} laid off ${n(e.people)}`;
     case 'loan_defaulted': return `${firm(e.firm)} defaulted on a loan`;
     case 'firm_founded': return `${firm(e.firm)} opened`;
     case 'firm_closed': return `${firm(e.firm)} closed`;

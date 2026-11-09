@@ -1,0 +1,153 @@
+{
+ "seed": 7,
+ "cancelBeforeTurn": {
+  "2": 1
+ },
+ "exportAfterTurn": 15,
+ "turns": [
+  [
+   {
+    "type": "set_policy",
+    "lever": "carbon_price",
+    "value": 40
+   },
+   {
+    "type": "place",
+    "kind": "renewable_plant",
+    "count": 2
+   },
+   {
+    "type": "set_policy",
+    "lever": "tax_wage",
+    "value": 0.12
+   }
+  ],
+  [
+   {
+    "type": "set_policy",
+    "lever": "benefit",
+    "value": 900
+   },
+   {
+    "type": "place",
+    "kind": "public_housing",
+    "count": 5
+   }
+  ],
+  [
+   {
+    "type": "set_policy",
+    "lever": "min_wage",
+    "value": 1500
+   },
+   {
+    "type": "set_policy",
+    "lever": "campaign_cap",
+    "value": 0.4
+   }
+  ],
+  [
+   {
+    "type": "switch_system",
+    "to": "regulated"
+   }
+  ],
+  [
+   {
+    "type": "set_policy",
+    "lever": "emissions_cap",
+    "value": 90000
+   },
+   {
+    "type": "place",
+    "kind": "renewable_plant",
+    "count": 1
+   }
+  ],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "wealth_tax",
+    "value": 0.01
+   },
+   {
+    "type": "set_policy",
+    "lever": "commons_harvest",
+    "value": 0.5
+   }
+  ],
+  [],
+  [
+   {
+    "type": "remove",
+    "kind": "fossil_plant",
+    "count": 1
+   },
+   {
+    "type": "set_policy",
+    "lever": "public_spending",
+    "value": 800000
+   }
+  ],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "commons_access",
+    "value": {
+     "mode": "community",
+     "cap": 0.5
+    }
+   }
+  ],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "bailout",
+    "value": true
+   },
+   {
+    "type": "set_policy",
+    "lever": "job_guarantee",
+    "value": 0.3
+   },
+   {
+    "type": "place",
+    "kind": "public_housing",
+    "count": 300
+   }
+  ],
+  [],
+  [],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "carbon_price",
+    "value": 90
+   }
+  ],
+  [],
+  [],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "ubi",
+    "value": 200
+   },
+   {
+    "type": "set_policy",
+    "lever": "green_subsidy",
+    "value": 0.2
+   }
+  ],
+  [],
+  [],
+  [],
+  [],
+  []
+ ]
+}

@@ -1,0 +1,219 @@
+{
+  "actions": "009f884c7e2cf7a8",
+  "cancel2": "a3b2608b744594e4",
+  "export": "92ea645d8fd7789d",
+  "finalSnapshot": "bf277a9f548b526b",
+  "import": "903c7e87aca9e63e",
+  "init": "e11e6d2e40395546",
+  "levers": "360dc2c547af15fa",
+  "turns": [
+    {
+      "fnv": "551948a86b5b3817",
+      "gdpRealAnnual": 22625676.340178344,
+      "legitimacy": 0.7059143059500268,
+      "ok": true,
+      "temperature": 1.3009576131098937,
+      "turn": 1
+    },
+    {
+      "fnv": "065594550a74dc56",
+      "gdpRealAnnual": 24208759.008207407,
+      "legitimacy": 0.7120527310397305,
+      "ok": true,
+      "temperature": 1.301939285909676,
+      "turn": 2
+    },
+    {
+      "fnv": "c53e4d5726eeb5bd",
+      "gdpRealAnnual": 24881106.654896818,
+      "legitimacy": 0.7186457508165144,
+      "ok": true,
+      "temperature": 1.3029878358757927,
+      "turn": 3
+    },
+    {
+      "fnv": "211a09f32c108906",
+      "gdpRealAnnual": 25127167.856079277,
+      "legitimacy": 0.7258373130421576,
+      "ok": true,
+      "temperature": 1.3040568481613841,
+      "turn": 4
+    },
+    {
+      "fnv": "7473acf06a237386",
+      "gdpRealAnnual": 25295383.14779223,
+      "legitimacy": 0.7330523886787923,
+      "ok": true,
+      "temperature": 1.3049720380598182,
+      "turn": 5
+    },
+    {
+      "fnv": "57055c4ab3843d39",
+      "gdpRealAnnual": 25566457.24315183,
+      "legitimacy": 0.7386773305525066,
+      "ok": true,
+      "temperature": 1.305783189065058,
+      "turn": 6
+    },
+    {
+      "fnv": "2b738fdbcefd6f0f",
+      "gdpRealAnnual": 25748383.53491402,
+      "legitimacy": 0.7450411767985908,
+      "ok": true,
+      "temperature": 1.3066098623451718,
+      "turn": 7
+    },
+    {
+      "fnv": "5192a5271015543f",
+      "gdpRealAnnual": 25895684.06865031,
+      "legitimacy": 0.7518956425330241,
+      "ok": true,
+      "temperature": 1.3074485027750327,
+      "turn": 8
+    },
+    {
+      "fnv": "daf108795a5c4506",
+      "gdpRealAnnual": 26001938.430449758,
+      "legitimacy": 0.7587514807727136,
+      "ok": true,
+      "temperature": 1.3082453136295256,
+      "turn": 9
+    },
+    {
+      "fnv": "fcc5a5b852c912fb",
+      "gdpRealAnnual": 26195718.313500337,
+      "legitimacy": 0.7609482042229198,
+      "ok": true,
+      "temperature": 1.308939044720666,
+      "turn": 10
+    },
+    {
+      "fnv": "ec6aefebd3ae1900",
+      "gdpRealAnnual": 26366913.282118414,
+      "legitimacy": 0.7616437689374084,
+      "ok": true,
+      "temperature": 1.3096298767424217,
+      "turn": 11
+    },
+    {
+      "fnv": "f8463c9052c64eea",
+      "gdpRealAnnual": 26706640.817416046,
+      "legitimacy": 0.7613063357826666,
+      "ok": true,
+      "temperature": 1.3103281732908192,
+      "turn": 12
+    },
+    {
+      "fnv": "2c1a292a9f608357",
+      "gdpRealAnnual": 26700493.756383568,
+      "legitimacy": 0.7604214939603035,
+      "ok": true,
+      "temperature": 1.3110341791459743,
+      "turn": 13
+    },
+    {
+      "fnv": "02c0b4b407ee3048",
+      "gdpRealAnnual": 27053690.125162072,
+      "legitimacy": 0.7587288380886742,
+      "ok": true,
+      "temperature": 1.3117481627034444,
+      "turn": 14
+    },
+    {
+      "fnv": "2ca832a3cc75f6b0",
+      "gdpRealAnnual": 27221563.82250163,
+      "legitimacy": 0.7563956909404457,
+      "ok": true,
+      "temperature": 1.3124697689102234,
+      "turn": 15
+    },
+    {
+      "fnv": "85919d8fcf3f1792",
+      "gdpRealAnnual": 27383788.50754741,
+      "legitimacy": 0.7532906166053079,
+      "ok": true,
+      "temperature": 1.313199238655537,
+      "turn": 16
+    },
+    {
+      "fnv": "454845fc084ed283",
+      "gdpRealAnnual": 27541357.66852324,
+      "legitimacy": 0.7494208331868192,
+      "ok": true,
+      "temperature": 1.313936399526829,
+      "turn": 17
+    },
+    {
+      "fnv": "5cb62601a6693642",
+      "gdpRealAnnual": 27692841.801243,
+      "legitimacy": 0.7448561328541641,
+      "ok": true,
+      "temperature": 1.314681450389841,
+      "turn": 18
+    },
+    {
+      "fnv": "bff563b5a1636597",
+      "gdpRealAnnual": 27820893.09391223,
+      "legitimacy": 0.7396527315262892,
+      "ok": true,
+      "temperature": 1.3154343076824222,
+      "turn": 19
+    },
+    {
+      "fnv": "f90840dce81d777a",
+      "gdpRealAnnual": 27955294.535453804,
+      "legitimacy": 0.7339566255479824,
+      "ok": true,
+      "temperature": 1.3161949494098524,
+      "turn": 20
+    },
+    {
+      "fnv": "281dd3e18db910ac",
+      "gdpRealAnnual": 27926000.705051776,
+      "legitimacy": 0.7275999784584997,
+      "ok": true,
+      "temperature": 1.3169633813921047,
+      "turn": 21
+    },
+    {
+      "fnv": "a88b3f36c426d786",
+      "gdpRealAnnual": 27838358.599377714,
+      "legitimacy": 0.7214700154351104,
+      "ok": true,
+      "temperature": 1.3177417872172366,
+      "turn": 22
+    },
+    {
+      "fnv": "6bebe89297b7ccc7",
+      "gdpRealAnnual": 28207393.585135233,
+      "legitimacy": 0.7126209958570429,
+      "ok": true,
+      "temperature": 1.3185309853177576,
+      "turn": 23
+    },
+    {
+      "fnv": "1631bc9fd4e52ac3",
+      "gdpRealAnnual": 28335201.669797797,
+      "legitimacy": 0.7029079141497276,
+      "ok": true,
+      "temperature": 1.3193279130022255,
+      "turn": 24
+    },
+    {
+      "fnv": "587eb5134fb6bd77",
+      "gdpRealAnnual": 28468991.725596912,
+      "legitimacy": 0.6919902549751895,
+      "ok": true,
+      "temperature": 1.320132879280927,
+      "turn": 25
+    },
+    {
+      "fnv": "5e2dcff110969610",
+      "gdpRealAnnual": 28614749.848956272,
+      "legitimacy": 0.6799744547550568,
+      "ok": true,
+      "temperature": 1.3209460888824485,
+      "turn": 26
+    }
+  ]
+}
