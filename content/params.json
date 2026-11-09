@@ -43,7 +43,7 @@
     "spread_base": 0.005,
     "spread_leverage": 0.02,
     "firm_term_months": 60.0,
-    "household_amort": 0.008,
+    "household_amort": 0.003,
     "deposit_spread": 0.01,
     "default_after_months": 3,
     "bank_payout": 0.5,

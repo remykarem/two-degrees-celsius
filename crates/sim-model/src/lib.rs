@@ -2,6 +2,7 @@
 //! Every system is a pure function `fn(&State, &Params, &mut Rng) -> Deltas`:
 //! it reads a snapshot of the state and returns changes; the engine applies them.
 #![forbid(unsafe_code)]
+#![allow(clippy::needless_range_loop)]
 
 pub mod class;
 pub mod credit;

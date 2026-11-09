@@ -1,5 +1,21 @@
 //! Small helpers shared by systems.
+use sim_params::{Params, SystemConfig};
 use sim_types::*;
+
+/// The rule overrides of the active economic system.
+pub fn cfg<'a>(s: &State, p: &'a Params) -> &'a SystemConfig {
+    p.systems.get(s.system)
+}
+
+/// Firm monthly interest rate factor helper: annual rate to monthly.
+pub fn monthly(rate: f64) -> f64 {
+    rate / 12.0
+}
+
+/// Is this cohort a skilled (premium wage) tier?
+pub fn is_skilled(h: &Household) -> bool {
+    h.wage_premium.0 > 1.0
+}
 
 /// Split `total` cents across `weights` so the parts sum exactly to `total`
 /// (largest remainder method, ties broken by index). Non-positive weights get zero.
