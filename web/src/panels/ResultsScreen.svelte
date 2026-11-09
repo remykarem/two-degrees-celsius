@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { PALETTE, quarterLabel, type Game } from '../store';
+  import { quarterLabel, type Game } from '../store';
   import { Button } from '../ui-kit';
-  import { describeCommand, pct } from './format';
+  import { describeCommand, formatEvent, pct } from './format';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const r = $derived($gs.lastResult);
-  const infraLabel = (k: string) => PALETTE.find((p) => p.kind === k)?.label ?? k;
-  const desc = (c: Parameters<typeof describeCommand>[0]) => describeCommand(c, $gs.levers, infraLabel);
+  const desc = (c: Parameters<typeof describeCommand>[0]) => describeCommand(c, $gs.levers, $gs.actions);
 
   const deltas = $derived.by(() => {
     const a = r?.snapshot, b = $gs.previous;
@@ -25,14 +24,14 @@
       row('Wellbeing', a.indicators.avgWellbeing, b.indicators.avgWellbeing, true, (v) => v.toFixed(3)),
     ];
   });
-  const events = $derived((r?.months.flatMap((m) => m.events) ?? []).filter((e) => e.text).sort((a, b) => b.importance - a.importance).slice(0, 6));
+  const events = $derived((r?.months.flatMap((m) => m.events) ?? []).filter((e) => e.type !== 'command_activated').sort((a, b) => b.importance - a.importance).slice(0, 6));
   const next = $derived((r?.snapshot.pending ?? []).filter((p) => p.effectiveTurn === (r?.snapshot.turn ?? 0) + 1));
 </script>
 
 {#if $gs.phase === 'results' && r}
   <div class="backdrop">
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="rt">
-      <h2 id="rt">Results · {quarterLabel(r.turn)}</h2>
+      <h2 id="rt">Results · {quarterLabel(r.turn, r.snapshot.game)}</h2>
       {#if deltas.length}
         <h3>What changed</h3>
         <ul class="deltas">
@@ -45,12 +44,12 @@
         </ul>
       {/if}
       <h3>Events</h3>
-      <ul>{#each events as e, i (i)}<li>{'●'.repeat(e.importance)} {e.text}</li>{:else}<li>Nothing notable.</li>{/each}</ul>
+      <ul>{#each events as e, i (i)}<li><span aria-label="importance {e.importance} of 3">{'●'.repeat(e.importance)}</span> {formatEvent(e, r.snapshot)}</li>{:else}<li>Nothing notable.</li>{/each}</ul>
       {#if r.rejected.length || r.policyGaps.length}
         <h3>Blocked or weakened by lobbying</h3>
         <ul>
           {#each r.rejected as x, i (i)}<li>Blocked: {desc(x.command)} ({x.reason})</li>{/each}
-          {#each r.policyGaps as g (g.lever)}<li>{g.lever}: set {g.nominal}, about {g.effective.toFixed(2)} in force</li>{/each}
+          {#each r.policyGaps as g (g.lever)}<li>{$gs.levers.find((l) => l.key === g.lever)?.label ?? g.lever}: set {g.nominal}, about {g.effective.toFixed(2)} in force</li>{/each}
         </ul>
       {/if}
       {#if r.activated.length}<h3>Now in force</h3><ul>{#each r.activated as a (a.id)}<li>{desc(a.command)}</li>{/each}</ul>{/if}

@@ -185,22 +185,5 @@
    "y": 1,
    "effectiveTurn": 0
   }
- ],
- "palette": [
-  {
-   "kind": "public_housing",
-   "label": "Public housing",
-   "hint": "Cheap rented homes"
-  },
-  {
-   "kind": "fossil_plant",
-   "label": "Fossil plant",
-   "hint": "Cheap power, emits carbon"
-  },
-  {
-   "kind": "renewable_plant",
-   "label": "Renewable plant",
-   "hint": "Costly power, no carbon"
-  }
  ]
 }

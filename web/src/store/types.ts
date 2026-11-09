@@ -1,4 +1,4 @@
-import type { Command, CommandPreview, InfraKind, LeverInfo, Snapshot, TurnResult } from '../contract';
+import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Snapshot, TurnResult } from '../contract';
 import type { MapLayout, Tile } from './layout';
 import type { Phase } from './phase';
 
@@ -18,6 +18,7 @@ export interface GameState {
   phase: Phase;
   snapshot: Snapshot | null;
   levers: LeverInfo[];
+  actions: ActionInfo[];
   draft: DraftItem[];
   lastResult: TurnResult | null;
   /** Snapshot from before the last turn, for result deltas. */
@@ -29,6 +30,4 @@ export interface GameState {
   buildKind: InfraKind | null;
   lens: Lens;
   camera: CameraAngle;
-  /** Message shown in the briefing card on Review. */
-  briefing: string[];
 }

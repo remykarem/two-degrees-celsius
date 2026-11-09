@@ -16,8 +16,8 @@ export function buildSnapshot(s: MockState): Snapshot {
   }
   const govMonthly = s.gdp / 12;
   return {
-    schemaVersion: s.schemaVersion, turn: s.turn, tick: s.tick, gameOver: s.gameOver,
-    pc: { current: s.pc, cap: DATA.pc.cap, regenNextTurn: Math.round(DATA.pc.regenBase * s.legitimacy) },
+    schemaVersion: s.schemaVersion, game: { ...DATA.game }, turn: s.turn, tick: s.tick, gameOver: s.gameOver,
+    pc: { current: s.pc, cap: DATA.pc.cap, regenNextTurn: DATA.pc.regenBase * s.legitimacy },
     system: { current: s.system, transition: s.transition },
     pending: s.pending.map((p) => ({ ...p })), policy, netLobby: s.netLobby, unionDensity: DATA.start.unionDensity!,
     indicators: {

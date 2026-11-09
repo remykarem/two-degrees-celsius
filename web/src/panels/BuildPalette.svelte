@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PALETTE, type Game } from '../store';
+  import { paletteActions, type Game } from '../store';
   import { Button } from '../ui-kit';
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -9,9 +9,9 @@
 
 <aside aria-label="Build palette">
   <h2>Build</h2>
-  {#each PALETTE as item (item.kind)}
-    <Button pressed={$gs.buildKind === item.kind} disabled={locked} title={item.hint}
-      onclick={() => game.setBuildKind($gs.buildKind === item.kind ? null : item.kind)}>{item.label}</Button>
+  {#each paletteActions($gs.actions) as item (item.kind)}
+    <Button pressed={$gs.buildKind === item.kind} disabled={locked} title="{item.action.baseCostPc} PC, ready {item.action.leadTime} turns after ordering, about ${item.action.moneyCost.toLocaleString()}"
+      onclick={() => game.setBuildKind($gs.buildKind === item.kind ? null : item.kind)}>{item.action.label}</Button>
   {/each}
   <p class="hint">
     {#if $gs.buildKind}Click a tile to place. Esc to stop.{:else}Pick a building, then click the map.{/if}

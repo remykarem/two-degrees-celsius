@@ -32,9 +32,9 @@ export interface Game {
 
 export function createGame(port: SimPort): Game {
   const store = writable<GameState>({
-    phase: 'review', snapshot: null, levers: [], draft: [], lastResult: null, previous: null,
+    phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
     playback: { month: -1, skipped: false }, layout: initialLayout(), selection: null, hover: null,
-    buildKind: null, lens: 'none', camera: 0, briefing: [],
+    buildKind: null, lens: 'none', camera: 0,
   });
   const get = store.get;
   const patch = (p: Partial<GameState>) => store.set({ ...get(), ...p });
@@ -48,16 +48,6 @@ export function createGame(port: SimPort): Game {
   }
 
   const draftedTiles = () => get().draft.flatMap((d) => (d.command.type === 'place' && d.command.tile ? [d.command.tile] : []));
-
-  function briefingFor(r: TurnResult | null): string[] {
-    if (!r) return ['Welcome. Review the town, then plan your first quarter.'];
-    const lines: string[] = [];
-    r.activated.forEach((a) => lines.push(`Took effect: ${describe(a.command)}`));
-    r.policyGaps.forEach((g) => lines.push(`Lobbying weakened ${g.lever}: set ${g.nominal}, about ${g.effective.toFixed(2)} in force`));
-    r.rejected.forEach((x) => lines.push(`Blocked: ${describe(x.command)} (${x.reason})`));
-    r.months.flatMap((m) => m.events).filter((e) => e.importance >= 2 && e.text).slice(0, 3).forEach((e) => lines.push(e.text!));
-    return lines.slice(0, 5).length ? lines.slice(0, 5) : ['A quiet quarter.'];
-  }
 
   function applyResultToLayout(r: TurnResult) {
     const layout = get().layout;
@@ -77,9 +67,9 @@ export function createGame(port: SimPort): Game {
     newGame(seed) {
       const snapshot = port.init(seed);
       store.set({
-        ...get(), phase: 'review', snapshot, levers: port.levers(), draft: [], lastResult: null, previous: null,
+        ...get(), phase: 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
         playback: { month: -1, skipped: false }, layout: initialLayout(), selection: null, hover: null,
-        buildKind: null, briefing: briefingFor(null),
+        buildKind: null,
       });
     },
 
@@ -132,7 +122,6 @@ export function createGame(port: SimPort): Game {
       const s = get();
       if (s.phase !== 'results') return;
       if (s.snapshot?.gameOver) return fire('gameOver');
-      patch({ briefing: briefingFor(s.lastResult) });
       fire('continue');
     },
 
@@ -165,13 +154,4 @@ export function createGame(port: SimPort): Game {
       return null;
     },
   };
-}
-
-function describe(c: Command): string {
-  switch (c.type) {
-    case 'set_policy': return `${c.lever} -> ${typeof c.value === 'object' ? c.value.mode : String(c.value)}`;
-    case 'switch_system': return `switch to ${c.to}`;
-    case 'place': return `build ${c.kind}`;
-    case 'remove': return `remove ${c.kind}`;
-  }
 }

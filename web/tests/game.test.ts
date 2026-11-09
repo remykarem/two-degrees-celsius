@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSimPort } from '../src/sim-port';
 import { attachPlayback, type Scheduler } from '../src/app/playback';
-import { createGame } from '../src/store';
+import { createGame, paletteActions, quarterLabel } from '../src/store';
 
 const newGame = () => {
   const g = createGame(createSimPort());
@@ -87,5 +87,15 @@ describe('playback driver', () => {
     g.finishPlayback();
     expect(queue.every((h) => !h.live)).toBe(true);
     off();
+  });
+});
+
+describe('v0.2 store behaviour', () => {
+  it('builds the palette from actions() and the calendar label from the snapshot', () => {
+    const g = newGame();
+    expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant']);
+    const game = g.state.get().snapshot!.game;
+    expect(quarterLabel(1, game)).toBe('Q1 2031');
+    expect(quarterLabel(6, game)).toBe('Q2 2032');
   });
 });

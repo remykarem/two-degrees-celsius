@@ -1,18 +1,20 @@
 <script lang="ts">
   import { quarterLabel, type Game } from '../store';
+  import { briefingLines } from './format';
   import { Button } from '../ui-kit';
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   let dismissedTurn = $state(0);
   const turn = $derived($gs.snapshot?.turn ?? 0);
-  const show = $derived($gs.phase === 'review' && dismissedTurn !== turn && $gs.briefing.length > 0);
+  const show = $derived($gs.phase === 'review' && dismissedTurn !== turn);
+  const lines = $derived(briefingLines($gs.lastResult, $gs.levers, $gs.actions));
 </script>
 
 {#if show}
   <section class="card" aria-label="Briefing">
-    <h2>Briefing · {quarterLabel(turn)}</h2>
-    <ul>{#each $gs.briefing as line, i (i)}<li>{line}</li>{/each}</ul>
+    <h2>Briefing · {#if $gs.snapshot}{quarterLabel(turn, $gs.snapshot.game)}{/if}</h2>
+    <ul>{#each lines as line, i (i)}<li>{line}</li>{/each}</ul>
     <div class="row">
       <Button onclick={() => (dismissedTurn = turn)}>Dismiss</Button>
       <Button variant="primary" onclick={() => { dismissedTurn = turn; game.enterPlan(); }}>Start planning</Button>

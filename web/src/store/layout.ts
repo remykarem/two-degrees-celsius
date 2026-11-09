@@ -4,12 +4,9 @@ import type { InfraKind } from '../contract';
 export type SceneryKind = 'home' | 'firm' | 'bank' | 'government' | 'forest' | 'commons';
 export interface Scenery { kind: SceneryKind; ref?: number; x: number; y: number; label: string }
 export interface Placed { kind: InfraKind; x: number; y: number; effectiveTurn: number }
-export interface PaletteItem { kind: InfraKind; label: string; hint: string }
 export interface Tile { x: number; y: number }
 
 export interface MapLayout { gridSize: number; scenery: Scenery[]; placed: Placed[] }
-
-export const PALETTE = raw.palette as PaletteItem[];
 
 export function initialLayout(): MapLayout {
   const l = raw as unknown as { gridSize: number; scenery: Scenery[]; placed: Placed[] };

@@ -1,6 +1,4 @@
 {
- "totalTurns": 160,
- "startYear": 2031,
  "schemaVersion": 1,
  "pc": {
   "start": 60,
@@ -132,19 +130,6 @@
    "active": false
   }
  ],
- "eventTexts": {
-  "hired": "{n} people found work",
-  "fired": "{n} people lost their jobs",
-  "commuted": "Commuters head to work",
-  "rent_shortfall": "Some households could not pay full rent",
-  "forest_shrank": "The forest shrank slightly",
-  "firm_founded": "A new firm was founded",
-  "policy_blocked": "A policy was blocked: {reason}",
-  "command_activated": "Took effect: {what}",
-  "budget_exhausted": "The carbon budget is exhausted",
-  "spending_cut": "Households cut spending",
-  "collapse": "The town collapsed"
- },
  "levers": [
   {
    "key": "carbon_price",
@@ -177,8 +162,7 @@
     "gdp": -0.012,
     "legitimacy": -0.01
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "tax_wage",
@@ -189,7 +173,7 @@
    "step": 0.01,
    "baseCostPc": 8,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "gini",
@@ -210,8 +194,7 @@
     "gini": -0.05,
     "gdp": -0.015
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "tax_profit",
@@ -243,8 +226,7 @@
     "gini": -0.04,
     "gdp": -0.01
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "tax_capital",
@@ -255,7 +237,7 @@
    "step": 0.01,
    "baseCostPc": 9,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "gini",
@@ -272,8 +254,7 @@
     "gini": -0.05,
     "gdp": -0.006
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "wealth_tax",
@@ -305,8 +286,7 @@
     "gini": -0.08,
     "legitimacy": 0.01
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "wealth_threshold",
@@ -317,7 +297,7 @@
    "step": 50000,
    "baseCostPc": 4,
    "leadTime": 3,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "gini",
@@ -333,8 +313,7 @@
    "effect": {
     "gini": 0.02
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "base_rate",
@@ -366,8 +345,7 @@
     "gdp": -0.1,
     "unemployment": 0.2
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "min_wage",
@@ -378,7 +356,7 @@
    "step": 0.5,
    "baseCostPc": 7,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "gini",
@@ -399,8 +377,7 @@
     "gini": -0.04,
     "unemployment": 0.03
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "benefit",
@@ -411,7 +388,7 @@
    "step": 50,
    "baseCostPc": 8,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "wellbeing",
@@ -432,8 +409,7 @@
     "legitimacy": 0.03,
     "gdp": -0.002
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "ubi",
@@ -444,7 +420,7 @@
    "step": 50,
    "baseCostPc": 16,
    "leadTime": 3,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "wellbeing",
@@ -470,8 +446,7 @@
     "legitimacy": 0.04,
     "gdp": -0.004
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "green_subsidy",
@@ -482,7 +457,7 @@
    "step": 0.05,
    "baseCostPc": 10,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "emissions",
@@ -503,8 +478,7 @@
     "emissions": -0.25,
     "gdp": 0.004
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "campaign_cap",
@@ -530,8 +504,7 @@
    "effect": {
     "legitimacy": -0.03
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "emissions_cap",
@@ -566,8 +539,7 @@
     "emissions": 0.0,
     "gdp": 0.0
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "commons_harvest",
@@ -594,19 +566,18 @@
    "effect": {
     "legitimacy": 0.0
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "commons_access",
    "label": "Commons access",
    "unit": "enum",
    "min": 0,
-   "max": 1,
-   "step": 1,
+   "max": 0,
+   "step": 0,
    "baseCostPc": 9,
    "leadTime": 2,
-   "lobbied": true,
+   "lobbied": false,
    "arrows": [
     {
      "metric": "forest",
@@ -625,7 +596,10 @@
    "default": 0,
    "effect": {},
    "moneyPerUnit": 0,
-   "oneOff": false
+   "options": [
+    "open",
+    "community"
+   ]
   },
   {
    "key": "bank_capital_ratio",
@@ -656,16 +630,15 @@
    "effect": {
     "gdp": -0.03
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "bailout",
    "label": "Bank bailout",
-   "unit": "usd",
+   "unit": "bool",
    "min": 0,
-   "max": 1000000,
-   "step": 50000,
+   "max": 1,
+   "step": 1,
    "baseCostPc": 22,
    "leadTime": 1,
    "lobbied": false,
@@ -684,10 +657,9 @@
     "regulated",
     "coop"
    ],
-   "default": 0,
+   "default": false,
    "effect": {},
-   "moneyPerUnit": 1,
-   "oneOff": true
+   "moneyPerUnit": 0
   },
   {
    "key": "public_spending",
@@ -724,8 +696,7 @@
     "unemployment": -0.05,
     "legitimacy": 0.02
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   },
   {
    "key": "job_guarantee",
@@ -757,8 +728,13 @@
     "unemployment": -0.06,
     "legitimacy": 0.03
    },
-   "moneyPerUnit": 0,
-   "oneOff": false
+   "moneyPerUnit": 0
   }
- ]
+ ],
+ "game": {
+  "startYear": 2031,
+  "firstTurn": 1,
+  "lastTurn": 160,
+  "turnsPerYear": 4
+ }
 }

@@ -13,10 +13,9 @@ export type BlockReason =
   | 'transition_in_progress' | 'nothing_to_remove' | 'same_system'
   | 'lever_unavailable' | 'insufficient_political_capital' | 'insufficient_funds' | 'invalid_command';
 
-// The contract names MetricKey but does not define it (see docs/web-notes.md). Working set:
 export type MetricKey =
-  | 'gdp' | 'unemployment' | 'gini' | 'emissions' | 'budget' | 'legitimacy'
-  | 'wellbeing' | 'gpi' | 'debt' | 'prices' | 'housing' | 'forest';
+  | 'gdp' | 'gpi' | 'unemployment' | 'gini' | 'wage_share' | 'profit_share' | 'wellbeing' | 'emissions'
+  | 'budget' | 'temperature' | 'legitimacy' | 'debt' | 'money' | 'prices' | 'housing' | 'forest' | 'commons';
 
 export type CommonsAccessWire = { mode: 'open' } | { mode: 'community'; cap: number };
 
@@ -37,6 +36,19 @@ export interface LeverInfo {
   leadTime: number;
   lobbied: boolean;
   arrows: { metric: MetricKey; direction: 'up' | 'down' }[];
+  availableIn: SystemKey[];
+  /** For unit 'enum' levers: the modes in order (min/max/step are 0 and ignored). */
+  options?: string[];
+}
+
+export type ActionKey = 'switch_system' | `place:${InfraKind}` | `remove:${InfraKind}`;
+export interface ActionInfo {
+  key: ActionKey;
+  label: string;
+  baseCostPc: number;
+  leadTime: number;
+  /** Estimated dollars; 0 if none. preview() is the authority on actual cost. */
+  moneyCost: number;
   availableIn: SystemKey[];
 }
 
@@ -114,8 +126,11 @@ export interface HistoryPoint {
 
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
 
+export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
+
 export interface Snapshot {
   schemaVersion: number;
+  game: GameCalendar;
   turn: number;
   tick: number;
   gameOver: null | { turn: number; outcome: GameOutcome };
@@ -162,23 +177,35 @@ export interface MonthFlows {
 
 export interface MonthFrame { month: 0 | 1 | 2; events: SimEvent[]; flows: MonthFlows }
 
-// Event payloads are not specified in the contract beyond the variant names (see docs/web-notes.md).
-export type SimEventType =
-  | 'commuted' | 'hired' | 'fired' | 'loan_defaulted' | 'firm_founded' | 'firm_closed'
-  | 'forest_shrank' | 'commons_collapsed' | 'commons_enclosed' | 'policy_blocked'
-  | 'command_activated' | 'bank_failed' | 'rent_shortfall' | 'spending_cut' | 'bank_bailout'
-  | 'class_changed' | 'system_switch_started' | 'system_switch_completed' | 'budget_exhausted' | 'collapse';
+export type CollapseReason = 'legitimacy_zero' | 'mass_unemployment' | 'bank_failure_cascade';
+type Importance = { importance: 1 | 2 | 3 };
 
-export interface SimEvent {
-  type: SimEventType;
-  importance: 1 | 2 | 3;
-  text?: string;
-  household?: number;
-  firm?: number;
-  amount?: number;
-}
+/** Type + importance + payload. No display text: the UI formats it. */
+export type SimEvent = Importance & (
+  | { type: 'commuted'; household: number; firm: number; people: number }
+  | { type: 'hired'; firm: number; people: number }
+  | { type: 'fired'; firm: number; people: number }
+  | { type: 'loan_defaulted'; firm: number }
+  | { type: 'firm_founded'; firm: number }
+  | { type: 'firm_closed'; firm: number }
+  | { type: 'forest_shrank'; stock: number }
+  | { type: 'commons_collapsed' }
+  | { type: 'commons_enclosed'; owner: number }
+  | { type: 'policy_blocked'; reason: BlockReason }
+  | { type: 'command_activated'; id: number }
+  | { type: 'bank_failed' }
+  | { type: 'rent_shortfall'; household: number; amount: number }
+  | { type: 'spending_cut'; shortfall: number }
+  | { type: 'bank_bailout'; amount: number }
+  | { type: 'class_changed'; household: number; to: ClassKey }
+  | { type: 'system_switch_started'; to: SystemKey }
+  | { type: 'system_switch_completed'; to: SystemKey }
+  | { type: 'budget_exhausted' }
+  | { type: 'collapse'; reason: CollapseReason }
+);
+export type SimEventType = SimEvent['type'];
 
 export type TraceRecord =
-  | { type: 'emissions'; metric: string; source: string; tonnes: number }
-  | { type: 'income'; household: number; component: string; amount: number }
-  | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; reason: string };
+  | { type: 'emissions'; source: 'firm' | 'households' | 'sink'; id?: number; tonnes: number }
+  | { type: 'income'; household: number; kind: 'wages' | 'dividends' | 'rent' | 'interest' | 'benefits'; amount: number }
+  | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; netLobby: number };

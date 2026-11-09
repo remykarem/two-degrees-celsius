@@ -1,9 +1,9 @@
-import type { Command, HistoryPoint, PendingItem, SimEvent, TurnResult } from '../../contract';
+import type { Command, HistoryPoint, PendingItem, SimEvent, TraceRecord, TurnResult } from '../../contract';
 import type { SimPort } from '../port';
 import { DATA } from './data';
 import { remainingBudget, stepMonth } from './dynamics';
-import { frame, makeEvents, makeFlows, text } from './frames';
-import { activate, evaluate, toPending } from './rules';
+import { frame, makeEvents, makeFlows } from './frames';
+import { actionList, activate, evaluate, toPending } from './rules';
 import { buildSnapshot } from './snapshot';
 import { initialState, type MockState } from './state';
 
@@ -16,9 +16,10 @@ export function createMockSim(): SimPort {
     const due = s.pending.filter((p) => p.effectiveTurn <= upTo);
     s.pending = s.pending.filter((p) => p.effectiveTurn > upTo);
     for (const p of due) {
-      const what = activate(s, p);
+      activate(s, p);
       out.push(p);
-      events.push({ type: 'command_activated', importance: 2, text: text('command_activated', { what }) });
+      events.push({ type: 'command_activated', importance: 2, id: p.id });
+      if (p.command.type === 'switch_system') events.push({ type: 'system_switch_started', importance: 3, to: p.command.to });
     }
   }
 
@@ -36,7 +37,8 @@ export function createMockSim(): SimPort {
       s = initialState(seed);
       return snap();
     },
-    levers: () => DATA.levers.map(({ default: _d, effect: _e, moneyPerUnit: _m, oneOff: _o, ...info }) => info),
+    levers: () => DATA.levers.map(({ default: _d, effect: _e, moneyPerUnit: _m, ...info }) => info),
+    actions: actionList,
     preview: (commands) => evaluate(s, commands),
 
     submitTurn(commands: Command[]): TurnResult {
@@ -50,7 +52,7 @@ export function createMockSim(): SimPort {
       previews.forEach((p, index) => {
         if (p.blocked) {
           rejected.push({ index, command: p.command, reason: p.blocked });
-          month0.push({ type: 'policy_blocked', importance: 2, text: text('policy_blocked', { reason: p.blocked }) });
+          month0.push({ type: 'policy_blocked', importance: 2, reason: p.blocked });
           return;
         }
         s.pc -= p.pc;
@@ -62,34 +64,40 @@ export function createMockSim(): SimPort {
       activateDue(turn, activated, month0);
 
       const months = ([0, 1, 2] as const).map((m) => {
+        const sysBefore = s.system;
         const { emissions, unemploymentDelta } = stepMonth(s);
         if (turn === DATA.dynamics.firmFoundedTurn && m === 0) {
           s.firmActive = s.firmActive.map(() => true);
-          month0.push({ type: 'firm_founded', importance: 2, text: text('firm_founded') });
+          month0.push({ type: 'firm_founded', importance: 2, firm: DATA.firms[2]!.id });
         }
-        const events = makeEvents(s, unemploymentDelta, m === 0 ? month0 : []);
-        return frame(m, events, makeFlows(s, emissions));
+        const flows = makeFlows(s, emissions);
+        const events = makeEvents(s, unemploymentDelta, flows, m === 0 ? month0 : []);
+        if (s.system !== sysBefore) events.push({ type: 'system_switch_completed', importance: 3, to: s.system });
+        return frame(m, events, flows);
       });
 
       s.history.push(historyPoint());
-      const trace = DATA.levers
-        .filter((l) => l.lobbied && Number(s.policy[l.key]) !== Number(l.default))
-        .map((l) => ({ type: 'policy_gap' as const, lever: l.key, nominal: Number(s.policy[l.key]), effective: snap().policy[l.key].effective ?? 0, reason: 'lobbying' }));
-      const policyGaps = trace.map(({ lever, nominal, effective }) => ({ lever, nominal, effective }));
+      const gaps = DATA.levers.filter((l) => l.lobbied && l.unit !== 'bool' && Number(s.policy[l.key]) !== Number(l.default));
+      const policyGaps = gaps.map((l) => ({ lever: l.key, nominal: Number(s.policy[l.key]), effective: snap().policy[l.key].effective ?? 0 }));
+      const trace: TraceRecord[] = [
+        ...policyGaps.map((g) => ({ type: 'policy_gap' as const, ...g, netLobby: s.netLobby })),
+        ...months[2]!.flows.emissions.map((e) => ({ type: 'emissions' as const, source: e.source, ...(e.id !== undefined ? { id: e.id } : {}), tonnes: e.tonnes })),
+        ...months[2]!.flows.wages.map((w) => ({ type: 'income' as const, household: w.household, kind: 'wages' as const, amount: w.amount })),
+      ];
 
       // advance to next turn
       s.turn++;
-      s.pc = Math.min(DATA.pc.cap, s.pc + Math.round(DATA.pc.regenBase * s.legitimacy));
+      s.pc = Math.min(DATA.pc.cap, s.pc + DATA.pc.regenBase * s.legitimacy);
       s.netLobby = Math.min(1, Math.max(0, s.netLobby + (s.rng.state % 7 - 3) * 0.004));
       activateDue(s.turn, activated, months[2]!.events);
 
       if (remainingBudget(s) <= 0) {
         s.gameOver = { turn: s.turn, outcome: 'budget_exhausted' };
-        months[2]!.events.push({ type: 'budget_exhausted', importance: 3, text: text('budget_exhausted') });
+        months[2]!.events.push({ type: 'budget_exhausted', importance: 3 });
       } else if (s.legitimacy <= 0) {
         s.gameOver = { turn: s.turn, outcome: { collapse: 'legitimacy_zero' } };
-        months[2]!.events.push({ type: 'collapse', importance: 3, text: text('collapse') });
-      } else if (s.turn > DATA.totalTurns) {
+        months[2]!.events.push({ type: 'collapse', importance: 3, reason: 'legitimacy_zero' });
+      } else if (s.turn > DATA.game.lastTurn) {
         s.gameOver = { turn: s.turn, outcome: 'survived' };
       }
       return { turn, accepted, rejected, activated, pcBefore, pcAfter: s.pc, months, policyGaps, trace, snapshot: snap() };
@@ -99,7 +107,7 @@ export function createMockSim(): SimPort {
       const p = s.pending.find((x) => x.id === id);
       if (!p) return { refundPc: 0, snapshot: snap() };
       s.pending = s.pending.filter((x) => x.id !== id);
-      const refundPc = Math.floor(p.pcCost * DATA.pc.cancelRefund);
+      const refundPc = p.pcCost * DATA.pc.cancelRefund; // PC only: money is charged at activation
       s.pc = Math.min(DATA.pc.cap, s.pc + refundPc);
       return { refundPc, snapshot: snap() };
     },

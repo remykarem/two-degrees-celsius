@@ -14,8 +14,11 @@ describe('mock levers', () => {
     const ls = fresh().levers();
     expect(ls).toHaveLength(19);
     for (const l of ls) {
-      expect(l.min).toBeLessThan(l.max);
-      expect(l.step).toBeGreaterThan(0);
+      if (l.unit === 'enum') expect(l.options!.length).toBeGreaterThan(1);
+      else {
+        expect(l.min).toBeLessThan(l.max);
+        expect(l.step).toBeGreaterThan(0);
+      }
       expect(l.leadTime).toBeGreaterThanOrEqual(0);
       expect(l.availableIn.length).toBeGreaterThan(0);
     }
@@ -36,8 +39,10 @@ describe('political capital', () => {
     expect(p!.effectiveTurn).toBe(1 + p!.leadTime);
     const r = sim.submitTurn([carbon(50)]);
     expect(r.accepted[0]!.pcCost).toBe(p!.pc);
-    const regen = Math.round(8 * r.snapshot.government.legitimacy);
-    expect(r.pcAfter).toBe(60 - p!.pc + regen);
+    const regen = 8 * r.snapshot.government.legitimacy;
+    expect(r.pcBefore).toBe(60);
+    expect(r.pcAfter).toBeCloseTo(60 - p!.pc + regen, 6);
+    expect(r.snapshot.pc.regenNextTurn).toBeCloseTo(regen, 6);
   });
   it('caps PC at 100', () => {
     const sim = fresh();
@@ -73,7 +78,7 @@ describe('cancelPending', () => {
     const item = r.accepted[0]!;
     const before = r.snapshot.pc.current;
     const out = sim.cancelPending(item.id);
-    expect(out.refundPc).toBe(Math.floor(item.pcCost / 2));
+    expect(out.refundPc).toBe(item.pcCost / 2);
     expect(out.snapshot.pc.current).toBe(before + out.refundPc);
     expect(out.snapshot.pending).toHaveLength(0);
   });
@@ -99,7 +104,9 @@ describe('block reasons', () => {
   });
   it('blocks on insufficient funds', () => {
     const sim = fresh();
-    const p = sim.preview([{ type: 'set_policy', lever: 'bailout', value: 1000000 }]);
+    sim.submitTurn([{ type: 'place', kind: 'renewable_plant', count: 8 }]); // 720k, charged on activation
+    for (let i = 0; i < 12; i++) sim.submitTurn([]);
+    const p = sim.preview([{ type: 'place', kind: 'renewable_plant', count: 5 }]);
     expect(p[0]!.blocked).toBe('insufficient_funds');
   });
   it('blocks a second system switch while one is in progress', () => {
@@ -186,5 +193,87 @@ describe('full game', () => {
     let s = sim.init(11);
     while (!s.gameOver) s = sim.submitTurn([]).snapshot;
     expect(() => sim.submitTurn([])).toThrow();
+  });
+});
+
+describe('contract v0.2', () => {
+  it('actions() describes switch_system and place/remove for every kind', () => {
+    const a = fresh().actions();
+    expect(a.map((x) => x.key).sort()).toEqual([
+      'place:fossil_plant', 'place:public_housing', 'place:renewable_plant',
+      'remove:fossil_plant', 'remove:public_housing', 'remove:renewable_plant', 'switch_system',
+    ]);
+    for (const x of a) {
+      expect(x.label).toBeTruthy();
+      expect(x.baseCostPc).toBeGreaterThan(0);
+      expect(x.availableIn.length).toBeGreaterThan(0);
+    }
+    const place = a.find((x) => x.key === 'place:renewable_plant')!;
+    const [p] = fresh().preview([{ type: 'place', kind: 'renewable_plant', count: 1 }]);
+    expect(p!.pc).toBe(place.baseCostPc);
+    expect(p!.money).toBe(place.moneyCost);
+  });
+  it('charges money at activation, not at queueing', () => {
+    const sim = fresh();
+    const cmd: Command = { type: 'place', kind: 'renewable_plant', count: 1 };
+    const [p] = sim.preview([cmd]);
+    const cash0 = sim.init(7).government.cash;
+    const r1 = sim.submitTurn([cmd]);
+    expect(r1.accepted[0]!.moneyCost).toBe(p!.money);
+    const cashQueued = r1.snapshot.government.cash;
+    expect(cashQueued).toBeGreaterThan(cash0 - p!.money * 0.5); // nothing charged yet (only small drift)
+    let s = r1.snapshot;
+    while (s.pending.length) s = sim.submitTurn([]).snapshot;
+    expect(s.energy.renewableCap).toBe(2);
+    expect(s.government.cash).toBeLessThan(cash0 - p!.money * 0.5);
+  });
+  it('cancel refunds PC only', () => {
+    const sim = fresh();
+    const r = sim.submitTurn([{ type: 'place', kind: 'renewable_plant', count: 1 }]);
+    const cash = r.snapshot.government.cash;
+    const out = sim.cancelPending(r.accepted[0]!.id);
+    expect(out.refundPc).toBe(r.accepted[0]!.pcCost / 2);
+    expect(out.snapshot.government.cash).toBe(cash);
+  });
+  it('bailout is a persistent boolean toggle', () => {
+    const sim = fresh();
+    const info = sim.levers().find((l) => l.key === 'bailout')!;
+    expect(info.unit).toBe('bool');
+    sim.submitTurn([{ type: 'set_policy', lever: 'bailout', value: true }]);
+    let s = sim.submitTurn([]).snapshot;
+    for (let i = 0; i < 3; i++) s = sim.submitTurn([]).snapshot;
+    expect(s.policy.bailout.nominal).toBe(true);
+  });
+  it('only the four numeric levers are lobbied', () => {
+    expect(fresh().levers().filter((l) => l.lobbied).map((l) => l.key).sort())
+      .toEqual(['carbon_price', 'emissions_cap', 'tax_profit', 'wealth_tax']);
+  });
+  it('commons_access is an enum with options', () => {
+    const l = fresh().levers().find((x) => x.key === 'commons_access')!;
+    expect(l.unit).toBe('enum');
+    expect(l.options).toEqual(['open', 'community']);
+    const [p] = fresh().preview([{ type: 'set_policy', lever: 'commons_access', value: { mode: 'community', cap: 0.5 } }]);
+    expect(p!.blocked).toBeNull();
+  });
+  it('carries a calendar and payload-only events', () => {
+    const sim = fresh();
+    const s = sim.init(1);
+    expect(s.game).toEqual({ startYear: 2031, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 });
+    const r = sim.submitTurn([]);
+    for (const e of r.months.flatMap((m) => m.events)) {
+      expect(e).not.toHaveProperty('text');
+      expect([1, 2, 3]).toContain(e.importance);
+    }
+    expect(s.gameOver).toBeNull();
+  });
+  it('game over turn is 161 when survived', () => {
+    const sim = fresh(11);
+    sim.submitTurn([carbon(200), { type: 'set_policy', lever: 'green_subsidy', value: 0.8 }]);
+    let s = sim.init(11);
+    const cmds: Command[] = [carbon(200), { type: 'set_policy', lever: 'green_subsidy', value: 0.8 }];
+    s = sim.submitTurn(cmds).snapshot;
+    for (let i = 0; i < 6; i++) s = sim.submitTurn([{ type: 'place', kind: 'renewable_plant', count: 1 }]).snapshot;
+    while (!s.gameOver) s = sim.submitTurn([]).snapshot;
+    if (s.gameOver.outcome === 'survived') expect(s.gameOver.turn).toBe(161);
   });
 });

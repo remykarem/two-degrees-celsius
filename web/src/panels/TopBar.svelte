@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { quarterLabel, UI_CONFIG, type Game } from '../store';
+  import { quarterLabel, type Game } from '../store';
   import EndTurn from './EndTurn.svelte';
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -9,12 +9,12 @@
 
 <header>
   {#if snap}
-    <div class="item"><strong>{quarterLabel(snap.turn)}</strong> <span class="dim">Turn {Math.min(snap.turn, UI_CONFIG.lastTurn)}/{UI_CONFIG.lastTurn}</span></div>
+    <div class="item"><strong>{quarterLabel(snap.turn, snap.game)}</strong> <span class="dim">Turn {Math.min(snap.turn, snap.game.lastTurn)}/{snap.game.lastTurn}</span></div>
     <div class="item" title="Political capital: spent to change policy, regenerates with legitimacy">
       <label for="pc">PC</label>
       <meter id="pc" min="0" max={snap.pc.cap} value={snap.pc.current}></meter>
-      <span class="num">{snap.pc.current}/{snap.pc.cap}</span>
-      <span class="dim">(+{snap.pc.regenNextTurn}/turn)</span>
+      <span class="num">{Math.round(snap.pc.current)}/{snap.pc.cap}</span>
+      <span class="dim">(+{snap.pc.regenNextTurn.toFixed(1)}/turn)</span>
     </div>
     <div class="item" title="Share of the carbon budget still unspent">
       <label for="cb">Carbon budget</label>

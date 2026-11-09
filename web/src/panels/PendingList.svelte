@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { PALETTE, type Game } from '../store';
+  import { type Game } from '../store';
   import { Button } from '../ui-kit';
   import { describeCommand } from './format';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const infraLabel = (k: string) => PALETTE.find((p) => p.kind === k)?.label ?? k;
   const canCancel = $derived($gs.phase === 'review' || $gs.phase === 'plan');
 </script>
 
@@ -18,8 +17,8 @@
     <ul>
       {#each $gs.snapshot.pending as p (p.id)}
         <li>
-          {describeCommand(p.command, $gs.levers, infraLabel)} · effective turn {p.effectiveTurn}
-          {#if canCancel}<Button variant="ghost" title="Cancel and refund 50% of the PC" onclick={() => game.cancelPending(p.id)}>Cancel (refund {Math.floor(p.pcCost / 2)} PC)</Button>{/if}
+          {describeCommand(p.command, $gs.levers, $gs.actions)} · effective turn {p.effectiveTurn}
+          {#if canCancel}<Button variant="ghost" title="Cancel and refund 50% of the PC" onclick={() => game.cancelPending(p.id)}>Cancel (refund {(p.pcCost / 2).toFixed(1)} PC)</Button>{/if}
         </li>
       {/each}
     </ul>

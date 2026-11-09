@@ -19,7 +19,7 @@
 {#if $gs.phase === 'ended' && over}
   <div class="backdrop">
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="et">
-      <h2 id="et">The end · {quarterLabel(over.turn)} (turn {over.turn})</h2>
+      <h2 id="et">The end · {quarterLabel(over.turn, $gs.snapshot!.game)} (turn {over.turn})</h2>
       <p>{story}</p>
       <p class="dim">Causal story: placeholder. The real simulation will list the main causes from the trace.</p>
       <div class="spark"><span>Emissions</span><Sparkline label="Emissions" values={hist.map((h) => h.emissions)} w={160} /></div>

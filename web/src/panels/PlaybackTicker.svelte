@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { Game } from '../store';
   import { Button } from '../ui-kit';
+  import { formatEvent } from './format';
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const lines = $derived(($gs.lastResult?.months ?? []).filter((m) => m.month <= $gs.playback.month)
-    .flatMap((m) => m.events.map((e) => ({ month: m.month, text: e.text ?? e.type, importance: e.importance }))));
+    .flatMap((m) => m.events.map((e) => ({ month: m.month, text: formatEvent(e, $gs.snapshot), importance: e.importance }))));
 </script>
 
 {#if $gs.phase === 'playback'}

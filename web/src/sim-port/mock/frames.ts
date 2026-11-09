@@ -1,14 +1,7 @@
-import type { MonthFlows, MonthFrame, SimEvent, SimEventType } from '../../contract';
+import type { MonthFlows, MonthFrame, SimEvent } from '../../contract';
 import { DATA } from './data';
 import { noise, nextFloat, pickInt } from './rng';
 import type { MockState } from './state';
-
-const fill = (t: string, vars: Record<string, string | number>) =>
-  t.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
-
-export function text(type: SimEventType, vars: Record<string, string | number> = {}): string {
-  return fill(DATA.eventTexts[type] ?? type, vars);
-}
 
 export function makeFlows(s: MockState, emissions: number): MonthFlows {
   const hh = DATA.households;
@@ -28,13 +21,16 @@ export function makeFlows(s: MockState, emissions: number): MonthFlows {
   };
 }
 
-export function makeEvents(s: MockState, uDelta: number, carry: SimEvent[]): SimEvent[] {
+/** Random-ish monthly events, derived from the flows so animation and log agree. */
+export function makeEvents(s: MockState, uDelta: number, flows: MonthFlows, carry: SimEvent[]): SimEvent[] {
   const ev: SimEvent[] = [...carry];
-  const n = Math.round(Math.abs(uDelta) * 1000);
-  if (n > 0) ev.push({ type: uDelta < 0 ? 'hired' : 'fired', importance: 1, text: text(uDelta < 0 ? 'hired' : 'fired', { n }), amount: n });
-  ev.push({ type: 'commuted', importance: 1, text: text('commuted') });
-  if (nextFloat(s.rng) < 0.15) ev.push({ type: 'rent_shortfall', importance: 2, text: text('rent_shortfall') });
-  if (nextFloat(s.rng) < 0.08) ev.push({ type: 'forest_shrank', importance: 2, text: text('forest_shrank') });
+  const firm = flows.wages[0]?.firm ?? 1;
+  const people = Math.round(Math.abs(uDelta) * 1000);
+  if (people > 0) ev.push({ type: uDelta < 0 ? 'hired' : 'fired', importance: 1, firm, people });
+  const c = flows.commutes[0];
+  if (c) ev.push({ type: 'commuted', importance: 1, household: c.household, firm: c.firm, people: c.people });
+  if (nextFloat(s.rng) < 0.15) ev.push({ type: 'rent_shortfall', importance: 2, household: 5, amount: Math.round(500 + nextFloat(s.rng) * 1500) });
+  if (nextFloat(s.rng) < 0.08) ev.push({ type: 'forest_shrank', importance: 2, stock: +s.forest.toFixed(3) });
   return ev;
 }
 

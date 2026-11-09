@@ -8,7 +8,7 @@
     draftValue: number | undefined; preview: CommandPreview | undefined; onset: (v: number) => void;
   } = $props();
 
-  const nominalNum = $derived(typeof nominal === 'boolean' ? (nominal ? 1 : 0) : typeof nominal === 'string' ? (nominal === 'open' ? 0 : 1) : nominal);
+  const nominalNum = $derived(typeof nominal === 'boolean' ? (nominal ? 1 : 0) : typeof nominal === 'string' ? Math.max(0, lever.options?.indexOf(nominal) ?? 0) : nominal);
   const shown = $derived(draftValue ?? nominalNum);
   const available = $derived(lever.availableIn.includes(system));
   const id = $derived(`lever-${lever.key}`);
@@ -25,7 +25,7 @@
   {:else if lever.unit === 'enum'}
     <label class="check" for={id}>{lever.label}</label>
     <select {id} value={String(shown)} onchange={(e) => onset(Number((e.currentTarget as HTMLSelectElement).value))}>
-      <option value="0">open</option><option value="1">community</option>
+      {#each lever.options ?? [] as o, i (o)}<option value={String(i)}>{o}</option>{/each}
     </select>
   {:else}
     <Slider {id} label={lever.label} value={shown} min={lever.min} max={lever.max} step={lever.step}

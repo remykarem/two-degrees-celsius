@@ -1,4 +1,4 @@
-import type { BlockReason, Command, CommandPreview, LeverKey, PendingItem } from '../../contract';
+import type { ActionInfo, BlockReason, Command, CommandPreview, InfraKind, LeverKey, PendingItem, SystemKey } from '../../contract';
 import { DATA, LEVER_BY_KEY } from './data';
 import type { MockState } from './state';
 
@@ -37,9 +37,12 @@ function costOf(s: MockState, c: Command, planned: Map<LeverKey, true>): Cost {
   if (!lever) return bad('invalid_command');
   if (!lever.availableIn.includes(s.system)) return bad('lever_unavailable');
   const v = numericValue(c.value);
-  if (!Number.isFinite(v) || v < lever.min || v > lever.max) return bad('invalid_command');
+  const inRange = lever.unit === 'enum'
+    ? Number.isInteger(v) && v >= 0 && v < (lever.options?.length ?? 0)
+    : Number.isFinite(v) && v >= lever.min && v <= lever.max;
+  if (!inRange) return bad('invalid_command');
   const opp = opposition(s, c.lever);
-  const range = lever.max - lever.min || 1;
+  const range = lever.max - lever.min || 1; // enum levers have min = max = 0
   const cur = numericValue(s.policy[c.lever]);
   const scale = lever.unit === 'bool' || lever.unit === 'enum' ? 1 : Math.max(0.25, Math.abs(v - cur) / range);
   const pc = Math.max(1, Math.ceil(lever.baseCostPc * scale * (1 + opp)));
@@ -50,7 +53,8 @@ function costOf(s: MockState, c: Command, planned: Map<LeverKey, true>): Cost {
 /** Shared by preview and submit so tray costs always equal what a submit charges. */
 export function evaluate(s: MockState, commands: Command[]): CommandPreview[] {
   let pc = s.pc;
-  let money = s.cash + DATA.start.creditLine!;
+  // pending builds are committed against available funds
+  let money = s.cash + DATA.start.creditLine! - s.pending.reduce((a, p) => a + p.moneyCost, 0);
   const planned = new Map<LeverKey, true>();
   return commands.map((command) => {
     const c = costOf(s, command, planned);
@@ -93,6 +97,19 @@ export function activate(s: MockState, item: PendingItem): string {
   }
   const lever = LEVER_BY_KEY.get(c.lever);
   if (c.lever === 'commons_access' && typeof c.value === 'object') s.commonsMode = c.value.mode;
-  s.policy[c.lever] = lever?.oneOff ? 0 : typeof c.value === 'object' ? numericValue(c.value) : c.value;
+  s.policy[c.lever] = typeof c.value === 'object' ? numericValue(c.value) : c.value;
   return `${lever?.label ?? c.lever} set`;
+}
+
+/** Static action metadata (switch_system, place:<kind>, remove:<kind>). */
+export function actionList(): ActionInfo[] {
+  const all: SystemKey[] = ['market', 'regulated', 'coop'];
+  const out: ActionInfo[] = [{ key: 'switch_system', label: 'Switch system', baseCostPc: DATA.system.pc, leadTime: DATA.system.leadTime, moneyCost: DATA.system.money, availableIn: all }];
+  for (const [kind, inf] of Object.entries(DATA.infra)) {
+    out.push({ key: `place:${kind as InfraKind}`, label: inf.label, baseCostPc: inf.pc, leadTime: inf.leadTime, moneyCost: inf.money, availableIn: all });
+  }
+  for (const [kind, inf] of Object.entries(DATA.infra)) {
+    out.push({ key: `remove:${kind as InfraKind}`, label: `Remove ${inf.label.toLowerCase()}`, baseCostPc: Math.ceil(inf.pc * 0.5), leadTime: 1, moneyCost: 0, availableIn: all });
+  }
+  return out;
 }

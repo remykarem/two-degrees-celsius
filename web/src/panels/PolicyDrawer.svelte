@@ -20,20 +20,21 @@
   function setLever(l: LeverInfo, v: number) {
     const snap = $gs.snapshot;
     const cur = snap?.policy[l.key].nominal;
-    const curNum = typeof cur === 'boolean' ? (cur ? 1 : 0) : typeof cur === 'string' ? (cur === 'open' ? 0 : 1) : (cur ?? 0);
+    const curNum = typeof cur === 'boolean' ? (cur ? 1 : 0) : typeof cur === 'string' ? Math.max(0, l.options?.indexOf(cur) ?? 0) : (cur ?? 0);
     const existing = draftFor(l.key);
     if (v === curNum) {
       if (existing) game.removeDraft(existing.id);
       return;
     }
-    const value = l.unit === 'bool' ? v === 1 : l.unit === 'enum' ? (v === 1 ? { mode: 'community' as const, cap: 0.5 } : { mode: 'open' as const }) : v;
+    const value = l.unit === 'bool' ? v === 1 : l.unit === 'enum' ? (l.options?.[v] === 'community' ? { mode: 'community' as const, cap: 0.5 } : { mode: 'open' as const }) : v;
     game.draftCommand({ type: 'set_policy', lever: l.key, value });
   }
   function draftNumber(key: string): number | undefined {
     const d = draftFor(key);
     if (!d || d.command.type !== 'set_policy') return undefined;
     const v = d.command.value;
-    return typeof v === 'boolean' ? (v ? 1 : 0) : typeof v === 'object' ? (v.mode === 'open' ? 0 : 1) : v;
+    const l = $gs.levers.find((x) => x.key === key);
+    return typeof v === 'boolean' ? (v ? 1 : 0) : typeof v === 'object' ? Math.max(0, l?.options?.indexOf(v.mode) ?? 0) : v;
   }
   const systemDraft = $derived($gs.draft.find((d) => d.command.type === 'switch_system'));
 </script>
