@@ -48,5 +48,5 @@ cd web && npm test              # front end
 
 ## Deploy
 
-Pushing to `main` builds and publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
+Pushing to the `deploy` branch builds and publishes the site to GitHub Pages (`.github/workflows/deploy.yml`).
 In the repo, set Settings > Pages > Source to **GitHub Actions** once.
