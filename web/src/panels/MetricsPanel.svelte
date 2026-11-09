@@ -20,7 +20,8 @@
   const gpi = $derived(metricById('gpi')!);
 
   function onTabKey(e: KeyboardEvent) {
-    const i = METRIC_TABS.indexOf(tab);
+    const from = ((e.target as HTMLElement).id || '').replace('tab-', '') as MetricTab;
+    const i = METRIC_TABS.includes(from) ? METRIC_TABS.indexOf(from) : METRIC_TABS.indexOf(tab);
     const n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? METRIC_TABS.length - 1 : -1;
     if (n < 0) return;
     e.preventDefault();

@@ -61,7 +61,7 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
     case 'set_policy': {
       const l = levers.find((x) => x.key === c.lever);
       const v = typeof c.value === 'object' ? c.value.mode : c.value;
-      return `${l?.label ?? c.lever} -> ${l && typeof v !== 'string' ? formatLever(l, v) : String(v)}`;
+      return `${l?.label ?? c.lever} → ${l && typeof v !== 'string' ? formatLever(l, v) : String(v)}`;
     }
     case 'switch_system': return `Switch system to ${SYSTEM_NAME[c.to]}`;
     case 'place': return `Build ${actionLabel(actions, `place:${c.kind}`)}${c.tile ? ` @ (${c.tile.x},${c.tile.y})` : ''}`;
