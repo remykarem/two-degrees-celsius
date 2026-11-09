@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "game": {
+    "startYear": 2031,
+    "firstTurn": 1,
+    "lastTurn": 160,
+    "turnsPerYear": 4
+  },
+  "turn": 1,
+  "tick": 0,
+  "gameOver": null,
+  "pc": {
+    "current": 60.0,
+    "cap": 100.0,
+    "regenNextTurn": 5.6
+  },
+  "system": {
+    "current": "market",
+    "transition": null
+  },
+  "buildings": {
+    "publicHousing": 0,
+    "fossilPlant": 5,
+    "renewablePlant": 0
+  },
+  "pending": [],
+  "policy": {
+    "carbon_price": {
+      "nominal": 0.0,
+      "effective": 0.0
+    },
+    "tax_wage": {
+      "nominal": 0.28,
+      "effective": null
+    },
+    "tax_profit": {
+      "nominal": 0.25,
+      "effective": 0.10852156035956309
+    },
+    "tax_capital": {
+      "nominal": 0.4,
+      "effective": null
+    },
+    "wealth_tax": {
+      "nominal": 0.0,
+      "effective": 0.0
+    },
+    "wealth_threshold": {
+      "nominal": 500000.0,
+      "effective": null
+    },
+    "base_rate": {
+      "nominal": 0.04,
+      "effective": null
+    },
+    "min_wage": {
+      "nominal": 1200.0,
+      "effective": null
+    },
+    "benefit": {
+      "nominal": 800.0,
+      "effective": null
+    },
+    "ubi": {
+      "nominal": 0.0,
+      "effective": null
+    },
+    "green_subsidy": {
+      "nominal": 0.0,
+      "effective": null
+    },
+    "campaign_cap": {
+      "nominal": 1.0,
+      "effective": null
+    },
+    "emissions_cap": {
+      "nominal": 0.0,
+      "effective": 0.0
+    },
+    "commons_harvest": {
+      "nominal": 1.0,
+      "effective": null
+    },
+    "commons_access": {
+      "nominal": "open",
+      "effective": null
+    },
+    "bank_capital_ratio": {
+      "nominal": 0.1,
+      "effective": null
+    },
+    "bailout": {
+      "nominal": false,
+      "effective": null
+    },
+    "public_spending": {
+      "nominal": 450000.0,
+      "effective": null
+    },
+    "job_guarantee": {
+      "nominal": 0.0,
+      "effective": null
+    }
+  },
+  "netLobby": 0.5659137585617476,
+  "unionDensity": 0.05,
+  "indicators": {
+    "gdpAnnual": 17021171.88,
+    "gdpRealAnnual": 22175017.857391264,
+    "unemployment": 0.1070528967254408,
+    "employed": 709.0,
+    "labourForce": 794.0,
+    "gini": 0.4594687031658318,
+    "wageShare": 0.6835447313513645,
+    "profitShare": 0.27895358518640373,
+    "avgWellbeing": 0.7264944550342782,
+    "remainingBudget": 400000.0,
+    "budgetShare": 1.0,
+    "temperature": 1.3,
+    "gpiAnnual": 7508835.696123227,
+    "moneyInCirculation": 21479049.89,
+    "priceIndex": 0.7675832321517878
+  },
+  "households": [
+    {
+      "id": 0,
+      "label": "A (capitalist)",
+      "class": "capitalist",
+      "people": 20.0,
+      "employed": 0.0,
+      "labourForce": 0.0,
+      "savings": 3682170.89,
+      "debt": 0.0,
+      "wealthPerCapita": 1019077.62,
+      "income": {
+        "wages": 0.0,
+        "dividends": 273308.85,
+        "rent": 0.0,
+        "interest": 9389.03,
+        "benefits": 0.0,
+        "taxPaid": 113079.15,
+        "rentPaid": 0.0,
+        "loanPayments": 0.0,
+        "spending": 116887.31
+      },
+      "wellbeing": 0.9194212596639841,
+      "politicalPower": 0.27308111320874234,
+      "footprintTonnes": 17.01415125,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    },
+    {
+      "id": 1,
+      "label": "B (landlord)",
+      "class": "rentier",
+      "people": 20.0,
+      "employed": 0.0,
+      "labourForce": 0.0,
+      "savings": 24901.05,
+      "debt": 3462801.44,
+      "wealthPerCapita": 295129.32,
+      "income": {
+        "wages": 0.0,
+        "dividends": 0.0,
+        "rent": 83146.08,
+        "interest": 207.87,
+        "benefits": 0.0,
+        "taxPaid": 33341.58,
+        "rentPaid": 0.0,
+        "loanPayments": 23444.24,
+        "spending": 24351.76
+      },
+      "wellbeing": 0.739865202277479,
+      "politicalPower": 0.07908587811080131,
+      "footprintTonnes": 5.375765,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    },
+    {
+      "id": 2,
+      "label": "C (manager)",
+      "class": "manager",
+      "people": 150.0,
+      "employed": 114.0,
+      "labourForce": 120.0,
+      "savings": 4376147.82,
+      "debt": 1298550.52,
+      "wealthPerCapita": 100517.32,
+      "income": {
+        "wages": 253863.31,
+        "dividends": 0.0,
+        "rent": 0.0,
+        "interest": 11087.03,
+        "benefits": 4800.0,
+        "taxPaid": 73382.01,
+        "rentPaid": 9391.5,
+        "loanPayments": 8791.59,
+        "spending": 145806.99
+      },
+      "wellbeing": 0.7999648057773625,
+      "politicalPower": 0.201862273621583,
+      "footprintTonnes": 36.175811249999995,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    },
+    {
+      "id": 3,
+      "label": "D (worker)",
+      "class": "worker",
+      "people": 350.0,
+      "employed": 315.0,
+      "labourForce": 315.0,
+      "savings": 3587495.24,
+      "debt": 1038840.43,
+      "wealthPerCapita": 47281.87,
+      "income": {
+        "wages": 378793.45,
+        "dividends": 0.0,
+        "rent": 0.0,
+        "interest": 9235.09,
+        "benefits": 0.0,
+        "taxPaid": 109534.04,
+        "rentPaid": 30678.9,
+        "loanPayments": 7033.27,
+        "spending": 237201.03
+      },
+      "wellbeing": 0.755308404808492,
+      "politicalPower": 0.22166475436100236,
+      "footprintTonnes": 71.68823375000001,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    },
+    {
+      "id": 4,
+      "label": "E (worker)",
+      "class": "worker",
+      "people": 350.0,
+      "employed": 268.6976744186046,
+      "labourForce": 315.0,
+      "savings": 3573097.68,
+      "debt": 1038840.43,
+      "wealthPerCapita": 47240.74,
+      "income": {
+        "wages": 323230.65,
+        "dividends": 0.0,
+        "rent": 0.0,
+        "interest": 9067.84,
+        "benefits": 37041.86,
+        "taxPaid": 93909.56,
+        "rentPaid": 30678.9,
+        "loanPayments": 7033.27,
+        "spending": 234103.22
+      },
+      "wellbeing": 0.7177040002407842,
+      "politicalPower": 0.22147190293969715,
+      "footprintTonnes": 71.27759625,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    },
+    {
+      "id": 5,
+      "label": "F (dependent)",
+      "class": "dependent",
+      "people": 110.0,
+      "employed": 11.302325581395348,
+      "labourForce": 44.0,
+      "savings": 211581.56,
+      "debt": 0.0,
+      "wealthPerCapita": 1923.47,
+      "income": {
+        "wages": 13673.62,
+        "dividends": 0.0,
+        "rent": 0.0,
+        "interest": 340.27,
+        "benefits": 78958.14,
+        "taxPaid": 3933.69,
+        "rentPaid": 12396.78,
+        "loanPayments": 0.0,
+        "spending": 76764.5
+      },
+      "wellbeing": 0.5250878469236165,
+      "politicalPower": 0.0028340777581738487,
+      "footprintTonnes": 22.8108075,
+      "foodMet": 1.0,
+      "housedShare": 1.0
+    }
+  ],
+  "firms": [
+    {
+      "id": 0,
+      "active": true,
+      "sector": "goods",
+      "name": "Factory",
+      "owner": {
+        "kind": "household",
+        "id": 0
+      },
+      "workers": 516.0,
+      "wage": 1200.0,
+      "price": 76.0,
+      "output": 12644.181362134455,
+      "emissions": 379.3254408640336,
+      "revenue": 948180.99,
+      "profit": 214497.21,
+      "capital": 5152.642138727261,
+      "debt": 2099999.84,
+      "greenTech": 0.0
+    },
+    {
+      "id": 1,
+      "active": true,
+      "sector": "food",
+      "name": "Farm",
+      "owner": {
+        "kind": "household",
+        "id": 0
+      },
+      "workers": 193.0,
+      "wage": 1200.0,
+      "price": 18.64,
+      "output": 25270.031665515446,
+      "emissions": 101.08012666206179,
+      "revenue": 468250.0,
+      "profit": 181179.2,
+      "capital": 2000.1746910802372,
+      "debt": 900000.0,
+      "greenTech": 0.0
+    },
+    {
+      "id": 2,
+      "active": false,
+      "sector": "goods",
+      "name": "Factory 2",
+      "owner": {
+        "kind": "household",
+        "id": 0
+      },
+      "workers": 0.0,
+      "wage": 1650.0,
+      "price": 100.0,
+      "output": 0.0,
+      "emissions": 0.0,
+      "revenue": 0.0,
+      "profit": 0.0,
+      "capital": 0.0,
+      "debt": 0.0,
+      "greenTech": 0.0
+    },
+    {
+      "id": 3,
+      "active": false,
+      "sector": "food",
+      "name": "Farm 2",
+      "owner": {
+        "kind": "household",
+        "id": 0
+      },
+      "workers": 0.0,
+      "wage": 1650.0,
+      "price": 24.0,
+      "output": 0.0,
+      "emissions": 0.0,
+      "revenue": 0.0,
+      "profit": 0.0,
+      "capital": 0.0,
+      "debt": 0.0,
+      "greenTech": 0.0
+    }
+  ],
+  "bank": {
+    "equity": 3088664.85,
+    "loans": 24567714.74,
+    "deposits": 21479049.89,
+    "defaultRate": 0.0,
+    "failed": false
+  },
+  "government": {
+    "cash": 450000.0,
+    "debt": 14728682.08,
+    "debtToGdp": 0.86531539566358,
+    "legitimacy": 0.7,
+    "receipts": 475326.69,
+    "spending": 122800.0
+  },
+  "nature": {
+    "forest": 71009.374469548,
+    "commons": 39392.94943500072,
+    "commonsAccess": "open",
+    "cumulativeTonnes": 0.0,
+    "netEmissionsMonthly": 633.7443351270683,
+    "grossEmissionsMonthly": 704.7479325260954,
+    "sinkMonthly": 71.00359739902704
+  },
+  "housing": {
+    "privateCap": 667.1776278159263,
+    "publicCap": 0.0,
+    "rentPrivate": 125.22,
+    "rentPublic": 40.0,
+    "occupancy": 0.9942419714694238,
+    "housedShare": 1.0
+  },
+  "energy": {
+    "fossilCap": 100.0,
+    "renewableCap": 0.0,
+    "fossilShare": 1.0
+  },
+  "history": []
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "key": "switch_system",
+    "label": "Switch economic system",
+    "baseCostPc": 45.0,
+    "leadTime": 1,
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "place:public_housing",
+    "label": "Build public housing",
+    "baseCostPc": 1.0,
+    "leadTime": 3,
+    "moneyCost": 14000.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "place:fossil_plant",
+    "label": "Build fossil power plant",
+    "baseCostPc": 12.0,
+    "leadTime": 4,
+    "moneyCost": 2000000.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "place:renewable_plant",
+    "label": "Build renewable power plant",
+    "baseCostPc": 2.0,
+    "leadTime": 4,
+    "moneyCost": 2000000.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "remove:public_housing",
+    "label": "Demolish public housing",
+    "baseCostPc": 2.0,
+    "leadTime": 1,
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "remove:fossil_plant",
+    "label": "Decommission fossil power plant",
+    "baseCostPc": 1.0,
+    "leadTime": 1,
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "remove:renewable_plant",
+    "label": "Decommission renewable power plant",
+    "baseCostPc": 3.0,
+    "leadTime": 1,
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  }
+]

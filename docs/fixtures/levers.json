@@ -1,0 +1,483 @@
+[
+  {
+    "key": "carbon_price",
+    "label": "Carbon price",
+    "unit": "usd_per_tonne",
+    "min": 0.0,
+    "max": 500.0,
+    "step": 5.0,
+    "baseCostPc": 8.0,
+    "leadTime": 2,
+    "costModel": {
+      "base": 8.0,
+      "unit": 50.0,
+      "minSize": 0.25
+    },
+    "lobbied": true,
+    "arrows": [
+      {
+        "metric": "emissions",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "tax_wage",
+    "label": "Wage tax",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 0.6,
+    "step": 0.01,
+    "baseCostPc": 6.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 6.0,
+      "unit": 0.05,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "tax_profit",
+    "label": "Profit tax",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 0.6,
+    "step": 0.01,
+    "baseCostPc": 6.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 6.0,
+      "unit": 0.05,
+      "minSize": 0.25
+    },
+    "lobbied": true,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "tax_capital",
+    "label": "Capital tax",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 0.6,
+    "step": 0.01,
+    "baseCostPc": 6.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 6.0,
+      "unit": 0.05,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "wealth_tax",
+    "label": "Wealth tax",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 0.05,
+    "step": 0.0025,
+    "baseCostPc": 8.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 8.0,
+      "unit": 0.01,
+      "minSize": 0.25
+    },
+    "lobbied": true,
+    "arrows": [
+      {
+        "metric": "gini",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "wealth_threshold",
+    "label": "Wealth tax threshold",
+    "unit": "usd",
+    "min": 0.0,
+    "max": 5000000.0,
+    "step": 50000.0,
+    "baseCostPc": 3.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 3.0,
+      "unit": 100000.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "base_rate",
+    "label": "Interest base rate",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 0.15,
+    "step": 0.0025,
+    "baseCostPc": 4.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 4.0,
+      "unit": 0.02,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "money",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "min_wage",
+    "label": "Minimum wage",
+    "unit": "usd_per_month",
+    "min": 0.0,
+    "max": 5000.0,
+    "step": 50.0,
+    "baseCostPc": 5.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 5.0,
+      "unit": 200.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "wage_share",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "benefit",
+    "label": "Unemployment benefit",
+    "unit": "usd_per_month",
+    "min": 0.0,
+    "max": 3000.0,
+    "step": 50.0,
+    "baseCostPc": 5.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 5.0,
+      "unit": 100.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "debt",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "ubi",
+    "label": "Universal basic income",
+    "unit": "usd_per_month",
+    "min": 0.0,
+    "max": 2000.0,
+    "step": 50.0,
+    "baseCostPc": 8.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 8.0,
+      "unit": 100.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "debt",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "green_subsidy",
+    "label": "Green investment subsidy",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 1.0,
+    "step": 0.05,
+    "baseCostPc": 5.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 5.0,
+      "unit": 0.2,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "emissions",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "campaign_cap",
+    "label": "Campaign finance cap",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 1.0,
+    "step": 0.05,
+    "baseCostPc": 8.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 8.0,
+      "unit": 0.5,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "emissions_cap",
+    "label": "Emissions cap per firm",
+    "unit": "tonnes_per_month",
+    "min": 0.0,
+    "max": 2000.0,
+    "step": 10.0,
+    "baseCostPc": 8.0,
+    "leadTime": 2,
+    "costModel": {
+      "base": 8.0,
+      "unit": 500.0,
+      "minSize": 0.25
+    },
+    "zeroMeansNone": true,
+    "lobbied": true,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "commons_harvest",
+    "label": "Commons harvest",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 3.0,
+    "step": 0.05,
+    "baseCostPc": 4.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 4.0,
+      "unit": 0.5,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "commons",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "commons_access",
+    "label": "Commons access rule",
+    "unit": "enum",
+    "min": 0.0,
+    "max": 0.0,
+    "step": 0.0,
+    "baseCostPc": 6.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 6.0,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ],
+    "options": [
+      "open",
+      "community"
+    ]
+  },
+  {
+    "key": "bank_capital_ratio",
+    "label": "Bank capital ratio",
+    "unit": "fraction",
+    "min": 0.02,
+    "max": 0.4,
+    "step": 0.01,
+    "baseCostPc": 5.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 5.0,
+      "unit": 0.05,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "money",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "bailout",
+    "label": "Bank bailout",
+    "unit": "bool",
+    "min": 0.0,
+    "max": 1.0,
+    "step": 1.0,
+    "baseCostPc": 15.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 15.0,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "lobbied": false,
+    "arrows": [],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "public_spending",
+    "label": "Public spending",
+    "unit": "usd_per_month",
+    "min": 0.0,
+    "max": 2000000.0,
+    "step": 25000.0,
+    "baseCostPc": 5.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 5.0,
+      "unit": 100000.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "gdp",
+        "direction": "up"
+      },
+      {
+        "metric": "debt",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  },
+  {
+    "key": "job_guarantee",
+    "label": "Job guarantee",
+    "unit": "fraction",
+    "min": 0.0,
+    "max": 1.0,
+    "step": 0.05,
+    "baseCostPc": 6.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 6.0,
+      "unit": 0.25,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "unemployment",
+        "direction": "down"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
+  }
+]
