@@ -1,7 +1,7 @@
 import type { HistoryPoint, Snapshot, TurnResult } from '../contract';
 import { quarterLabel } from '../store/config';
 import { emissionsBars } from './why';
-import { pct } from './format';
+import { money, pct } from './format';
 
 export interface Story {
   outcome: 'win' | 'lose';
@@ -61,6 +61,27 @@ function lobbyingLine(last: TurnResult | null, snap: Snapshot): string | null {
   return `Lobbying watered down ${gaps.length} polic${gaps.length === 1 ? 'y' : 'ies'} at the end, by ${pct(Math.max(0, avg))} on average (the biggest gap was on ${worst.lever.replaceAll('_', ' ')}).`;
 }
 
+/** Town v2 facts: who earned what, who held the wealth, who lost their home. Skips a fact when the history lacks the field. */
+export function townFacts(snap: Snapshot, last: TurnResult | null): string[] {
+  const h = snap.history, out: string[] = [];
+  const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  if (h.length >= 2) {
+    const a = h[0]!, z = h[h.length - 1]!;
+    if (fin(a.medianIncomePerPerson) && fin(z.medianIncomePerPerson) && fin(a.avgIncomePerPerson) && fin(z.avgIncomePerPerson)) {
+      out.push(`The median person's income ${dirWord(a.medianIncomePerPerson / (a.medianIncomePerPerson || 1), z.medianIncomePerPerson / (a.medianIncomePerPerson || 1), 'rose', 'fell', 'stayed about the same')} from ${money(a.medianIncomePerPerson)} to ${money(z.medianIncomePerPerson)} a month, while the average went from ${money(a.avgIncomePerPerson)} to ${money(z.avgIncomePerPerson)}.`);
+    }
+    if (fin(a.topHouseholdWealthShare) && fin(z.topHouseholdWealthShare)) {
+      out.push(`The richest household held ${pct(a.topHouseholdWealthShare)} of the town's wealth at the start and ${pct(z.topHouseholdWealthShare)} at the end.`);
+    }
+  }
+  if (!h.length) return out;
+  const unhoused = snap.housing.unhousedHouseholds;
+  const evictions = (last?.months ?? []).flatMap((m) => m.events).filter((e) => e.type === 'household_evicted').length;
+  if (unhoused > 0) out.push(`At the end ${unhoused} household${unhoused === 1 ? ' was' : 's were'} without a home${evictions ? `, ${evictions} of them evicted in the final turn` : ''}.`);
+  else if (evictions) out.push(`${evictions} household${evictions === 1 ? ' was' : 's were'} evicted in the final turn.`);
+  return out;
+}
+
 export function generateStory(snap: Snapshot, last: TurnResult | null): Story {
   const { outcome, headline, summary } = outcomeText(snap);
   const h = snap.history;
@@ -86,6 +107,7 @@ export function generateStory(snap: Snapshot, last: TurnResult | null): Story {
     p.push(`Legitimacy ${dirWord(first.legitimacy, end.legitimacy)} overall; its lowest point was ${pct(minL.legitimacy)} in ${when(minL.turn, snap)}.`);
     p.push(`Real GDP ${dirWord(first.gdpRealAnnual / (first.gdpRealAnnual || 1), end.gdpRealAnnual / (first.gdpRealAnnual || 1), 'grew', 'shrank', 'was flat')} by ${pct(Math.abs(end.gdpRealAnnual / (first.gdpRealAnnual || 1) - 1))} over the run.`);
   }
+  p.push(...townFacts(snap, last));
   if (snap.system.current !== 'market' || snap.system.transition) {
     p.push(`The town ended as a ${snap.system.current === 'regulated' ? 'regulated capitalist' : snap.system.current === 'coop' ? 'worker cooperative' : 'market'} economy${snap.system.transition ? ` (still switching to ${snap.system.transition.to})` : ''}.`);
   }

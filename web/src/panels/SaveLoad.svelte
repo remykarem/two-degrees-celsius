@@ -47,7 +47,8 @@
 <style>
   .sl { display: inline-flex; gap: 6px; align-items: center; }
   .hide { display: none; }
-  .msg { font-size: 12px; color: var(--text-dim); max-width: 280px; }
-  .msg.bad { color: var(--bad); font-weight: 600; }
+  /* A toast floating below the top bar, so a message never makes the header wrap. */
+  .msg { position: fixed; top: 54px; right: 14px; z-index: 600; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; box-shadow: var(--shadow); max-width: 320px; }
+  .msg.bad { color: var(--bad); border-color: var(--bad); font-weight: 600; }
   .msg:empty { display: none; }
 </style>

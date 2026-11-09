@@ -46,7 +46,7 @@ describe('component smoke (server render)', () => {
     expect(p).toContain('Manager A');
     expect(p).toContain('Commute');
     g.select({ kind: 'household', id: 7 });
-    expect(html(Inspector, { game: g })).toContain('unhoused');
+    expect(html(Inspector, { game: g })).toMatch(/unhoused/i);
   });
   it('results screen only renders in the results phase', () => {
     const g = game();
@@ -80,7 +80,7 @@ describe('v0.3 component behaviour', () => {
     for (const label of ['Build public housing', 'Build fossil power plant', 'Build renewable power plant', 'Build road']) expect(b).toContain(label);
     expect(b).toContain('Built 2'); // two fossil plants
     expect(b).toContain('Built 4'); // four roads
-    expect(b).toContain('select it on the map');
+    expect(b).toContain('click it on the map');
   });
   it('shows cost estimates from the cost model, then the authoritative preview once drafted', () => {
     const g = game();

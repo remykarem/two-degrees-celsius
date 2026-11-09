@@ -23,3 +23,18 @@ export function arrowFlip(l: LeverInfo, from: number, to: number): 1 | -1 | 0 {
   const a = looseness(l, from), b = looseness(l, to);
   return a === b ? 0 : b > a ? 1 : -1;
 }
+
+/** A price line for the build palette. `exact` is true only when it comes from the simulation's preview(). */
+export interface CostLine { pc: number; money: number; leadTime: number; exact: boolean }
+
+/**
+ * The cost shown for a building. preview() (an `estimate` taken from it) is the authority; the action table
+ * (`ActionInfo.moneyCost`, `costModel`) is only a fallback before a preview exists, and is marked as an estimate.
+ */
+export function costLine(a: ActionInfo, est: { pc: number; money: number; leadTime: number } | null): CostLine {
+  if (est) return { pc: est.pc, money: est.money, leadTime: est.leadTime, exact: true };
+  return { pc: estimatePc(actionModel(a), 1), money: a.moneyCost, leadTime: a.leadTime, exact: false };
+}
+
+/** True when the action table disagrees with the simulation's price by more than 1% (a content or wire bug worth surfacing). */
+export const estimateDisagrees = (a: ActionInfo, est: { money: number } | null) => !!est && Math.abs(est.money - a.moneyCost) > Math.max(1, Math.abs(est.money) * 0.01);

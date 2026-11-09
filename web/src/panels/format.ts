@@ -86,10 +86,10 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
     case 'commuted': return `${person(e.person)} commutes to ${firm(e.firm)}`;
     case 'person_hired': return `${firm(e.firm)} hired ${person(e.person)}`;
     case 'person_fired': return `${firm(e.firm)} laid off ${person(e.person)}`;
-    case 'household_moved': return `${hh(e.household)} moved to home ${e.to}`;
-    case 'household_evicted': return `${hh(e.household)} lost their home`;
+    case 'household_moved': { const t = snap?.homes.find((x) => x.id === e.to)?.tile; return `${hh(e.household)} moved into home ${e.to}${t ? ` at (${t.x},${t.y})` : ''}`; }
+    case 'household_evicted': return `${hh(e.household)} was evicted and has no home`;
     case 'built': return `A ${e.kind.replaceAll('_', ' ')} was built at (${e.tile.x},${e.tile.y})`;
-    case 'removed': return `Something was removed at (${e.tile.x},${e.tile.y})`;
+    case 'removed': return `A building or road was removed at (${e.tile.x},${e.tile.y})`;
     case 'electricity_rationed': return `Electricity was rationed (${pct(e.served)} of demand served)`;
     case 'purchase': return `${hh(e.household)} spent ${money(e.amount)} at ${firm(e.firm)}`;
     case 'hired': return `${firm(e.firm)} hired ${n(e.people)}`;
@@ -114,6 +114,9 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
   }
 }
 
+/** Lobbying only counts as a weakening when the value in force really differs from the one set (beyond rounding noise). */
+export const lobbyingDiffers = (nominal: number, effective: number) => Math.abs(nominal - effective) > Math.max(1e-6, Math.abs(nominal) * 1e-4);
+
 /** 3 to 5 lines for the review-phase briefing card. */
 export function briefingLines(r: TurnResult | null, levers: LeverInfo[], actions: ActionInfo[]): string[] {
   if (!r) return ['Welcome. Review the town, then plan your first quarter.'];
@@ -121,6 +124,7 @@ export function briefingLines(r: TurnResult | null, levers: LeverInfo[], actions
   r.activated.forEach((a) => lines.push(`Took effect: ${describeCommand(a.command, levers, actions)}`));
   r.policyGaps.forEach((g) => {
     const l = levers.find((x) => x.key === g.lever);
+    if (!lobbyingDiffers(g.nominal, g.effective)) return;
     lines.push(`Lobbying weakened ${l?.label ?? g.lever}: set ${l ? formatLever(l, g.nominal) : g.nominal}, about ${l ? formatLever(l, g.effective) : g.effective.toFixed(2)} in force`);
   });
   r.rejected.forEach((x) => lines.push(`Blocked: ${describeCommand(x.command, levers, actions)} (${REASON_TEXT[x.reason] ?? x.reason})`));

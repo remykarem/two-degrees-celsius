@@ -7,6 +7,9 @@ import { writable, type Readable } from './readable';
 import { parseSave, SAVE_FORMAT, SAVE_VERSION, type SaveFile } from './save';
 import type { CameraAngle, GameState, Lens, UiError } from './types';
 
+/** One preview() answer for a single place command, for display before anything is drafted. */
+export interface BuildEstimate { pc: number; money: number; leadTime: number; tile: Tile; blocked: string | null }
+
 export interface Game {
   state: Readable<GameState>;
   newGame(seed: number): void;
@@ -32,6 +35,11 @@ export interface Game {
   tileError(t: Tile): string | null;
   /** Drafts removing what stands on the tile (public housing, plant or road). Returns an error text when the tile has nothing removable. */
   removeAt(t: Tile): string | null;
+  /**
+   * The simulation's own price for building `kind` on `tile` (default: the first tile that can take it), asked through preview() without drafting.
+   * This, not ActionInfo.moneyCost, is the authority; null when there is no valid tile or the call fails.
+   */
+  estimateBuild(kind: InfraKind, tile?: Tile): BuildEstimate | null;
   dismissError(): void;
   dismissCrisis(id: string): void;
   /** The save file as text, or null (with `state.error` set) when the sim cannot export. */
@@ -177,6 +185,17 @@ export function createGame(port: SimPort): Game {
       if (kind !== 'public_housing' && kind !== 'fossil_plant' && kind !== 'renewable_plant' && kind !== 'road') return describeTileReason('nothing_to_remove');
       this.draftCommand({ type: 'remove', tile: { x: t.x, y: t.y } });
       return null;
+    },
+
+    estimateBuild(kind, tile) {
+      let t = tile;
+      if (!t) {
+        try { t = port.validTiles(kind)[0]; } catch { t = undefined; }
+      }
+      if (!t) return null;
+      const res = safe(() => port.preview([{ type: 'place', kind, tile: { x: t!.x, y: t!.y } }]));
+      const p = res.ok ? res.value[0] : undefined;
+      return p ? { pc: p.pc, money: p.money, leadTime: p.leadTime, tile: { x: t.x, y: t.y }, blocked: p.blocked } : null;
     },
 
     dismissError: () => patch({ error: null }),

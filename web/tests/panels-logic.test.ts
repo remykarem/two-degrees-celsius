@@ -260,7 +260,7 @@ describe('inspector model', () => {
     expect(wm.sections.map((x) => x.heading)).toEqual(['Work', 'Commute', 'Life']);
     expect(wm.sections[1]!.rows[1]!.value).toMatch(/minutes/);
     const unhoused = resolveSelection(snap, layout, { kind: 'household', id: 7 }, [])!;
-    expect(unhoused.sections[0]!.rows[0]!.value).toMatch(/unhoused/);
+    expect(unhoused.sections[0]!.rows[0]!.value).toMatch(/unhoused/i);
     const firm = layout.scenery.find((s) => s.kind === 'firm')!;
     expect(resolveTile(snap, layout, firm, []).sections.length).toBeGreaterThan(0);
     const dormant = layout.scenery.filter((s) => s.kind === 'firm').map((f) => resolveTile(snap, layout, f, [])).find((m) => m.note?.includes('No firm'));

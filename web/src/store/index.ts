@@ -1,4 +1,4 @@
-export { createGame, type Game } from './game';
+export { createGame, type Game, type BuildEstimate } from './game';
 export { writable, type Readable, type Writable } from './readable';
 export { nextPhase, canTransition, type Phase, type PhaseEvent } from './phase';
 export { totalPc, totalMoney } from './draft';

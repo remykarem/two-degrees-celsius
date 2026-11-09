@@ -2,6 +2,7 @@
   import { quarterLabel, type Game } from '../store';
   import { ARROW, money, pct, TREND_WORD } from './format';
   import { historyChange, METRIC_TABS, metricById, metricsFor, runway, runwayText, type MetricTab } from './metrics';
+  import PeoplePanel from './PeoplePanel.svelte';
   import RunwayChart from './RunwayChart.svelte';
   import Sparkline from './Sparkline.svelte';
   import { setUi } from './ui';
@@ -61,6 +62,9 @@
         </section>
       {/if}
 
+      {#if tab === 'People'}
+        <PeoplePanel {game} />
+      {/if}
       <ul>
         {#each defs as m (m.id)}
           {@const ch = historyChange(m, history)}
@@ -74,6 +78,7 @@
               {#if ch}<span class="chg {ch.tone}" title="Change since last turn: {TREND_WORD[ch.trend]}"><span aria-hidden="true">{ARROW[ch.trend]}</span><span class="sr-only">{TREND_WORD[ch.trend]} since last turn</span></span>{:else}<span class="chg"></span>{/if}
               <Sparkline label={m.label} values={m.series ? history.map(m.series) : []} tone={ch?.tone ?? 'neutral'} w={110} />
             </div>
+            {#if m.detail}<div class="detail">{m.detail(snap)}</div>{/if}
           </li>
         {/each}
       </ul>
@@ -95,7 +100,7 @@
 <style>
   aside { padding: 10px; background: var(--surface); border-left: 1px solid var(--border); overflow: auto; min-width: 0; }
   [role='tablist'] { display: flex; gap: 4px; margin-bottom: 10px; }
-  [role='tab'] { flex: 1; padding: 5px 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+  [role='tab'] { flex: 1; padding: 5px 2px; font-size: 13px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
   [role='tab'].on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; padding: 8px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 10px; }
   .k { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -110,6 +115,7 @@
   .label { font-size: 13px; }
   .line { display: grid; grid-template-columns: 78px 18px 1fr; align-items: center; gap: 4px; }
   .num { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .detail { font-size: 12px; color: var(--text-dim); }
   .chg { text-align: center; font-size: 12px; color: var(--text-dim); }
   .chg.good { color: var(--good); } .chg.bad { color: var(--bad); }
   .why { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0 2px; font-size: 12px; }

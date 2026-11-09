@@ -60,17 +60,21 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
   if (!p) return null;
   const h = s.households.find((x) => x.id === p.household);
   const firmName = p.job ? s.firms.find((f) => f.id === p.job!.firm)?.name ?? `Firm ${p.job.firm}` : null;
-  const works = p.ageBand === 'adult' && (p.job !== null || h?.class === 'worker' || h?.class === 'manager' || h?.class === 'dependent');
+  const home = h?.home != null ? s.homes.find((x) => x.id === h.home) : undefined;
+  const jobText = firmName ?? (p.ageBand === 'child' ? 'child, not working' : p.ageBand === 'retired' ? 'retired' : p.inLabourForce ? 'looking for work' : 'not in the labour force');
   return {
-    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${AGE_LABEL[p.ageBand]}. ${h ? CLASS_LABEL[h.class] : ''} household`,
+    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${AGE_LABEL[p.ageBand]}${h ? `. ${CLASS_LABEL[h.class]} household` : ''}`,
     ...(h ? { household: { label: h.label, detail: `${h.members.length} people`, selection: { kind: 'household' as const, id: h.id } } } : {}),
     sections: [
       { heading: 'Work', rows: [
-        { label: 'Job', value: firmName ?? (works ? 'looking for work' : p.ageBand === 'child' ? 'child' : 'not in the labour force') },
-        { label: 'Wage', value: p.job ? `${money(p.wage)}/month` : 'none' }, { label: 'Skill', value: pct(p.skill) }] },
-      { heading: 'Commute', rows: [
-        { label: 'Distance', value: p.job ? `${compact(p.commuteTiles)} tiles` : 'none' }, { label: 'Time', value: p.job ? `${Math.round(p.commuteMinutes)} minutes` : 'none' }] },
-      { heading: 'Life', rows: [{ label: 'Wellbeing', value: p.wellbeing.toFixed(2) }, { label: 'Home', value: h?.home != null ? `home ${h.home}` : 'no home' }] },
+        { label: 'Job', value: jobText }, { label: 'Wage', value: p.job ? `${money(p.wage)}/month` : 'none' },
+        { label: 'Skill', value: pct(p.skill) }, ...(p.jobGuarantee ? [{ label: 'Job guarantee', value: 'yes' }] : [])] },
+      { heading: 'Commute', rows: p.job ? [
+        { label: 'Distance', value: `${compact(p.commuteTiles)} ${p.commuteTiles === 1 ? 'tile' : 'tiles'}` }, { label: 'Time', value: `${Math.round(p.commuteMinutes)} minutes each way` }]
+        : [{ label: 'Commute', value: 'none (no job)' }] },
+      { heading: 'Life', rows: [
+        { label: 'Wellbeing', value: p.wellbeing.toFixed(2), hint: '0 to 1' },
+        { label: 'Home', value: h?.home != null ? `home ${h.home}${home ? ` (${home.owner === 'public' ? 'public' : 'private'}, rent ${money(home.rent)})` : ''}` : 'UNHOUSED' }] },
     ],
   };
 }
@@ -84,22 +88,29 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
     { label: 'Rent', value: inc.rent, text: money(inc.rent) }, { label: 'Interest', value: inc.interest, text: money(inc.interest) },
     { label: 'Benefits', value: inc.benefits, text: money(inc.benefits) },
   ];
+  const total = inc.wages + inc.dividends + inc.rent + inc.interest + inc.benefits;
   const members: PersonView[] = h.members.flatMap((m) => s.people.filter((p) => p.id === m));
   const homeId = home?.id ?? h.home;
   const theHome = home ?? s.homes.find((x) => x.id === homeId);
+  const owns = s.homes.filter((x) => x.owner === h.id && x.household !== h.id);
+  const ownerText = theHome ? (theHome.owner === 'public' ? 'public housing' : theHome.owner === h.id ? 'this household' : s.households.find((x) => x.id === theHome.owner)?.label ?? 'a landlord') : 'none';
   return {
-    kind: 'household', title: h.label, subtitle: `${CLASS_LABEL[h.class]} household. ${theHome ? at(theHome.tile) : 'No home'}`, income: parts,
-    members: members.map((p) => ({ label: p.label, detail: p.job ? 'works' : AGE_LABEL[p.ageBand].toLowerCase(), selection: { kind: 'person' as const, id: p.id } })),
+    kind: 'household', title: h.label, subtitle: `${CLASS_LABEL[h.class]} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
+    members: members.map((p) => ({ label: p.label, detail: p.job ? `works${p.wage > 0 ? `, ${money(p.wage)}/month` : ''}` : AGE_LABEL[p.ageBand].toLowerCase(), selection: { kind: 'person' as const, id: p.id } })),
     sections: [
       { heading: 'Home', rows: [
-        { label: 'Lives in', value: theHome ? `home ${theHome.id}` : 'no home (unhoused)' },
-        { label: 'Owner', value: theHome ? (theHome.owner === 'public' ? 'public housing' : theHome.owner === h.id ? 'this household' : s.households.find((x) => x.id === theHome.owner)?.label ?? 'a landlord') : 'none' },
+        { label: 'Lives in', value: theHome ? `home ${theHome.id}` : 'UNHOUSED (no home)' },
+        { label: 'Owner', value: ownerText },
+        ...(theHome && theHome.owner !== h.id ? [{ label: 'Rent', value: `${money(theHome.rent)}/month` }] : []),
+        ...(owns.length ? [{ label: 'Lets out', value: `${owns.length} ${owns.length === 1 ? 'home' : 'homes'}` }] : []),
         { label: 'Months behind on rent', value: String(h.arrearsMonths) }] },
-      { heading: 'Money (per month)', rows: [
-        { label: 'Tax paid', value: money(inc.taxPaid) }, { label: 'Rent paid', value: money(inc.rentPaid) },
-        { label: 'Loan payments', value: money(inc.loanPayments) }, { label: 'Spending', value: money(inc.spending) },
+      { heading: 'Wealth', rows: [
         { label: 'Savings', value: money(h.savings) }, { label: 'Debt', value: money(h.debt) }, { label: 'Net worth', value: money(h.netWorth) }] },
-      { heading: 'Politics', rows: [{ label: 'Political power', value: h.politicalPower.toFixed(2) }] },
+      { heading: 'Money (per month)', rows: [
+        { label: 'Income, all sources', value: money(total) },
+        { label: 'Tax paid', value: money(inc.taxPaid) }, { label: 'Rent paid', value: money(inc.rentPaid) },
+        { label: 'Loan payments', value: money(inc.loanPayments) }, { label: 'Spending', value: money(inc.spending) }] },
+      { heading: 'Life and politics', rows: [{ label: 'Wellbeing', value: h.wellbeing.toFixed(2) }, { label: 'Political power', value: h.politicalPower.toFixed(2) }] },
     ],
   };
 }

@@ -8,11 +8,20 @@ export interface WhyData { kind: WhyKind; title: string; blurb: string; groups: 
 
 const KIND_LABEL: Record<string, string> = { wages: 'Wages', dividends: 'Dividends', rent: 'Rent', interest: 'Interest', benefits: 'Benefits' };
 
+/** 'Fossil plant at (4,7)': the plant behind a trace record (by id, else by tile). */
+export function plantLabel(t: { id?: number; tile?: { x: number; y: number } }, snap: Snapshot | null): string {
+  const plant = snap?.plants?.find((p) => (t.id !== undefined && p.id === t.id) || (t.tile && p.tile.x === t.tile.x && p.tile.y === t.tile.y));
+  const tile = plant?.tile ?? t.tile;
+  const kind = plant ? (plant.kind === 'fossil' ? 'Fossil plant' : 'Renewable plant') : 'Power plant';
+  return tile ? `${kind} at (${tile.x},${tile.y})` : kind;
+}
+
 export function emissionsBars(trace: TraceRecord[], snap: Snapshot | null): Bar[] {
   const by = new Map<string, Bar>();
   for (const t of trace) {
     if (t.type !== 'emissions') continue;
     const label = t.source === 'firm' ? snap?.firms.find((f) => f.id === t.id)?.name ?? `Firm ${t.id ?? ''}`.trim()
+      : t.source === 'plant' ? plantLabel(t, snap)
       : t.source === 'households' ? 'Households' : 'Forest sink (absorbed)';
     const cur = by.get(label) ?? { label, value: 0, text: '', tone: t.source === 'sink' ? 'sink' as const : 'plain' as const };
     cur.value += t.source === 'sink' ? -Math.abs(t.tonnes) : t.tonnes;
