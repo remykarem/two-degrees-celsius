@@ -197,3 +197,20 @@ Original options, kept for the record:
 5. `exportState` / `importState` via serde JSON of `State` plus RNG state, with a schema check.
 6. Event importance ranking.
 7. `Outcome` as an object, not a tuple.
+
+## 9. Contract v0.2: resolutions to the scaffold's ten issues
+
+Resolved after the web scaffold (`docs/web-notes.md`, "Contract issues"). Where this section differs from sections 3 and 4, **this section wins**. Resolutions were checked against the Rust code (`sim-engine/src/turn.rs`, `sim-types`).
+
+| # | Issue | Resolution |
+|---|---|---|
+| 1 | `levers()` cannot describe `switch_system` or the place/remove kinds | Keep `levers()` for the 19 policy levers. Add `actions(): ActionInfo[]` for `switch_system`, `place:<kind>` and `remove:<kind>`: `{ key, label, baseCostPc, leadTime, moneyCost (estimated, dollars; 0 if none), availableIn: SystemKey[] }`. `preview()` remains the authority on actual cost. |
+| 2 | `MetricKey` undefined | Define it in the contract as the closed set: `gdp, gpi, unemployment, gini, wage_share, profit_share, wellbeing, emissions, budget, temperature, legitimacy, debt, money, prices, housing, forest, commons`. |
+| 3 | `SimEvent` and `TraceRecord` payloads unspecified | `SimEvent` = `{ type, importance: 1 \| 2 \| 3, ...payload }` with the payloads of the Rust variants: `commuted{household,firm,people}`, `hired{firm,people}`, `fired{firm,people}`, `loan_defaulted{firm}`, `firm_founded{firm}`, `firm_closed{firm}`, `forest_shrank{stock}`, `commons_collapsed`, `commons_enclosed{owner}`, `policy_blocked{reason}`, `command_activated{id}`, `bank_failed`, `rent_shortfall{household,amount}`, `spending_cut{shortfall}`, `bank_bailout{amount}`, `class_changed{household,to}`, `system_switch_started{to}`, `system_switch_completed{to}`, `budget_exhausted`, `collapse{reason}`. **No display text in the contract**: the UI formats text from the payload (`panels/format`). `TraceRecord` = `emissions{source:'firm'\|'households'\|'sink', id?, tonnes}` \| `income{household, kind:'wages'\|'dividends'\|'rent'\|'interest'\|'benefits', amount}` \| `policy_gap{lever, nominal, effective, netLobby}`. |
+| 4 | `commons_access` typed as enum but numeric min/max/step | `LeverInfo` gets `options?: string[]` for `unit: 'enum'` levers (`['open','community']` for commons access; `min/max/step` are 0 and ignored). The wire value is `CommonsAccessWire`; `policy.nominal` for that lever is the mode string. |
+| 5 | Meaning of `pcBefore` / `pcAfter` | `pcBefore` = PC when the turn was submitted, before charging commands. `pcAfter` = PC at the start of the next turn, after charging and regeneration. (Matches Rust.) |
+| 6 | `regenNextTurn`, `gameOver.turn` | `regenNextTurn` = `pc_base x legitimacy` as a float (not rounded; the UI rounds for display). `gameOver.turn` = the turn on which the game ended (161 when the run was survived). |
+| 7 | `policyGaps` numeric only | Intended. Only numeric levers can be lobbied (carbon price, wealth tax, profit tax, emissions cap), so bool and enum levers never appear in `policyGaps`. `LeverInfo.lobbied` is true only for those. |
+| 8 | No calendar | `Snapshot.game = { startYear, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 }`. The UI derives quarter and year labels from it and hard-codes nothing. |
+| 9 | When money is charged | Charged **at activation**, not at queueing (Rust: `PendingCommand.money_cost` is "the money the command will cost when it takes effect"; pending builds count as committed against available funds). Cancelling refunds **PC only** (50%); no money was charged yet. `CommandPreview.money` is the amount that will be charged on activation. |
+| 10 | `bailout` | A **persistent boolean policy toggle** ("the government will bail the bank out if it fails"), as in Rust (`Policy.bailout: bool`). It is not a one-off and must not reset on activation. |
