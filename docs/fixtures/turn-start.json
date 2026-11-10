@@ -58,7 +58,7 @@
   "activated": [],
   "pcBefore": 60.0,
   "snapshot": {
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -1940,14 +1940,157 @@
       "unhousedHouseholds": 1
     },
     "energy": {
-      "fossilCap": 10.0,
-      "renewableCap": -0.0,
-      "fossilShare": 1.0,
-      "demand": 6.835081650401035,
-      "supply": 10.0,
-      "delivered": 6.835081650401035,
+      "unit": "MWh",
+      "supply": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        }
+      ],
+      "demand": {
+        "firms": 3.2135411504010354,
+        "households": 3.6215404999999996,
+        "total": 6.835081650401035
+      },
       "served": 1.0,
-      "gridIntensity": 1.0
+      "intensity": 1.0,
+      "renewableShare": 0.0,
+      "emissionsByPlant": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "tonnes": 3.4175408252005175
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "tonnes": 3.4175408252005175
+        }
+      ]
+    },
+    "finance": {
+      "government": {
+        "revenue": {
+          "wageTax": 0.0,
+          "profitTax": 0.0,
+          "capitalTax": 0.0,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "spending": {
+          "benefits": 0.0,
+          "ubi": 0.0,
+          "publicSpending": 0.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 0.0,
+          "subsidy": 0.0,
+          "interest": 0.0,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "balance": 0.0,
+        "cash": 8000.0,
+        "debt": 95124.64,
+        "debtToGdp": 0.2466419746325857,
+        "legitimacy": 0.7,
+        "basis": "month"
+      },
+      "bank": {
+        "equity": 42313.75,
+        "loans": 334042.91,
+        "deposits": 291729.16,
+        "capitalRatio": 0.1266716003641568,
+        "capitalRatioLimit": 0.1,
+        "headroom": 89094.59000000003,
+        "defaultRate": 0.0,
+        "interestIncome": 0.0
+      },
+      "households": {
+        "income": {
+          "wages": 0.0,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 0.0,
+          "benefits": 0.0
+        },
+        "taxes": 0.0,
+        "rentPaid": 0.0,
+        "loanPayments": 0.0,
+        "spending": 0.0,
+        "savingRate": 0.0,
+        "debt": 156166.5,
+        "netWorth": 754698.931997354
+      },
+      "firms": {
+        "revenue": 0.0,
+        "wageBill": 0.0,
+        "profit": 0.0,
+        "investment": 0.0,
+        "debt": 82751.77,
+        "cash": 60196.68
+      },
+      "money": {
+        "supply": 291729.16,
+        "createdThisTurn": 0.0,
+        "destroyedThisTurn": 0.0
+      },
+      "priceIndex": 1.0435262982315547,
+      "wageShare": 0.0,
+      "profitShare": 0.0,
+      "quarter": {
+        "govRevenue": {
+          "wageTax": 0.0,
+          "profitTax": 0.0,
+          "capitalTax": 0.0,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "govSpending": {
+          "benefits": 0.0,
+          "ubi": 0.0,
+          "publicSpending": 0.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 0.0,
+          "subsidy": 0.0,
+          "interest": 0.0,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "householdIncome": {
+          "wages": 0.0,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 0.0,
+          "benefits": 0.0
+        },
+        "householdTaxes": 0.0,
+        "rentPaid": 0.0,
+        "loanPayments": 0.0,
+        "householdSpending": 0.0,
+        "firmRevenue": 0.0,
+        "wageBill": 0.0,
+        "firmProfit": 0.0,
+        "investment": 0.0,
+        "bankInterestIncome": 0.0
+      }
     },
     "history": []
   }

@@ -100,6 +100,14 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
     let mut live = Api::init(FIXTURE_SEED)?;
     let turn_start = live.begin_turn(&fixture_commands())?;
     let month_result = live.advance_month()?;
+    // Contract v1.4: finance, energy and ledgers after three played turns (loans, taxes,
+    // purchases and wages all exist by then).
+    api.submit_turn(&[])?;
+    api.submit_turn(&[])?;
+    let later = api.snapshot();
+    let query = crate::ledger::LedgerQuery::default();
+    let ledger_household = api.ledger(&crate::ledger::AccountRef::Household { id: 0 }, &query)?;
+    let ledger_government = api.ledger(&crate::ledger::AccountRef::Government, &query)?;
     Ok(vec![
         ("snapshot-turn1.json".to_string(), snapshot),
         ("turn-result.json".to_string(), pretty(&turn)?),
@@ -112,5 +120,15 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
             "turn-result-weather.json".to_string(),
             pretty(&weather_sample()?)?,
         ),
+        (
+            "ledger-household.json".to_string(),
+            pretty(&ledger_household)?,
+        ),
+        (
+            "ledger-government.json".to_string(),
+            pretty(&ledger_government)?,
+        ),
+        ("finance.json".to_string(), pretty(&later.finance)?),
+        ("energy.json".to_string(), pretty(&later.energy)?),
     ])
 }

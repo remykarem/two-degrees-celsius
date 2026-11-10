@@ -24,6 +24,33 @@ fn pick(v: &Value, path: &[&str]) -> Value {
     path.iter().fold(v.clone(), |acc, k| acc[*k].clone())
 }
 
+/// Hashes of the ledger calls named in the plan (`ledgerCalls`, `personLedgerCalls`), for the
+/// native-vs-wasm comparison of the Town v5 calls: `{ name: fnv(reply) }`.
+fn ledger_hashes(sim: &WasmSim, plan: &Value) -> Value {
+    let mut h = serde_json::Map::new();
+    if let Some(calls) = plan["ledgerCalls"].as_object() {
+        for (name, call) in calls {
+            let query = if call["query"].is_null() {
+                String::new()
+            } else {
+                call["query"].to_string()
+            };
+            let reply = sim.ledger(&call["account"].to_string(), &query);
+            let v: Value = serde_json::from_str(&reply).unwrap();
+            assert_eq!(v["ok"], true, "{name}: {reply}");
+            // The page of every account in the plan reconciles.
+            assert_eq!(v["value"]["reconciles"], true, "{name} does not reconcile");
+            h.insert(name.clone(), json!(fnv(&reply)));
+        }
+    }
+    for p in plan["personLedgerCalls"].as_array().into_iter().flatten() {
+        let reply = sim.person_ledger(p.as_u64().unwrap() as u32);
+        assert!(reply.contains(r#""ok":true"#), "{reply}");
+        h.insert(format!("person{p}"), json!(fnv(&reply)));
+    }
+    Value::Object(h)
+}
+
 fn run(plan: &Value) -> Value {
     let mut sim = WasmSim::new();
     let init = sim.init(plan["seed"].as_f64().unwrap(), None);
@@ -33,12 +60,19 @@ fn run(plan: &Value) -> Value {
         "actions": fnv(&sim.actions()),
     });
     let mut turns = Vec::new();
+    let mut ledgers = serde_json::Map::new();
     for (i, cmds) in plan["turns"].as_array().unwrap().iter().enumerate() {
         let turn = i as u64 + 1;
         if let Some(id) = plan["cancelBeforeTurn"][turn.to_string()].as_u64() {
             out[format!("cancel{turn}")] = json!(fnv(&sim.cancel_pending(id as u32)));
         }
         let reply = sim.submit_turn(&cmds.to_string());
+        if plan["ledgerAfterTurns"]
+            .as_array()
+            .is_some_and(|l| l.iter().any(|t| t.as_u64() == Some(turn)))
+        {
+            ledgers.insert(turn.to_string(), ledger_hashes(&sim, plan));
+        }
         let v: Value = serde_json::from_str(&reply).unwrap();
         let snap = pick(&v, &["value", "snapshot"]);
         turns.push(json!({
@@ -53,10 +87,18 @@ fn run(plan: &Value) -> Value {
             let blob = sim.export_state();
             out["export"] = json!(fnv(&blob));
             let v: Value = serde_json::from_str(&blob).unwrap();
+            let before = ledger_hashes(&sim, plan);
             let imported = sim.import_state(v["value"].as_str().unwrap());
             out["import"] = json!(fnv(&imported));
+            // The ledger survives the save and load unchanged.
+            assert_eq!(
+                before,
+                ledger_hashes(&sim, plan),
+                "ledger changed by import"
+            );
         }
     }
+    out["ledger"] = Value::Object(ledgers);
     out["turns"] = Value::Array(turns);
     out["finalSnapshot"] = json!(fnv(&sim.snapshot()));
     out

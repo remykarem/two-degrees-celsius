@@ -216,5 +216,59 @@
   [],
   [],
   []
+ ],
+ "ledgerAfterTurns": [
+  1,
+  5,
+  12,
+  15,
+  20
+ ],
+ "ledgerCalls": {
+  "household0": {
+   "account": {
+    "kind": "household",
+    "id": 0
+   }
+  },
+  "household3": {
+   "account": {
+    "kind": "household",
+    "id": 3
+   }
+  },
+  "firm0": {
+   "account": {
+    "kind": "firm",
+    "id": 0
+   }
+  },
+  "government": {
+   "account": {
+    "kind": "government"
+   }
+  },
+  "governmentTaxes": {
+   "account": {
+    "kind": "government"
+   },
+   "query": {
+    "kind": "tax",
+    "fromTurn": 3
+   }
+  },
+  "bank": {
+   "account": {
+    "kind": "bank"
+   },
+   "query": {
+    "fromTurn": 1,
+    "toTurn": 20
+   }
+  }
+ },
+ "personLedgerCalls": [
+  3,
+  8
  ]
 }

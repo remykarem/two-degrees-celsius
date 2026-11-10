@@ -58,14 +58,10 @@ pub fn grid_intensity(s: &State, p: &Params) -> f64 {
     sim_types::safe_div(s.capacity(PlantKind::Fossil), supply, 0.0) * p.energy.factor_fossil
 }
 
-pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
-    let mut d = Deltas::new();
+/// Electricity each household would like this month (before rationing), from last month's
+/// consumption; `heat` is the drought multiplier.
+pub fn household_demand(s: &State, p: &Params, heat: f64) -> Vec<f64> {
     let ep = &p.energy;
-    let gi = grid_intensity(s, p);
-    // A drought raises electricity demand (cooling, pumping): S11.
-    let heat = 1.0 + p.weather.a_e * crate::weather::effective_drought(s, p);
-
-    // Electricity the households would like, from last month's consumption.
     let mut hh_use = Vec::with_capacity(s.households.len());
     for h in &s.households {
         let n = h.members.len() as f64;
@@ -76,6 +72,18 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd),
         );
     }
+    hh_use
+}
+
+pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
+    let mut d = Deltas::new();
+    let ep = &p.energy;
+    let gi = grid_intensity(s, p);
+    // A drought raises electricity demand (cooling, pumping): S11.
+    let heat = 1.0 + p.weather.a_e * crate::weather::effective_drought(s, p);
+
+    // Electricity the households would like, from last month's consumption.
+    let hh_use = household_demand(s, p, heat);
 
     // Production before rationing.
     struct Plan {

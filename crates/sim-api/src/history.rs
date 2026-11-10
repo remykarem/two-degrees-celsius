@@ -26,6 +26,14 @@ pub struct HistoryPoint {
     pub forest_health: f64,
     pub commons_health: f64,
     pub farm_health: f64,
+    /// Contract v1.4: government revenue and spending over the turn (three months, dollars,
+    /// from the ledger), the bank's capital ratio (equity over loans, 1 with no loans), the
+    /// renewable share of plant capacity and the share of electricity demand served.
+    pub gov_revenue: f64,
+    pub gov_spending: f64,
+    pub bank_capital_ratio: f64,
+    pub renewable_share: f64,
+    pub grid_served: f64,
 }
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
@@ -44,8 +52,18 @@ pub fn budget_share(s: &State, p: &Params) -> f64 {
 }
 
 /// The point for the turn that has just been played (`played_turn`).
-pub fn point(s: &State, p: &Params, played_turn: u32) -> HistoryPoint {
+pub fn point(
+    s: &State,
+    p: &Params,
+    played_turn: u32,
+    gov_revenue: f64,
+    gov_spending: f64,
+) -> HistoryPoint {
     let i = &s.indicators;
+    let (fossil, renewable) = (
+        s.capacity(sim_types::PlantKind::Fossil),
+        s.capacity(sim_types::PlantKind::Renewable),
+    );
     HistoryPoint {
         turn: played_turn,
         gdp_real_annual: i.gdp_real_annual,
@@ -64,5 +82,18 @@ pub fn point(s: &State, p: &Params, played_turn: u32) -> HistoryPoint {
         forest_health: i.forest_health,
         commons_health: i.commons_health,
         farm_health: i.farm_health,
+        gov_revenue,
+        gov_spending,
+        bank_capital_ratio: if s.bank.loans.0 > 0 {
+            s.bank.equity.as_f64() / s.bank.loans.as_f64()
+        } else {
+            1.0
+        },
+        renewable_share: if fossil + renewable > 0.0 {
+            renewable / (fossil + renewable) + 0.0
+        } else {
+            0.0
+        },
+        grid_served: s.energy.served.0,
     }
 }

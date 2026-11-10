@@ -2388,7 +2388,7 @@
     }
   ],
   "snapshot": {
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -4270,14 +4270,157 @@
       "unhousedHouseholds": 1
     },
     "energy": {
-      "fossilCap": 10.0,
-      "renewableCap": -0.0,
-      "fossilShare": 1.0,
-      "demand": 6.939432551785466,
-      "supply": 10.0,
-      "delivered": 6.939432551785466,
+      "unit": "MWh",
+      "supply": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        }
+      ],
+      "demand": {
+        "firms": 3.3230378017854663,
+        "households": 3.61639475,
+        "total": 6.939432551785466
+      },
       "served": 1.0,
-      "gridIntensity": 1.0
+      "intensity": 1.0,
+      "renewableShare": 0.0,
+      "emissionsByPlant": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "tonnes": 3.4697162758927336
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "tonnes": 3.4697162758927336
+        }
+      ]
+    },
+    "finance": {
+      "government": {
+        "revenue": {
+          "wageTax": 5480.87,
+          "profitTax": 1529.54,
+          "capitalTax": 4805.23,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "spending": {
+          "benefits": 4000.0,
+          "ubi": 0.0,
+          "publicSpending": 8000.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 60.0,
+          "subsidy": 0.0,
+          "interest": 321.03,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "balance": -565.3900000000012,
+        "cash": 8000.0,
+        "debt": 96875.72,
+        "debtToGdp": 0.25075444495349913,
+        "legitimacy": 0.6918247922210627,
+        "basis": "month"
+      },
+      "bank": {
+        "equity": 42396.68,
+        "loans": 334598.26,
+        "deposits": 292201.58,
+        "capitalRatio": 0.12670920643759473,
+        "capitalRatioLimit": 0.1,
+        "headroom": 89368.53999999998,
+        "defaultRate": 0.0,
+        "interestIncome": 1243.42
+      },
+      "households": {
+        "income": {
+          "wages": 18561.64,
+          "dividends": 10045.71,
+          "rent": 1392.76,
+          "interest": 574.6,
+          "benefits": 4000.0
+        },
+        "taxes": 10286.1,
+        "rentPaid": 1392.76,
+        "loanPayments": 1028.15,
+        "spending": 21517.83,
+        "savingRate": 0.0034076930797105748,
+        "debt": 154791.57,
+        "netWorth": 755585.3482903412
+      },
+      "firms": {
+        "revenue": 30395.17,
+        "wageBill": 18269.59,
+        "profit": 10244.86,
+        "investment": 877.34,
+        "debt": 82930.97,
+        "cash": 60399.54
+      },
+      "money": {
+        "supply": 292201.58,
+        "createdThisTurn": 8824.69,
+        "destroyedThisTurn": 8352.27
+      },
+      "priceIndex": 1.0339720315712517,
+      "wageShare": 0.6407133926833588,
+      "profitShare": 0.35928660731664125,
+      "quarter": {
+        "govRevenue": {
+          "wageTax": 16533.95,
+          "profitTax": 4575.71,
+          "capitalTax": 14276.46,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "govSpending": {
+          "benefits": 12000.0,
+          "ubi": 0.0,
+          "publicSpending": 24000.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 180.0,
+          "subsidy": 0.0,
+          "interest": 957.2,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "householdIncome": {
+          "wages": 55982.34,
+          "dividends": 29810.7,
+          "rent": 4157.56,
+          "interest": 1722.9,
+          "benefits": 12000.0
+        },
+        "householdTaxes": 30810.41,
+        "rentPaid": 4157.56,
+        "loanPayments": 3093.72,
+        "householdSpending": 64653.04,
+        "firmRevenue": 91240.68,
+        "wageBill": 55113.13,
+        "firmProfit": 30499.45,
+        "investment": 2587.64,
+        "bankInterestIncome": 3728.38
+      }
     },
     "history": [
       {
@@ -4297,7 +4440,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7090242941944195,
         "commonsHealth": 0.7879972363912755,
-        "farmHealth": 0.7485107652928475
+        "farmHealth": 0.7485107652928475,
+        "govRevenue": 35386.119999999995,
+        "govSpending": 37137.2,
+        "bankCapitalRatio": 0.12670920643759476,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       }
     ]
   }

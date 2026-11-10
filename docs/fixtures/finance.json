@@ -1,0 +1,108 @@
+{
+  "government": {
+    "revenue": {
+      "wageTax": 5651.65,
+      "profitTax": 1405.07,
+      "capitalTax": 4685.99,
+      "wealthTax": 0.0,
+      "carbon": 136.74,
+      "other": 0.0
+    },
+    "spending": {
+      "benefits": 3200.0,
+      "ubi": 0.0,
+      "publicSpending": 8000.0,
+      "jobGuarantee": 0.0,
+      "upkeep": 70.0,
+      "subsidy": 0.0,
+      "interest": 338.11,
+      "builds": 0.0,
+      "other": 0.0
+    },
+    "balance": 271.3399999999983,
+    "cash": 8481.74,
+    "debt": 101379.81,
+    "debtToGdp": 0.26233955672864184,
+    "legitimacy": 0.674821246603125,
+    "basis": "month"
+  },
+  "bank": {
+    "equity": 42761.61,
+    "loans": 337186.47,
+    "deposits": 294424.86,
+    "capitalRatio": 0.1268188785866764,
+    "capitalRatioLimit": 0.1,
+    "headroom": 90429.63,
+    "defaultRate": 0.0,
+    "interestIncome": 1264.9
+  },
+  "households": {
+    "income": {
+      "wages": 19134.82,
+      "dividends": 9699.98,
+      "rent": 1435.08,
+      "interest": 579.93,
+      "benefits": 3200.0
+    },
+    "taxes": 10337.64,
+    "rentPaid": 1435.08,
+    "loanPayments": 1029.56,
+    "spending": 21804.4,
+    "savingRate": -0.022991611406935897,
+    "debt": 152069.83,
+    "netWorth": 757149.0280688652
+  },
+  "firms": {
+    "revenue": 31015.6,
+    "wageBill": 18838.83,
+    "profit": 10280.16,
+    "investment": 1211.2,
+    "debt": 83736.83,
+    "cash": 60883.91
+  },
+  "money": {
+    "supply": 294424.86,
+    "createdThisTurn": 10394.05,
+    "destroyedThisTurn": 8637.85
+  },
+  "priceIndex": 1.0076793862706535,
+  "wageShare": 0.6469602826196925,
+  "profitShare": 0.3530397173803075,
+  "quarter": {
+    "govRevenue": {
+      "wageTax": 16331.03,
+      "profitTax": 4733.01,
+      "capitalTax": 15144.85,
+      "wealthTax": 0.0,
+      "carbon": 264.37,
+      "other": 0.0
+    },
+    "govSpending": {
+      "benefits": 11200.0,
+      "ubi": 0.0,
+      "publicSpending": 24000.0,
+      "jobGuarantee": 0.0,
+      "upkeep": 200.0,
+      "subsidy": 0.0,
+      "interest": 1004.54,
+      "builds": 2500.0,
+      "other": 0.0
+    },
+    "householdIncome": {
+      "wages": 57869.28,
+      "dividends": 31840.53,
+      "rent": 4283.88,
+      "interest": 1737.78,
+      "benefits": 11200.0
+    },
+    "householdTaxes": 31475.88,
+    "rentPaid": 4283.88,
+    "loanPayments": 3058.23,
+    "householdSpending": 66644.99,
+    "firmRevenue": 93768.22,
+    "wageBill": 54436.8,
+    "firmProfit": 33271.79,
+    "investment": 3123.23,
+    "bankInterestIncome": 3765.86
+  }
+}

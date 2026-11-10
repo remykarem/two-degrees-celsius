@@ -1,264 +1,264 @@
 {
-  "finalSnapshot": "573a8591d6b35a0f",
+  "finalSnapshot": "20b3f46d5ed7f762",
   "midTurnExportError": "turn_state",
   "turns": [
     {
-      "begin": "2ace9b50341bcfb9",
-      "finish": "6371e051947ce316",
+      "begin": "9b5e30db43682e37",
+      "finish": "aa148ed92e6c3907",
       "months": [
-        "1288abdd837583c1",
-        "9f7784a8cf9fbd57",
-        "75234c4f94a96428"
+        "f0b4c238f6eeefe8",
+        "2fdcdd8e3964e9aa",
+        "3bb54c231a323df0"
       ],
       "turn": 1
     },
     {
-      "begin": "2526b3311929c2d1",
-      "finish": "3d9b1983cdb52d38",
+      "begin": "65ce8b5d025cebe6",
+      "finish": "2aaa0371d9e34ab7",
       "months": [
-        "97839789aa278204",
-        "0d7e480993a452e6",
-        "ee73765fcc05a6a5"
+        "d84854a97e38c983",
+        "438f32ed63086b9f",
+        "862af01311f25a6e"
       ],
       "turn": 2
     },
     {
-      "begin": "02fea7967c23b87a",
-      "finish": "a8936afd79690eb0",
+      "begin": "2b74c6197fb5eb4b",
+      "finish": "fa4ec48c1c66d842",
       "months": [
-        "b2197f1a070417b4",
-        "424bf15ba846a118",
-        "115ba34b1ac70cbc"
+        "5df485502494431d",
+        "08408b53ce66e12d",
+        "61f024333783bdd3"
       ],
       "turn": 3
     },
     {
-      "begin": "c49ab42344de686f",
-      "finish": "276be07bcf8bdb8b",
+      "begin": "94921ce1dae5033d",
+      "finish": "7c1f70eef91c0c35",
       "months": [
-        "4c5dbc55e391f1f8",
-        "ca1ece4fed306124",
-        "640deaafd51e2f4e"
+        "469bf2eacdd85691",
+        "bbdbbd9140242365",
+        "5bff7a01ed00068f"
       ],
       "turn": 4
     },
     {
-      "begin": "783a8466f7128aec",
-      "finish": "b55fd68047747c46",
+      "begin": "2959ae3d98b61ffe",
+      "finish": "2b4f22addb0da017",
       "months": [
-        "dfe03033ec73546b",
-        "6328a3ee34b4cf40",
-        "f24b92b15e462d96"
+        "542945a4c38278ca",
+        "f67d2c4f45d06cf3",
+        "cbe3aff6cc0b51a7"
       ],
       "turn": 5
     },
     {
-      "begin": "fc704e1bc31f48ab",
-      "finish": "f41860ddc6c061a7",
+      "begin": "676a4af5b865f860",
+      "finish": "97d9a8cff745cf82",
       "months": [
-        "709dfe07e8c1be75",
-        "e2dc43ddcdd01376",
-        "930e55f9902e930c"
+        "f802b1d502a3ce67",
+        "ee4d98501151c344",
+        "69088bf46abe5657"
       ],
       "turn": 6
     },
     {
-      "begin": "6285e37cd8be6658",
-      "finish": "729f0bfca0cba27a",
+      "begin": "b0cb6b58489293c9",
+      "finish": "19c44e54331a8228",
       "months": [
-        "2bf1b24e677fff0f",
-        "8183cc90d0824f17",
-        "5b04830f84af0969"
+        "82d80344e53c3743",
+        "cabf7d4d64fb4448",
+        "0b0e15f2895b8fc9"
       ],
       "turn": 7
     },
     {
-      "begin": "fa049be1f771dedc",
-      "finish": "64543c8d432d495e",
+      "begin": "41636ed332442f4a",
+      "finish": "a2ca7aa803656e03",
       "months": [
-        "35a412b831665e67",
-        "7874378902f2a4c7",
-        "1f855d345f770a9a"
+        "d169d2944117cb00",
+        "2365db4bf92172af",
+        "1c0f24c3e18097ed"
       ],
       "turn": 8
     },
     {
-      "begin": "ab7cbe3c5bc85b4d",
-      "finish": "cc37fa05bdd4fc8f",
+      "begin": "eda04e714a7ae22a",
+      "finish": "872723bc12d9a328",
       "months": [
-        "4cdc962ddd56a791",
-        "e1a7f5b2e9cf726c",
-        "d22f14408a142dce"
+        "f027a546e2c87a34",
+        "cac27f0362548969",
+        "83b45b5f26db5a4c"
       ],
       "turn": 9
     },
     {
-      "begin": "b18019f9a34ffb44",
-      "finish": "03d47fbf32aff9d9",
+      "begin": "e7e9f39a20c66c8d",
+      "finish": "6d3ee915a6983d9d",
       "months": [
-        "c9e1e33a979afeef",
-        "2e2d2cff52633e94",
-        "567e418dab3e8951"
+        "12a92ff9755b1253",
+        "b84adac01e054287",
+        "a51682056a0a5be4"
       ],
       "turn": 10
     },
     {
-      "begin": "d8452197ef6f6246",
-      "finish": "a326306cc849a0b8",
+      "begin": "1455f39ac9f65970",
+      "finish": "97a3b0364827071e",
       "months": [
-        "74beead611175369",
-        "0f19293df8657f7a",
-        "b9ee22db786b7973"
+        "09ca94a64986e96e",
+        "addebeddc3f2ab9c",
+        "08db6657e4fefcc2"
       ],
       "turn": 11
     },
     {
-      "begin": "e38d19f8072db2fc",
-      "finish": "007713e19a4dafae",
+      "begin": "5cdee87e37ca0dd0",
+      "finish": "2ffbccf9fd6c0bc9",
       "months": [
-        "93ee6919569a8d3d",
-        "20a7fb20d9f0a539",
-        "8fb976a8654b4ffb"
+        "d3f4904e4da9a4f7",
+        "93ca57c4e6ed8068",
+        "ad847adbe7b13d70"
       ],
       "turn": 12
     },
     {
-      "begin": "9e3df24a112cc6db",
-      "finish": "6f649b7db83f7d12",
+      "begin": "a592e983013c8406",
+      "finish": "bf6250b0af626746",
       "months": [
-        "7c298b335c508323",
-        "2791c04b73dd1294",
-        "dbd6b08765c1e608"
+        "87ba63ba77480a67",
+        "30381ca97dd00dcb",
+        "6d658b019bc6d9a1"
       ],
       "turn": 13
     },
     {
-      "begin": "687082d681cce388",
-      "finish": "df53b1f7e3ee867f",
+      "begin": "c0cac0673c2122b4",
+      "finish": "19aa9772a73da376",
       "months": [
-        "c1a9645cf677035c",
-        "b198420bac295fdf",
-        "b879fd2333d2d32d"
+        "4daaae3913bcca14",
+        "c94c424f7690c059",
+        "bccbeda50a2923bc"
       ],
       "turn": 14
     },
     {
-      "begin": "2243fb1fc811f32e",
-      "finish": "4a0f5c06d8874607",
+      "begin": "4265d890f0c2d719",
+      "finish": "d692449a715e0586",
       "months": [
-        "13c927c04378671a",
-        "39b530c5bc7d3cb7",
-        "8426782678c6669c"
+        "8648c9f0a2f3be3c",
+        "d87cc3590d856443",
+        "bba760f4eae7a7aa"
       ],
       "turn": 15
     },
     {
-      "begin": "012ed6ebcf7989df",
-      "finish": "d155b1c16608f5d4",
+      "begin": "20d9121a2c869c28",
+      "finish": "c771f24ba66b5847",
       "months": [
-        "29dfa979e34d867f",
-        "ca91702931b6ecb0",
-        "ddccd7fde0acafab"
+        "0654ba151e88695e",
+        "692954899b04ec8e",
+        "f5d6c437e98b1aea"
       ],
       "turn": 16
     },
     {
-      "begin": "5455d031a997cedd",
-      "finish": "ab169ea22753b189",
+      "begin": "e9da4d09cf14b8a4",
+      "finish": "f19735271b497fc0",
       "months": [
-        "7ad545d6122a0a22",
-        "e1450313a01d2ca1",
-        "eaf502732388972c"
+        "165c7c9af61c3fa0",
+        "bd231a3b572a0b12",
+        "88fc048db37c73ef"
       ],
       "turn": 17
     },
     {
-      "begin": "cce8a7554bce6ea5",
-      "finish": "84969c5fbefb26a7",
+      "begin": "e15749d79302101e",
+      "finish": "e9e7714c0c666dc5",
       "months": [
-        "f7fa2b7ffe6ed34e",
-        "4fd0a006c22ac002",
-        "bbbb5c1f97d102ac"
+        "8708f81b0cf83dcd",
+        "7e09b003ecdef3d9",
+        "f582282c9b322c89"
       ],
       "turn": 18
     },
     {
-      "begin": "195e443a3ff5446e",
-      "finish": "4e05b28df3ff2291",
+      "begin": "1cd8e565ffc74c54",
+      "finish": "d23fb178d6cd5092",
       "months": [
-        "39ad8240ae063ab1",
-        "c7e7c2788e709aff",
-        "73e9d61afd99d7e2"
+        "9b8b7581f0cb4ad7",
+        "c9481799b8d5a143",
+        "b5ed5266e7893a57"
       ],
       "turn": 19
     },
     {
-      "begin": "098994c2dca67890",
-      "finish": "3bcce72e463fa428",
+      "begin": "a292bfe2fb6e7e0d",
+      "finish": "4407e5a46b61ec6e",
       "months": [
-        "93995066b3350813",
-        "aa094d4ca9b64b94",
-        "86a0c3e45b0c85b0"
+        "e8a029ecb64d545a",
+        "9fb8b352b2439945",
+        "527d25fbf26eced8"
       ],
       "turn": 20
     },
     {
-      "begin": "baf1039ae3537482",
-      "finish": "ea0323c738f8fce6",
+      "begin": "cfe19964903431ae",
+      "finish": "dd8a08be4e62c23e",
       "months": [
-        "7b6bea4215900574",
-        "70e3cf9011f32d44",
-        "2503aadfa309d0cd"
+        "03363aa0946387b2",
+        "1e3fb35a1f06ad4b",
+        "06bcbafc4d0ade71"
       ],
       "turn": 21
     },
     {
-      "begin": "5c7cc3ddebb9d529",
-      "finish": "e87afcc01f08dd7e",
+      "begin": "f927feb4d4dd1d87",
+      "finish": "facc662975242343",
       "months": [
-        "ac86a604c876a8c9",
-        "256af62e9d035aa9",
-        "72261763e5203266"
+        "079871119ee430d4",
+        "ad25a2b1ed240334",
+        "070e7b257c0f19f0"
       ],
       "turn": 22
     },
     {
-      "begin": "f3e767304107c917",
-      "finish": "524ca53ce5adbc38",
+      "begin": "bb90d3223b86e40c",
+      "finish": "d59c08b1f73c13d5",
       "months": [
-        "f7b338efbfb04e46",
-        "b2ef5d7ef1c45c6f",
-        "daf92e8f410aa7d0"
+        "ac7407c6e0e180a6",
+        "61610ed639edf324",
+        "67613d5f2921e00e"
       ],
       "turn": 23
     },
     {
-      "begin": "095e0ec2f2c65499",
-      "finish": "dccc3f30f784c3df",
+      "begin": "3e575245a14fece4",
+      "finish": "c9464a4443ad6e0a",
       "months": [
-        "d2742767f22e3209",
-        "87bae8e5f2a2e5f0",
-        "4398d7d173e55f36"
+        "ac3ade8d81b4a5e7",
+        "d2adbbf937c0ac56",
+        "702554413765d059"
       ],
       "turn": 24
     },
     {
-      "begin": "56aa102a76978405",
-      "finish": "d26551ef94f74955",
+      "begin": "c2763272f6e3ccc6",
+      "finish": "a1f829a8132c4d63",
       "months": [
-        "0b873aa61582dea8",
-        "19718b309b450bf0",
-        "ca674484cfee6d33"
+        "e6f2add8c73a6aa4",
+        "736918005047a45e",
+        "9c1ab69b3ac07fd1"
       ],
       "turn": 25
     },
     {
-      "begin": "ea36814e475a1437",
-      "finish": "4a9cab2ebe27a04d",
+      "begin": "c5b9dbe867515db3",
+      "finish": "fa655b1a07deb1a8",
       "months": [
-        "9c191fe0c66bd455",
-        "707547ebd3bed428",
-        "55ab706a6010e462"
+        "028f16fb53320aad",
+        "52b3d5e6b527cb1e",
+        "dc309b03f414461c"
       ],
       "turn": 26
     }

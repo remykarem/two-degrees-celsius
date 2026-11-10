@@ -14,7 +14,7 @@
 use serde::Serialize;
 use sim_api::api::parse_commands;
 use sim_api::error::code;
-use sim_api::{Api, ApiError, ApiResult, InfraKind};
+use sim_api::{AccountRef, Api, ApiError, ApiResult, InfraKind, LedgerQuery};
 use sim_params::ContentJson;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -150,6 +150,30 @@ impl WasmSim {
     /// `Result<{refundPc, snapshot}>`.
     pub fn cancel_pending(&mut self, id: u32) -> String {
         wrap(self.get_mut().and_then(|a| a.cancel_pending(id)))
+    }
+
+    /// `Result<LedgerPage>` (contract v1.4): the ledger of one account. `account_json` is an
+    /// `AccountRef` (`{"kind":"household","id":0}`, `{"kind":"government"}`, ...); `query_json`
+    /// a `LedgerQuery` (`{}` for everything) or an empty string.
+    pub fn ledger(&self, account_json: &str, query_json: &str) -> String {
+        wrap(self.get().and_then(|a| {
+            let account: AccountRef = serde_json::from_str(account_json).map_err(|e| {
+                ApiError::new(code::BAD_REQUEST, format!("bad account reference: {e}"))
+            })?;
+            let query: LedgerQuery = if query_json.trim().is_empty() {
+                LedgerQuery::default()
+            } else {
+                serde_json::from_str(query_json).map_err(|e| {
+                    ApiError::new(code::BAD_REQUEST, format!("bad ledger query: {e}"))
+                })?
+            };
+            a.ledger(&account, &query)
+        }))
+    }
+
+    /// `Result<PersonLedger>` (contract v1.4): a person's earnings and employment events.
+    pub fn person_ledger(&self, person: u32) -> String {
+        wrap(self.get().and_then(|a| a.person_ledger(person)))
     }
 
     /// `Result<string>`: the opaque save blob.

@@ -1,14 +1,66 @@
 {
   "actions": "9120d5597d63372b",
-  "cancel2": "99924c6f0a2efe17",
-  "export": "bcba22d5832af999",
-  "finalSnapshot": "573a8591d6b35a0f",
-  "import": "febc29b5b4dce9f9",
-  "init": "3e6db3648b41f5d2",
+  "cancel2": "77cd6db1e9e20b74",
+  "export": "6dce2947551fdfea",
+  "finalSnapshot": "20b3f46d5ed7f762",
+  "import": "800a9ade9bf3a018",
+  "init": "215e8e0685e5128c",
+  "ledger": {
+    "1": {
+      "bank": "ed79bc63484dc90d",
+      "firm0": "a627211252d7b748",
+      "government": "69a120bdc773989d",
+      "governmentTaxes": "64a43ac2883ef6af",
+      "household0": "4556b6f4813c12a6",
+      "household3": "75ff9356273c6760",
+      "person3": "e0ea6edc7c365e76",
+      "person8": "926c1f5cd36e8438"
+    },
+    "12": {
+      "bank": "c644c565920c09ad",
+      "firm0": "635a61e403bd23ad",
+      "government": "fc3ef8aec32a9f7f",
+      "governmentTaxes": "73f1508eb40b5049",
+      "household0": "a51a3c01e6149345",
+      "household3": "da13e1773d987b35",
+      "person3": "e0ea6edc7c365e76",
+      "person8": "b9aa704e5851e3c3"
+    },
+    "15": {
+      "bank": "c106857a5ab50df4",
+      "firm0": "51fc62f1a50b4c98",
+      "government": "87900a2804236945",
+      "governmentTaxes": "bf5126d1c2d76ab5",
+      "household0": "5ad050fc8f4979a3",
+      "household3": "c79ca2fa453df793",
+      "person3": "e0ea6edc7c365e76",
+      "person8": "8b2da3786b1c18c5"
+    },
+    "20": {
+      "bank": "2bffe42b6f9ed4e2",
+      "firm0": "86c68c3cd61799ba",
+      "government": "1091748fb12ad3e4",
+      "governmentTaxes": "619eccc6eae7edf5",
+      "household0": "937453ee10d4d382",
+      "household3": "2f095b0c6899a948",
+      "person3": "e0ea6edc7c365e76",
+      "person8": "120cc449622d26d8"
+    },
+    "5": {
+      "bank": "995d5c94766539b0",
+      "firm0": "df9b4e314ea73755",
+      "government": "5a54f5c6dbbf8e16",
+      "governmentTaxes": "0678354a78a1ff67",
+      "household0": "4e8880e1e8c5ed8c",
+      "household3": "cf1762c25a0f2f9e",
+      "person3": "e0ea6edc7c365e76",
+      "person8": "ae1cff82e8e82a53"
+    }
+  },
   "levers": "67d8596584b5a7f9",
   "turns": [
     {
-      "fnv": "6371e051947ce316",
+      "fnv": "aa148ed92e6c3907",
       "gdpRealAnnual": 373643.56888156047,
       "legitimacy": 0.6918247922210627,
       "ok": true,
@@ -16,7 +68,7 @@
       "turn": 1
     },
     {
-      "fnv": "3d9b1983cdb52d38",
+      "fnv": "2aaa0371d9e34ab7",
       "gdpRealAnnual": 427756.94230338855,
       "legitimacy": 0.6835428797599991,
       "ok": true,
@@ -24,7 +76,7 @@
       "turn": 2
     },
     {
-      "fnv": "a8936afd79690eb0",
+      "fnv": "fa4ec48c1c66d842",
       "gdpRealAnnual": 454758.2923029503,
       "legitimacy": 0.6762239768023434,
       "ok": true,
@@ -32,7 +84,7 @@
       "turn": 3
     },
     {
-      "fnv": "276be07bcf8bdb8b",
+      "fnv": "7c1f70eef91c0c35",
       "gdpRealAnnual": 458314.2924150045,
       "legitimacy": 0.6712361629016201,
       "ok": true,
@@ -40,7 +92,7 @@
       "turn": 4
     },
     {
-      "fnv": "b55fd68047747c46",
+      "fnv": "2b4f22addb0da017",
       "gdpRealAnnual": 462276.8988711465,
       "legitimacy": 0.6704331095194975,
       "ok": true,
@@ -48,7 +100,7 @@
       "turn": 5
     },
     {
-      "fnv": "f41860ddc6c061a7",
+      "fnv": "97d9a8cff745cf82",
       "gdpRealAnnual": 466943.34902626177,
       "legitimacy": 0.6726283428631501,
       "ok": true,
@@ -56,7 +108,7 @@
       "turn": 6
     },
     {
-      "fnv": "729f0bfca0cba27a",
+      "fnv": "19c44e54331a8228",
       "gdpRealAnnual": 471420.4109094504,
       "legitimacy": 0.6759673652803468,
       "ok": true,
@@ -64,7 +116,7 @@
       "turn": 7
     },
     {
-      "fnv": "64543c8d432d495e",
+      "fnv": "a2ca7aa803656e03",
       "gdpRealAnnual": 475867.4663569764,
       "legitimacy": 0.6795439783049516,
       "ok": true,
@@ -72,7 +124,7 @@
       "turn": 8
     },
     {
-      "fnv": "cc37fa05bdd4fc8f",
+      "fnv": "872723bc12d9a328",
       "gdpRealAnnual": 480187.92535136495,
       "legitimacy": 0.6832742876090342,
       "ok": true,
@@ -80,7 +132,7 @@
       "turn": 9
     },
     {
-      "fnv": "03d47fbf32aff9d9",
+      "fnv": "6d3ee915a6983d9d",
       "gdpRealAnnual": 484249.6757842585,
       "legitimacy": 0.6871044335868957,
       "ok": true,
@@ -88,7 +140,7 @@
       "turn": 10
     },
     {
-      "fnv": "a326306cc849a0b8",
+      "fnv": "97a3b0364827071e",
       "gdpRealAnnual": 488256.165692817,
       "legitimacy": 0.6908766273946316,
       "ok": true,
@@ -96,7 +148,7 @@
       "turn": 11
     },
     {
-      "fnv": "007713e19a4dafae",
+      "fnv": "2ffbccf9fd6c0bc9",
       "gdpRealAnnual": 492118.60804598365,
       "legitimacy": 0.6949288832890501,
       "ok": true,
@@ -104,7 +156,7 @@
       "turn": 12
     },
     {
-      "fnv": "6f649b7db83f7d12",
+      "fnv": "bf6250b0af626746",
       "gdpRealAnnual": 495758.36846572295,
       "legitimacy": 0.6991735406590556,
       "ok": true,
@@ -112,7 +164,7 @@
       "turn": 13
     },
     {
-      "fnv": "df53b1f7e3ee867f",
+      "fnv": "19aa9772a73da376",
       "gdpRealAnnual": 499166.10507827805,
       "legitimacy": 0.7035959699687618,
       "ok": true,
@@ -120,7 +172,7 @@
       "turn": 14
     },
     {
-      "fnv": "4a0f5c06d8874607",
+      "fnv": "d692449a715e0586",
       "gdpRealAnnual": 502347.9588427119,
       "legitimacy": 0.7081973249269138,
       "ok": true,
@@ -128,7 +180,7 @@
       "turn": 15
     },
     {
-      "fnv": "d155b1c16608f5d4",
+      "fnv": "c771f24ba66b5847",
       "gdpRealAnnual": 504902.2925746365,
       "legitimacy": 0.7136820599530186,
       "ok": true,
@@ -136,7 +188,7 @@
       "turn": 16
     },
     {
-      "fnv": "ab169ea22753b189",
+      "fnv": "f19735271b497fc0",
       "gdpRealAnnual": 508579.5301190691,
       "legitimacy": 0.7195499727382613,
       "ok": true,
@@ -144,7 +196,7 @@
       "turn": 17
     },
     {
-      "fnv": "84969c5fbefb26a7",
+      "fnv": "e9e7714c0c666dc5",
       "gdpRealAnnual": 511977.7181941374,
       "legitimacy": 0.725038546793601,
       "ok": true,
@@ -152,7 +204,7 @@
       "turn": 18
     },
     {
-      "fnv": "4e05b28df3ff2291",
+      "fnv": "d23fb178d6cd5092",
       "gdpRealAnnual": 514644.96658113354,
       "legitimacy": 0.730824854503084,
       "ok": true,
@@ -160,7 +212,7 @@
       "turn": 19
     },
     {
-      "fnv": "3bcce72e463fa428",
+      "fnv": "4407e5a46b61ec6e",
       "gdpRealAnnual": 516673.2251843267,
       "legitimacy": 0.7368971045108681,
       "ok": true,
@@ -168,7 +220,7 @@
       "turn": 20
     },
     {
-      "fnv": "ea0323c738f8fce6",
+      "fnv": "dd8a08be4e62c23e",
       "gdpRealAnnual": 516876.3216722885,
       "legitimacy": 0.7431718803438997,
       "ok": true,
@@ -176,7 +228,7 @@
       "turn": 21
     },
     {
-      "fnv": "e87afcc01f08dd7e",
+      "fnv": "facc662975242343",
       "gdpRealAnnual": 519700.18125158723,
       "legitimacy": 0.7497254012394968,
       "ok": true,
@@ -184,7 +236,7 @@
       "turn": 22
     },
     {
-      "fnv": "524ca53ce5adbc38",
+      "fnv": "d59c08b1f73c13d5",
       "gdpRealAnnual": 520969.1090735998,
       "legitimacy": 0.7563060588492106,
       "ok": true,
@@ -192,7 +244,7 @@
       "turn": 23
     },
     {
-      "fnv": "dccc3f30f784c3df",
+      "fnv": "c9464a4443ad6e0a",
       "gdpRealAnnual": 522428.9760528417,
       "legitimacy": 0.7633992873367071,
       "ok": true,
@@ -200,7 +252,7 @@
       "turn": 24
     },
     {
-      "fnv": "d26551ef94f74955",
+      "fnv": "a1f829a8132c4d63",
       "gdpRealAnnual": 524007.4508334488,
       "legitimacy": 0.7709135108156695,
       "ok": true,
@@ -208,7 +260,7 @@
       "turn": 25
     },
     {
-      "fnv": "4a9cab2ebe27a04d",
+      "fnv": "fa655b1a07deb1a8",
       "gdpRealAnnual": 522133.4511727575,
       "legitimacy": 0.7786131205382951,
       "ok": true,

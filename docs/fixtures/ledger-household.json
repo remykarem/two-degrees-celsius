@@ -1,0 +1,1527 @@
+{
+  "account": {
+    "kind": "household",
+    "id": 0
+  },
+  "openingBalance": 60790.06,
+  "openingDebt": 0.0,
+  "entries": [
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1266.0,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59524.06,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2442.04,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 57082.02,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 1998.03,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 55083.99,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3299.16,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58383.15,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5625.86,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64009.01,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.02,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64169.03,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 638.94,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64807.97,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 3889.59,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60918.38,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "tick": 0,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 194.48,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60723.9,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1259.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59464.4,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2458.23,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 57006.17,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2011.27,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54994.9,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3350.33,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58345.23,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5651.78,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 63997.01,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 159.99,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64157.0,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 641.03,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64798.03,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 3921.25,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60876.78,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "tick": 1,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 196.06,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60680.72,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1252.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59428.22,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2471.11,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 56957.11,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2021.82,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54935.29,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3406.03,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58341.32,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5675.02,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64016.34,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.04,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64176.38,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 642.58,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64818.96,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 3953.47,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60865.49,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "tick": 2,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 197.67,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60667.82,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1245.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59422.32,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2484.03,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 56938.29,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2032.39,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54905.9,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3463.19,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58369.09,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5694.74,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64063.83,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.16,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64223.99,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 643.54,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64867.53,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 3984.65,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60882.88,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "tick": 3,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 199.23,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60683.65,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1238.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59445.15,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2496.41,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 56948.74,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2042.51,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54906.23,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3523.91,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58430.14,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5711.58,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64141.72,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.35,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64302.07,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 644.05,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64946.12,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 4015.96,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60930.16,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "tick": 4,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 200.8,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60729.36,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1231.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59497.86,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2508.66,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 56989.2,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2052.54,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54936.66,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3586.35,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58523.01,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5725.66,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64248.67,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.62,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64409.29,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 644.06,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 65053.35,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 4046.68,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 61006.67,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "tick": 5,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 202.33,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60804.34,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1224.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59579.84,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2520.54,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 57059.3,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2062.26,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 54997.04,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 3651.35,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58648.39,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5737.27,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 64385.66,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 160.96,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 64546.62,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 643.67,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 65190.29,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 4077.3,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 61112.99,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "tick": 6,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 203.87,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60909.12,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1217.5,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 59691.62,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2532.73,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 57158.89,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2072.23,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 55086.66,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 4406.25,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 59492.91,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5715.71,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 65208.62,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 163.02,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 65371.64,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 488.78,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 65860.42,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 4309.5,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 61550.92,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "tick": 7,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 215.48,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 61335.44,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 1
+      },
+      "amount": 1210.0,
+      "kind": "purchase",
+      "detail": "food",
+      "memo": "food: household 0 -> firm 1",
+      "balanceAfter": 60125.44,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 0
+      },
+      "amount": 2622.2,
+      "kind": "purchase",
+      "detail": "goods",
+      "memo": "goods: household 0 -> firm 0",
+      "balanceAfter": 57503.24,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "firm",
+        "id": 2
+      },
+      "amount": 2145.44,
+      "kind": "purchase",
+      "detail": "services",
+      "memo": "services: household 0 -> firm 2",
+      "balanceAfter": 55357.8,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "firm",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 2722.59,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 0 -> household 0",
+      "balanceAfter": 58080.39,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "firm",
+        "id": 1
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 5750.93,
+      "kind": "dividend",
+      "detail": "firm dividend",
+      "memo": "firm dividend: firm 1 -> household 0",
+      "balanceAfter": 63831.32,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 159.58,
+      "kind": "interest",
+      "detail": "deposit interest",
+      "memo": "deposit interest: bank -> household 0",
+      "balanceAfter": 63990.9,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "bank"
+      },
+      "to": {
+        "kind": "household",
+        "id": 0
+      },
+      "amount": 606.62,
+      "kind": "dividend",
+      "detail": "bank dividend",
+      "memo": "bank dividend: bank -> household 0",
+      "balanceAfter": 64597.52,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "government"
+      },
+      "amount": 3695.89,
+      "kind": "tax",
+      "detail": "capital tax",
+      "memo": "capital tax: household 0 -> government",
+      "balanceAfter": 60901.63,
+      "debtAfter": 0.0
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "tick": 8,
+      "from": {
+        "kind": "household",
+        "id": 0
+      },
+      "to": {
+        "kind": "household",
+        "id": 2
+      },
+      "amount": 184.79,
+      "kind": "lobby",
+      "detail": "lobbying",
+      "memo": "lobbying: household 0 -> household 2",
+      "balanceAfter": 60716.84,
+      "debtAfter": 0.0
+    }
+  ],
+  "summary": [],
+  "closingBalance": 60716.84,
+  "closingDebt": 0.0,
+  "reconciles": true,
+  "detailFromTurn": 1
+}

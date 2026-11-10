@@ -432,6 +432,13 @@ impl Balances {
         }
     }
 
+    /// Add `e` to an account's position (external accounts have none and are ignored).
+    pub fn add(&mut self, a: LedgerAccount, e: Position) {
+        if let Some(p) = self.slot(a) {
+            *p += e;
+        }
+    }
+
     fn slot(&mut self, a: LedgerAccount) -> Option<&mut Position> {
         match a {
             LedgerAccount::Household(h) => self.households.get_mut(h.idx()),

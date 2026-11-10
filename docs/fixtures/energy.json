@@ -1,0 +1,45 @@
+{
+  "unit": "MWh",
+  "supply": [
+    {
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "kind": "fossil",
+      "capacity": 5.0
+    },
+    {
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "kind": "fossil",
+      "capacity": 5.0
+    }
+  ],
+  "demand": {
+    "firms": 3.6311028915310897,
+    "households": 3.7603685,
+    "total": 7.3914713915310895
+  },
+  "served": 1.0,
+  "intensity": 1.0,
+  "renewableShare": 0.0,
+  "emissionsByPlant": [
+    {
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "tonnes": 3.6957356957655447
+    },
+    {
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "tonnes": 3.6957356957655447
+    }
+  ]
+}

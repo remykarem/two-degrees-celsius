@@ -310,7 +310,7 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
         assert!(j.get(k).is_some(), "snapshot lacks {k}");
     }
     assert_eq!(j["policy"].as_object().unwrap().len(), 20);
-    assert_eq!(j["schemaVersion"], 3);
+    assert_eq!(j["schemaVersion"], 4);
     assert_eq!(j["map"]["width"], 12);
     assert_eq!(j["map"]["tiles"].as_array().unwrap().len(), 144);
     for k in [
@@ -661,7 +661,7 @@ fn old_saves_are_refused_with_a_clear_error() {
     let mut api = Api::init(3).unwrap();
     let blob = api.export_state().unwrap();
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    assert_eq!(v["schemaVersion"], 3);
+    assert_eq!(v["schemaVersion"], 4);
     v["schemaVersion"] = serde_json::json!(1);
     let e = api.import_state(&v.to_string()).unwrap_err();
     assert_eq!(e.code, "schema_mismatch");
@@ -932,13 +932,13 @@ fn saves_round_trip_with_weather_and_refuse_old_or_inconsistent_ones() {
     let mut other = sim_api::Api::init(9).unwrap();
     assert_eq!(other.import_state(&blob).unwrap(), snap);
     assert_eq!(other.export_state().unwrap(), blob);
-    // A version-2 save (before weather) is refused and says why.
+    // A version-3 save (before the ledger) is refused and says why.
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    v["schemaVersion"] = serde_json::json!(2);
+    v["schemaVersion"] = serde_json::json!(3);
     let e = other.import_state(&v.to_string()).unwrap_err();
     assert_eq!(e.code, "schema_mismatch");
     assert!(
-        e.message.contains("weather") && e.message.contains("new game"),
+        e.message.contains("ledger") && e.message.contains("new game"),
         "{}",
         e.message
     );

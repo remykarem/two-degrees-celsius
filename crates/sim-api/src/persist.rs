@@ -2,6 +2,7 @@
 //! The blob is a JSON string; floats round-trip exactly (`serde_json` `float_roundtrip`).
 use crate::error::{code, ApiError, ApiResult};
 use crate::history::HistoryPoint;
+use crate::ledger::LedgerStore;
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_params::Params;
@@ -21,6 +22,7 @@ struct SaveBlob {
     clamped_total: i64,
     state: State,
     history: Vec<HistoryPoint>,
+    ledger: LedgerStore,
 }
 
 /// Everything `import` restores.
@@ -30,6 +32,7 @@ pub struct Imported {
     pub initial_population: f64,
     pub clamped_total: Cents,
     pub history: Vec<HistoryPoint>,
+    pub ledger: LedgerStore,
 }
 
 /// FNV-1a over the canonical JSON of the params: stable across platforms and runs.
@@ -44,7 +47,7 @@ pub fn params_hash(p: &Params) -> ApiResult<String> {
     Ok(format!("{h:016x}"))
 }
 
-pub fn export(sim: &Sim, history: &[HistoryPoint]) -> ApiResult<String> {
+pub fn export(sim: &Sim, history: &[HistoryPoint], ledger: &LedgerStore) -> ApiResult<String> {
     let (rng_state, rng_inc) = sim.rng.parts();
     let blob = SaveBlob {
         schema_version: crate::SCHEMA_VERSION,
@@ -55,6 +58,7 @@ pub fn export(sim: &Sim, history: &[HistoryPoint]) -> ApiResult<String> {
         clamped_total: sim.clamped_total.0,
         state: sim.state.clone(),
         history: history.to_vec(),
+        ledger: ledger.clone(),
     };
     serde_json::to_string(&blob)
         .map_err(|e| ApiError::new(code::BAD_STATE, format!("export failed: {e}")))
@@ -64,7 +68,7 @@ fn bad(msg: impl Into<String>) -> ApiError {
     ApiError::new(code::BAD_STATE, msg)
 }
 
-pub fn import(blob: &str, params: &Params) -> ApiResult<Imported> {
+pub fn import(blob: &str, params: &Params, detail_turns: u32) -> ApiResult<Imported> {
     let value: serde_json::Value =
         serde_json::from_str(blob).map_err(|e| bad(format!("save is not valid JSON: {e}")))?;
     let version = value.get("schemaVersion").and_then(|v| v.as_u64());
@@ -72,7 +76,7 @@ pub fn import(blob: &str, params: &Params) -> ApiResult<Imported> {
         return Err(ApiError::new(
             code::SCHEMA_MISMATCH,
             format!(
-                "save has schemaVersion {:?}, this build reads {} (Town v4 added weather to the saved state, so older saves cannot be loaded; start a new game)",
+                "save has schemaVersion {:?}, this build reads {} (Town v5 added the transaction ledger to the saved game, so older saves cannot be loaded; start a new game)",
                 version,
                 crate::SCHEMA_VERSION
             ),
@@ -95,12 +99,18 @@ pub fn import(blob: &str, params: &Params) -> ApiResult<Imported> {
             "saved history is longer than the number of turns played",
         ));
     }
+    let mut ledger = b.ledger;
+    ledger
+        .verify(&b.state)
+        .map_err(|e| bad(format!("saved ledger is inconsistent: {e}")))?;
+    ledger.set_detail_turns(detail_turns, b.state.turn.saturating_sub(1));
     Ok(Imported {
         state: b.state,
         rng: Rng::from_parts(b.rng_state, b.rng_inc),
         initial_population: pop,
         clamped_total: Cents(b.clamped_total),
         history: b.history,
+        ledger,
     })
 }
 

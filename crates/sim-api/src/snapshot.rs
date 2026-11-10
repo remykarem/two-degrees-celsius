@@ -1,6 +1,7 @@
 //! The `Snapshot` view of the sim state (contract sections 4, 9 and 10). A stable wire type,
 //! decoupled from the internal `State`. One function per area.
 use crate::command::Tile;
+use crate::finance::{EnergyView, Finance};
 use crate::history::{budget_share, debt_to_gdp, HistoryPoint};
 use crate::keys::{
     AgeBandKey, ClassKey, GameOutcome, LeverKey, PlainOutcome, SectorKey, SystemKey, TileKindKey,
@@ -388,20 +389,6 @@ pub struct HousingView {
     pub unhoused_households: u32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EnergyView {
-    pub fossil_cap: f64,
-    pub renewable_cap: f64,
-    /// Fossil capacity over total capacity (0 with no plants).
-    pub fossil_share: f64,
-    pub demand: f64,
-    pub supply: f64,
-    pub delivered: f64,
-    pub served: f64,
-    pub grid_intensity: f64,
-}
-
 /// Progress inside the current turn (contract v1.1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -439,6 +426,8 @@ pub struct Snapshot {
     pub weather: WeatherView,
     pub housing: HousingView,
     pub energy: EnergyView,
+    /// Contract v1.4 (section 14).
+    pub finance: Finance,
     pub history: Vec<HistoryPoint>,
 }
 
@@ -774,7 +763,12 @@ fn firms(sim: &Sim) -> Vec<FirmView> {
 }
 
 /// Build the full snapshot from the sim, the saved history and the metadata.
-pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
+pub fn build(
+    sim: &Sim,
+    history: &[HistoryPoint],
+    meta: &Meta,
+    ledger: &crate::ledger::LedgerStore,
+) -> Snapshot {
     let s = &sim.state;
     let tp = &sim.params.turn;
     Snapshot {
@@ -853,24 +847,8 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
             occupancy: s.housing.occupancy.0,
             unhoused_households: s.housing.unhoused_households,
         },
-        energy: {
-            let fossil = s.capacity(st::PlantKind::Fossil);
-            let renewable = s.capacity(st::PlantKind::Renewable);
-            EnergyView {
-                fossil_cap: fossil,
-                renewable_cap: renewable,
-                fossil_share: if fossil + renewable > 0.0 {
-                    fossil / (fossil + renewable)
-                } else {
-                    0.0
-                },
-                demand: s.energy.demand.0,
-                supply: s.energy.supply.0,
-                delivered: s.energy.delivered.0,
-                served: s.energy.served.0,
-                grid_intensity: s.energy.grid_intensity.0,
-            }
-        },
+        energy: crate::finance::energy(sim, &meta.energy_unit),
+        finance: crate::finance::build(sim, ledger),
         history: history.to_vec(),
     }
 }

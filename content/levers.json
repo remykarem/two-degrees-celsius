@@ -2,6 +2,12 @@
   "game": {
     "startYear": 2026
   },
+  "ledger": {
+    "detail_turns": 8
+  },
+  "energy": {
+    "unit_label": "MWh"
+  },
   "levers": {
     "carbon_price": {
       "label": "Carbon price",

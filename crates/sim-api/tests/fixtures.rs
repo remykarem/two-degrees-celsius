@@ -8,7 +8,7 @@ fn committed_fixtures_are_current_and_deterministic() {
     let first = sim_api::fixtures::generate().unwrap();
     let second = sim_api::fixtures::generate().unwrap();
     assert_eq!(first, second, "fixtures differ between two runs");
-    assert_eq!(first.len(), 8);
+    assert_eq!(first.len(), 12);
     for (name, body) in first {
         let committed = std::fs::read_to_string(dir.join(&name))
             .unwrap_or_else(|e| panic!("{name}: {e} (run the fixtures example)"));
@@ -41,7 +41,18 @@ fn fixtures_have_the_documented_content() {
         .unwrap()
         .is_empty());
     let snap = read("snapshot-turn1.json");
-    assert_eq!(snap["schemaVersion"], 3);
+    assert_eq!(snap["schemaVersion"], 4);
+    // Contract v1.4: finance and energy are on every snapshot.
+    assert_eq!(snap["energy"]["unit"], "MWh");
+    assert!(snap["finance"]["government"]["revenue"]["wageTax"].is_number());
+    // The new fixtures: ledgers reconcile; finance and energy are the snapshot parts.
+    for n in ["ledger-household.json", "ledger-government.json"] {
+        let l = read(n);
+        assert_eq!(l["reconciles"], true, "{n}");
+        assert!(!l["entries"].as_array().unwrap().is_empty(), "{n}");
+    }
+    assert_eq!(read("finance.json")["government"]["basis"], "month");
+    assert_eq!(read("energy.json")["unit"], "MWh");
     assert_eq!(snap["people"].as_array().unwrap().len(), 20);
     assert_eq!(snap["households"].as_array().unwrap().len(), 8);
     assert_eq!(snap["homes"].as_array().unwrap().len(), 7);

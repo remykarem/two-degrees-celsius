@@ -132,10 +132,27 @@ struct ActionEntry {
     tile_rule: Option<String>,
 }
 
+/// `ledger` block of levers.json (contract v1.4).
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LedgerFile {
+    /// Turns kept in full detail (older periods are rolled up to monthly summaries).
+    detail_turns: u32,
+}
+
+/// `energy` block of levers.json (contract v1.4).
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EnergyFile {
+    unit_label: String,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct LeversFile {
     game: GameFile,
+    ledger: LedgerFile,
+    energy: EnergyFile,
     levers: BTreeMap<LeverKey, LeverEntry>,
     actions: BTreeMap<String, ActionEntry>,
 }
@@ -168,6 +185,10 @@ pub struct Meta {
     pub levers: Vec<LeverInfo>,
     pub actions: Vec<ActionInfo>,
     pub game: GameCalendar,
+    /// Turns of full ledger detail (at least 2: the trailing quarter can span two turns).
+    pub ledger_detail_turns: u32,
+    /// Label of the energy unit, shown per month ("MWh").
+    pub energy_unit: String,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -293,9 +314,19 @@ impl Meta {
                 format!("the wire format has exactly 3 months per turn, params say {tpt}"),
             ));
         }
+        if !(2..=200).contains(&file.ledger.detail_turns) {
+            return Err(bad(
+                "levers.json: ledger.detail_turns must be between 2 and 200".into(),
+            ));
+        }
+        if file.energy.unit_label.trim().is_empty() {
+            return Err(bad("levers.json: energy.unit_label is empty".into()));
+        }
         Ok(Meta {
             levers,
             actions,
+            ledger_detail_turns: file.ledger.detail_turns,
+            energy_unit: file.energy.unit_label.clone(),
             game: GameCalendar {
                 start_year: file.game.start_year,
                 first_turn: 1,

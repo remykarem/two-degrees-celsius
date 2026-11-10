@@ -2553,7 +2553,7 @@
     }
   ],
   "snapshot": {
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -4407,14 +4407,157 @@
       "unhousedHouseholds": 1
     },
     "energy": {
-      "fossilCap": 10.0,
-      "renewableCap": -0.0,
-      "fossilShare": 1.0,
-      "demand": 7.675221584136342,
-      "supply": 10.0,
-      "delivered": 7.675221584136342,
+      "unit": "MWh",
+      "supply": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "kind": "fossil",
+          "capacity": 5.0
+        }
+      ],
+      "demand": {
+        "firms": 3.9545400512139377,
+        "households": 3.720681532922404,
+        "total": 7.675221584136342
+      },
       "served": 1.0,
-      "gridIntensity": 1.0
+      "intensity": 1.0,
+      "renewableShare": 0.0,
+      "emissionsByPlant": [
+        {
+          "tile": {
+            "x": 10,
+            "y": 2
+          },
+          "tonnes": 3.8376107920681704
+        },
+        {
+          "tile": {
+            "x": 10,
+            "y": 4
+          },
+          "tonnes": 3.8376107920681704
+        }
+      ]
+    },
+    "finance": {
+      "government": {
+        "revenue": {
+          "wageTax": 6022.01,
+          "profitTax": 1172.2,
+          "capitalTax": 3815.43,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "spending": {
+          "benefits": 2400.0,
+          "ubi": 0.0,
+          "publicSpending": 8000.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 60.0,
+          "subsidy": 0.0,
+          "interest": 334.61,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "balance": 215.02999999999884,
+        "cash": 8193.53,
+        "debt": 100361.53,
+        "debtToGdp": 0.2655642742008294,
+        "legitimacy": 0.5835221432162347,
+        "basis": "month"
+      },
+      "bank": {
+        "equity": 42848.44,
+        "loans": 337441.7,
+        "deposits": 294593.26,
+        "capitalRatio": 0.12698027540757412,
+        "capitalRatioLimit": 0.1,
+        "headroom": 91042.70000000001,
+        "defaultRate": 0.0,
+        "interestIncome": 1290.71
+      },
+      "households": {
+        "income": {
+          "wages": 20315.16,
+          "dividends": 7474.51,
+          "rent": 1477.96,
+          "interest": 586.11,
+          "benefits": 2400.0
+        },
+        "taxes": 9837.44,
+        "rentPaid": 1477.96,
+        "loanPayments": 892.08,
+        "spending": 20673.97,
+        "savingRate": -0.025097554578166748,
+        "debt": 131763.82,
+        "netWorth": 765330.6213992895
+      },
+      "firms": {
+        "revenue": 29633.33,
+        "wageBill": 20073.38,
+        "profit": 7927.25,
+        "investment": 959.36,
+        "debt": 105316.35,
+        "cash": 58972.13
+      },
+      "money": {
+        "supply": 294593.26,
+        "createdThisTurn": 11248.52,
+        "destroyedThisTurn": 10782.05
+      },
+      "priceIndex": 0.9113483712734904,
+      "wageShare": 0.7168902985397114,
+      "profitShare": 0.2831097014602886,
+      "quarter": {
+        "govRevenue": {
+          "wageTax": 17296.13,
+          "profitTax": 3799.15,
+          "capitalTax": 12700.36,
+          "wealthTax": 0.0,
+          "carbon": 0.0,
+          "other": 0.0
+        },
+        "govSpending": {
+          "benefits": 8800.0,
+          "ubi": 0.0,
+          "publicSpending": 24000.0,
+          "jobGuarantee": 0.0,
+          "upkeep": 180.0,
+          "subsidy": 0.0,
+          "interest": 1001.82,
+          "builds": 0.0,
+          "other": 0.0
+        },
+        "householdIncome": {
+          "wages": 58442.03,
+          "dividends": 25550.24,
+          "rent": 4441.36,
+          "interest": 1759.33,
+          "benefits": 8800.0
+        },
+        "householdTaxes": 29996.49,
+        "rentPaid": 4441.36,
+        "loanPayments": 2648.46,
+        "householdSpending": 61904.22,
+        "firmRevenue": 88835.15,
+        "wageBill": 57653.81,
+        "firmProfit": 26008.15,
+        "investment": 2930.93,
+        "bankInterestIncome": 3847.33
+      }
     },
     "history": [
       {
@@ -4434,7 +4577,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7090242941944195,
         "commonsHealth": 0.7879972363912755,
-        "farmHealth": 0.7485107652928475
+        "farmHealth": 0.7485107652928475,
+        "govRevenue": 35386.119999999995,
+        "govSpending": 37137.2,
+        "bankCapitalRatio": 0.12670920643759476,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 2,
@@ -4453,7 +4601,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7090923257367661,
         "commonsHealth": 0.7867952750353632,
-        "farmHealth": 0.7479438003860646
+        "farmHealth": 0.7479438003860646,
+        "govRevenue": 35563.100000000006,
+        "govSpending": 37154.170000000006,
+        "bankCapitalRatio": 0.1267304419634873,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 3,
@@ -4472,7 +4625,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7090977601118932,
         "commonsHealth": 0.7855978580320451,
-        "farmHealth": 0.7473478090719692
+        "farmHealth": 0.7473478090719692,
+        "govRevenue": 35732.25,
+        "govSpending": 37169.57,
+        "bankCapitalRatio": 0.12673916956853404,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 4,
@@ -4491,7 +4649,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7092168306274785,
         "commonsHealth": 0.7844105943729837,
-        "farmHealth": 0.7468137125002311
+        "farmHealth": 0.7468137125002311,
+        "govRevenue": 34617.79,
+        "govSpending": 34780.19,
+        "bankCapitalRatio": 0.12703402588468332,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 5,
@@ -4510,7 +4673,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7092488187750283,
         "commonsHealth": 0.7832397997978692,
-        "farmHealth": 0.7462443092864488
+        "farmHealth": 0.7462443092864488,
+        "govRevenue": 34810.76,
+        "govSpending": 34781.01,
+        "bankCapitalRatio": 0.1270944732431203,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 6,
@@ -4529,7 +4697,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7092675212399664,
         "commonsHealth": 0.7820935321469066,
-        "farmHealth": 0.7456805266934365
+        "farmHealth": 0.7456805266934365,
+        "govRevenue": 34792.009999999995,
+        "govSpending": 34780.83,
+        "bankCapitalRatio": 0.12709628414024507,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 7,
@@ -4548,7 +4721,12 @@
         "climateStress": 0.0,
         "forestHealth": 0.7092551240078314,
         "commonsHealth": 0.7809805540412292,
-        "farmHealth": 0.7451178390245303
+        "farmHealth": 0.7451178390245303,
+        "govRevenue": 34759.68,
+        "govSpending": 34780.69,
+        "bankCapitalRatio": 0.12707529152596467,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 8,
@@ -4567,7 +4745,12 @@
         "climateStress": 0.051146345338313706,
         "forestHealth": 0.7093209092843517,
         "commonsHealth": 0.778809441957298,
-        "farmHealth": 0.7440651756208247
+        "farmHealth": 0.7440651756208247,
+        "govRevenue": 34760.25,
+        "govSpending": 34780.64,
+        "bankCapitalRatio": 0.12704595863293822,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 9,
@@ -4586,7 +4769,12 @@
         "climateStress": 0.10687766912954058,
         "forestHealth": 0.709318530572634,
         "commonsHealth": 0.7770773976258162,
-        "farmHealth": 0.7431979640992251
+        "farmHealth": 0.7431979640992251,
+        "govRevenue": 34774.56,
+        "govSpending": 34780.69,
+        "bankCapitalRatio": 0.12701886582045258,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 10,
@@ -4605,7 +4793,12 @@
         "climateStress": 0.1627031805193143,
         "forestHealth": 0.709255655058997,
         "commonsHealth": 0.7758120190484539,
-        "farmHealth": 0.7425338370537254
+        "farmHealth": 0.7425338370537254,
+        "govRevenue": 34771.22,
+        "govSpending": 34780.75000000001,
+        "bankCapitalRatio": 0.12699623439846244,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 11,
@@ -4624,7 +4817,12 @@
         "climateStress": 0.21871696421708872,
         "forestHealth": 0.6811270685869826,
         "commonsHealth": 0.7750513105473554,
-        "farmHealth": 0.7280891895671691
+        "farmHealth": 0.7280891895671691,
+        "govRevenue": 34779.45,
+        "govSpending": 34780.84,
+        "bankCapitalRatio": 0.12697949816069518,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 12,
@@ -4643,7 +4841,12 @@
         "climateStress": 0.27509248243727086,
         "forestHealth": 0.667639381603417,
         "commonsHealth": 0.7738015128416738,
-        "farmHealth": 0.7207204472225454
+        "farmHealth": 0.7207204472225454,
+        "govRevenue": 34794.05,
+        "govSpending": 34780.86,
+        "bankCapitalRatio": 0.12696310700014438,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 13,
@@ -4662,7 +4865,12 @@
         "climateStress": 0.3342385170977161,
         "forestHealth": 0.6680065076707703,
         "commonsHealth": 0.7720014940917395,
-        "farmHealth": 0.7200040008812549
+        "farmHealth": 0.7200040008812549,
+        "govRevenue": 33485.02,
+        "govSpending": 32380.39,
+        "bankCapitalRatio": 0.12702295507321856,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 14,
@@ -4681,7 +4889,12 @@
         "climateStress": 0.3932850020183835,
         "forestHealth": 0.6418638213459247,
         "commonsHealth": 0.7717012796459224,
-        "farmHealth": 0.7067825504959235
+        "farmHealth": 0.7067825504959235,
+        "govRevenue": 33353.18,
+        "govSpending": 32377.47,
+        "bankCapitalRatio": 0.1271256255731012,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 15,
@@ -4700,7 +4913,12 @@
         "climateStress": 0.4504801401697296,
         "forestHealth": 0.6293521746875026,
         "commonsHealth": 0.7715883787208176,
-        "farmHealth": 0.7004702767041602
+        "farmHealth": 0.7004702767041602,
+        "govRevenue": 34405.5,
+        "govSpending": 34773.14,
+        "bankCapitalRatio": 0.12710848809582584,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 16,
@@ -4719,7 +4937,12 @@
         "climateStress": 0.5078854833576292,
         "forestHealth": 0.6171748050605614,
         "commonsHealth": 0.7715825868992695,
-        "farmHealth": 0.6943786959799154
+        "farmHealth": 0.6943786959799154,
+        "govRevenue": 34220.86,
+        "govSpending": 34770.56,
+        "bankCapitalRatio": 0.1270422995672979,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 17,
@@ -4738,7 +4961,12 @@
         "climateStress": 0.5660128322376101,
         "forestHealth": 0.5353563736425633,
         "commonsHealth": 0.7701209905672091,
-        "farmHealth": 0.6527386821048862
+        "farmHealth": 0.6527386821048862,
+        "govRevenue": 34247.11,
+        "govSpending": 34771.19,
+        "bankCapitalRatio": 0.12689636990853542,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 18,
@@ -4757,7 +4985,12 @@
         "climateStress": 0.6242366668826795,
         "forestHealth": 0.5253249818509586,
         "commonsHealth": 0.7707560401058674,
-        "farmHealth": 0.648040510978413
+        "farmHealth": 0.648040510978413,
+        "govRevenue": 34226.19,
+        "govSpending": 34776.09,
+        "bankCapitalRatio": 0.12687051547024636,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       },
       {
         "turn": 19,
@@ -4776,7 +5009,12 @@
         "climateStress": 0.6833279415102672,
         "forestHealth": 0.5053925057160882,
         "commonsHealth": 0.7685021369907366,
-        "farmHealth": 0.6369473213534124
+        "farmHealth": 0.6369473213534124,
+        "govRevenue": 33795.64,
+        "govSpending": 33981.82,
+        "bankCapitalRatio": 0.12698027540757412,
+        "renewableShare": 0.0,
+        "gridServed": 1.0
       }
     ]
   }

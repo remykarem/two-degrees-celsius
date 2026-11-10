@@ -11,10 +11,12 @@ pub mod command;
 pub mod content;
 pub mod error;
 pub mod events;
+pub mod finance;
 pub mod fixtures;
 pub mod frames;
 pub mod history;
 pub mod keys;
+pub mod ledger;
 pub mod meta;
 pub mod persist;
 pub mod snapshot;
@@ -26,9 +28,12 @@ pub use error::{ApiError, ApiResult};
 pub use events::{SimEvent, SimEventKind, TraceRecord};
 pub use history::HistoryPoint;
 pub use keys::{BlockReason, InfraKind, LeverKey, SystemKey};
+pub use ledger::{AccountRef, LedgerKindKey, LedgerPage, LedgerQuery, PersonLedger};
 pub use meta::{ActionInfo, LeverInfo};
 pub use snapshot::Snapshot;
 pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 
 /// Version of the wire format and of saved games. Bump when either changes shape.
-pub const SCHEMA_VERSION: u32 = sim_types::SCHEMA_VERSION;
+/// Town v5 (contract v1.4) added the ledger to the saved wrapper blob: 4. The model `State` has
+/// its own `sim_types::SCHEMA_VERSION` (3), unchanged.
+pub const SCHEMA_VERSION: u32 = 4;

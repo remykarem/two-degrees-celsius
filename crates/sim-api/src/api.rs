@@ -6,6 +6,7 @@ use crate::events::{SimEvent, SimEventKind, TraceRecord};
 use crate::frames::{self, TickCapture};
 use crate::history::{self, HistoryPoint};
 use crate::keys::{BlockReason, InfraKind, LeverKey};
+use crate::ledger::{AccountRef, LedgerPage, LedgerQuery, LedgerSize, LedgerStore, PersonLedger};
 use crate::meta::{ActionInfo, LeverInfo, Meta, Rejection};
 use crate::persist;
 use crate::snapshot::{self, Snapshot};
@@ -23,6 +24,8 @@ pub struct Api {
     sim: Sim,
     meta: Meta,
     history: Vec<HistoryPoint>,
+    /// Transaction ledger (Town v5): wrapper state, saved with the game, never read by the model.
+    ledger: LedgerStore,
     /// What the open turn has produced so far (`None` at a turn boundary).
     live: Option<Live>,
 }
@@ -82,10 +85,12 @@ impl Api {
         let meta = Meta::load(levers_json, &params)?;
         let sim =
             sim_engine::init(params, seed).map_err(|e| ApiError::new(code::INIT_FAILED, e))?;
+        let ledger = LedgerStore::new(&sim.state, meta.ledger_detail_turns);
         Ok(Api {
             sim,
             meta,
             history: Vec::new(),
+            ledger,
             live: None,
         })
     }
@@ -94,6 +99,7 @@ impl Api {
     pub fn reset(&mut self, seed: u64) -> ApiResult<Snapshot> {
         let sim = sim_engine::init(self.sim.params.clone(), seed)
             .map_err(|e| ApiError::new(code::INIT_FAILED, e))?;
+        self.ledger = LedgerStore::new(&sim.state, self.meta.ledger_detail_turns);
         self.sim = sim;
         self.history.clear();
         self.live = None;
@@ -109,7 +115,53 @@ impl Api {
     }
 
     pub fn snapshot(&self) -> Snapshot {
-        snapshot::build(&self.sim, &self.history, &self.meta)
+        snapshot::build(&self.sim, &self.history, &self.meta, &self.ledger)
+    }
+
+    /// The ledger of one account (contract section 14): entries of the detail window, rolled-up
+    /// summaries of older periods, opening and closing balances, and whether they reconcile.
+    /// Legal at any time; entries of the open turn are included.
+    pub fn ledger(&self, account: &AccountRef, query: &LedgerQuery) -> ApiResult<LedgerPage> {
+        let acct = account.to_sim(&self.sim.state)?;
+        Ok(self.ledger.page(acct, query, &self.sim.state))
+    }
+
+    /// A person's earnings (wages credited to their household) and employment events.
+    pub fn person_ledger(&self, person: u32) -> ApiResult<PersonLedger> {
+        let Some(p) = self.sim.state.persons.get(person as usize) else {
+            return Err(ApiError::new(
+                code::BAD_REQUEST,
+                format!("no person {person}"),
+            ));
+        };
+        Ok(self
+            .ledger
+            .person_ledger(person, p.household.0, &self.sim.state))
+    }
+
+    /// How much the ledger holds (tests and notes).
+    pub fn ledger_size(&self) -> LedgerSize {
+        self.ledger.size()
+    }
+
+    /// Record one applied tick in the ledger. On failure the ledger is left as it was.
+    fn record(&mut self, out: &sim_engine::StepOutput) -> Result<(), String> {
+        let mut next = self.ledger.clone();
+        next.record_tick(out, &self.sim.state)?;
+        self.ledger = next;
+        Ok(())
+    }
+
+    /// The history point for the turn just played.
+    fn history_point(&self, turn: u32) -> HistoryPoint {
+        let f = crate::finance::turn_flows(&self.ledger, turn);
+        history::point(
+            &self.sim.state,
+            &self.sim.params,
+            turn,
+            f.gov_revenue.total(),
+            f.gov_spending.total(),
+        )
     }
 
     /// The underlying sim, read-only (tests and tools).
@@ -256,8 +308,15 @@ impl Api {
         let split = self.split(cmds);
         let backup = self.backup();
         let mut ticks: Vec<TickCapture> = Vec::new();
+        // The ledger is updated on a copy, tick by tick against the state after that tick, and
+        // only kept if the whole turn succeeds.
+        let mut next_ledger = self.ledger.clone();
+        let mut ledger_error: Option<String> = None;
         let run = sim_engine::submit_turn_with(&mut self.sim, &split.cmds, |sim, out| {
             ticks.push(frames::capture(sim, out));
+            if ledger_error.is_none() {
+                ledger_error = next_ledger.record_tick(out, &sim.state).err();
+            }
         });
         let out = match run {
             Ok(o) => o,
@@ -303,8 +362,13 @@ impl Api {
 
         let rejected = Self::wire_rejected(&out, &split, cmds);
 
-        self.history
-            .push(history::point(&self.sim.state, &self.sim.params, out.turn));
+        if let Some(e) = ledger_error {
+            self.restore(backup);
+            return Err(ApiError::new(code::VIOLATION, e));
+        }
+        self.ledger = next_ledger;
+        let point = self.history_point(out.turn);
+        self.history.push(point);
         Ok(TurnResult {
             turn: out.turn,
             accepted: out.accepted.iter().map(PendingItem::from_sim).collect(),
@@ -398,6 +462,10 @@ impl Api {
                 return Err(ApiError::new(code::VIOLATION, v.to_string()));
             }
         };
+        if let Err(e) = self.record(&t) {
+            self.restore(backup);
+            return Err(ApiError::new(code::VIOLATION, e));
+        }
         let cap = frames::capture(&self.sim, &t);
         let month = ph.months_done as u8;
         let snapshot = self.snapshot();
@@ -441,8 +509,8 @@ impl Api {
         let Some(live) = self.live.take() else {
             return Err(Self::turn_state("no open turn"));
         };
-        self.history
-            .push(history::point(&self.sim.state, &self.sim.params, live.turn));
+        let point = self.history_point(live.turn);
+        self.history.push(point);
         Ok(TurnResult {
             turn: live.turn,
             accepted: live.accepted,
@@ -488,12 +556,12 @@ impl Api {
                 "exportState is only legal at a turn boundary",
             ));
         }
-        persist::export(&self.sim, &self.history)
+        persist::export(&self.sim, &self.history, &self.ledger)
     }
 
     /// Restore a blob from `export_state`. On error the current game is untouched.
     pub fn import_state(&mut self, blob: &str) -> ApiResult<Snapshot> {
-        let imp = persist::import(blob, &self.sim.params)?;
+        let imp = persist::import(blob, &self.sim.params, self.meta.ledger_detail_turns)?;
         for p in &imp.state.pending {
             self.meta
                 .to_sim(&Command::from_sim(&p.command))
@@ -506,6 +574,7 @@ impl Api {
         self.sim.initial_population = imp.initial_population;
         self.sim.clamped_total = imp.clamped_total;
         self.history = imp.history;
+        self.ledger = imp.ledger;
         // A save is always a turn boundary: drop any open turn.
         self.sim.turn_phase = sim_engine::TurnPhase::default();
         self.live = None;
