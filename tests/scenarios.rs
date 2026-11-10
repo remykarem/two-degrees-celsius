@@ -1292,7 +1292,11 @@ struct Run {
     loss_tick: Option<u32>,
     /// Tick at which the cumulative emissions passed the budget, if they did.
     exhausted_tick: Option<u32>,
+    /// Tick at which half of the budget was gone, if it was.
+    half_tick: Option<u32>,
     legitimacy_min: f64,
+    /// Lowest legitimacy before the budget ran out (the run keeps going afterwards).
+    legitimacy_min_before_exhaustion: f64,
     budget_left_share: f64,
     gini_start: f64,
 }
@@ -1301,9 +1305,17 @@ fn play(script: &Plan, seed: u64) -> Run {
     let mut sim = new_sim(seed);
     let gini_start = sim.state.indicators.gini.0;
     let mut exhausted = None;
+    let mut half = None;
     let mut legit_min = 1.0f64;
+    let mut legit_pre = 1.0f64;
     sim_engine::run(&mut sim, 160, script, |s, _| {
         legit_min = legit_min.min(s.state.gov.legitimacy.0);
+        if exhausted.is_none() {
+            legit_pre = legit_pre.min(s.state.gov.legitimacy.0);
+        }
+        if half.is_none() && s.state.nature.cumulative.0 >= 0.5 * s.params.nature.budget_b0 {
+            half = Some(s.state.tick);
+        }
         if exhausted.is_none() && s.state.nature.cumulative.0 >= s.params.nature.budget_b0 {
             exhausted = Some(s.state.tick);
         }
@@ -1313,7 +1325,9 @@ fn play(script: &Plan, seed: u64) -> Run {
         outcome: sim_engine::final_outcome(&sim),
         loss_tick: sim.state.outcome.map(|(t, _)| t),
         exhausted_tick: exhausted,
+        half_tick: half,
         legitimacy_min: legit_min,
+        legitimacy_min_before_exhaustion: legit_pre,
         budget_left_share: sim.state.indicators.remaining_budget.0 / sim.params.nature.budget_b0,
         gini_start,
     }
@@ -1332,20 +1346,27 @@ fn median(mut v: Vec<f64>) -> f64 {
     v[v.len() / 2]
 }
 
-/// Baseline A: no action. It degrades, never crashes or breaks an invariant (every run completes
-/// the strict checks), the carbon budget runs out between turns 90 and 140, and the start is as
-/// unequal as the design asks.
+/// Baseline A: no action. The budget is the Paris-2030 horizon (`nature.budget_b0` = 600 t, start
+/// year 2026): half is gone around turn 9 and all of it around turn 18 to 19 (end of 2030), in
+/// every seed. The loss is the budget, not an early collapse: legitimacy and wellbeing are still
+/// middling when it ends. The start is as unequal as the design asks.
 #[test]
-fn baseline_a_no_action_degrades_and_runs_the_budget_out() {
+fn baseline_a_no_action_runs_the_paris_budget_out_by_turn_20() {
     let rs = runs(&Plan::default());
     let turns: Vec<f64> = rs
         .iter()
         .filter_map(|r| r.exhausted_tick)
         .map(|t| t as f64 / 3.0)
         .collect();
+    let halves: Vec<f64> = rs
+        .iter()
+        .filter_map(|r| r.half_tick)
+        .map(|t| t as f64 / 3.0)
+        .collect();
     println!(
-        "A: exhausted turns {turns:?}, outcomes {:?}",
-        rs.iter().map(|r| r.outcome).collect::<Vec<_>>()
+        "A: half turns {halves:?}, exhausted turns {turns:?}, outcomes {:?}, legitimacy min {:?}",
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
+        rs.iter().map(|r| r.legitimacy_min).collect::<Vec<_>>()
     );
     assert!(
         share(&rs, |r| r.gini_start > 0.65 && r.gini_start < 0.78) >= 1.0,
@@ -1355,45 +1376,69 @@ fn baseline_a_no_action_degrades_and_runs_the_budget_out() {
     assert!(
         share(&rs, |r| r
             .exhausted_tick
-            .is_some_and(|t| (270..=420).contains(&t)))
-            >= 0.8
+            .is_some_and(|t| (48..=60).contains(&t)))
+            >= 0.8,
+        "exhausted between turns 16 and 20"
     );
     let m = median(turns);
-    assert!(m > 100.0 && m < 140.0, "median turn {m}");
+    assert!((17.0..=20.0).contains(&m), "median exhaustion turn {m}");
+    let h = median(halves);
+    assert!((8.0..=10.0).contains(&h), "median half-budget turn {h}");
+    // With a budget this small the climate-damage and legitimacy terms bite early; they must not
+    // make A an early collapse (the budget, not the town, ends it).
     assert!(
-        share(&rs, |r| r.legitimacy_min < 0.2) >= 0.8,
-        "inequality eats legitimacy when nothing is done"
+        share(&rs, |r| r.legitimacy_min_before_exhaustion > 0.3) >= 0.8,
+        "legitimacy stays above 0.3 in A until the budget ends the game"
     );
 }
 
-/// Baseline B: sensible play survives most seeds with budget left and legitimacy above 0.3.
+/// Baseline B (sensible play) in the 4-year horizon. The same script that used to win 160 turns
+/// cannot win now: emissions respond with lags (a carbon price takes 2 turns, a plant 4), so
+/// they fall from about 10 t to about 3 t a month only around turn 25, and the 600 t budget is gone
+/// by then. What sensible play does buy is time and a better town: the budget lasts clearly
+/// longer than under A, and emissions are far lower at the end. Not forced to win by tuning
+/// behaviour; see docs/tuning-log.md for the options that keep the game winnable.
 #[test]
-fn baseline_b_sensible_play_survives_most_seeds_with_budget_left() {
+fn baseline_b_sensible_play_buys_time_but_cannot_save_the_4_year_budget() {
     let rs = runs(&Plan::from_json(SCENARIO_B).unwrap());
+    let a = runs(&Plan::default());
+    let exh: Vec<f64> = rs
+        .iter()
+        .filter_map(|r| r.exhausted_tick)
+        .map(|t| t as f64 / 3.0)
+        .collect();
     println!(
-        "B: survived {:.0}%, median budget left {:.2}, median legitimacy min {:.2}",
+        "B: survived {:.0}%, exhausted turns {exh:?}, median budget left {:.2}, median legitimacy min {:.2}",
         100.0 * share(&rs, |r| matches!(r.outcome, Outcome::Survived)),
         median(rs.iter().map(|r| r.budget_left_share).collect()),
         median(rs.iter().map(|r| r.legitimacy_min).collect())
     );
-    assert!(share(&rs, |r| matches!(r.outcome, Outcome::Survived)) >= 0.8);
     assert!(
-        share(&rs, |r| r.exhausted_tick.is_none()
-            && r.budget_left_share > 0.2)
-            >= 0.8
+        share(&rs, |r| r.exhausted_tick.is_some()) >= 0.9,
+        "the budget runs out in nearly every seed even with sensible play"
     );
-    assert!(median(rs.iter().map(|r| r.legitimacy_min).collect()) > 0.3);
+    let a_med = median(
+        a.iter()
+            .filter_map(|r| r.exhausted_tick)
+            .map(|t| t as f64 / 3.0)
+            .collect(),
+    );
+    assert!(
+        median(exh) >= a_med + 4.0,
+        "sensible play must buy at least 4 turns over doing nothing"
+    );
 }
 
-/// Baseline C: neglect and extraction fails by about year 30 (tick 360) in most seeds.
+/// Baseline C: neglect and extraction fails inside the 4-year budget (tick 60) in most seeds, and
+/// burns the budget no more slowly than doing nothing.
 #[test]
-fn baseline_c_neglect_fails_by_year_30_in_most_seeds() {
+fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
     let rs = runs(&Plan::from_json(SCENARIO_C).unwrap());
     println!(
         "C: loss ticks {:?}",
         rs.iter().map(|r| r.loss_tick).collect::<Vec<_>>()
     );
-    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 360)) >= 0.7);
+    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 60)) >= 0.7);
     let a = runs(&Plan::default());
     let a_exh = median(
         a.iter()
@@ -1407,10 +1452,10 @@ fn baseline_c_neglect_fails_by_year_30_in_most_seeds() {
         .map(|t| t as f64)
         .collect::<Vec<_>>();
     // Extraction burns the budget no more slowly than doing nothing.
-    assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 36.0);
+    assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 3.0);
 }
 
-/// Baseline D: one tool (a carbon tax) is not enough.
+/// Baseline D: one tool (a carbon tax) is not enough; it also fails inside the horizon.
 #[test]
 fn baseline_d_carbon_tax_alone_fails_in_most_seeds() {
     let rs = runs(&Plan::from_json(SCENARIO_D).unwrap());
