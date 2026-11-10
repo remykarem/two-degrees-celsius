@@ -360,3 +360,16 @@ Approved design: `docs/town-v2.md`. Where this section conflicts with earlier te
 - **Systems S4, S5, S6, S8, S9b** carry over, applied per household; lobbying power derives from household wealth.
 - **Kept from Phase 2:** the wage and price rules, green-investment smoothing and the demand levers, as rules. All calibrated numbers must be redone.
 - **Baselines (section 9)** are re-established over many seeds (distributions, not single runs), plus a single-seed golden test.
+
+---
+
+## 11. Town v4 amendment: S11 weather (fires and drought)
+
+Approved design: `docs/town-v4.md`. A new pure system **S11 weather** runs each tick **before nature (S7) and production (S2)**. It returns deltas, draws from the sim RNG (so seeds finally differ), and its parameters live under `weather` in `content/params.json`.
+
+- **Climate stress:** `s = clamp((onset - r) / (onset - full), 0, 1) ^ curve`, with `r` = carbon budget remaining as a share of `budget_b0`. Placeholders `onset 0.50`, `full 0.10`, `curve 1.5`. No hazards at `s = 0`.
+- **Drought:** monthly ignition `p = base x (1 + b x s)`; severity `d` in 0..1 and duration `D` months drawn from ranges widening with `s`. While active: commons regrowth `x (1 - a_c x d x (1 - community_buffer))` where `community_buffer` applies to a community-managed commons; farm productivity `x (1 - a_f x d)`; electricity demand `x (1 + a_e x d)`; wildfire dryness `+ d`. Food price rises through the existing price rule (lower farm output).
+- **Fire:** per month `p_ignite = base x (1 + a x s) x dryness x forest_fraction` on a standing forest tile. A fire is a set of burning tiles with `months_left`; each month each burning tile reduces forest stock, may spread to an adjacent standing forest tile with `spread_p` (raised by drought, lowered by fire-station coverage within `coverage_radius`), and ends after `duration` months (shortened by coverage). Burnt tiles are `regrowing` for `regrow_months`, then standing. Net emissions rise as the sink shrinks (`sink = sigma x forest`, existing S7 rule). Smoke penalises wellbeing of people within `smoke_radius` tiles of a burning tile. Homes within 1 tile of a fire may be damaged (optional).
+- **Adaptation:** buildable **fire station** (tile; build cost, upkeep, PC cost; lead time like other builds); policy lever **resilience_spending** ($/month, lead time 1 turn) lowering ignition odds and drought damage with diminishing returns.
+- **Forecast:** deterministic risk levels (low/medium/high) from stress, dryness, forest density and coverage; computed from state, never from the RNG's future draws.
+- **Invariants:** forest stock stays in `[0, forest_max]`; a tile is in exactly one state; fires only on forest tiles; determinism per seed. Sign tests: higher stress raises fire frequency; more burning raises net emissions; fire stations reduce burnt area; community commons lose less regrowth under drought.

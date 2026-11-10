@@ -280,3 +280,25 @@ interface Snapshot { /* addition */ turnPhase: { open: boolean; monthsDone: 0 | 
 - **Saves:** `exportState` is legal only when no turn is open (a turn boundary); otherwise `turn_state`. `importState` always yields `turnPhase.open: false`.
 - **Previews:** `preview(commands)` is legal at any time and costs commands as for the next `beginTurn` (it does not see the turn in progress).
 - Fixtures: add `turn-start.json` and `month-result.json` to `docs/fixtures/`.
+
+## 13. Contract v1.2: weather (fires and drought) (additive; `schemaVersion` bumps only if the saved State layout changes)
+
+Design: `docs/town-v4.md`; rules: `docs/causal-model.md` section 11.
+```ts
+interface Snapshot { /* additions */
+  weather: { stress: number /* 0..1 */; drought: null | { severity: number; monthsLeft: number };
+             fires: { tile: { x: number; y: number }; monthsLeft: number }[];
+             forecast: { fireRisk: 'low'|'medium'|'high'; droughtRisk: 'low'|'medium'|'high' } };
+  nature: { /* additions */ forestHealth: number; commonsHealth: number; farmHealth: number /* 0..1 */ };
+}
+type TileKind = /* existing */ | 'fire_station';
+interface Tile { /* addition */ state?: 'standing' | 'burning' | 'regrowing' /* forest tiles only */ }
+type LeverKey = /* existing */ | 'resilience_spending';
+type InfraKind = /* existing */ | 'fire_station';
+type MetricKey = /* existing */ | 'forest_health' | 'commons_health' | 'farm_health' | 'climate_stress';
+```
+- **Events** (each with `importance`): `fire_started{tile}`, `fire_spread{from,to}`, `fire_out{tile}`, `forest_burned{tile}`, `drought_started{severity,months}`, `drought_ended`, optional `home_damaged{home}`.
+- **TraceRecord.emissions** source gains `'fire_sink_loss'` (tonnes of sink lost to fire).
+- **HistoryPoint** gains `climateStress`, `forestHealth`, `commonsHealth`, `farmHealth`.
+- `placeable` kinds gain `fire_station`; `levers.json` gains `resilience_spending`; the fixtures gain a weather sample.
+- If the `State` layout changes for saves, bump `schemaVersion` to 3 and refuse older saves with a clear message.

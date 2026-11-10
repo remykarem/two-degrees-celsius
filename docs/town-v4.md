@@ -1,6 +1,6 @@
 # Town v4 design: weather (draft for review)
 
-Status: **DRAFT, nothing implemented. Planned after Town v3 (the pressure clock, `docs/town-v3.md`).** Scope **[DECIDED]**: **forest fires and drought only**; no floods in v4. Severity **scales gradually** with climate stress **[DECIDED]**. Thresholds are measured as carbon budget **remaining** **[DECIDED]** and are configurable. All numbers are placeholders.
+Status: **APPROVED (user: "start v4"; defaults delegated); implementation starting after the carbon-budget horizon change (see section 11).** Builds on Town v3 (`docs/town-v3.md`). Scope **[DECIDED]**: **forest fires and drought only**; no floods in v4. Severity **scales gradually** with climate stress **[DECIDED]**. Thresholds are measured as carbon budget **remaining** **[DECIDED]** and are configurable. All numbers are placeholders.
 
 ## 1. Goal
 
@@ -81,7 +81,10 @@ Seasons and mild variability are **cosmetic only** (scene lighting, clouds); no 
 3. Adaptation is a fire station plus one resilience lever. Floods, storms and heatwaves are left for later.
 4. Damage to homes from fire is optional.
 
-## 10. Open questions
-1. Should a **fire station** be a buildable the player must place (position matters, as with roads), or should fire defence be only the lever?
-2. How hard should drought hit **households' food costs**: a visible price rise, or only lower farm output?
-3. Do you want **cooperative or community commons** to give extra drought resilience (a reward for the community option)?
+## 10. Defaults taken (user delegated the open questions)
+1. **Fire station is a placed building** (position matters, like roads); the resilience lever complements it.
+2. **Drought visibly raises food prices** through the existing price rule (lower farm output lifts the farm price); low-income households feel it most.
+3. **Community-managed commons give extra drought resilience** (a smaller drought penalty on commons regrowth), a reward for the community option.
+
+## 11. Dependency on the carbon-budget horizon change
+The user shortened the carbon budget so a no-action game reaches 50% remaining around turn 8 to 10 and exhausts it around turn 17 to 20 (a Paris-2030-style horizon). Weather onset and full severity are measured against the budget **remaining**, so weather will begin early in a game and ramp fast. The weather agent must therefore calibrate on top of the new budget (`docs/tuning-log.md` "Carbon budget horizon"), and the stress curve parameters (`onset`, `full`, `curve`) remain the tuning knobs. The weather work starts only after that change is committed.
