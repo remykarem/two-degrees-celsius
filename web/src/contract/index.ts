@@ -1,7 +1,7 @@
-// Snapshot contract v1.2, Town v4 (docs/snapshot-contract.md sections 11 to 13 win over sections 3-10). Types only: no logic, no imports.
+// Snapshot contract v1.4, Town v5 (docs/snapshot-contract.md sections 11 to 14 win over sections 3-10). Types only: no logic, no imports.
 
-/** Snapshot.schemaVersion. 2 for contract v1.0 to v1.2; the weather State layout may bump it to 3 (section 13), so both are accepted here. */
-export type SchemaVersion = 2 | 3;
+/** Snapshot.schemaVersion. 3 since the weather State layout (section 13); 4 since the saved wrapper blob gains the ledger (section 14). Older saves are refused. */
+export type SchemaVersion = 3 | 4;
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
@@ -191,9 +191,70 @@ export interface NatureView {
   cumulativeTonnes: number; netEmissionsMonthly: number; grossEmissionsMonthly: number; sinkMonthly: number;
 }
 export interface HousingView { homes: number; rentPrivate: number; rentPublic: number; occupancy: number; unhousedHouseholds: number }
+/**
+ * Contract v1.4 (section 14): the power grid with a unit. `unit` is the label from config (default 'MWh'; the displayed rate is per month).
+ * A package built before v1.4 sent a different object under the same key (fossilCap, supply as a number, ...): the wasm wrapper rewrites it into this shape.
+ */
 export interface EnergyView {
-  fossilCap: number; renewableCap: number; fossilShare: number;
-  demand: number; supply: number; delivered: number; served: number; gridIntensity: number;
+  unit: string;
+  supply: { tile: TileRef; kind: 'fossil' | 'renewable'; capacity: number }[];
+  demand: { firms: number; households: number; total: number };
+  /** 0..1. */
+  served: number;
+  /** Tonnes of CO2 per unit of energy delivered. */
+  intensity: number;
+  renewableShare: number;
+  emissionsByPlant: { tile: TileRef; tonnes: number }[];
+}
+
+/** Contract v1.4: one money movement. Money is dollars. */
+export type AccountRef =
+  | { kind: 'household'; id: number } | { kind: 'firm'; id: number }
+  | { kind: 'government' } | { kind: 'bank' } | { kind: 'external'; label: string };
+export type LedgerKind = 'wage' | 'dividend' | 'rent' | 'benefit' | 'tax' | 'purchase' | 'lobby' | 'interest' | 'loan_new' | 'loan_repay'
+  | 'loan_writeoff' | 'build' | 'upkeep' | 'subsidy' | 'bailout' | 'wealth_consumption' | 'neutral';
+export interface LedgerEntry {
+  turn: number; month: 0 | 1 | 2; tick: number; from: AccountRef; to: AccountRef; amount: number;
+  kind: LedgerKind; detail?: string; memo: string;
+  /** Balance of the queried account after this entry. */
+  balanceAfter: number;
+}
+export interface LedgerSummaryRow { turn: number; month: 0 | 1 | 2; counterparty: AccountRef; kind: LedgerKind; inflow: number; outflow: number; count: number }
+export interface LedgerPage {
+  account: AccountRef;
+  /** At turn 0. */
+  openingBalance: number;
+  /** The detail window (the last `ledger.detail_turns` turns). */
+  entries: LedgerEntry[];
+  /** Rolled-up older periods. */
+  summary: LedgerSummaryRow[];
+  closingBalance: number;
+  /** True iff opening + all entries and roll-ups = closing. */
+  reconciles: boolean;
+  detailFromTurn: number;
+}
+export interface PersonLedger { person: number; household: number; earnings: LedgerEntry[]; events: SimEvent[] }
+export interface LedgerQuery { fromTurn?: number; toTurn?: number; kind?: LedgerKind }
+
+/** Contract v1.4: finance aggregates. Flows are for the latest month; `quarter` (optional, see docs/web-notes-v5.md "Contract issues") holds the trailing-quarter totals of the same flows. */
+export interface FinanceFlows {
+  govRevenue: Record<'wageTax' | 'profitTax' | 'capitalTax' | 'wealthTax' | 'carbon' | 'other', number>;
+  govSpending: Record<'benefits' | 'ubi' | 'publicSpending' | 'jobGuarantee' | 'upkeep' | 'subsidy' | 'interest' | 'builds' | 'other', number>;
+  householdIncome: Record<'wages' | 'dividends' | 'rent' | 'interest' | 'benefits', number>;
+  householdTaxes: number; rentPaid: number; loanPayments: number; householdSpending: number;
+  firmRevenue: number; wageBill: number; firmProfit: number; investment: number; bankInterestIncome: number;
+}
+export interface FinanceView {
+  government: {
+    revenue: FinanceFlows['govRevenue']; spending: FinanceFlows['govSpending'];
+    balance: number; debt: number; debtToGdp: number; legitimacy: number; basis: 'month';
+  };
+  bank: { equity: number; loans: number; deposits: number; capitalRatio: number; capitalRatioLimit: number; headroom: number; defaultRate: number; interestIncome: number };
+  households: { income: FinanceFlows['householdIncome']; taxes: number; rentPaid: number; loanPayments: number; spending: number; savingRate: number; debt: number; netWorth: number };
+  firms: { revenue: number; wageBill: number; profit: number; investment: number; debt: number; cash: number };
+  money: { supply: number; createdThisTurn: number; destroyedThisTurn: number };
+  priceIndex: number; wageShare: number; profitShare: number;
+  quarter?: FinanceFlows;
 }
 
 export interface HistoryPoint {
@@ -202,6 +263,8 @@ export interface HistoryPoint {
   avgIncomePerPerson: number; medianIncomePerPerson: number; topHouseholdWealthShare: number;
   /** Contract v1.2. */
   climateStress: number; forestHealth: number; commonsHealth: number; farmHealth: number;
+  /** Contract v1.4. Optional: absent in a package built before v1.4. */
+  govRevenue?: number; govSpending?: number; bankCapitalRatio?: number; renewableShare?: number; gridServed?: number;
 }
 
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
@@ -260,6 +323,8 @@ export interface Snapshot {
   /** Contract v1.2. Absent in a package built before v1.2 (the UI then shows no weather). */
   weather: Weather;
   housing: HousingView;
+  /** Contract v1.4. */
+  finance: FinanceView;
   energy: EnergyView;
   history: HistoryPoint[];
 }

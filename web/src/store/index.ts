@@ -23,3 +23,4 @@ export { weatherLook, tileFireRisk, isCovered, nearFire, type WeatherLook } from
 export { createLive, type Live, type LiveView } from './live';
 export { liveClock, type LiveClockFeed } from './scene-live';
 export type { LiveSlice } from './types';
+export { fossilShareOf } from './scene-energy';

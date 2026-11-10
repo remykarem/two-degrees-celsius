@@ -1,5 +1,6 @@
 import type { HouseholdView, PersonView, SimEvent } from '../../contract';
 import { GEN } from './data';
+import { coverShortfall, hKey, recordMonth } from './ledger';
 import { commute, type Route } from './space';
 import { cellAt, type HouseholdState, type MockState, type PersonState } from './state';
 
@@ -120,11 +121,15 @@ export function topWealthShare(s: MockState): number {
 /** Monthly household money: savings absorb the surplus, debt the shortfall; three months of unpaid rent mean eviction. Also moves. */
 export function stepHouseholds(s: MockState, events: SimEvent[]): void {
   const e = economy(s);
+  // All income lines come from the state before any money moves; the ledger books them, and savings are the household's ledger balance.
+  const incs = new Map(s.households.map((h) => [h.id, householdIncome(s, h, e)] as const));
+  recordMonth(s, e, incs);
   for (const h of s.households) {
-    const inc = householdIncome(s, h, e);
+    const inc = incs.get(h.id)!;
     const disposable = totalIncome(inc) - inc.taxPaid - inc.rentPaid - inc.loanPayments;
-    h.savings += disposable - inc.spending;
-    if (h.savings < 0) { h.debt += -h.savings; h.savings = 0; }
+    const loan = coverShortfall(s, h.id);
+    h.debt += loan;
+    h.savings = s.ledger.balance[hKey(h.id)] ?? 0;
     if (inc.rentPaid > 0 && disposable < inc.rentPaid) {
       h.arrears++;
       events.push({ type: 'rent_shortfall', importance: 2, household: h.id, amount: Math.round(inc.rentPaid - Math.max(0, disposable)) });

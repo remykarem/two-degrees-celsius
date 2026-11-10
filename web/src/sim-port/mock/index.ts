@@ -1,7 +1,8 @@
-import type { Command, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, Command, LedgerQuery, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 import { actionList, GEN, LEVERS, MOCK } from './data';
 import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
+import { ledgerPage, personLedger, rollUp } from './ledger';
 import { frame, makeEvents, makeFlows } from './frames';
 import { stepHouseholds, syncJobs } from './people';
 import { activate, evaluate, spend, validTiles } from './rules';
@@ -36,13 +37,17 @@ export function createMockSim(): SimPort {
   }
 
   function historyPoint(): HistoryPoint {
-    const ind = snap().indicators;
+    const sn = snap();
+    const ind = sn.indicators;
+    const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
+    const gov = { revenue: sum(sn.finance.government.revenue), spending: sum(sn.finance.government.spending) };
     return {
       turn: s.turn, gdpRealAnnual: s.gdp / s.prices, unemployment: s.unemployment, gini: s.gini,
       // net monthly tonnes at the end of the turn, as the real wire (docs/sim-api-notes.md)
       emissions: s.lastMonthlyEmissions * (1 - 0.1 * s.forest), budgetShare: remainingBudget(s) / GEN.carbon.budget,
       legitimacy: s.legitimacy, avgWellbeing: ind.avgWellbeing, gpiAnnual: ind.gpiAnnual, debtToGdp: s.debt / s.gdp,
       avgIncomePerPerson: ind.avgIncomePerPerson, medianIncomePerPerson: ind.medianIncomePerPerson, topHouseholdWealthShare: ind.topHouseholdWealthShare,
+      govRevenue: gov.revenue, govSpending: gov.spending, bankCapitalRatio: s.bank.loans > 0 ? s.bank.equity / s.bank.loans : 0, renewableShare: sn.energy.renewableShare, gridServed: sn.energy.served,
       climateStress: stressNow(s), forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm,
     };
   }
@@ -116,6 +121,7 @@ export function createMockSim(): SimPort {
         }
         const jobEvents: SimEvent[] = [];
         syncJobs(s, jobEvents);
+        for (const ev of jobEvents) if (ev.type === 'person_hired' || ev.type === 'person_fired') s.ledger.personEvents.push({ person: ev.person, event: structuredClone(ev) });
         stepHouseholds(s, jobEvents);
         const flows = makeFlows(s, out.emissions);
         const events = makeEvents(s, flows, [...(m === 0 ? month0 : []), ...jobEvents]);
@@ -156,10 +162,14 @@ export function createMockSim(): SimPort {
       s.fireSinkLossTurn = 0;
       s.pc = Math.min(GEN.pc.cap, s.pc + GEN.pc.regenBase * s.legitimacy);
       s.turn++;
+      rollUp(s);
       updateLobby(s);
       if (!s.gameOver && turn >= GEN.game.lastTurn) s.gameOver = { turn, outcome: 'survived' };
       return ok({ turn, accepted, rejected, activated, pcBefore, pcAfter: s.pc, months, policyGaps, trace, snapshot: snap() });
     },
+
+    ledger: (account: AccountRef, query?: LedgerQuery) => ledgerPage(s, account, query),
+    personLedger: (person: number) => personLedger(s, person),
 
     cancelPending(id) {
       if (s.gameOver) return fail('game_over', 'The game is over: nothing can be cancelled.');
@@ -179,6 +189,7 @@ export function createMockSim(): SimPort {
         return fail('bad_save', 'The saved game data is incomplete.');
       }
       if (!('drought' in parsed) || !parsed.weatherRng) return fail('schema_mismatch', 'The save was made before weather was added to the game (Town v3 or earlier), so it cannot be loaded.');
+      if (!parsed.ledger) return fail('schema_mismatch', 'The save was made before transaction ledgers were added to the game (Town v4 or earlier), so it cannot be loaded.');
       if (parsed.schemaVersion !== SCHEMA_VERSION) return fail('schema_mismatch', `The save was made by a different version (schema ${String(parsed.schemaVersion)}, expected ${SCHEMA_VERSION}).`);
       s = parsed;
       open = null;

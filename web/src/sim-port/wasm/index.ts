@@ -1,5 +1,6 @@
-import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
+import { upgradeResult } from './upgrade';
 
 /**
  * The real Rust simulation, through the wasm package built by `npm run build:wasm` (crates/sim-wasm).
@@ -20,6 +21,9 @@ export interface WasmSimInstance {
   begin_turn?(commandsJson: string): string;
   advance_month?(): string;
   finish_turn?(): string;
+  /** Contract v1.4 ledger exports (names assumed; see docs/web-notes-v5.md). Missing in a package built before v1.4. */
+  ledger?(accountJson: string, queryJson: string): string;
+  person_ledger?(person: number): string;
   cancel_pending(id: number): string;
   export_state(): string;
   import_state(blob: string): string;
@@ -39,7 +43,7 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
   /** Calls into wasm. A panic (the module traps and stays dead) comes back as an error result, never an exception. */
   const call = <T>(f: () => string): Result<T> => {
     try {
-      return JSON.parse(f()) as Result<T>;
+      return upgradeResult(JSON.parse(f()) as Result<T>);
     } catch (e) {
       let detail = '';
       try { detail = mod.last_panic(); } catch { /* the module is gone */ }
@@ -72,6 +76,10 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
       ? call<MonthResult>(() => sim.advance_month!()) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1).'),
     finishTurn: () => sim.finish_turn
       ? call<TurnResult>(() => sim.finish_turn!()) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1).'),
+    ledger: (account: AccountRef, query?: LedgerQuery) => sim.ledger
+      ? call<LedgerPage>(() => sim.ledger!(JSON.stringify(account), JSON.stringify(query ?? {}))) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
+    personLedger: (person: number) => sim.person_ledger
+      ? call<PersonLedger>(() => sim.person_ledger!(person)) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
     cancelPending: (id) => call(() => sim.cancel_pending(id)),
     exportState: () => call<string>(() => sim.export_state()),
     importState: (blob) => call<Snapshot>(() => sim.import_state(blob)),
@@ -95,10 +103,10 @@ export async function loadWasmPort(): Promise<SimPort> {
   await mod.default({ module_or_path: await wasmUrl() });
   const port = createWasmPort(mod);
   // A package built before contract v1.0 (schemaVersion 1) must not drive this UI: refuse, and the caller falls back to the mock.
-  // Contract v1.2 (weather) is schemaVersion 3; 2 is still accepted, so a package built before the weather State layout keeps working (the UI shows no weather then).
+  // Contract v1.2 (weather) is schemaVersion 3, contract v1.4 (ledger in the saved blob) is 4. Both are accepted: a version 3 package has no ledger (the UI says so) and its energy and finance are derived by upgrade.ts.
   const probe = port.init(1);
-  if (!probe.ok || ![2, 3].includes(probe.value.schemaVersion) || !probe.value.map) {
-    throw new Error('the wasm package speaks an older contract (schemaVersion is not 2 or 3); rebuild it with npm run build:wasm');
+  if (!probe.ok || ![3, 4].includes(probe.value.schemaVersion) || !probe.value.map) {
+    throw new Error('the wasm package speaks an older contract (schemaVersion is not 3 or 4); rebuild it with npm run build:wasm');
   }
   return port;
 }

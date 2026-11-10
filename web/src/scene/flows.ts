@@ -1,5 +1,5 @@
 import type { ClassKey, MonthFlows, MonthFrame, PlantView, Sector, SimEvent, Snapshot } from '../contract';
-import type { MapLayout, Tile } from '../store';
+import { fossilShareOf, type MapLayout, type Tile } from '../store';
 import { centreOf, hash01, tileKey, type Pt } from './coords';
 import { route } from './paths';
 
@@ -36,7 +36,7 @@ export interface PlanCtx {
 
 export function ctxFromSnapshot(layout: MapLayout, s: Snapshot): PlanCtx {
   return {
-    layout, turn: s.turn, fossilShare: s.energy.fossilShare,
+    layout, turn: s.turn, fossilShare: fossilShareOf(s.energy),
     homes: s.homes.map((h) => ({ id: h.id, owner: h.owner, tile: { ...h.tile } })), plants: s.plants,
     households: s.households.map((h) => ({ id: h.id, class: h.class, home: h.home })),
     firms: s.firms.map((f) => ({ id: f.id, sector: f.sector, active: f.active })),

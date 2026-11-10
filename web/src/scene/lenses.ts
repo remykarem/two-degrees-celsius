@@ -1,5 +1,5 @@
 import type { ClassKey, Snapshot } from '../contract';
-import type { Lens, MapLayout } from '../store';
+import { fossilShareOf, type Lens, type MapLayout } from '../store';
 import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
 import type { EntityDesc } from './entities';
@@ -70,7 +70,7 @@ export function emitterWeights(ctx: LensCtx): { x: number; z: number; w: number 
   for (const d of ctx.descs) {
     if (d.state === 'draft') continue;
     if (d.firm?.active) out.push({ x: d.x, z: d.z, w: d.firm.emissions / ex.maxEmission });
-    else if (d.ref.kind === 'fossil_plant' && d.state === 'normal') out.push({ x: d.x, z: d.z, w: d.plant ? d.plant.emissionsMonthly / ex.maxEmission : 0.35 + 0.65 * (ctx.snapshot?.energy.fossilShare ?? 0.5) });
+    else if (d.ref.kind === 'fossil_plant' && d.state === 'normal') out.push({ x: d.x, z: d.z, w: d.plant ? d.plant.emissionsMonthly / ex.maxEmission : 0.35 + 0.65 * (ctx.snapshot ? fossilShareOf(ctx.snapshot.energy) : 0.5) });
   }
   return out;
 }

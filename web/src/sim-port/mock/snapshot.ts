@@ -2,6 +2,7 @@ import type { LeverKey, SchemaVersion, Snapshot, Tile } from '../../contract';
 import { GEN, LEVERS, MOCK } from './data';
 import { effectiveValue, remainingBudget } from './dynamics';
 import { plantTiles } from './frames';
+import { energyView, financeView } from './finance';
 import { economy, householdViews, median, peopleViews, personIncomes, topWealthShare } from './people';
 import { healthOf, weatherView } from './weather';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
@@ -38,8 +39,6 @@ export function buildSnapshot(s: MockState): Snapshot {
   const e = economy(s);
   const wageShare = Math.min(1, e.wageBill / e.monthlyOutput);
   const counts = buildingCounts(s);
-  const fossilCap = counts.fossil_plant * GEN.build.plantCapacity;
-  const renewableCap = counts.renewable_plant * GEN.build.plantCapacity;
   const taxWage = Number(s.policy.tax_wage), taxProfit = Number(s.policy.tax_profit);
   const govReceipts = e.wageBill * taxWage + e.profitFirms * taxProfit;
 
@@ -48,6 +47,8 @@ export function buildSnapshot(s: MockState): Snapshot {
   const activeFirms = GEN.firms.filter((f) => s.firmActive[f.id]);
   const intensitySum = activeFirms.reduce((a, f) => a + f.output * f.intensity, 0) || 1;
   const firmEmissions = (s.lastMonthlyEmissions - s.lastPlantEmissions) / (1 + MOCK.extra.householdEmissionShare!);
+  const households = householdViews(s);
+  const firmOutput = activeFirms.reduce((a, f) => a + (f.output > 0 ? f.output : (GEN.firms.find((x) => x.sector === f.sector && x.output > 0)?.output ?? 0) * 0.5) * idx, 0);
   const wellbeing = people.length ? people.reduce((a, p) => a + p.wellbeing, 0) / people.length : 0;
   return {
     schemaVersion: SCHEMA_VERSION as SchemaVersion, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
@@ -66,7 +67,7 @@ export function buildSnapshot(s: MockState): Snapshot {
       avgIncomePerPerson: incomes.reduce((a, b) => a + b, 0) / Math.max(1, incomes.length), medianIncomePerPerson: median(incomes), topHouseholdWealthShare: topWealthShare(s),
     },
     people,
-    households: householdViews(s),
+    households,
     homes: s.homes.map((h) => ({ id: h.id, tile: { x: h.x, y: h.y }, owner: h.owner, household: h.household, rent: h.owner === 'public' ? GEN.town.rentPublic : GEN.town.rentPrivate, value: h.owner === 'public' ? GEN.build.publicHousingCostUsd : GEN.homes[0]!.valueUsd })),
     plants: plantTiles(s).map((tile, id) => ({ id, kind: 'fossil' as const, tile, capacity: GEN.build.plantCapacity, output: 0, emissionsMonthly: s.lastPlantEmissions / Math.max(1, plantTiles(s).length) })),
     firms: GEN.firms.map((f) => {
@@ -90,7 +91,9 @@ export function buildSnapshot(s: MockState): Snapshot {
       homes: s.homes.length, rentPrivate: GEN.town.rentPrivate, rentPublic: GEN.town.rentPublic,
       occupancy: s.homes.filter((h) => h.household !== null).length / Math.max(1, s.homes.length), unhousedHouseholds: s.households.filter((h) => h.home === null).length,
     },
-    energy: { fossilCap, renewableCap, fossilShare: fossilCap / Math.max(1, fossilCap + renewableCap), demand: fossilCap + renewableCap, supply: fossilCap + renewableCap, delivered: fossilCap + renewableCap, served: 1, gridIntensity: fossilCap / Math.max(1, fossilCap + renewableCap) },
+    finance: financeView(s, households, { moneyInCirculation: GEN.town.bank.deposits * idx * s.prices, priceIndex: s.prices, wageShare, profitShare: Math.max(0, 1 - wageShare) },
+      { deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1) }, s.debt / s.gdp),
+    energy: energyView(s, households, firmOutput),
     history: s.history.map((h) => ({ ...h })),
   };
 }

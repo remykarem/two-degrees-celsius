@@ -1,4 +1,4 @@
-import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
 
 /**
  * The UI's only window onto the simulation (contract v1.0, docs/snapshot-contract.md sections 10.7 and 11). Every fallible call returns a Result:
@@ -22,6 +22,10 @@ export interface SimPort {
   /** False when the implementation lacks the v1.1 calls (an older wasm package): Pressure mode is then unavailable. Absent means true. */
   readonly liveTurn?: boolean;
   cancelPending(id: number): Result<{ refundPc: number; snapshot: Snapshot }>;
+  /** Contract v1.4 (section 14): the transaction ledger of one account. Legal at any time. A package without it returns { ok: false, code: 'unsupported' }. */
+  ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;
+  /** Contract v1.4: a person's wages earned and employment events (people have no purse; money is household-level). */
+  personLedger(person: number): Result<PersonLedger>;
   exportState(): Result<string>;
   importState(blob: string): Result<Snapshot>;
 }

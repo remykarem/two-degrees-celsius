@@ -23,7 +23,7 @@ const keys = (o: object) => Object.keys(o).sort();
 describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
   it('speaks schemaVersion 3 and carries the weather block, health fields and forest tile states', async () => {
     const snap = ok((await realPort()).init(7));
-    expect(snap.schemaVersion).toBe(3);
+    expect([3, 4]).toContain(snap.schemaVersion);
     expect(snap.weather.stress).toBe(0);
     expect(snap.weather.forecast).toEqual({ fireRisk: 'low', droughtRisk: 'low' });
     for (const k of ['forestHealth', 'commonsHealth', 'farmHealth'] as const) expect(snap.nature[k]).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
     expect(keys(mock.weather)).toEqual(keys(real.weather));
     expect(keys(mock.weather.forecast)).toEqual(keys(real.weather.forecast));
     expect(keys(mock.nature).filter((k) => /Health$/.test(k))).toEqual(keys(real.nature).filter((k) => /Health$/.test(k)));
-    expect(mock.schemaVersion).toBe(real.schemaVersion);
+    expect(mock.schemaVersion).toBeGreaterThanOrEqual(real.schemaVersion); // the mock is v1.4 (4); a package built before v1.4 is 3
     expect(mp.levers().map((l) => l.key).sort()).toEqual(rp.levers().map((l) => l.key).sort());
     expect(rp.actions().map((a) => a.key).sort()).toEqual(mp.actions().map((a) => a.key).sort());
     const rl = rp.levers().find((l) => l.key === 'resilience_spending')!, ml = mp.levers().find((l) => l.key === 'resilience_spending')!;

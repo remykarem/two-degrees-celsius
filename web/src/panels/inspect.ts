@@ -1,6 +1,6 @@
 import type { ClassKey, FirmOwner, InfraKind, PersonView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
-import { occupant, pendingAt, sameTile, tileAt } from '../store';
+import { fossilShareOf, occupant, pendingAt, sameTile, tileAt } from '../store';
 import { forestStateOf, forecastView, WEATHER_UI, weatherOf } from '../store/weather';
 import { compact, money, pct, tonnes, turnsUntil } from './format';
 
@@ -215,7 +215,7 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
     { label: 'Fire risk now', value: forecastView(s)?.fireWord ?? 'unknown' }] });
   else sections.push({ heading: 'This plant', rows: [{ label: 'Emits', value: `${tonnes(t?.emissionsMonthly ?? 0)} per month` }] },
     { heading: 'Energy (whole town)', rows: [
-    { label: 'Fossil capacity', value: compact(s.energy.fossilCap) }, { label: 'Renewable capacity', value: compact(s.energy.renewableCap) }, { label: 'Fossil share', value: pct(s.energy.fossilShare) }] });
+    { label: 'Fossil share of capacity', value: pct(fossilShareOf(s.energy)) }, { label: 'Renewable share', value: pct(s.energy.renewableShare) }] });
   const already = draft.some((d) => d.command.type === 'remove' && sameTile(d.command.tile, p));
   return {
     kind: 'building', title: INFRA_LABEL[p.kind], subtitle: `Built. ${where}`, sections,

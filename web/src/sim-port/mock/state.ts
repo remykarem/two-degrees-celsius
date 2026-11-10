@@ -1,9 +1,10 @@
 import type { AgeBand, ClassKey, GameOutcome, HistoryPoint, InfraKind, PendingItem, SystemKey, TileKind } from '../../contract';
 import { GEN, LEVERS, MOCK, type PolicyValue } from './data';
+import { initialLedger, type MockLedger } from './ledger';
 import type { Rng } from './rng';
 
-/** The mock's own save format. Equal to the real sim's schemaVersion (3 since the weather State layout, Town v4), so saves from before weather are refused by both. */
-export const SCHEMA_VERSION = 3;
+/** The mock's own save format. Equal to the real sim's schemaVersion (4 since the ledger joined the saved blob, Town v5), so saves from before the ledger are refused by both. */
+export const SCHEMA_VERSION = 4;
 export const GRID = 12;
 
 export interface PersonState { id: number; label: string; household: number; ageBand: AgeBand; skill: number; labourForce: boolean; job: number | null }
@@ -42,6 +43,8 @@ export interface MockState {
   bank: { equity: number; loans: number; failed: boolean };
   cumulativeTonnes: number; lastMonthlyEmissions: number; lastPlantEmissions: number; prices: number; wage: number;
   firmActive: boolean[];
+  /** MOCK transaction ledger (ledger.ts): double-entry bookings of the mock's invented money. */
+  ledger: MockLedger;
   history: HistoryPoint[];
   gameOver: null | { turn: number; outcome: GameOutcome };
 }
@@ -89,8 +92,9 @@ export function initialState(seed: number): MockState {
     cash: t.govCash, debt: t.govDebt, netLobby: MOCK.extra.startingNetLobby!, forest: t.forest / t.forestMax, commons: t.commons / t.commonsMax,
     bank: { equity: t.bank.equity, loans: t.bank.loans, failed: false },
     cumulativeTonnes: 0, lastMonthlyEmissions: baseEmissions(), lastPlantEmissions: GEN.build.start.fossilPlant * MOCK.extra.plantEmissionPerFossil!, prices: 1, wage: GEN.firms[0]!.wage,
-    firmActive: GEN.firms.map((f) => f.active), history: [], gameOver: null,
+    firmActive: GEN.firms.map((f) => f.active), ledger: { opening: {}, balance: {}, detail: [], summary: {}, months: [], personEvents: [], lastTurn: 0 }, history: [], gameOver: null,
   };
+  s.ledger = initialLedger(s);
   return s;
 }
 

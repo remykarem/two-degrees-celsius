@@ -39,7 +39,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;
@@ -61,7 +61,7 @@ const ACTION = { key: 'string', label: 'string', baseCostPc: 'number', costModel
 const PENDING = { id: 'number', command: 'object', submittedTurn: 'number', effectiveTurn: 'number', pcCost: 'number', moneyCost: 'number' } satisfies Shape<PendingItem>;
 
 // Contract v1.0 to v1.2 (schemaVersion 2, or 3 since the weather State layout). Skipped, with this message, when the fixtures are still in the old cohort format.
-const current = present && [2, 3].includes(load<{ schemaVersion: number; map?: unknown }>('snapshot-turn1.json').schemaVersion) && !!load<{ map?: unknown }>('snapshot-turn1.json').map;
+const current = present && [3, 4].includes(load<{ schemaVersion: number; map?: unknown }>('snapshot-turn1.json').schemaVersion) && !!load<{ map?: unknown }>('snapshot-turn1.json').map;
 if (present && !current) console.warn('TODO: docs/fixtures/*.json are still in the old (cohort, schemaVersion 1) format, so the fixtures tests are skipped. Re-run them once the wire layer has regenerated the fixtures.');
 
 describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScript types (contract v1.0, v1.2 shapes optional)', () => {
@@ -83,8 +83,8 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     ];
     expect(bad).toEqual([]);
   });
-  it('is schemaVersion 2 or 3 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
-    expect([2, 3]).toContain(snap.schemaVersion);
+  it('is schemaVersion 3 or 4 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
+    expect([3, 4]).toContain(snap.schemaVersion);
     expect(snap.map).toMatchObject({ width: 12, height: 12 });
     expect(snap.map.tiles).toHaveLength(144);
     snap.map.tiles.forEach((t, i) => expect([t.x, t.y]).toEqual([i % 12, Math.floor(i / 12)]));

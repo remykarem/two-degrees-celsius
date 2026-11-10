@@ -247,7 +247,7 @@ describe('buildings live on tiles', () => {
   it('starts with 2 fossil plants, 4 roads, no renewables, no public housing, 7 homes', () => {
     const s = ok(fresh().init(1));
     expect(s.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
-    expect(s.energy.fossilCap).toBe(10);
+    expect(s.energy.supply.filter((p) => p.kind === 'fossil').reduce((a, p) => a + p.capacity, 0)).toBe(10);
     expect(s.homes).toHaveLength(7);
     expect(s.map.tiles.filter((t) => t.kind === 'fossil_plant')).toHaveLength(2);
   });
@@ -264,7 +264,7 @@ describe('buildings live on tiles', () => {
     while (s.pending.length || s.buildings.renewablePlant === 0) s = ok(sim.submitTurn([])).snapshot;
     expect(s.buildings.renewablePlant).toBe(1);
     expect(s.map.tiles.find((t) => t.x === tile.x && t.y === tile.y)!.kind).toBe('renewable_plant');
-    expect(s.energy.renewableCap).toBe(GEN.build.plantCapacity);
+    expect(s.energy.supply.filter((p) => p.kind === 'renewable').reduce((a, p) => a + p.capacity, 0)).toBe(GEN.build.plantCapacity);
     expect(s.government.cash - s.government.debt).toBeLessThan(cash0 - GEN.town.govDebt - GEN.build.plantCostUsd / 2);
   });
   it('public housing adds a vacant public home, and the unhoused household moves in', () => {
