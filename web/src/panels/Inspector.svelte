@@ -2,6 +2,9 @@
   import { layoutOf, type Game, type Selection } from '../store';
   import { Button } from '../ui-kit';
   import { INFRA_LABEL, resolveSelection, resolveTile } from './inspect';
+  import { selectionAccount } from './ledger';
+  import LedgerPreview from './LedgerPreview.svelte';
+  import PersonEarnings from './PersonEarnings.svelte';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -12,6 +15,7 @@
   const model = $derived(!$gs.snapshot ? null : pinned ? resolveSelection($gs.snapshot, layout, pinned, $gs.draft) : hovering ? resolveTile($gs.snapshot, layout, hovering, $gs.draft) : null);
   const hoverErr = $derived($gs.buildKind && $gs.hover ? game.tileError($gs.hover) : null);
   const canEdit = $derived($gs.phase === 'review' || $gs.phase === 'plan');
+  const acct = $derived(pinned ? selectionAccount($gs.snapshot, pinned) : null);
   const maxIncome = $derived(Math.max(1, ...(model?.income ?? []).map((p) => p.value)));
 
   const open = (s: Selection) => game.select(s);
@@ -40,7 +44,7 @@
     {#each model.sections as sec (sec.heading)}
       <section>
         <h4>{sec.heading}</h4>
-        <dl>{#each sec.rows as r (r.label)}<dt>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
+        <dl>{#each sec.rows as r (r.label)}<dt title={r.hint}>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
       </section>
     {/each}
 
@@ -64,6 +68,9 @@
         </ul>
       </section>
     {/if}
+
+    {#if acct}<LedgerPreview {game} account={acct} />{/if}
+    {#if pinned?.kind === 'person'}<PersonEarnings {game} person={pinned.id} />{/if}
 
     {#if model.removable}
       <section class="rm">

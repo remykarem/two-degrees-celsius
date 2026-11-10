@@ -1,9 +1,11 @@
 <script lang="ts">
   import { quarterLabel, type Game } from '../store';
   import { ARROW, money, pct, TREND_WORD } from './format';
-  import { historyChange, METRIC_TABS, metricById, metricsFor, runway, runwayText, seriesOf, type MetricTab } from './metrics';
+  import { historyChange, METRIC_LEDGER, METRIC_TABS, metricById, metricsFor, runway, runwayText, seriesOf, type MetricTab } from './metrics';
   import { forecastView } from '../store';
   import ClimateGauge from './ClimateGauge.svelte';
+  import EnergyPanel from './EnergyPanel.svelte';
+  import FinancePanel from './FinancePanel.svelte';
   import ForecastCard from './ForecastCard.svelte';
   import HealthMeters from './HealthMeters.svelte';
   import PeoplePanel from './PeoplePanel.svelte';
@@ -73,6 +75,11 @@
         <ForecastCard {game} />
         <ClimateGauge {game} />
         <section class="health" aria-label="Health of the land"><h3>Health of the land</h3><HealthMeters {game} /></section>
+        <EnergyPanel {game} />
+      {/if}
+
+      {#if tab === 'Finance'}
+        <FinancePanel {game} />
       {/if}
 
       {#if tab === 'People'}
@@ -84,6 +91,7 @@
           <li>
             <div class="head">
               <span class="label" title={m.hint}>{m.label}</span>
+              {#if METRIC_LEDGER[m.id]}<button class="why" onclick={() => { const l = METRIC_LEDGER[m.id]!; game.select({ kind: 'government' }); game.openLedger(l.account, l.kind); }}>see transactions</button>{/if}
               {#if m.why}<button class="why" aria-label="Why is {m.label} changing?" onclick={() => setUi({ why: { kind: m.why!, metric: m.metric } })}>why?</button>{/if}
             </div>
             <div class="line">
@@ -113,7 +121,7 @@
 <style>
   aside { padding: 10px; background: var(--surface); border-left: 1px solid var(--border); overflow: auto; min-width: 0; }
   [role='tablist'] { display: flex; gap: 4px; margin-bottom: 10px; }
-  [role='tab'] { flex: 1; padding: 5px 2px; font-size: 13px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+  [role='tab'] { flex: 1; padding: 5px 1px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); cursor: pointer; }
   [role='tab'].on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; padding: 8px; background: var(--surface-2); border-radius: var(--radius); margin-bottom: 10px; }
   .k { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }

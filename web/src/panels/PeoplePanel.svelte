@@ -55,6 +55,9 @@
     {/each}
   </ul>
 
+  {#if selHh !== null}
+    <p class="dim">Savings, debt and net worth: <button class="lnk" onclick={() => game.openLedger({ kind: 'household', id: selHh })}>see this household's transactions</button></p>
+  {/if}
   <h3>{selHh !== null ? 'Members' : 'People'}</h3>
   {#if selHh !== null}<p class="dim"><button class="lnk" onclick={() => game.select(null)}>Show everyone</button></p>{/if}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

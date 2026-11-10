@@ -1,4 +1,4 @@
-import type { Command, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
 import type { SimPort } from '../sim-port/port';
 import { withCommand, withoutItem, withPreviews } from './draft';
 import { describeTileReason, inBounds, layoutOf, pendingAt, sameTile, selectionAt, tileAt, tileKey, type Selection, type Tile } from './map';
@@ -28,6 +28,11 @@ export interface Game {
   rotate(dir: 1 | -1): void;
   setLens(l: Lens): void;
   select(sel: Selection | null): void;
+  /** Contract v1.4: an account's transaction ledger, or an error result (never throws). */
+  ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;
+  personLedger(person: number): Result<PersonLedger>;
+  /** Opens the full transaction viewer for an account (optionally with a kind filter), or closes it with null. */
+  openLedger(account: AccountRef | null, kind?: LedgerKind): void;
   hover(t: Tile | null): void;
   setBuildKind(k: InfraKind | null): void;
   /** Tile click handler: places a draft when in build mode, otherwise selects. Returns an error text if invalid. */
@@ -78,7 +83,7 @@ export function createGame(port: SimPort): Game {
   const store = writable<GameState>({
     mode: 'relaxed', liveAvailable, live: null, savedClock: null,
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
-    playback: { month: -1, skipped: false }, selection: null, hover: null,
+    playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
     buildKind: null, validTiles: null, lens: 'none', camera: 0, error: null, dismissedCrises: {},
   });
   const get = store.get;
@@ -123,7 +128,7 @@ export function createGame(port: SimPort): Game {
       const snapshot = res.value;
       store.set({
         ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
-        playback: { month: -1, skipped: false }, selection: null, hover: null,
+        playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
         buildKind: null, validTiles: null, error: null, dismissedCrises: {}, savedClock: null, live: get().mode === 'pressure' ? freshLive() : null,
       });
       captureBoundary();
@@ -182,6 +187,9 @@ export function createGame(port: SimPort): Game {
     rotate: (dir) => patch({ camera: ((get().camera + dir + 4) % 4) as CameraAngle }),
     setLens: (lens) => patch({ lens }),
     select: (selection) => patch({ selection }),
+    ledger: (account, query) => safe(() => port.ledger(account, query)),
+    personLedger: (person) => safe(() => port.personLedger(person)),
+    openLedger: (account, kind) => patch({ ledgerView: account ? { account, ...(kind ? { kind } : {}) } : null }),
     hover: (t) => {
       const h = get().hover;
       if (h === t || (h && t && sameTile(h, t))) return;
@@ -329,7 +337,7 @@ export function createGame(port: SimPort): Game {
         ...get(), mode, live: mode === 'pressure' ? freshLive() : null, savedClock: f.clock ?? null,
         phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [],
         lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false },
-        selection: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
+        selection: null, ledgerView: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
       });
       if (f.drafts?.length && !snapshot.gameOver) {
         let draft: GameState['draft'] = [];

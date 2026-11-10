@@ -20,3 +20,4 @@ export { default as QuarterCard } from './QuarterCard.svelte';
 export { default as StartScreen } from './StartScreen.svelte';
 export { default as ForecastCard } from './ForecastCard.svelte';
 export { default as ErrorScreen } from './ErrorScreen.svelte';
+export { default as LedgerModal } from './LedgerModal.svelte';

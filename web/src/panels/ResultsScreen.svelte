@@ -22,6 +22,9 @@
   const over = $derived(!!r?.snapshot.gameOver);
   const toggle = (k: WhyKind | null) => { if (k) why = why === k ? null : k; };
   const IMP = ['', 'minor', 'notable', 'major'];
+  import type { AccountRef } from '../contract';
+  import { accountSelection } from './ledger';
+  const seeLedger = (a: AccountRef) => { const sel = accountSelection(a); if (sel) game.select(sel); game.openLedger(a); };
   const next = () => { why = null; game.continueFromResults(); };
 </script>
 
@@ -54,7 +57,8 @@
           </div>
         {:else}
           <p class="dim hint">Pick <b>why?</b> on a row, or look at: <button class="link" onclick={() => (why = 'emissions')}>emissions by source</button>,
-            <button class="link" onclick={() => (why = 'income')}>income by type</button>, <button class="link" onclick={() => (why = 'lobbying')}>lobbying gap</button>.</p>
+            <button class="link" onclick={() => (why = 'income')}>income by type</button>, <button class="link" onclick={() => (why = 'lobbying')}>lobbying gap</button>.
+            Money: <button class="link" onclick={() => seeLedger({ kind: 'government' })}>government ledger</button>, <button class="link" onclick={() => seeLedger({ kind: 'bank' })}>bank ledger</button>.</p>
         {/if}
       </div>
 
@@ -62,7 +66,7 @@
         <h3>What happened</h3>
         <ul class="ev">
           {#each events.lines as e, i (i)}
-            <li class="i{e.importance}"><span class="imp" title="Importance: {IMP[e.importance]}"><span aria-hidden="true">{'●'.repeat(e.importance)}</span><span class="sr-only">{IMP[e.importance]}:</span></span> {e.text}</li>
+            <li class="i{e.importance}"><span class="imp" title="Importance: {IMP[e.importance]}"><span aria-hidden="true">{'●'.repeat(e.importance)}</span><span class="sr-only">{IMP[e.importance]}:</span></span> {e.text}{#if e.ledger} <button class="link" onclick={() => seeLedger(e.ledger!)}>see transactions</button>{/if}</li>
           {:else}<li class="dim">A quiet quarter. Nothing notable.</li>{/each}
         </ul>
         {#if events.more}<p class="dim">and {events.more} more minor events</p>{/if}

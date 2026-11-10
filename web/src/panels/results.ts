@@ -1,6 +1,6 @@
 
 import { METRICS, changeBetween, type MetricChange, type MetricDef } from './metrics';
-import type { ActionInfo, LeverInfo, PendingItem, SimEvent, Snapshot, TurnResult } from '../contract';
+import type { AccountRef, ActionInfo, LeverInfo, PendingItem, SimEvent, Snapshot, TurnResult } from '../contract';
 import { describeCommand, formatEvent, formatLever, pct, REASON_TEXT } from './format';
 
 /** Events that are noise on the results screen (covered by other sections or by the animation). */
@@ -32,11 +32,11 @@ export function rankEvents(events: SimEvent[], limit = Infinity): SimEvent[] {
     .slice(0, limit);
 }
 
-export interface RankedLine { importance: 1 | 2 | 3; text: string }
+export interface RankedLine { importance: 1 | 2 | 3; text: string; /** The ledger that explains this event (contract v1.4), when there is one. */ ledger?: AccountRef }
 /** ONE formatter: ranking and wording both come from the payload. */
 export function eventLines(events: SimEvent[], snap: Snapshot | null, limit = 8): { lines: RankedLine[]; more: number } {
   const ranked = rankEvents(events);
-  return { lines: ranked.slice(0, limit).map((e) => ({ importance: e.importance, text: formatEvent(e, snap) })), more: Math.max(0, ranked.length - limit) };
+  return { lines: ranked.slice(0, limit).map((e) => { const ledger = eventLedger(e); return { importance: e.importance, text: formatEvent(e, snap), ...(ledger ? { ledger } : {}) }; }), more: Math.max(0, ranked.length - limit) };
 }
 
 export const RESULT_METRICS = ['gdp', 'gpi', 'unemployment', 'gini', 'wellbeing', 'emissions', 'budget', 'legitimacy'];
@@ -79,4 +79,15 @@ export function comingNextTurn(snap: Snapshot): { next: PendingItem[]; later: nu
   // Pending items fire at the START of the next submit (Rust activate_due), so "coming next turn" is effectiveTurn == snapshot.turn.
   const next = snap.pending.filter((p) => p.effectiveTurn <= snap.turn);
   return { next, later: snap.pending.length - next.length };
+}
+
+/** Which account's ledger explains an event: money trouble (rent shortfall, bailout, a loan default, a purchase) opens the ledger it was booked in. */
+export function eventLedger(e: SimEvent): AccountRef | null {
+  switch (e.type) {
+    case 'rent_shortfall': case 'purchase': case 'household_evicted': return { kind: 'household', id: e.household };
+    case 'bank_bailout': case 'bank_failed': return { kind: 'bank' };
+    case 'loan_defaulted': return { kind: 'firm', id: e.firm };
+    case 'spending_cut': return { kind: 'government' };
+    default: return null;
+  }
 }

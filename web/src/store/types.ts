@@ -1,4 +1,4 @@
-import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, MonthFrame, RejectedCommand, Snapshot, TurnResult } from '../contract';
+import type { AccountRef, ActionInfo, LedgerKind, Command, CommandPreview, InfraKind, LeverInfo, MonthFrame, RejectedCommand, Snapshot, TurnResult } from '../contract';
 import type { GameMode } from './clock';
 import type { Selection, Tile } from './map';
 import type { Phase } from './phase';
@@ -54,6 +54,8 @@ export interface GameState {
   previous: Snapshot | null;
   playback: Playback;
   selection: Selection | null;
+  /** Contract v1.4: the full transaction viewer, open for one account (null = closed). `kind` pre-sets its kind filter. */
+  ledgerView: { account: AccountRef; kind?: LedgerKind } | null;
   hover: Tile | null;
   buildKind: InfraKind | null;
   /** Tiles that can take `buildKind` right now, from the simulation's validTiles() (null when not building). Keys are "x,y". */

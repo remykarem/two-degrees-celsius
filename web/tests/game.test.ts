@@ -169,7 +169,7 @@ describe('v0.3 store behaviour', () => {
     g.clickTile(firm);
     expect(g.state.get().selection).toEqual({ kind: 'firm', id: firm.ref });
     g.clickTile({ x: 6, y: 5 });
-    expect(g.state.get().selection).toEqual({ kind: 'tile', x: 6, y: 5 });
+    expect(g.state.get().selection).toEqual({ kind: 'bank' }); // the bank tile selects the bank (contract v1.4: it has a ledger)
     const person = snap.people.find((p) => p.job)!;
     g.select({ kind: 'person', id: person.id });
     const hh = snap.households[person.household]!;

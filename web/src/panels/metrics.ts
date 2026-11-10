@@ -1,12 +1,12 @@
-import type { HistoryPoint, MetricKey, Snapshot } from '../contract';
+import type { AccountRef, LedgerKind, HistoryPoint, MetricKey, Snapshot } from '../contract';
 import { money, pct, tonnes, trendOf, type Trend } from './format';
 import { HEALTH_WORD, healthLevel } from '../store/weather';
 import { unemploymentCount } from './people';
 
 const healthWord = (v: number) => HEALTH_WORD[healthLevel(v)];
 
-export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People';
-export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People'];
+export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People' | 'Finance';
+export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People', 'Finance'];
 /** Which trace the "why?" link opens. */
 export type WhyKind = 'emissions' | 'income' | 'lobbying';
 
@@ -125,3 +125,8 @@ export function runwayText(r: Runway, label: (turn: number) => string): string {
     ? `At the current rate the budget runs out around ${when} (turn ${t}).`
     : 'At the current rate the budget lasts past the final turn.';
 }
+
+/** Metrics that come from a ledger: the "see transactions" link beside them (contract v1.4). */
+export const METRIC_LEDGER: Record<string, { account: AccountRef; kind?: LedgerKind }> = {
+  debt: { account: { kind: 'government' }, kind: 'loan_new' },
+};

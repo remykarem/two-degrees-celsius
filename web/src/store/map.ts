@@ -13,6 +13,9 @@ export type Selection =
   | { kind: 'household'; id: number }
   | { kind: 'home'; id: number }
   | { kind: 'firm'; id: number }
+  /** Contract v1.4: the government and the bank have ledgers too; the Finance tab selects them (they are also the town hall and bank tiles). */
+  | { kind: 'government' }
+  | { kind: 'bank' }
   | { kind: 'tile'; x: number; y: number };
 
 export type SceneryKind = 'home' | 'firm' | 'bank' | 'government' | 'forest' | 'commons';
@@ -93,6 +96,7 @@ export function selectionTile(snap: Snapshot | null, sel: Selection | null): Til
     case 'household': return homeTile(snap.households.find((h) => h.id === sel.id)?.home);
     case 'person': { const p = snap.people.find((x) => x.id === sel.id); return p ? homeTile(snap.households.find((h) => h.id === p.household)?.home) : null; }
     case 'firm': { const t = snap.map.tiles.find((x) => x.kind === 'firm' && x.ref === sel.id); return t ? { x: t.x, y: t.y } : null; }
+    case 'government': case 'bank': { const t = snap.map.tiles.find((x) => x.kind === (sel.kind === 'bank' ? 'bank' : 'town_hall')); return t ? { x: t.x, y: t.y } : null; }
   }
 }
 
@@ -101,6 +105,8 @@ export function selectionAt(snap: Snapshot | null, t: Tile): Selection {
   const tile = tileAt(snap, t);
   if (tile?.kind === 'home' || tile?.kind === 'public_housing') return tile.ref !== undefined ? { kind: 'home', id: tile.ref } : { kind: 'tile', ...t };
   if (tile?.kind === 'firm' && tile.ref !== undefined) return { kind: 'firm', id: tile.ref };
+  if (tile?.kind === 'town_hall') return { kind: 'government' };
+  if (tile?.kind === 'bank') return { kind: 'bank' };
   return { kind: 'tile', ...t };
 }
 

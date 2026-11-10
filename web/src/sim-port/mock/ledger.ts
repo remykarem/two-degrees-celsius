@@ -66,8 +66,10 @@ function book(s: MockState, from: AcctKey, to: AcctKey, amount: number, kind: Le
   if (!(a > 0) || from === to) return;
   L.balance[from] = r2((L.balance[from] ?? 0) - a);
   L.balance[to] = r2((L.balance[to] ?? 0) + a);
-  const m = (s.tick % 3) as 0 | 1 | 2;
-  L.detail.push({ turn: s.turn, month: m, tick: s.tick, from, to, amount: a, kind, detail, memo, fromAfter: L.balance[from]!, toAfter: L.balance[to]!, ...(person !== undefined ? { person } : {}) });
+  // advanceMonth books after stepMonth has already counted the tick, so this month's tick is tick - 1
+  const tick = s.tick - 1;
+  const m = (((tick % 3) + 3) % 3) as 0 | 1 | 2;
+  L.detail.push({ turn: s.turn, month: m, tick, from, to, amount: a, kind, detail, memo, fromAfter: L.balance[from]!, toAfter: L.balance[to]!, ...(person !== undefined ? { person } : {}) });
   L.lastTurn = s.turn;
 }
 

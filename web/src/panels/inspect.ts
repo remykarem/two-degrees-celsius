@@ -2,6 +2,7 @@ import type { ClassKey, FirmOwner, InfraKind, PersonView, Snapshot } from '../co
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
 import { fossilShareOf, occupant, pendingAt, sameTile, tileAt } from '../store';
 import { forestStateOf, forecastView, WEATHER_UI, weatherOf } from '../store/weather';
+import { plantAt, UNIT_HELP } from './energy';
 import { compact, money, pct, tonnes, turnsUntil } from './format';
 
 export interface Row { label: string; value: string; hint?: string }
@@ -53,6 +54,8 @@ export function resolveSelection(snap: Snapshot, layout: MapLayout, sel: Selecti
       const t = snap.map.tiles.find((x) => x.kind === 'firm' && x.ref === sel.id);
       return f ? firm(snap, f.id, t ? at(t) : '') : null;
     }
+    case 'government': return government(snap, '');
+    case 'bank': return bank(snap, '');
     case 'tile': return resolveTile(snap, layout, sel, draft);
   }
 }
@@ -213,9 +216,15 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
   else if (p.kind === 'fire_station') sections.push({ heading: 'Fire cover', rows: [
     { label: 'Covers', value: `forest within about ${WEATHER_UI.coverageRadius} tiles` }, { label: 'Effect', value: 'fires there burn shorter and spread less' },
     { label: 'Fire risk now', value: forecastView(s)?.fireWord ?? 'unknown' }] });
-  else sections.push({ heading: 'This plant', rows: [{ label: 'Emits', value: `${tonnes(t?.emissionsMonthly ?? 0)} per month` }] },
+  else {
+    const pl = plantAt(s, p);
+    sections.push({ heading: 'This plant', rows: [
+      ...(pl ? [{ label: 'Capacity', value: pl.capacityText, hint: UNIT_HELP(s.energy) }, { label: 'Share of the grid', value: pct(pl.outputShare) }] : []),
+      { label: 'Emits', value: `${tonnes(pl?.emissions ?? t?.emissionsMonthly ?? 0)} per month` }] },
     { heading: 'Energy (whole town)', rows: [
-    { label: 'Fossil share of capacity', value: pct(fossilShareOf(s.energy)) }, { label: 'Renewable share', value: pct(s.energy.renewableShare) }] });
+    { label: 'Fossil share of capacity', value: pct(fossilShareOf(s.energy)) }, { label: 'Renewable share', value: pct(s.energy.renewableShare) },
+    { label: 'Served', value: pct(s.energy.served) }, { label: 'Grid intensity', value: `${s.energy.intensity.toFixed(2)} t per ${s.energy.unit || 'MWh'}` }] });
+  }
   const already = draft.some((d) => d.command.type === 'remove' && sameTile(d.command.tile, p));
   return {
     kind: 'building', title: INFRA_LABEL[p.kind], subtitle: `Built. ${where}`, sections,
