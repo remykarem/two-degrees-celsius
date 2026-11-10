@@ -32,6 +32,8 @@ pub struct Sim {
     pub initial_population: f64,
     /// Money that payers could not cover in this run so far (diagnostic).
     pub clamped_total: Cents,
+    /// Progress inside the current turn (not part of `State` or saves).
+    pub turn_phase: TurnPhase,
 }
 
 impl Sim {
@@ -93,6 +95,7 @@ pub fn init(params: Params, seed: u64) -> Result<Sim, String> {
         base_prices,
         initial_population,
         clamped_total: Cents::ZERO,
+        turn_phase: TurnPhase::default(),
     };
     sim.state.indicators = sim_metrics::compute(&sim.state, &sim.params, &sim.base_prices);
     check_state(&sim.state, 0, SystemId::Commands, sim.initial_population)
@@ -214,13 +217,38 @@ fn check_outcome(sim: &mut Sim, events: &mut Vec<Event>) {
     }
 }
 
-/// Play one turn: charge and queue the commands, activate what is due, run the ticks,
-/// then regenerate political capital. `on_tick` sees every tick's output.
-pub fn submit_turn_with(
-    sim: &mut Sim,
-    cmds: &[Command],
-    mut on_tick: impl FnMut(&Sim, &StepOutput),
-) -> Result<TurnOutput, Violation> {
+/// Where the sim is inside a turn. Lives in `Sim`, not in the model `State`: it is not part
+/// of a save (saves are only made at turn boundaries) and no system reads it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TurnPhase {
+    /// `begin_turn` has run and `finish_turn` has not.
+    pub open: bool,
+    /// Monthly ticks run since `begin_turn` (0 to `ticks_per_turn`).
+    pub months_done: u32,
+}
+
+/// What `finish_turn` adds to the turn's output.
+#[derive(Clone, Debug)]
+pub struct TurnFinish {
+    pub policy_gaps: Vec<PolicyGapSummary>,
+    pub pc_after: f64,
+}
+
+fn order_error(what: &str) -> Violation {
+    Violation {
+        tick: 0,
+        system: SystemId::Commands,
+        what: format!("turn calls out of order: {what}"),
+    }
+}
+
+/// Start a turn: charge and queue the commands, activate what is due. The returned output
+/// has the turn number, PC before, accepted, rejected, activated and the events so far.
+/// On error the state may be partly changed; the caller restores its backup.
+pub fn begin_turn(sim: &mut Sim, cmds: &[Command]) -> Result<TurnOutput, Violation> {
+    if sim.turn_phase.open {
+        return Err(order_error("begin_turn while a turn is open"));
+    }
     let mut out = TurnOutput {
         turn: sim.state.turn,
         pc_before: sim.state.political_capital,
@@ -235,15 +263,37 @@ pub fn submit_turn_with(
     let before = sim.state.total_deposits();
     out.activated = turn::activate_due(sim, &mut out.events);
     verify(sim, SystemId::Commands, before, MoneyLedger::default())?;
-    for _ in 0..sim.params.run.ticks_per_turn {
-        let t = step(sim)?;
-        on_tick(sim, &t);
-        out.events.extend(t.events);
-        out.trace.extend(t.trace);
+    sim.turn_phase = TurnPhase {
+        open: true,
+        months_done: 0,
+    };
+    Ok(out)
+}
+
+/// Run one monthly tick of the open turn.
+pub fn advance_month(sim: &mut Sim) -> Result<StepOutput, Violation> {
+    let ph = sim.turn_phase;
+    if !ph.open || ph.months_done >= sim.params.run.ticks_per_turn {
+        return Err(order_error(
+            "advance_month needs an open turn with months left",
+        ));
+    }
+    let t = step(sim)?;
+    sim.turn_phase.months_done += 1;
+    Ok(t)
+}
+
+/// Close the turn once all its months are done: policy gaps, PC regeneration, turn += 1.
+pub fn finish_turn(sim: &mut Sim) -> Result<TurnFinish, Violation> {
+    let ph = sim.turn_phase;
+    if !ph.open || ph.months_done != sim.params.run.ticks_per_turn {
+        return Err(order_error(
+            "finish_turn needs an open turn with all months done",
+        ));
     }
     // Nominal vs effective for the lobbied levers, as of the end of the turn.
     let (pol, eff) = (&sim.state.policy, &sim.state.effective);
-    out.policy_gaps = vec![
+    let policy_gaps = vec![
         PolicyGapSummary {
             lever: Lever::CarbonPrice,
             nominal: pol.carbon_price.dollars(),
@@ -267,7 +317,30 @@ pub fn submit_turn_with(
     ];
     turn::regenerate(&mut sim.state, &sim.params.turn);
     sim.state.turn += 1;
-    out.pc_after = sim.state.political_capital;
+    sim.turn_phase = TurnPhase::default();
+    Ok(TurnFinish {
+        policy_gaps,
+        pc_after: sim.state.political_capital,
+    })
+}
+
+/// Play one turn: `begin_turn`, one `advance_month` per tick, `finish_turn`.
+/// `on_tick` sees every tick's output.
+pub fn submit_turn_with(
+    sim: &mut Sim,
+    cmds: &[Command],
+    mut on_tick: impl FnMut(&Sim, &StepOutput),
+) -> Result<TurnOutput, Violation> {
+    let mut out = begin_turn(sim, cmds)?;
+    for _ in 0..sim.params.run.ticks_per_turn {
+        let t = advance_month(sim)?;
+        on_tick(sim, &t);
+        out.events.extend(t.events);
+        out.trace.extend(t.trace);
+    }
+    let fin = finish_turn(sim)?;
+    out.policy_gaps = fin.policy_gaps;
+    out.pc_after = fin.pc_after;
     Ok(out)
 }
 
