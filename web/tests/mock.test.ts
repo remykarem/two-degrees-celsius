@@ -503,7 +503,7 @@ describe('turn result shape', () => {
   it('carries a calendar, a mock flag, and payload-only events', () => {
     const sim = fresh();
     const s = ok(sim.init(1));
-    expect(s.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 });
+    expect(s.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4 });
     expect(s.mock).toBe(true);
     for (const e of ok(sim.submitTurn([])).months.flatMap((m) => m.events)) {
       expect(e).not.toHaveProperty('text');
@@ -552,13 +552,13 @@ describe('determinism and persistence', () => {
 });
 
 describe('game over', () => {
-  it('doing nothing exhausts the 600 t carbon budget between turn 15 and 25 (Paris 2030 horizon)', () => {
+  it('doing nothing exhausts the 900 t carbon budget between turn 24 and 34 (40-turn horizon; mock dynamics, the real sim ends at about turn 27.5)', () => {
     const sim = fresh(11);
     let s = ok(sim.init(11));
     while (!s.gameOver) s = ok(sim.submitTurn([])).snapshot;
     expect(s.gameOver.outcome).toBe('budget_exhausted');
-    expect(s.gameOver.turn).toBeGreaterThanOrEqual(15);
-    expect(s.gameOver.turn).toBeLessThanOrEqual(25);
+    expect(s.gameOver.turn).toBeGreaterThanOrEqual(24);
+    expect(s.gameOver.turn).toBeLessThanOrEqual(34);
   });
   it('submitTurn after game over is an error result', () => {
     const sim = fresh(11);
@@ -596,12 +596,12 @@ describe('game over', () => {
     for (let i = 0; i < 80 && !s.gameOver; i++) s = ok(sim.submitTurn([])).snapshot;
     expect(s.bank.failed || s.gameOver !== null).toBe(true);
   });
-  it('survived: turn is lastTurn and the snapshot has moved to 161', () => {
+  it('survived: turn is lastTurn and the snapshot has moved to 41', () => {
     const sim = fresh(11);
-    tweak(sim, (s) => { s.turn = 160; });
+    tweak(sim, (s) => { s.turn = 40; });
     const r = ok(sim.submitTurn([]));
-    expect(r.snapshot.gameOver).toEqual({ turn: 160, outcome: 'survived' });
-    expect(r.snapshot.turn).toBe(161);
+    expect(r.snapshot.gameOver).toEqual({ turn: 40, outcome: 'survived' });
+    expect(r.snapshot.turn).toBe(41);
   });
 });
 
@@ -611,15 +611,15 @@ describe('mock-only dynamics are labelled', () => {
   });
 });
 
-describe('a full run (160 turns)', () => {
+describe('a full run (40 turns)', () => {
   /** A fixed plan that builds roads, renewables and public housing as it goes, and cuts carbon. Checks the invariants after every turn. */
-  it('keeps every invariant for 160 turns (or until a game-over) and is deterministic', () => {
+  it('keeps every invariant for 40 turns (or until a game-over) and is deterministic', () => {
     const run = () => {
       const sim = fresh(21);
       let s = ok(sim.init(21));
       let turns = 0;
       const log: string[] = [];
-      while (!s.gameOver && turns < 160) {
+      while (!s.gameOver && turns < 40) {
         const cmds: Command[] = [];
         if (turns === 0) cmds.push(carbon(30), set('tax_wage', 0.32));
         if (turns % 12 === 4) cmds.push(placeAt('road', sim.validTiles('road')[turns % 7]!));
@@ -641,7 +641,7 @@ describe('a full run (160 turns)', () => {
       return { turns, log: log.join(','), outcome: JSON.stringify(s.gameOver), final: JSON.stringify(s) };
     };
     const a = run();
-    expect(a.turns).toBeGreaterThan(15); // a 600 t budget ends the game near turn 21, long before 160
+    expect(a.turns).toBeGreaterThan(15); // a 900 t budget ends the game near turn 30, before the 40-turn limit
     const b = run();
     expect(b.final).toBe(a.final);
     expect(b.log).toBe(a.log);

@@ -105,7 +105,7 @@ describe('v0.3 component behaviour', () => {
     expect(html(TopBar, { game: g })).toContain('Mock data');
     for (let i = 0; i < 200 && g.state.get().phase !== 'ended'; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); }
     const turn = g.state.get().snapshot!.gameOver!.turn;
-    expect(html(TopBar, { game: g })).toContain(`Turn ${turn}/160`);
+    expect(html(TopBar, { game: g })).toContain(`Turn ${turn}/40`);
     expect(html(EndScreen, { game: g })).toContain(`(turn ${turn})`);
   });
   it('the crisis region keeps role=status; only critical banners carry role=alert', () => {

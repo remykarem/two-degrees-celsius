@@ -355,9 +355,9 @@ describe('v0.3 panels logic', () => {
     expect(cs.find((c) => c.id === 'low_legitimacy')!.why).toBeUndefined();
   });
   it('shownTurn is the same for the top bar and the end screen at game over', () => {
-    const over = { ...snapshot!, turn: 161, gameOver: { turn: 160, outcome: 'survived' as const } };
-    expect(shownTurn(over)).toBe(160);
-    expect(quarterLabel(shownTurn(over), over.game)).toBe('Q4 2065');
+    const over = { ...snapshot!, turn: 41, gameOver: { turn: 40, outcome: 'survived' as const } };
+    expect(shownTurn(over)).toBe(40);
+    expect(quarterLabel(shownTurn(over), over.game)).toBe('Q4 2035');
     expect(shownTurn({ ...snapshot!, turn: 7 })).toBe(7);
   });
 });

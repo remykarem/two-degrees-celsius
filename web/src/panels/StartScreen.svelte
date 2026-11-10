@@ -18,7 +18,7 @@
 
 {#if $ui.startOpen}
   <Modal title="New game" size="md" dismissible={false}>
-    <p>Run a small town for 40 years and keep it under a 1.5 C carbon budget. Choose how time works.</p>
+    <p>Run a small town for 10 years and keep it under a 1.5 C carbon budget. Choose how time works.</p>
     <div class="choices" role="radiogroup" aria-label="Game mode">
       <label class="opt" class:on={mode === 'relaxed'}>
         <input type="radio" name="mode" value="relaxed" checked={mode === 'relaxed'} onchange={() => (mode = 'relaxed')} data-autofocus />

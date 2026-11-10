@@ -120,9 +120,9 @@ describe('Pressure game loop on the mock', () => {
   it('plays to the end of the game when the sim reports game over, and stops the loop', () => {
     const { game, live, advance, spq } = rig();
     live.start();
-    // fast-forward a long way: 160 quarters at 4x
+    // fast-forward a long way: 40 quarters at 4x
     live.setSpeed(4);
-    for (let i = 0; i < 160 && live.view.get().active; i++) advance(spq / 4 + 0.1);
+    for (let i = 0; i < 40 && live.view.get().active; i++) advance(spq / 4 + 0.1);
     expect(game.state.get().snapshot!.gameOver).not.toBeNull();
     expect(game.state.get().phase).toBe('ended');
     expect(live.view.get().active).toBe(false);

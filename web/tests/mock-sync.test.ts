@@ -19,10 +19,10 @@ describe('mock data is generated from content/', () => {
     expect(GEN.build.start).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
     expect(GEN.build.roadCostUsd).toBe(2500);
     expect(GEN.space).toMatchObject({ slowMinutes: 6, fastMinutes: 2 });
-    expect(GEN.carbon.budget).toBe(600);
+    expect(GEN.carbon.budget).toBe(900);
     expect(GEN.policyStart.tax_wage).toBe(0.3);
     expect(GEN.policyStart.min_wage).toBe(1200);
-    expect(GEN.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 });
+    expect(GEN.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4 });
   });
   it('the layout comes from content/initial_town.json: 20 people, 8 households, 7 homes, 4 firms, a 12 x 12 map', () => {
     expect(GEN.households).toHaveLength(8);
