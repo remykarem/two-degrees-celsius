@@ -4,6 +4,11 @@ use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
 
+/// Tonnes of CO2 the forest absorbs per month: `sink_sigma` per unit of standing forest.
+pub fn forest_sink(p: &Params, forest: f64) -> f64 {
+    p.nature.sink_sigma * forest
+}
+
 pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let np = &p.nature;
@@ -87,7 +92,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     // Stocks.
     let f0 = n.forest.0;
     let c0 = n.commons.0;
-    let sink = np.sink_sigma * f0;
+    let sink = forest_sink(p, f0);
     let df = np.forest_growth * f0 * (1.0 - f0 / np.forest_max) - harvest_f - n.pending_clearing.0;
     // Drought (S11) slows commons regrowth; a community-managed commons keeps part of it.
     let buffer = match n.commons_access {

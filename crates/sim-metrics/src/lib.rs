@@ -151,10 +151,34 @@ pub fn farm_health(s: &State, p: &Params) -> f64 {
     (0.5 * (forest_health(s, p) + commons_health(s, p))).clamp(0.0, 1.0)
 }
 
+/// Sales of all active firms this month.
+pub fn firm_sales(s: &State) -> Cents {
+    Cents::sum(s.firms.iter().filter(|f| f.active).map(|f| f.revenue))
+}
+
+/// GDP per month: firm sales plus investment plus government services.
+pub fn gdp_month(s: &State) -> Cents {
+    firm_sales(s) + s.gdp_parts.investment + s.gdp_parts.gov_services
+}
+
+/// Genuine progress indicator per year: GDP times one minus the Gini, less the social cost of
+/// carbon on gross emissions and the cost of depleted natural capital (both annualised).
+pub fn gpi_annual(
+    p: &Params,
+    gdp_annual_usd: f64,
+    gini: f64,
+    gross_emissions_monthly: f64,
+    depletion_monthly: f64,
+) -> f64 {
+    gdp_annual_usd * (1.0 - gini.min(1.0))
+        - p.metrics.scc_usd * 12.0 * gross_emissions_monthly
+        - p.metrics.depletion_usd_per_unit * 12.0 * depletion_monthly
+}
+
 /// Compute all derived indicators from the current state.
 pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
-    let sales_value: Cents = Cents::sum(s.firms.iter().filter(|f| f.active).map(|f| f.revenue));
-    let gdp_month = sales_value + s.gdp_parts.investment + s.gdp_parts.gov_services;
+    let sales_value = firm_sales(s);
+    let gdp_month = gdp_month(s);
     let gdp_annual = gdp_month.scale(12.0);
     let real_sales: f64 = s
         .firms
@@ -187,9 +211,13 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
     let wb: f64 =
         s.persons.iter().map(|x| x.wellbeing.0).sum::<f64>() / (s.persons.len() as f64).max(1.0);
     let annual_usd = gdp_annual.dollars();
-    let gpi = annual_usd * (1.0 - g.min(1.0))
-        - p.metrics.scc_usd * 12.0 * s.nature.gross_emissions.0
-        - p.metrics.depletion_usd_per_unit * 12.0 * s.nature.depletion.0;
+    let gpi = gpi_annual(
+        p,
+        annual_usd,
+        g,
+        s.nature.gross_emissions.0,
+        s.nature.depletion.0,
+    );
     Indicators {
         gdp_month,
         gdp_annual,

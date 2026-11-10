@@ -61,23 +61,47 @@ pub fn grid_intensity(s: &State, p: &Params) -> f64 {
 /// Electricity each household would like this month (before rationing), from last month's
 /// consumption; `heat` is the drought multiplier.
 pub fn household_demand(s: &State, p: &Params, heat: f64) -> Vec<f64> {
+    s.households
+        .iter()
+        .map(|h| household_energy_use(p, heat, h.members.len() as f64, h.consumption.dollars()))
+        .collect()
+}
+
+/// Electricity one household would like per month: `heat * n * (base + k * c / ref)` with `n`
+/// people spending `consumption_usd` a month (`c` per person).
+pub fn household_energy_use(p: &Params, heat: f64, members: f64, consumption_usd: f64) -> f64 {
     let ep = &p.energy;
-    let mut hh_use = Vec::with_capacity(s.households.len());
-    for h in &s.households {
-        let n = h.members.len() as f64;
-        let cons_pc = h.consumption.dollars() / n.max(1.0);
-        hh_use.push(
-            heat * n
-                * (ep.hh_energy_base_pc
-                    + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd),
-        );
+    let cons_pc = consumption_usd / members.max(1.0);
+    heat * members
+        * (ep.hh_energy_base_pc + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd)
+}
+
+/// Direct CO2 per unit of output of a firm: its base intensity cut by green technology.
+pub fn firm_intensity(intensity_base: f64, green_tech: f64) -> f64 {
+    intensity_base * (1.0 - green_tech)
+}
+
+/// Electricity per unit of output of a firm: its base need cut by green technology, scaled by
+/// the heat multiplier.
+pub fn firm_energy_per_unit(energy_per_unit: f64, green_tech: f64, heat: f64) -> f64 {
+    energy_per_unit * (1.0 - green_tech) * heat
+}
+
+/// Direct CO2 of a firm making `output` units.
+pub fn firm_direct_emissions(output: f64, intensity_base: f64, green_tech: f64) -> f64 {
+    output * firm_intensity(intensity_base, green_tech)
+}
+
+/// CO2 a plant emits delivering `delivered` energy units: only fossil plants emit.
+pub fn plant_emissions(p: &Params, kind: PlantKind, delivered: f64) -> f64 {
+    match kind {
+        PlantKind::Fossil => delivered * p.energy.factor_fossil,
+        PlantKind::Renewable => 0.0,
     }
-    hh_use
 }
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
-    let ep = &p.energy;
     let gi = grid_intensity(s, p);
     // A drought raises electricity demand (cooling, pumping): S11.
     let heat = 1.0 + p.weather.a_e * crate::weather::effective_drought(s, p);
@@ -95,12 +119,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut plans: Vec<Plan> = Vec::new();
     for f in s.firms.iter().filter(|f| f.active) {
         let y0 = capacity(s, p, f, effective_labour(s, f));
-        let green = 1.0 - f.green_tech.0;
         plans.push(Plan {
             id: f.id,
             y0,
-            e_eff: f.energy_per_unit.0 * green * heat,
-            iota: f.intensity_base.0 * green,
+            e_eff: firm_energy_per_unit(f.energy_per_unit.0, f.green_tech.0, heat),
+            iota: firm_intensity(f.intensity_base.0, f.green_tech.0),
         });
     }
     let firm_demand: f64 = plans.iter().map(|x| x.y0 * x.e_eff).sum();
@@ -183,10 +206,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let delivered = firm_use + hh_total;
     for pl in &s.plants {
         let out = sim_types::safe_div(delivered * pl.capacity.0, supply, 0.0);
-        let em = match pl.kind {
-            PlantKind::Fossil => out * ep.factor_fossil,
-            PlantKind::Renewable => 0.0,
-        };
+        let em = plant_emissions(p, pl.kind, out);
         d.changes.push(Delta::PlantOutput {
             id: pl.id,
             output: Units(out),

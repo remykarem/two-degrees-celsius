@@ -55,7 +55,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 
         // Carbon cost, after lobbying: on the firm's footprint (direct emissions plus the energy
         // emissions of the electricity it uses).
-        let carbon_due = Cents::from_f64(s.effective.carbon_price.as_f64() * f.footprint.0);
+        let carbon_due = crate::util::carbon_cost(s.effective.carbon_price, f.footprint.0);
         let carbon = carbon_due.min(cash);
         d.transfer_as(
             firm_acct,
@@ -70,7 +70,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let interest_due = f.debt.scale(monthly(f.loan_rate.0));
         let amort_due = f.amort.min(f.debt);
         let pre_tax = f.revenue - wages_paid - interest_due - carbon;
-        let tax_due = pre_tax.max(Cents::ZERO).scale(s.effective.tax_profit.0);
+        let tax_due = crate::util::profit_tax_due(pre_tax, s.effective.tax_profit.0);
         let tax = tax_due.min(cash);
         d.transfer_as(
             firm_acct,

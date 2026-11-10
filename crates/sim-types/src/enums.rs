@@ -516,6 +516,30 @@ pub enum TraceRecord {
         effective: f64,
         net_lobby: Rate,
     },
+    /// The legitimacy update of one tick, term by term (Town v5.2). Output only: nothing in the
+    /// model reads it.
+    Legitimacy(LegitStep),
+}
+
+/// One tick's legitimacy update: `after = clamp(before + wellbeing - unemployment - inequality
+/// - debt - bailout - transition, 0, 1)`. Each `*_term` is the signed contribution
+/// (negative drains), each `*_input` the indicator it came from.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct LegitStep {
+    pub before: f64,
+    pub wellbeing_input: f64,
+    pub wellbeing_term: f64,
+    pub unemployment_input: f64,
+    pub unemployment_term: f64,
+    pub inequality_input: f64,
+    pub inequality_term: f64,
+    pub debt_input: f64,
+    pub debt_term: f64,
+    pub bailout_term: f64,
+    pub transition_term: f64,
+    /// Before the clamp to 0..1.
+    pub raw: f64,
+    pub after: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

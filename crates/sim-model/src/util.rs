@@ -126,6 +126,33 @@ pub fn apportion(total: Cents, weights: &[f64]) -> Vec<Cents> {
     out
 }
 
+/// Tax on a base at a flat rate (wage tax on wages, capital tax on capital income).
+pub fn tax_on(base: Cents, rate: f64) -> Cents {
+    base.scale(rate)
+}
+
+/// Profit tax due on a firm's pre-tax profit: nothing on a loss.
+pub fn profit_tax_due(pre_tax: Cents, rate: f64) -> Cents {
+    pre_tax.max(Cents::ZERO).scale(rate)
+}
+
+/// Monthly wealth tax on a household's net worth (`wealth_cents`, in cents): the annual rate on
+/// what is above the threshold, one twelfth a month.
+pub fn wealth_tax_monthly(wealth_cents: f64, threshold: Cents, annual_rate: f64) -> Cents {
+    let over = (wealth_cents / 100.0 - threshold.dollars()).max(0.0);
+    Cents::from_dollars(over * annual_rate / 12.0)
+}
+
+/// Carbon price paid on a footprint (tonnes of CO2).
+pub fn carbon_cost(price: Cents, footprint_tonnes: f64) -> Cents {
+    Cents::from_f64(price.as_f64() * footprint_tonnes)
+}
+
+/// The most the bank can have lent: equity over the capital ratio.
+pub fn max_loans(equity: Cents, capital_ratio: f64) -> Cents {
+    equity.max(Cents::ZERO).scale(1.0 / capital_ratio)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

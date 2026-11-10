@@ -17,11 +17,14 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut taxes = Cents::ZERO;
     for (i, h) in s.households.iter().enumerate() {
         let me = Account::Household(h.id);
-        let wage_tax = h.income.wages.scale(s.policy.tax_wage.0);
-        let cap_tax = h.income.capital_income().scale(s.policy.tax_capital.0);
+        let wage_tax = crate::util::tax_on(h.income.wages, s.policy.tax_wage.0);
+        let cap_tax = crate::util::tax_on(h.income.capital_income(), s.policy.tax_capital.0);
         // The wealth tax falls on a household's net worth above the threshold.
-        let over = (wealth[i] / 100.0 - s.policy.wealth_threshold.dollars()).max(0.0);
-        let wealth_tax = Cents::from_dollars(over * s.effective.wealth_tax.0 / 12.0);
+        let wealth_tax = crate::util::wealth_tax_monthly(
+            wealth[i],
+            s.policy.wealth_threshold,
+            s.effective.wealth_tax.0,
+        );
         let mut left = h.savings.max(Cents::ZERO);
         for (amt, purpose) in [
             (wage_tax, Purpose::WageTax),
@@ -205,7 +208,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut borrowed = Cents::ZERO;
     if need > Cents::ZERO {
         let kappa = s.policy.bank_capital_ratio.0;
-        let max_loans = s.bank.equity.max(Cents::ZERO).scale(1.0 / kappa);
+        let max_loans = crate::util::max_loans(s.bank.equity, kappa);
         let headroom = (max_loans - s.bank.loans).max(Cents::ZERO);
         borrowed = need.min(headroom);
         d.money.push(MoneyOp::Lend {
@@ -246,19 +249,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     }
 
     // ---- Legitimacy ----
-    let i = &s.indicators;
-    let gdp_annual = i.gdp_annual.dollars().max(1.0);
-    let mut l = s.gov.legitimacy.0 + gp.legit_wellbeing * (i.avg_wellbeing.0 - 0.5)
-        - gp.legit_unemployment
-            * (i.unemployment_smooth.0 - gp.legit_unemployment_threshold).max(0.0)
-        - gp.legit_gini * (i.gini.0 - gp.legit_gini_threshold).max(0.0)
-        - gp.legit_debt * (s.gov.debt.dollars() / gdp_annual - 1.0).max(0.0);
-    if s.bank.bailout_this_tick {
-        l -= gp.legit_bailout;
-    }
-    if let Some(t) = &s.transition {
-        l -= cfg(s, p).resistance.max(p.systems.get(t.to).resistance);
-    }
+    let step = legitimacy_step(s, p, s.bank.bailout_this_tick);
+    let l = step.raw;
+    d.trace.push(TraceRecord::Legitimacy(step));
     d.changes.push(Delta::Gov(GovPatch {
         legitimacy: Some(Rate(l.clamp(0.0, 1.0))),
         tax_revenue: Some(receipts),
@@ -269,4 +262,46 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         ..GovPatch::default()
     }));
     d
+}
+
+/// The legitimacy update of one tick from the state's indicators (S8), term by term. The sum is
+/// taken in the same order as the model always did (before, then wellbeing, unemployment,
+/// inequality, debt, bailout, transition), so the numbers are unchanged. `bailout` is whether the
+/// bank was bailed out this tick.
+pub fn legitimacy_step(s: &State, p: &Params, bailout: bool) -> LegitStep {
+    let gp = &p.government;
+    let i = &s.indicators;
+    let gdp_annual = i.gdp_annual.dollars().max(1.0);
+    let debt_input = s.gov.debt.dollars() / gdp_annual;
+    let wellbeing_term = gp.legit_wellbeing * (i.avg_wellbeing.0 - 0.5);
+    let unemployment_term = gp.legit_unemployment
+        * (i.unemployment_smooth.0 - gp.legit_unemployment_threshold).max(0.0);
+    let inequality_term = gp.legit_gini * (i.gini.0 - gp.legit_gini_threshold).max(0.0);
+    let debt_term = gp.legit_debt * (debt_input - 1.0).max(0.0);
+    let before = s.gov.legitimacy.0;
+    let mut l = before + wellbeing_term - unemployment_term - inequality_term - debt_term;
+    let bailout_term = if bailout { gp.legit_bailout } else { 0.0 };
+    if bailout {
+        l -= gp.legit_bailout;
+    }
+    let mut transition_term = 0.0;
+    if let Some(t) = &s.transition {
+        transition_term = cfg(s, p).resistance.max(p.systems.get(t.to).resistance);
+        l -= transition_term;
+    }
+    LegitStep {
+        before,
+        wellbeing_input: i.avg_wellbeing.0,
+        wellbeing_term,
+        unemployment_input: i.unemployment_smooth.0,
+        unemployment_term: -unemployment_term,
+        inequality_input: i.gini.0,
+        inequality_term: -inequality_term,
+        debt_input,
+        debt_term: -debt_term,
+        bailout_term: -bailout_term,
+        transition_term: -transition_term,
+        raw: l,
+        after: l.clamp(0.0, 1.0),
+    }
 }

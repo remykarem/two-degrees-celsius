@@ -368,8 +368,8 @@ pub enum TraceRecord {
 }
 
 impl TraceRecord {
-    pub fn from_sim(t: &st::TraceRecord, plants: &[st::Plant]) -> TraceRecord {
-        match *t {
+    pub fn from_sim(t: &st::TraceRecord, plants: &[st::Plant]) -> Option<TraceRecord> {
+        Some(match *t {
             st::TraceRecord::Emissions { source, tonnes } => {
                 let l = EmissionLine::from_sim(source, tonnes, plants);
                 TraceRecord::Emissions {
@@ -405,6 +405,8 @@ impl TraceRecord {
                 effective,
                 net_lobby: net_lobby.0,
             },
-        }
+            // Internal bookkeeping for the breakdowns; not part of the wire trace.
+            st::TraceRecord::Legitimacy(_) => return None,
+        })
     }
 }

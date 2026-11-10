@@ -389,7 +389,7 @@ impl Api {
             trace: out
                 .trace
                 .iter()
-                .map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
+                .filter_map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
                 .collect(),
             snapshot: self.snapshot(),
         })
@@ -531,7 +531,7 @@ impl Api {
             trace: live
                 .trace
                 .iter()
-                .map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
+                .filter_map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
                 .collect(),
             snapshot: self.snapshot(),
         })
