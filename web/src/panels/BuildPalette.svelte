@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { paletteActions, totalPc, type Game } from '../store';
+  import { paletteActions, totalPc, WEATHER_UI, type Game } from '../store';
   import { Button } from '../ui-kit';
   import { costLine } from './costs';
   import { leadText, money } from './format';
@@ -34,11 +34,12 @@
         {line.exact ? '' : 'Est. '}{Math.round(line.pc * 10) / 10} PC · {line.money > 0 ? `${money(line.money)} · ` : ''}ready {leadText(line.leadTime)}{line.exact ? '' : ' (estimate)'}
       </div>
       <div class="cost">Built {builtCount($gs.snapshot, item.kind)}{#if planned(item.kind)}&nbsp;· planned {planned(item.kind)}{/if}</div>
+      {#if item.kind === 'fire_station'}<div class="cost">Covers forest within about {WEATHER_UI.coverageRadius} tiles: shorter, slower fires.</div>{/if}
       {#if why}<div class="off">{why}</div>{/if}
     </div>
   {/each}
   <p class="hint">
-    {#if $gs.buildKind === 'road'}Click free ground to lay a road tile. Commutes that follow roads are faster, so connect homes to workplaces. Esc to stop.{:else if $gs.buildKind}Free tiles are shaded green; click one to place it. Prices are the simulation's own. Esc to stop.{:else}Pick a building, then click the map.{/if}
+    {#if $gs.buildKind === 'road'}Click free ground to lay a road tile. Commutes that follow roads are faster, so connect homes to workplaces. Esc to stop.{:else if $gs.buildKind === 'fire_station'}Click free ground, ideally next to the forest. Forest within about {WEATHER_UI.coverageRadius} tiles burns for a shorter time and spreads less; a ring on the map shows the cover. Esc to stop.{:else if $gs.buildKind}Free tiles are shaded green; click one to place it. Prices are the simulation's own. Esc to stop.{:else}Pick a building, then click the map.{/if}
   </p>
 
   <p class="hint">To remove a road, plant or public housing, click it on the map and press Remove in the panel. Firms, private homes and forest cannot be removed.</p>

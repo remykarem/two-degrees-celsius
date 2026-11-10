@@ -1,7 +1,11 @@
 <script lang="ts">
   import { quarterLabel, type Game } from '../store';
   import { ARROW, money, pct, TREND_WORD } from './format';
-  import { historyChange, METRIC_TABS, metricById, metricsFor, runway, runwayText, type MetricTab } from './metrics';
+  import { historyChange, METRIC_TABS, metricById, metricsFor, runway, runwayText, seriesOf, type MetricTab } from './metrics';
+  import { forecastView } from '../store';
+  import ClimateGauge from './ClimateGauge.svelte';
+  import ForecastCard from './ForecastCard.svelte';
+  import HealthMeters from './HealthMeters.svelte';
   import PeoplePanel from './PeoplePanel.svelte';
   import RunwayChart from './RunwayChart.svelte';
   import Sparkline from './Sparkline.svelte';
@@ -14,9 +18,11 @@
 
   const snap = $derived($gs.snapshot);
   const history = $derived(snap?.history ?? []);
-  const defs = $derived(metricsFor(tab).filter((m) => !(tab === 'Economy' && (m.id === 'gdp' || m.id === 'gpi'))));
+  // Forest and commons stocks are the same numbers as the health bars above (Ecology tab), so they are not listed twice.
+  const defs = $derived(metricsFor(tab).filter((m) => !(tab === 'Economy' && (m.id === 'gdp' || m.id === 'gpi')) && !(tab === 'Ecology' && (m.id === 'forest' || m.id === 'commons'))));
   const rw = $derived(snap ? runway(snap) : null);
   const turnLabel = (t: number) => (snap ? quarterLabel(t, snap.game) : String(t));
+  const fc = $derived(forecastView(snap));
   const gdp = $derived(metricById('gdp')!);
   const gpi = $derived(metricById('gpi')!);
 
@@ -39,6 +45,7 @@
   </div>
 
   {#if snap}
+    {#if fc && !fc.calm && tab !== 'Ecology'}<ForecastCard {game} />{/if}
     <div id="metrics-body" role="tabpanel" aria-labelledby="tab-{tab}">
       {#if tab === 'Economy'}
         <section class="pair" aria-label="GDP beside GPI">
@@ -62,6 +69,12 @@
         </section>
       {/if}
 
+      {#if tab === 'Ecology'}
+        <ForecastCard {game} />
+        <ClimateGauge {game} />
+        <section class="health" aria-label="Health of the land"><h3>Health of the land</h3><HealthMeters {game} /></section>
+      {/if}
+
       {#if tab === 'People'}
         <PeoplePanel {game} />
       {/if}
@@ -76,7 +89,7 @@
             <div class="line">
               <span class="num">{m.fmt(m.value(snap))}</span>
               {#if ch}<span class="chg {ch.tone}" title="Change since last turn: {TREND_WORD[ch.trend]}"><span aria-hidden="true">{ARROW[ch.trend]}</span><span class="sr-only">{TREND_WORD[ch.trend]} since last turn</span></span>{:else}<span class="chg"></span>{/if}
-              <Sparkline label={m.label} values={m.series ? history.map(m.series) : []} tone={ch?.tone ?? 'neutral'} w={110} />
+              <Sparkline label={m.label} values={seriesOf(m, history)} tone={ch?.tone ?? 'neutral'} w={110} />
             </div>
             {#if m.detail}<div class="detail">{m.detail(snap)}</div>{/if}
           </li>
@@ -120,6 +133,8 @@
   .chg.good { color: var(--good); } .chg.bad { color: var(--bad); }
   .why { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0 2px; font-size: 12px; }
   .pair .why { grid-column: 1 / -1; justify-self: start; }
+  .health { margin-bottom: 12px; }
+  .health h3 { margin-bottom: 4px; }
   .runway { margin-top: 12px; }
   .rtext { font-size: 12px; margin: 4px 0 0; }
   .dim { color: var(--text-dim); font-size: 12px; }

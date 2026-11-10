@@ -190,11 +190,11 @@ describe('causal story', () => {
 describe('policy logic', () => {
   const g = fresh();
   const { levers, snapshot } = g.state.get();
-  it('groups all 19 levers exactly once', () => {
+  it('groups all 20 levers exactly once', () => {
     const groups = groupLevers(levers);
     expect(groups.flatMap((x) => x.levers.map((l) => l.key)).sort()).toEqual(levers.map((l) => l.key).sort());
     expect(groups.map((x) => x.group.id)).not.toContain('other');
-    expect(levers).toHaveLength(19);
+    expect(levers).toHaveLength(20);
   });
   it('converts between numbers and command values', () => {
     const bool = levers.find((l) => l.key === 'bailout')!, en = levers.find((l) => l.key === 'commons_access')!;
@@ -322,7 +322,7 @@ describe('v0.3 panels logic', () => {
     expect(lv('campaign_cap').arrows).toEqual([]);
     expect(lv('commons_access').arrows.map((a) => a.metric)).toEqual(['commons']);
     expect(lv('bailout').arrows.map((a) => a.metric)).not.toContain('prices');
-    for (const l of levers) for (const a of l.arrows) expect(['gdp', 'unemployment', 'gini', 'emissions', 'legitimacy', 'debt', 'wage_share', 'money', 'commons']).toContain(a.metric);
+    for (const l of levers) for (const a of l.arrows) expect(['gdp', 'unemployment', 'gini', 'emissions', 'legitimacy', 'debt', 'wage_share', 'money', 'commons', 'forest_health', 'commons_health', 'farm_health']).toContain(a.metric);
   });
   it('cost hints are estimates built from the cost model', () => {
     expect(leverCostHint(lv('carbon_price'))).toBe('About 2 PC for a small change, 8 PC per $50/t of change');

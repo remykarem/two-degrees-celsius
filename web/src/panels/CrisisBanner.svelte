@@ -2,6 +2,7 @@
   import type { Game } from '../store';
   import { deriveCrises } from './crisis';
   import { setUi } from './ui';
+  import { adapt } from './weatherActions';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -20,6 +21,8 @@
       <strong>{c.title}.</strong>
       <span class="detail">{c.detail}</span>
       {#if c.why}<button class="link" onclick={() => setUi({ why: { kind: c.why! } })}>why?</button>{/if}
+      {#if c.show}<button class="link" onclick={() => game.select(c.show!)}>show on map</button>{/if}
+      {#if c.adapt && ($gs.phase === 'review' || $gs.phase === 'plan')}<button class="link" onclick={() => adapt(game)}>adapt</button>{/if}
       {#if c.severity === 'warning'}<button class="x" aria-label="Dismiss warning for this turn" onclick={() => game.dismissCrisis(c.id)}>✕</button>{/if}
     </div>
   {/each}

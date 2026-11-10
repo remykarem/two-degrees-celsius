@@ -82,6 +82,31 @@ export function townFacts(snap: Snapshot, last: TurnResult | null): string[] {
   return out;
 }
 
+/** Town v4 facts: the climate stress, and the fires and droughts that moved the forest, commons or farm. Templates only; numbers come from history. Empty for a package without the v1.2 history fields. */
+export function weatherFacts(snap: Snapshot, last: TurnResult | null): string[] {
+  const h = snap.history, out: string[] = [];
+  const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  if (h.length < 2 || !h.every((p) => fin(p.climateStress) && fin(p.forestHealth) && fin(p.commonsHealth) && fin(p.farmHealth))) return out;
+  const peak = h.reduce((m, x) => (x.climateStress > m.climateStress ? x : m));
+  if (peak.climateStress > 0.01) out.push(`Climate stress began to bite as the carbon budget ran down; it peaked at ${pct(peak.climateStress)} in ${when(peak.turn, snap)}.`);
+  else out.push('Climate stress never began: the town kept more than half of its carbon budget, so there were no fires or droughts.');
+  const steps = h.slice(1).map((p, i) => ({ turn: p.turn, forest: h[i]!.forestHealth - p.forestHealth, from: h[i]!.forestHealth, to: p.forestHealth, commons: h[i]!.commonsHealth - p.commonsHealth, farm: h[i]!.farmHealth - p.farmHealth }));
+  const fires = steps.filter((x) => x.forest > 0.03).sort((a, b) => b.forest - a.forest);
+  if (fires.length) {
+    const f = fires[0]!;
+    out.push(`Forest fires mattered most in ${when(f.turn, snap)}, when forest health fell from ${pct(f.from)} to ${pct(f.to)} in a single quarter${fires.length > 1 ? `; fires cost forest in ${fires.length - 1} other quarter${fires.length === 2 ? '' : 's'} too` : ''}.`);
+  }
+  const dry = steps.filter((x) => x.forest <= 0.03 && (x.commons > 0.02 || x.farm > 0.04)).sort((a, b) => b.farm + b.commons - (a.farm + a.commons));
+  if (dry.length) out.push(`Droughts hit the farm and the commons, worst in ${when(dry[0]!.turn, snap)}, when farm health fell ${pct(Math.max(0, dry[0]!.farm))} in one quarter.`);
+  const end = h[h.length - 1]!, low = h.reduce((m, x) => (x.forestHealth < m.forestHealth ? x : m));
+  if (low.forestHealth < 0.95 || low.commonsHealth < 0.95) out.push(`Forest health ended at ${pct(end.forestHealth)} (lowest ${pct(low.forestHealth)} in ${when(low.turn, snap)}); commons health ended at ${pct(end.commonsHealth)} and farm health at ${pct(end.farmHealth)}.`);
+  const w = snap.weather;
+  const nowFires = last?.months.flatMap((m) => m.events).filter((e) => e.type === 'fire_started').length ?? 0;
+  if (nowFires) out.push(`${nowFires === 1 ? 'A fire' : `${nowFires} fires`} started in the final turn.`);
+  else if (w && w.fires.length) out.push(`${w.fires.length === 1 ? 'A fire was' : `${w.fires.length} fires were`} still burning at the end.`);
+  return out;
+}
+
 export function generateStory(snap: Snapshot, last: TurnResult | null): Story {
   const { outcome, headline, summary } = outcomeText(snap);
   const h = snap.history;
@@ -108,6 +133,7 @@ export function generateStory(snap: Snapshot, last: TurnResult | null): Story {
     p.push(`Real GDP ${dirWord(first.gdpRealAnnual / (first.gdpRealAnnual || 1), end.gdpRealAnnual / (first.gdpRealAnnual || 1), 'grew', 'shrank', 'was flat')} by ${pct(Math.abs(end.gdpRealAnnual / (first.gdpRealAnnual || 1) - 1))} over the run.`);
   }
   p.push(...townFacts(snap, last));
+  p.push(...weatherFacts(snap, last));
   if (snap.system.current !== 'market' || snap.system.transition) {
     p.push(`The town ended as a ${snap.system.current === 'regulated' ? 'regulated capitalist' : snap.system.current === 'coop' ? 'worker cooperative' : 'market'} economy${snap.system.transition ? ` (still switching to ${snap.system.transition.to})` : ''}.`);
   }

@@ -18,4 +18,5 @@ export { default as ClockStrip } from './ClockStrip.svelte';
 export { default as LockButton } from './LockButton.svelte';
 export { default as QuarterCard } from './QuarterCard.svelte';
 export { default as StartScreen } from './StartScreen.svelte';
+export { default as ForecastCard } from './ForecastCard.svelte';
 export { default as ErrorScreen } from './ErrorScreen.svelte';

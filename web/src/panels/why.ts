@@ -22,14 +22,14 @@ export function emissionsBars(trace: TraceRecord[], snap: Snapshot | null): Bar[
     if (t.type !== 'emissions') continue;
     const label = t.source === 'firm' ? snap?.firms.find((f) => f.id === t.id)?.name ?? `Firm ${t.id ?? ''}`.trim()
       : t.source === 'plant' ? plantLabel(t, snap)
-      : t.source === 'households' ? 'Households' : 'Forest sink (absorbed)';
+      : t.source === 'households' ? 'Households' : t.source === 'fire_sink_loss' ? 'Sink lost to fire' : 'Forest sink (absorbed)';
     const cur = by.get(label) ?? { label, value: 0, text: '', tone: t.source === 'sink' ? 'sink' as const : 'plain' as const };
-    cur.value += t.source === 'sink' ? -Math.abs(t.tonnes) : t.tonnes;
+    cur.value += t.source === 'sink' ? -Math.abs(t.tonnes) : t.source === 'fire_sink_loss' ? Math.abs(t.tonnes) : t.tonnes;
     by.set(label, cur);
   }
   const bars = [...by.values()];
   const gross = bars.filter((b) => b.value > 0).reduce((a, b) => a + b.value, 0);
-  bars.forEach((b) => { b.text = tonnes(b.value); if (b.value > 0 && gross > 0) b.sub = `${pct(b.value / gross)} of emitted`; });
+  bars.forEach((b) => { b.text = tonnes(b.value); if (b.value > 0 && gross > 0) b.sub = `${pct(b.value / gross)} of emitted${b.label === 'Sink lost to fire' ? ' (burnt forest absorbs less)' : ''}`; });
   return bars.sort((a, b) => b.value - a.value);
 }
 

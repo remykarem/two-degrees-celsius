@@ -9,7 +9,7 @@ export const LEVER_GROUPS: LeverGroup[] = [
   { id: 'taxes', label: 'Taxes', blurb: 'Who pays, and how much the state collects.', keys: ['tax_wage', 'tax_profit', 'tax_capital', 'wealth_tax', 'wealth_threshold'] },
   { id: 'money', label: 'Money and credit', blurb: 'The price of credit and the safety of the bank.', keys: ['base_rate', 'bank_capital_ratio', 'bailout'] },
   { id: 'labour', label: 'Labour and welfare', blurb: 'Wages, benefits and jobs.', keys: ['min_wage', 'benefit', 'ubi', 'job_guarantee'] },
-  { id: 'nature', label: 'Nature and carbon', blurb: 'Pricing and capping emissions, and sharing the land.', keys: ['carbon_price', 'emissions_cap', 'green_subsidy', 'commons_harvest', 'commons_access'] },
+  { id: 'nature', label: 'Nature and carbon', blurb: 'Pricing and capping emissions, sharing the land, and getting ready for fires and droughts.', keys: ['carbon_price', 'emissions_cap', 'green_subsidy', 'commons_harvest', 'commons_access', 'resilience_spending'] },
   { id: 'spending', label: 'Government spending', blurb: 'What the state spends, and the rules on political money.', keys: ['public_spending', 'campaign_cap'] },
 ];
 

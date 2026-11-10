@@ -5,6 +5,7 @@
   import { SYSTEM_NAME } from './format';
   import { draftNumber, groupLevers, leverStatus, toCommandValue, toNum } from './policy';
   import PolicyRow from './PolicyRow.svelte';
+  import { tick } from 'svelte';
   import { setUi, ui } from './ui';
 
   let { game }: { game: Game } = $props();
@@ -33,6 +34,22 @@
   }
   const draftCount = (keys: string[]) => keys.filter((k) => draftOf(k)).length;
   const open = $derived($ui.drawerOpen);
+  // The Adapt shortcut (forecast card, crisis banner): open the group the lever is in, scroll to it and flash it.
+  $effect(() => {
+    const key = $ui.focusLever;
+    if (!key || !open || !snap) return;
+    const g = groups.find((x) => x.levers.some((l) => l.key === key));
+    if (g) closedGroups[g.group.id] = false;
+    void tick().then(() => {
+      const el = document.querySelector(`[data-lever="${key}"]`);
+      // Scroll the drawer only: scrollIntoView would also move the overflow-hidden map area around it.
+      const box = el?.closest('.drawer');
+      if (el && box) box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 60;
+      el?.classList.add('coach-hl');
+      setTimeout(() => el?.classList.remove('coach-hl'), 2500);
+      setUi({ focusLever: null });
+    });
+  });
 </script>
 
 <div class="wrap">

@@ -1,6 +1,9 @@
 import type { HistoryPoint, MetricKey, Snapshot } from '../contract';
 import { money, pct, tonnes, trendOf, type Trend } from './format';
+import { HEALTH_WORD, healthLevel } from '../store/weather';
 import { unemploymentCount } from './people';
+
+const healthWord = (v: number) => HEALTH_WORD[healthLevel(v)];
 
 export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People';
 export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People'];
@@ -39,12 +42,25 @@ export const METRICS: MetricDef[] = [
   { id: 'temperature', metric: 'temperature', tab: 'Ecology', label: 'Temperature rise', hint: 'Degrees C above the starting level', value: (s) => s.indicators.temperature, fmt: (v) => `${v.toFixed(2)} C`, series: null, goodUp: false, why: 'emissions' },
   { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', hint: 'Forest stock, as a share of its maximum', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
   { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', hint: 'Health of the shared land', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
+  { id: 'forest_health', metric: 'forest_health', tab: 'Ecology', label: 'Forest health', hint: 'How much of the forest is still standing and healthy. Fires burn it down; burnt tiles regrow slowly.', value: (s) => s.nature.forestHealth ?? s.nature.forest, fmt: (v) => pct(v, 0), series: (h) => h.forestHealth, goodUp: true, why: 'emissions',
+    detail: (s) => healthWord(s.nature.forestHealth ?? s.nature.forest) },
+  { id: 'commons_health', metric: 'commons_health', tab: 'Ecology', label: 'Commons health', hint: 'Health of the shared land. Droughts and over-harvesting wear it down.', value: (s) => s.nature.commonsHealth ?? s.nature.commons, fmt: (v) => pct(v, 0), series: (h) => h.commonsHealth, goodUp: true, why: null,
+    detail: (s) => healthWord(s.nature.commonsHealth ?? s.nature.commons) },
+  { id: 'farm_health', metric: 'farm_health', tab: 'Ecology', label: 'Farm health', hint: 'How well the farm can produce. It follows forest and commons health and drops in a drought.', value: (s) => s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2), fmt: (v) => pct(v, 0), series: (h) => h.farmHealth, goodUp: true, why: null,
+    detail: (s) => healthWord(s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2)) },
+  { id: 'climate_stress', metric: 'climate_stress', tab: 'Ecology', label: 'Climate stress', hint: 'Rises as the carbon budget runs down. The more stress, the likelier and fiercer fires and droughts become.', value: (s) => s.weather?.stress ?? 0, fmt: (v) => pct(v, 0), series: (h) => h.climateStress, goodUp: false, why: 'emissions' },
   { id: 'gini', metric: 'gini', tab: 'Society', label: 'Inequality (Gini)', hint: '0 is perfectly equal, 1 is one person has everything', value: (s) => s.indicators.gini, fmt: (v) => v.toFixed(3), series: (h) => h.gini, goodUp: false, why: 'income' },
   { id: 'top_wealth_share', metric: 'top_wealth_share', tab: 'Society', label: 'Wealth of the richest household', hint: 'Share of all household net worth held by the single richest household', value: (s) => s.indicators.topHouseholdWealthShare, fmt: (v) => pct(v, 0), series: (h) => h.topHouseholdWealthShare, goodUp: false, why: null },
   { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', hint: 'Average wellbeing, 0 to 1', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: null },
   { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null },
 ];
 
+/** The history values of a metric, or [] when the package's history lacks the field (a package built before contract v1.2). */
+export function seriesOf(def: MetricDef, history: HistoryPoint[]): number[] {
+  if (!def.series) return [];
+  const v = history.map(def.series);
+  return v.every((x) => typeof x === 'number' && Number.isFinite(x)) ? v : [];
+}
 export const metricById = (id: string) => METRICS.find((m) => m.id === id);
 export const metricsFor = (tab: MetricTab) => METRICS.filter((m) => m.tab === tab);
 
@@ -63,7 +79,7 @@ export function changeBetween(def: MetricDef, from: Snapshot, to: Snapshot): Met
 
 /** Change since the previous completed turn, from history only (null with fewer than 2 points). */
 export function historyChange(def: MetricDef, history: HistoryPoint[]): MetricChange | null {
-  if (!def.series || history.length < 2) return null;
+  if (!def.series || history.length < 2 || seriesOf(def, history.slice(-2)).length < 2) return null;
   const a = def.series(history[history.length - 2]!), b = def.series(history[history.length - 1]!);
   const trend = trendOf(a, b);
   return { trend, tone: toneOf(trend, def.goodUp), from: a, to: b };

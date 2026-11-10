@@ -1,3 +1,4 @@
+import { fireLabel, nearestLandmark } from '../store/weather';
 import type { ActionInfo, Command, LeverInfo, MetricKey, SimEvent, Snapshot, TurnResult } from '../contract';
 
 export const METRIC_LABEL: Record<MetricKey, string> = {
@@ -5,6 +6,7 @@ export const METRIC_LABEL: Record<MetricKey, string> = {
   wellbeing: 'Wellbeing', emissions: 'Emissions', budget: 'Carbon budget', temperature: 'Temperature', legitimacy: 'Legitimacy',
   debt: 'Public debt', money: 'Money supply', prices: 'Prices', housing: 'Housing', forest: 'Forest', commons: 'Commons',
   avg_income: 'Average income', median_income: 'Median income', top_wealth_share: 'Top household wealth',
+  forest_health: 'Forest health', commons_health: 'Commons health', farm_health: 'Farm health', climate_stress: 'Climate stress',
 };
 
 export const REASON_TEXT: Record<string, string> = {
@@ -74,6 +76,9 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
   }
 }
 
+/** Plain words for a drought's severity (0..1). */
+export const severityWord = (v: number) => (v < 0.35 ? 'mild' : v < 0.65 ? 'moderate' : 'severe');
+
 /** People are floats in the real sim (2.0000000000000057); show at most one decimal. */
 const n = (v: number) => String(Math.round(v * 10) / 10);
 
@@ -111,6 +116,13 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
     case 'system_switch_completed': return `The town is now ${SYSTEM_NAME[e.to]}`;
     case 'budget_exhausted': return 'The carbon budget is exhausted';
     case 'collapse': return `The town collapsed: ${e.reason.replaceAll('_', ' ')}`;
+    case 'fire_started': return `${fireLabel(snap, e.tile)} started`;
+    case 'fire_spread': return `${fireLabel(snap, e.from)} spread to (${e.to.x},${e.to.y})`;
+    case 'fire_out': return `${fireLabel(snap, e.tile)} is out`;
+    case 'forest_burned': { const near = nearestLandmark(snap, e.tile); return `A forest tile burned down ${near ? `near ${near}` : `at (${e.tile.x},${e.tile.y})`}; it will regrow slowly`; }
+    case 'drought_started': return `A ${severityWord(e.severity)} drought began and may last about ${n(e.months)} months`;
+    case 'drought_ended': return 'The drought ended';
+    case 'home_damaged': { const h = snap?.homes.find((x) => x.id === e.home); const t = h?.household != null ? hh(h.household) : null; return `${t ? `${t} home` : `Home ${e.home}`} was damaged by fire`; }
   }
 }
 

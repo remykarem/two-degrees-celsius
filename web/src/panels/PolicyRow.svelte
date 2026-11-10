@@ -30,7 +30,7 @@
   {#if draftValue !== undefined}<button class="reset" onclick={onreset} aria-label="Reset {lever.label} to {formatLever(lever, nominal)}">Reset</button>{/if}
 {/snippet}
 
-<li class:drafted={draftValue !== undefined} class:off={!!disabled}>
+<li data-lever={lever.key} class:drafted={draftValue !== undefined} class:off={!!disabled}>
   {#if lever.unit === 'bool' || lever.unit === 'enum'}
     <div class="top"><span class="name">{lever.label}</span>{@render resetBtn()}</div>
     <Segmented label={lever.label} {options} value={String(shown)} disabled={!!disabled} onchange={(v) => onset(Number(v))} />

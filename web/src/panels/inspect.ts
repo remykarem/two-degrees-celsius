@@ -1,6 +1,7 @@
 import type { ClassKey, FirmOwner, InfraKind, PersonView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
 import { occupant, pendingAt, sameTile, tileAt } from '../store';
+import { forestStateOf, forecastView, WEATHER_UI, weatherOf } from '../store/weather';
 import { compact, money, pct, tonnes, turnsUntil } from './format';
 
 export interface Row { label: string; value: string; hint?: string }
@@ -25,14 +26,15 @@ export interface InspectModel {
 }
 
 export const CLASS_LABEL: Record<ClassKey, string> = { capitalist: 'Capitalist', rentier: 'Rentier (landlord)', manager: 'Manager', worker: 'Worker', dependent: 'Dependent' };
-export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road' };
+export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road', fire_station: 'Fire station' };
 const AGE_LABEL = { child: 'Child', adult: 'Adult', retired: 'Retired' } as const;
 const OWNER_TEXT = (o: FirmOwner, s: Snapshot) =>
   o.kind === 'household' ? `${s.households.find((h) => h.id === o.id)?.label ?? `Household ${o.id}`}` : o.kind === 'workers' ? 'Its workers' : o.kind === 'state' ? 'The state' : 'The bank';
 
 /** Finished buildings of a kind (summary counts; the tiles are the truth). */
 export const builtCount = (snap: Snapshot | null, kind: InfraKind): number =>
-  !snap ? 0 : kind === 'public_housing' ? snap.buildings.publicHousing : kind === 'fossil_plant' ? snap.buildings.fossilPlant : kind === 'renewable_plant' ? snap.buildings.renewablePlant : snap.buildings.road ?? snap.map.tiles.filter((t) => t.kind === 'road').length;
+  !snap ? 0 : kind === 'public_housing' ? snap.buildings.publicHousing : kind === 'fossil_plant' ? snap.buildings.fossilPlant : kind === 'renewable_plant' ? snap.buildings.renewablePlant
+    : kind === 'road' ? snap.buildings.road ?? snap.map.tiles.filter((t) => t.kind === 'road').length : snap.map.tiles.filter((t) => t.kind === kind).length; // the summary counts have no fire stations (contract v1.2 adds none): count the tiles
 
 const at = (t: Tile) => `Tile (${t.x}, ${t.y})`;
 
@@ -155,13 +157,23 @@ export function resolveTile(snap: Snapshot, layout: MapLayout, tile: Tile, draft
     case 'firm': return firm(snap, sc.ref ?? -1, where) ?? { kind: 'firm', title: sc.label, subtitle: where, sections: [] };
     case 'bank': return bank(snap, where);
     case 'government': return government(snap, where);
-    case 'forest': return { kind: 'forest', title: 'Forest', subtitle: where, sections: [{ heading: 'Forest', rows: [
-      { label: 'Stock', value: pct(snap.nature.forest) }, { label: 'Absorbs', value: `${tonnes(snap.nature.sinkMonthly)} per month` },
-      { label: 'Net emissions', value: `${tonnes(snap.nature.netEmissionsMonthly)} per month` }] }], note: 'Forests are fixed scenery in this version.' };
+    case 'forest': return forestModel(snap, tile, where);
     case 'commons': return { kind: 'commons', title: 'Commons', subtitle: where, sections: [{ heading: 'Commons', rows: [
       { label: 'Health', value: pct(snap.nature.commons) }, { label: 'Access', value: snap.nature.commonsAccess },
       { label: 'Harvest policy', value: String(snap.policy.commons_harvest.nominal) }] }], note: 'Change access and harvest in the policy drawer.' };
   }
+}
+
+const STATE_WORD = { standing: 'Standing', burning: 'BURNING', regrowing: 'Regrowing after a fire' } as const;
+function forestModel(snap: Snapshot, tile: Tile, where: string): InspectModel {
+  const st = forestStateOf(snap, tile) ?? 'standing';
+  const fire = weatherOf(snap)?.fires.find((f) => f.tile.x === tile.x && f.tile.y === tile.y);
+  const fc = forecastView(snap);
+  const rows = [{ label: 'This tile', value: STATE_WORD[st] }, ...(fire ? [{ label: 'Fire ends in', value: `about ${fire.monthsLeft} ${fire.monthsLeft === 1 ? 'month' : 'months'}` }] : []),
+    { label: 'Forest stock', value: pct(snap.nature.forest) }, { label: 'Absorbs', value: `${tonnes(snap.nature.sinkMonthly)} per month` },
+    { label: 'Net emissions', value: `${tonnes(snap.nature.netEmissionsMonthly)} per month` }, ...(fc ? [{ label: 'Fire risk', value: fc.fireWord }] : [])];
+  return { kind: 'forest', title: st === 'burning' ? 'Forest fire' : st === 'regrowing' ? 'Burnt forest, regrowing' : 'Forest', subtitle: where, sections: [{ heading: 'Forest', rows }],
+    note: st === 'burning' ? 'Burning forest stops absorbing carbon. A fire station nearby shortens fires and slows their spread.' : st === 'regrowing' ? 'Burnt tiles regrow slowly and then stand again.' : 'Forests are fixed scenery in this version.' };
 }
 
 function roadModel(where: string, tile: Tile, draft: DraftItem[]): InspectModel {
@@ -198,6 +210,9 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
     { label: 'Homes in town', value: compact(s.housing.homes) }, { label: 'Unhoused households', value: compact(s.housing.unhousedHouseholds) },
     { label: 'Public rent', value: money(s.housing.rentPublic) }, { label: 'Private rent', value: money(s.housing.rentPrivate) },
     { label: 'Occupancy', value: pct(s.housing.occupancy) }] });
+  else if (p.kind === 'fire_station') sections.push({ heading: 'Fire cover', rows: [
+    { label: 'Covers', value: `forest within about ${WEATHER_UI.coverageRadius} tiles` }, { label: 'Effect', value: 'fires there burn shorter and spread less' },
+    { label: 'Fire risk now', value: forecastView(s)?.fireWord ?? 'unknown' }] });
   else sections.push({ heading: 'This plant', rows: [{ label: 'Emits', value: `${tonnes(t?.emissionsMonthly ?? 0)} per month` }] },
     { heading: 'Energy (whole town)', rows: [
     { label: 'Fossil capacity', value: compact(s.energy.fossilCap) }, { label: 'Renewable capacity', value: compact(s.energy.renewableCap) }, { label: 'Fossil share', value: pct(s.energy.fossilShare) }] });
