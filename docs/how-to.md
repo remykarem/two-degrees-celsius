@@ -118,6 +118,7 @@ Real example: the `commute` lens (commit `015d3bc`, scene notes in `docs/web-not
 2. `web/src/scene/lenses.ts`: add a ramp to `RAMP`, cases in `entityTints`, `tileTints`, `personTints` and `legendFor` (pure colour functions: snapshot in, hex out; no Three.js).
 3. **`web/src/store/save.ts`: the `LENS` allow-list in `parseSave`.** It currently lacks `'commute'` (see `docs/known-issues.md`); add new lenses here or a save made with that lens will not load.
 4. `web/src/panels/ViewBar.svelte` reads `LENSES`; check the legend renders.
+The `fire` lens (Town v4, "Fire and drought risk") is a worked example that also reads derived weather data: colours in `scene/weatherLook.ts`, per-tile risk in `store/scene-weather.ts`, tests in `web/tests/scene-weather.test.ts`.
 Tests: `web/tests/scene-lenses.test.ts`, `scene-lenses2.test.ts`. Commands: `npm test`, `npm run typecheck`, `npm run lint`.
 
 ## 10. Change the contract (the wire)
@@ -136,6 +137,7 @@ Real example: the Shop and tent models in commit `aa5939c`.
 2. `web/src/scene/entities.ts`: decide when an entity uses it (`planEntities`: pure function of snapshot + layout, so unit-testable without WebGL).
 3. `web/src/scene/entityLayer.ts` draws descriptions; colours come from `palette.ts`; lens tints from `lenses.ts`.
 4. Test the planning, not the pixels: `web/tests/scene-entities.test.ts`. For a visual check run `npm run dev` and `node playwright/scene-shots2.mjs <outDir>` (manual; needs `npx playwright install chromium`).
+Town v4 weather meshes: `forest_burning`, `forest_regrowing`, `fire_station` in `models.ts`; the model for a forest tile's state is `forestModelFor` in `scene/weatherLook.ts`; flames, smoke columns, haze over people and the coverage ring live in `scene/weather.ts` (`WeatherLayer`, capped instanced pools). Data for them is derived in `store/scene-weather.ts`.
 The scene may import only three, store and contract. Anything the scene needs from panels goes through `store/scene-bus.ts`.
 
 ## 12. Add a panel
