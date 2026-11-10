@@ -23,11 +23,15 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let over = (wealth[i] / 100.0 - s.policy.wealth_threshold.dollars()).max(0.0);
         let wealth_tax = Cents::from_dollars(over * s.effective.wealth_tax.0 / 12.0);
         let mut left = h.savings.max(Cents::ZERO);
-        for amt in [wage_tax, cap_tax, wealth_tax] {
+        for (amt, purpose) in [
+            (wage_tax, Purpose::WageTax),
+            (cap_tax, Purpose::CapitalTax),
+            (wealth_tax, Purpose::WealthTax),
+        ] {
             let paid = amt.min(left);
             left -= paid;
             taxes += paid;
-            d.transfer(me, gov, paid, FlowKind::Tax);
+            d.transfer_as(me, gov, paid, FlowKind::Tax, purpose);
         }
     }
     // Firm-side receipts were collected in S4 this tick: the amounts actually paid.
@@ -45,7 +49,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut ubi = Cents::ZERO;
     let mut jg_wages = Cents::ZERO;
     let min_wage = s.policy.min_wage.scale(cfg(s, p).min_wage_multiplier);
-    let mut pay: Vec<(Account, Cents, FlowKind)> = Vec::new();
+    // Each payment is one amount (scaled and clamped as a whole) that the ledger then splits by
+    // purpose; the parts always sum to the amount, so the money moved is unchanged.
+    type Parts = Vec<(Cents, Purpose)>;
+    let mut pay: Vec<(Account, Cents, FlowKind, Parts)> = Vec::new();
     for h in &s.households {
         let members: Vec<&Person> = h.members.iter().map(|m| s.person(*m)).collect();
         // Benefits go to unemployed adults and to retired members.
@@ -58,8 +65,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let jg_people = members.iter().filter(|x| x.jg).count();
         let j = min_wage.scale(jg_people as f64);
         let me = Account::Household(h.id);
-        pay.push((me, b + u, FlowKind::Benefit));
-        pay.push((me, j, FlowKind::Wage));
+        pay.push((
+            me,
+            b + u,
+            FlowKind::Benefit,
+            vec![(b, Purpose::Benefits), (u, Purpose::Ubi)],
+        ));
+        pay.push((me, j, FlowKind::Wage, vec![(j, Purpose::JobGuarantee)]));
         benefits += b;
         ubi += u;
         jg_wages += j;
@@ -180,6 +192,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             Account::Household(HouseholdId(h as u32)),
             part,
             FlowKind::Wage,
+            vec![(upkeep, Purpose::Upkeep), (build_cost, Purpose::Build)],
         ));
     }
     let committed = Cents::sum(pay.iter().map(|x| x.1));
@@ -214,10 +227,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         1.0
     };
     let mut paid_total = Cents::ZERO;
-    for (to, amt, kind) in pay {
+    for (to, amt, kind, parts) in pay {
         let a = amt.scale(ratio).min(amt);
         paid_total += a;
-        spend.transfer(gov, to, a, kind);
+        for (part, purpose) in split_by_weights(a, &parts) {
+            spend.transfer_as(gov, to, part, kind, purpose);
+        }
     }
     let shortfall = committed - paid_total;
     if shortfall > Cents::ZERO {

@@ -32,11 +32,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 .scale(share)
                 .min(h.savings.max(Cents::ZERO));
             total_spend += spend.dollars();
-            d.transfer(
+            d.transfer_as(
                 Account::Household(h.id),
                 Account::Household(lob.id),
                 spend,
                 FlowKind::Lobby,
+                Purpose::LobbySpend,
             );
         }
     }

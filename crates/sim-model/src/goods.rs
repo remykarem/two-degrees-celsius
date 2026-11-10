@@ -348,11 +348,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             for (b, part) in parts.iter().enumerate() {
                 if b < n_h {
                     let hid = HouseholdId(b as u32);
-                    d.transfer(
+                    d.transfer_as(
                         Account::Household(hid),
                         Account::Firm(f.id),
                         *part,
                         FlowKind::Purchase,
+                        Purpose::Purchase(sector),
                     );
                     if *part > Cents::ZERO {
                         d.events.push(Event::Purchase {
@@ -367,19 +368,21 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     }
                 } else if b < n_h + n_f {
                     let buyer = FirmId((b - n_h) as u32);
-                    d.transfer(
+                    d.transfer_as(
                         Account::Firm(buyer),
                         Account::Firm(f.id),
                         *part,
                         FlowKind::Purchase,
+                        Purpose::CapitalGoods,
                     );
                     capex_paid[buyer.idx()] += *part;
                 } else {
-                    d.transfer(
+                    d.transfer_as(
                         Account::Government,
                         Account::Firm(f.id),
                         *part,
                         FlowKind::Purchase,
+                        Purpose::PublicPurchases,
                     );
                 }
             }

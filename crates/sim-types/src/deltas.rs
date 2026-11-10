@@ -1,5 +1,6 @@
 use crate::enums::*;
 use crate::ids::*;
+use crate::ledger::Purpose;
 use crate::state::*;
 use crate::units::*;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,8 @@ pub enum MoneyOp {
         to: Account,
         amount: Cents,
         kind: FlowKind,
+        /// Why (labels the ledger only; behaviour never reads it).
+        purpose: Purpose,
     },
     /// New loan: borrower deposit and bank loans both rise. Creates money.
     Lend { to: Account, amount: Cents },
@@ -188,12 +191,24 @@ impl Deltas {
         Self::default()
     }
     pub fn transfer(&mut self, from: Account, to: Account, amount: Cents, kind: FlowKind) {
+        self.transfer_as(from, to, amount, kind, Purpose::Plain);
+    }
+    /// A transfer with a ledger purpose (same behaviour as `transfer`).
+    pub fn transfer_as(
+        &mut self,
+        from: Account,
+        to: Account,
+        amount: Cents,
+        kind: FlowKind,
+        purpose: Purpose,
+    ) {
         if amount > Cents::ZERO && from != to {
             self.money.push(MoneyOp::Transfer {
                 from,
                 to,
                 amount,
                 kind,
+                purpose,
             });
         }
     }

@@ -55,19 +55,21 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             let firm_share = cost - gov_share;
             if cash - reserve >= firm_share {
                 for (h, part) in apportion(firm_share, &lw).into_iter().enumerate() {
-                    d.transfer(
+                    d.transfer_as(
                         acct,
                         Account::Household(HouseholdId(h as u32)),
                         part,
                         FlowKind::Wage,
+                        Purpose::InvestmentLabour,
                     );
                 }
                 for (h, part) in apportion(gov_share, &lw).into_iter().enumerate() {
-                    d.transfer(
+                    d.transfer_as(
                         gov,
                         Account::Household(HouseholdId(h as u32)),
                         part,
                         FlowKind::Wage,
+                        Purpose::GreenSubsidy,
                     );
                 }
                 cash -= firm_share;

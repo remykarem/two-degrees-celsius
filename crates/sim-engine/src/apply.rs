@@ -63,6 +63,34 @@ impl ApplyStats {
     }
 }
 
+/// What the engine records while applying deltas: every money movement as a `Transaction`
+/// (with the amount actually moved, after clamping) and wages earned by persons.
+#[derive(Clone, Debug, Default)]
+pub struct Capture {
+    pub transactions: Vec<Transaction>,
+    pub earnings: Vec<Earning>,
+}
+
+impl Capture {
+    #[allow(clippy::too_many_arguments)]
+    fn push(
+        &mut self,
+        tick: u32,
+        from: LedgerAccount,
+        to: LedgerAccount,
+        amount: Cents,
+        kind: LedgerKind,
+        detail: &'static str,
+        posting: Posting,
+    ) {
+        if amount != Cents::ZERO {
+            self.transactions.push(Transaction::new(
+                tick, from, to, amount, kind, detail, posting,
+            ));
+        }
+    }
+}
+
 pub fn apply(
     s: &mut State,
     p: &Params,
@@ -70,12 +98,14 @@ pub fn apply(
     events: &mut Vec<Event>,
     trace: &mut Vec<TraceRecord>,
     stats: &mut ApplyStats,
+    cap: &mut Capture,
 ) -> MoneyLedger {
     let mut ledger = MoneyLedger::default();
     for op in d.money {
-        apply_money(s, p, op, &mut ledger, stats);
+        apply_money(s, p, op, &mut ledger, stats, cap);
     }
     for c in d.changes {
+        capture_earning(s, &c, cap);
         apply_change(s, c, p.class.history_months);
     }
     events.extend(d.events);
@@ -83,13 +113,42 @@ pub fn apply(
     ledger
 }
 
-fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: &mut ApplyStats) {
+/// Wages a person earns this tick come from `Delta::Person` patches with a wage.
+fn capture_earning(s: &State, c: &Delta, cap: &mut Capture) {
+    if let Delta::Person(id, patch) = c {
+        if let Some(w) = patch.wage.filter(|w| *w > Cents::ZERO) {
+            let x = &s.persons[id.idx()];
+            let job = patch.job.unwrap_or(x.job);
+            cap.earnings.push(Earning {
+                tick: s.tick,
+                person: *id,
+                household: x.household,
+                firm: job,
+                amount: w,
+            });
+        }
+    }
+}
+
+/// Apply one money operation and record what it did. Every balance in the model changes here
+/// and nowhere else; the recorded transactions are the ledger of the tick.
+fn apply_money(
+    s: &mut State,
+    p: &Params,
+    op: MoneyOp,
+    l: &mut MoneyLedger,
+    st: &mut ApplyStats,
+    cap: &mut Capture,
+) {
+    let tick = s.tick;
+    use LedgerAccount as A;
     match op {
         MoneyOp::Transfer {
             from,
             to,
             amount,
             kind,
+            purpose,
         } => {
             let amt = amount.min(balance(s, from)).max(Cents::ZERO);
             st.clamp(flow_name(kind), amount - amt);
@@ -99,6 +158,16 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             add_balance(s, from, -amt);
             add_balance(s, to, amt);
             record_flow(s, from, to, amt, kind);
+            let (lk, detail) = purpose.resolve(kind);
+            cap.push(
+                tick,
+                from.into(),
+                to.into(),
+                amt,
+                lk,
+                detail,
+                Posting::Transfer,
+            );
         }
         MoneyOp::Lend { to, amount } => {
             if amount <= Cents::ZERO {
@@ -113,6 +182,15 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
                 let term = p.credit.firm_term_months;
                 s.firms[f.idx()].amort += amount.scale(1.0 / term);
             }
+            cap.push(
+                tick,
+                A::External(External::CreditCreation),
+                to.into(),
+                amount,
+                LedgerKind::LoanNew,
+                "new loan",
+                Posting::CreditCreate,
+            );
         }
         MoneyOp::Repay { from, amount } => {
             let amt = amount
@@ -131,6 +209,15 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             if let Account::Household(h) = from {
                 s.households[h.idx()].income.loan_payments += amt;
             }
+            cap.push(
+                tick,
+                from.into(),
+                A::External(External::CreditDestruction),
+                amt,
+                LedgerKind::LoanRepay,
+                "loan repayment",
+                Posting::CreditRepay,
+            );
         }
         MoneyOp::PayInterest { from, amount } => {
             let amt = amount.min(balance(s, from)).max(Cents::ZERO);
@@ -145,6 +232,15 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             if let Account::Household(h) = from {
                 s.households[h.idx()].income.loan_payments += amt;
             }
+            cap.push(
+                tick,
+                from.into(),
+                A::Bank,
+                amt,
+                LedgerKind::Interest,
+                "loan interest",
+                Posting::BankReceives,
+            );
         }
         MoneyOp::DepositInterest { to, amount } => {
             let amt = amount.min(s.bank.equity).max(Cents::ZERO);
@@ -159,6 +255,15 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             if let Account::Household(h) = to {
                 s.households[h.idx()].income.interest_received += amt;
             }
+            cap.push(
+                tick,
+                A::Bank,
+                to.into(),
+                amt,
+                LedgerKind::Interest,
+                "deposit interest",
+                Posting::BankPays,
+            );
         }
         MoneyOp::BankDividend { to, amount } => {
             let amt = amount.min(s.bank.equity).max(Cents::ZERO);
@@ -170,40 +275,91 @@ fn apply_money(s: &mut State, p: &Params, op: MoneyOp, l: &mut MoneyLedger, st: 
             s.bank.deposits += amt;
             l.created += amt;
             s.households[to.idx()].income.dividends += amt;
+            cap.push(
+                tick,
+                A::Bank,
+                A::Household(to),
+                amt,
+                LedgerKind::Dividend,
+                "bank dividend",
+                Posting::BankPays,
+            );
         }
         MoneyOp::WriteOff { who, amount } => {
             let amt = amount.min(debt_of(s, who)).max(Cents::ZERO);
             add_debt(s, who, -amt);
             s.bank.loans -= amt;
             s.bank.equity -= amt;
+            cap.push(
+                tick,
+                A::Bank,
+                who.into(),
+                amt,
+                LedgerKind::LoanWriteoff,
+                "loan written off",
+                Posting::WriteOff,
+            );
         }
         MoneyOp::Bailout { amount } => {
             s.gov.debt += amount;
             s.bank.loans += amount;
             s.bank.equity += amount;
+            cap.push(
+                tick,
+                A::Government,
+                A::Bank,
+                amount,
+                LedgerKind::Bailout,
+                "bank bailout",
+                Posting::DebtToBank,
+            );
         }
         MoneyOp::CapitalizeInterest { amount } => {
             let amt = amount.max(Cents::ZERO);
             s.gov.debt += amt;
             s.bank.loans += amt;
             s.bank.equity += amt;
+            cap.push(
+                tick,
+                A::Government,
+                A::Bank,
+                amt,
+                LedgerKind::Interest,
+                "unpaid interest added to debt",
+                Posting::DebtToBank,
+            );
         }
         MoneyOp::Haircut { rate } => {
             let r = rate.0.clamp(0.0, 1.0);
             let mut total = Cents::ZERO;
+            let mut losses: Vec<(LedgerAccount, Cents)> = Vec::new();
             for h in &mut s.households {
                 let loss = Cents((h.savings.0 as f64 * r).floor() as i64);
                 h.savings -= loss;
                 total += loss;
+                losses.push((A::Household(h.id), loss));
             }
             for f in &mut s.firms {
                 let loss = Cents((f.cash.0 as f64 * r).floor() as i64);
                 f.cash -= loss;
                 total += loss;
+                losses.push((A::Firm(f.id), loss));
             }
             let loss = Cents((s.gov.cash.0 as f64 * r).floor() as i64);
             s.gov.cash -= loss;
             total += loss;
+            losses.push((A::Government, loss));
+            for (who, loss) in losses {
+                cap.push(
+                    tick,
+                    who,
+                    A::Bank,
+                    loss,
+                    LedgerKind::Neutral,
+                    "bank failure haircut",
+                    Posting::BankReceives,
+                );
+            }
             s.bank.equity += total;
             s.bank.deposits -= total;
             l.destroyed += total;

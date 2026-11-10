@@ -190,6 +190,46 @@ pub fn check_sector_balance(
     Ok(())
 }
 
+/// Ledger reconciliation (Town v5): for every account and both of its quantities,
+/// opening + the effect of every transaction = closing. The quantities are the account's
+/// `balance` (savings, cash, bank equity) and `debt` (debt, bank loans); see
+/// `sim_types::ledger` for the exact definition. A mismatch names the account, the quantity,
+/// the tick and the amount that is unexplained, so a money movement that bypassed the
+/// ledger shows up as a failure and never as a silent gap.
+pub fn check_ledger(
+    opening: &Balances,
+    txs: &[Transaction],
+    closing: &Balances,
+    tick: u32,
+) -> Result<(), Violation> {
+    let mut expected = opening.clone();
+    for t in txs {
+        expected.post(t);
+    }
+    for ((acct, want), (_, got)) in expected.accounts().into_iter().zip(closing.accounts()) {
+        for (what, w, g) in [
+            ("balance", want.balance, got.balance),
+            ("debt", want.debt, got.debt),
+        ] {
+            if w != g {
+                return fail(
+                    tick,
+                    SystemId::Ledger,
+                    format!(
+                        "ledger does not reconcile for {} ({what}): opening {} plus transactions = {}, but closing is {} (unexplained {} cents)",
+                        acct.label(),
+                        opening.get(acct).map_or(0, |p| if what == "balance" { p.balance.0 } else { p.debt.0 }),
+                        w.0,
+                        g.0,
+                        g.0 - w.0
+                    ),
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
 fn fail(tick: u32, system: SystemId, what: String) -> Result<(), Violation> {
     Err(Violation { tick, system, what })
 }

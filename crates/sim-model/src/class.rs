@@ -167,16 +167,23 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
             let capital_part = startup.scale(cp.startup_capital_share);
             let cash_part = startup - capital_part;
             let me = Account::Household(src.id);
-            d.transfer(me, Account::Firm(slot.id), cash_part, FlowKind::Neutral);
+            d.transfer_as(
+                me,
+                Account::Firm(slot.id),
+                cash_part,
+                FlowKind::Neutral,
+                Purpose::StartupFunding,
+            );
             for (h, part) in apportion(capital_part, &labour_weights(s))
                 .into_iter()
                 .enumerate()
             {
-                d.transfer(
+                d.transfer_as(
                     me,
                     Account::Household(HouseholdId(h as u32)),
                     part,
                     FlowKind::Wage,
+                    Purpose::StartupWorks,
                 );
             }
             d.changes

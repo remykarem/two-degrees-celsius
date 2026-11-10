@@ -5,6 +5,7 @@
 pub mod deltas;
 pub mod enums;
 pub mod ids;
+pub mod ledger;
 pub mod state;
 pub mod turn;
 pub mod units;
@@ -12,6 +13,7 @@ pub mod units;
 pub use deltas::*;
 pub use enums::*;
 pub use ids::*;
+pub use ledger::*;
 pub use state::*;
 pub use turn::*;
 pub use units::*;

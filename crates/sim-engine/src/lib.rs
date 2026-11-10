@@ -9,10 +9,11 @@ pub mod plan;
 pub mod series;
 pub mod turn;
 
-use apply::ApplyStats;
+use apply::{ApplyStats, Capture};
 use serde::Serialize;
 use sim_checks::{
-    check_money, check_sector_balance, check_state, MoneyLedger, SectorBalances, Violation,
+    check_ledger, check_money, check_sector_balance, check_state, MoneyLedger, SectorBalances,
+    Violation,
 };
 use sim_params::Params;
 use sim_rng::Rng;
@@ -59,6 +60,12 @@ impl Sim {
 pub struct StepOutput {
     pub events: Vec<Event>,
     pub trace: Vec<TraceRecord>,
+    /// Every money movement of the tick, in application order (Town v5 ledger). Output only:
+    /// nothing in `State` reads it. Opening balances plus these equal the closing balances;
+    /// `step` fails if not.
+    pub transactions: Vec<Transaction>,
+    /// Wages earned by persons this tick (credited to their households).
+    pub earnings: Vec<Earning>,
 }
 
 /// JSON-ready view of the simulation for the front end.
@@ -125,6 +132,7 @@ fn run_system(
     let balances_before = SectorBalances::of(&sim.state);
     let deltas = f(&sim.state, &sim.params, &mut sim.rng);
     let mut stats = ApplyStats::default();
+    let mut cap = Capture::default();
     let ledger = apply::apply(
         &mut sim.state,
         &sim.params,
@@ -132,7 +140,10 @@ fn run_system(
         &mut out.events,
         &mut out.trace,
         &mut stats,
+        &mut cap,
     );
+    out.transactions.append(&mut cap.transactions);
+    out.earnings.append(&mut cap.earnings);
     sim.clamped_total += stats.clamped;
     let tick = sim.state.tick;
     if sim.params.run.strict_flows && stats.clamped.dollars() > sim.params.run.flow_tolerance_usd {
@@ -160,9 +171,17 @@ fn verify(sim: &Sim, id: SystemId, before: Cents, ledger: MoneyLedger) -> Result
 /// Advance one monthly tick. Commands are handled by the turn layer, never here.
 pub fn step(sim: &mut Sim) -> Result<StepOutput, Violation> {
     let mut out = StepOutput::default();
+    let opening = Balances::of(&sim.state);
     for (id, f) in sim_model::TICK_ORDER {
         run_system(sim, id, f, &mut out)?;
     }
+    // Strict per-account reconciliation: opening + transactions = closing, every tick.
+    check_ledger(
+        &opening,
+        &out.transactions,
+        &Balances::of(&sim.state),
+        sim.state.tick,
+    )?;
 
     // Metrics and win/lose checks.
     sim.state.indicators = sim_metrics::compute(&sim.state, &sim.params, &sim.base_prices);

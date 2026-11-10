@@ -304,6 +304,8 @@ pub enum SystemId {
     Weather,
     Metrics,
     Commands,
+    /// The per-tick reconciliation of balances against the transaction ledger.
+    Ledger,
 }
 
 impl SystemId {
@@ -324,6 +326,7 @@ impl SystemId {
             SystemId::Weather => "S11 weather",
             SystemId::Metrics => "metrics",
             SystemId::Commands => "commands",
+            SystemId::Ledger => "ledger reconciliation",
         }
     }
 }

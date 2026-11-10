@@ -68,11 +68,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
             let fee = Cents::from_dollars(np.enclosure_fee_usd * harvest_c);
             if before > 0.0 {
                 for fid in &enclosure_firms {
-                    d.transfer(
+                    d.transfer_as(
                         Account::Firm(*fid),
                         Account::Household(owner),
                         fee.scale(1.0 / enclosure_firms.len() as f64),
                         FlowKind::Rent,
+                        Purpose::CommonsFee,
                     );
                 }
             }

@@ -316,11 +316,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                 };
                 let cost = Cents::from_dollars(c.home_repair_cost_usd);
                 for (h, part) in apportion(cost, &lw).into_iter().enumerate() {
-                    d.transfer(
+                    d.transfer_as(
                         payer,
                         Account::Household(HouseholdId(h as u32)),
                         part,
                         FlowKind::Wage,
+                        Purpose::RepairLabour,
                     );
                 }
             }

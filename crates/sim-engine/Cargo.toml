@@ -29,3 +29,7 @@ path = "../../tests/scenarios.rs"
 [[test]]
 name = "weather"
 path = "../../tests/weather.rs"
+
+[[test]]
+name = "ledger"
+path = "../../tests/ledger.rs"

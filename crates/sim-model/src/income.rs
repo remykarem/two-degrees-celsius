@@ -42,11 +42,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             ));
         }
         for (h, pay) in per_household.iter().enumerate() {
-            d.transfer(
+            d.transfer_as(
                 firm_acct,
                 Account::Household(HouseholdId(h as u32)),
                 *pay,
                 FlowKind::Wage,
+                Purpose::Wages,
             );
             incoming[h] += *pay;
         }
@@ -56,7 +57,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         // emissions of the electricity it uses).
         let carbon_due = Cents::from_f64(s.effective.carbon_price.as_f64() * f.footprint.0);
         let carbon = carbon_due.min(cash);
-        d.transfer(firm_acct, Account::Government, carbon, FlowKind::Tax);
+        d.transfer_as(
+            firm_acct,
+            Account::Government,
+            carbon,
+            FlowKind::Tax,
+            Purpose::CarbonTax,
+        );
         cash -= carbon;
 
         // Profit before and after tax.
@@ -65,7 +72,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let pre_tax = f.revenue - wages_paid - interest_due - carbon;
         let tax_due = pre_tax.max(Cents::ZERO).scale(s.effective.tax_profit.0);
         let tax = tax_due.min(cash);
-        d.transfer(firm_acct, Account::Government, tax, FlowKind::Tax);
+        d.transfer_as(
+            firm_acct,
+            Account::Government,
+            tax,
+            FlowKind::Tax,
+            Purpose::ProfitTax,
+        );
         cash -= tax;
         let profit = pre_tax - tax;
 
@@ -91,28 +104,31 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let dividends = regular + excess;
         match f.owner {
             Owner::Household(h) => {
-                d.transfer(
+                d.transfer_as(
                     firm_acct,
                     Account::Household(h),
                     dividends,
                     FlowKind::Dividend,
+                    Purpose::FirmDividend,
                 );
                 incoming[h.idx()] += dividends;
             }
             Owner::Bank => {
-                d.transfer(
+                d.transfer_as(
                     firm_acct,
                     Account::Household(s.bank.owner),
                     dividends,
                     FlowKind::Dividend,
+                    Purpose::FirmDividend,
                 );
                 incoming[s.bank.owner.idx()] += dividends;
             }
-            Owner::State => d.transfer(
+            Owner::State => d.transfer_as(
                 firm_acct,
                 Account::Government,
                 dividends,
                 FlowKind::Dividend,
+                Purpose::StateFirmDividend,
             ),
             Owner::Workers => {
                 let mut w = vec![0.0; n_h];
@@ -121,11 +137,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 }
                 let parts = apportion(dividends, &w);
                 for (h, part) in parts.into_iter().enumerate() {
-                    d.transfer(
+                    d.transfer_as(
                         firm_acct,
                         Account::Household(HouseholdId(h as u32)),
                         part,
                         FlowKind::Dividend,
+                        Purpose::FirmDividend,
                     );
                     incoming[h] += part;
                 }
@@ -159,7 +176,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let pay = home.rent.min(available);
         match home.owner {
             HomeOwner::Household(o) => d.transfer(me, Account::Household(o), pay, FlowKind::Rent),
-            HomeOwner::Public => d.transfer(me, Account::Government, pay, FlowKind::Rent),
+            HomeOwner::Public => d.transfer_as(
+                me,
+                Account::Government,
+                pay,
+                FlowKind::Rent,
+                Purpose::PublicRent,
+            ),
         }
         let short = home.rent - pay;
         if short > Cents::ZERO {

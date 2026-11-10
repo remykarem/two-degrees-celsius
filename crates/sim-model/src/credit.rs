@@ -64,18 +64,27 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             eq -= write_off;
             let residual = cash - repay;
             match f.owner {
-                Owner::Household(h) => {
-                    d.transfer(acct, Account::Household(h), residual, FlowKind::Neutral)
-                }
-                Owner::Bank => d.transfer(
+                Owner::Household(h) => d.transfer_as(
+                    acct,
+                    Account::Household(h),
+                    residual,
+                    FlowKind::Neutral,
+                    Purpose::DefaultResidual,
+                ),
+                Owner::Bank => d.transfer_as(
                     acct,
                     Account::Household(s.bank.owner),
                     residual,
                     FlowKind::Neutral,
+                    Purpose::DefaultResidual,
                 ),
-                Owner::State | Owner::Workers => {
-                    d.transfer(acct, Account::Government, residual, FlowKind::Neutral)
-                }
+                Owner::State | Owner::Workers => d.transfer_as(
+                    acct,
+                    Account::Government,
+                    residual,
+                    FlowKind::Neutral,
+                    Purpose::DefaultResidual,
+                ),
             }
             for x in crate::util::workers_of(s, f.id) {
                 d.changes.push(Delta::Person(
