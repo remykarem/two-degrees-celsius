@@ -359,3 +359,33 @@ interface SimPort { assumptions(): Result<AssumptionTopic[]> }
 ```
 - Values come from the live `Params`; examples come from the model's functions; both are produced in Rust. The web must not hard-code any number or formula text from the model.
 - `usedBy` lets the UI place "How is this calculated?" links (a `MetricKey`, `LeverKey`, or panel id).
+
+## 16. Contract v1.6: breakdowns, policies and industry (additive; queued with v1.5)
+
+Design: `docs/town-v5.md` section 11. All values are computed in Rust; the web never recomputes model math.
+```ts
+interface BreakdownInput { label: string; value: number; unit: string; source?: string /* metric key or ledger kind */ }
+interface Breakdown { id: string; title: string; formula: string; inputs: BreakdownInput[]; result: { value: number; unit: string };
+  parts?: { label: string; value: number; unit: string; note?: string }[] /* components that sum to the result */; sumsToResult?: boolean }
+interface Snapshot { /* additions */ breakdowns: {
+  gdp: Breakdown; gpi: Breakdown; wageShare: Breakdown; profitShare: Breakdown; debtToGdp: Breakdown;
+  gini: Breakdown & { lorenz: { populationShare: number; wealthShare: number }[]; byHousehold: { household: number; people: number; netWorth: number }[] };
+  legitimacy: Breakdown & { terms: { id: 'wellbeing'|'unemployment'|'inequality'|'debt'|'bailout'; label: string; input: number; threshold?: number; weight: number; contribution: number }[]; trend: number };
+  capitalRatio: Breakdown; 
+  emissions: { month: EmissionsLine; turn: EmissionsLine; cumulative: { tonnes: number; budget: number; remaining: number; share: number }; reconciles: boolean; note: string };
+  taxes: { id: 'income'|'profit'|'capital'|'wealth'|'carbon'|'gst'; label: string; appliesTo: string; rateNominal: number | null; rateEffective: number | null; revenueMonth: number; revenueQuarter: number; modelled: boolean }[];
+}; }
+interface EmissionsLine { firms: number; households: number; plants: number; grossTotal: number; sink: number /* negative */; net: number; headline: number }
+// policies and industry
+interface PolicyRow { lever: LeverKey; label: string; group: string; initial: number|boolean|string; active: number|boolean|string;
+  effective: number | null; pending: { id: number; value: number|boolean|string; effectiveTurn: number } | null; lastChangeTurn: number | null; weakenedBy: number | null /* share */ }
+interface PolicyEvent { turn: number; lever: LeverKey; kind: 'queued'|'activated'|'cancelled'|'rejected'|'weakened'; from: unknown; to: unknown; reason?: string }
+interface Snapshot { /* additions */ policies: { rows: PolicyRow[]; timeline: PolicyEvent[] };
+  industry: { firms: { firm: number; name: string; sector: 'goods'|'food'|'services'; output: number; price: number; workers: number; wage: number; revenue: number; profit: number; emissions: number;
+                       ownership: { owner: 'household'|'workers'|'state'|'bank'; household?: number; share: number }[]; stateShare: number }[];
+              infrastructure: { kind: 'road'|'public_housing'|'fossil_plant'|'renewable_plant'|'fire_station'; count: number; buildCost: number; upkeepMonthly: number }[];
+              publicGoods: { id: string; label: string; spendingMonthly: number; buys: string }[];
+              note: string /* e.g. no state shareholding in current systems */ } }
+```
+- A label change: the tax currently keyed `tax_wage` is labelled **"Income tax"** (key unchanged). `gst` is listed with `modelled: false`.
+- A Rust test asserts every breakdown's `parts` sum to `result` and the emissions `reconciles` flag; State hashes must be unchanged.
