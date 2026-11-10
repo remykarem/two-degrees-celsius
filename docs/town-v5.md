@@ -1,66 +1,54 @@
-# Town v5 design: daily ticks (draft for review)
+# Town v5 design: information release (approved)
 
-Status: **DRAFT, nothing implemented.** Planned after the "Horizon: 40 turns, ~900 t, weather visibility" change (see `docs/tuning-log.md`) and a playtest. Numbers are placeholders. **[DECIDED]** = from the user; **[PROPOSED]** = my choices.
+Status: **APPROVED (user: make v5 "more info-friendly" and expose more metrics; daily ticks are deferred to `docs/town-v6.md`).** No economic rules change in v5: it makes the existing model **visible and traceable**. Numbers and labels are defaults for the user to adjust.
 
-## 1. Goal [DECIDED]
-All the displayed numbers should change continuously with the game clock instead of jumping once a month or a quarter. The user chose a **truly finer simulation** (not just visual smoothing): **daily ticks**, by dividing the monthly deltas proportionately.
+## 1. What the user asked for
+1. A **Finance tab**.
+2. For **every entity (government, bank, household, person) the past transactions**, so any number can be traced back to its original value.
+3. A unit of measurement for the **power grid** (it is not shown anywhere).
+4. Clarity on whether **people spend at shops**.
 
-## 2. The idea, and where "just divide the deltas" is enough and where it is not
-Dividing a monthly delta by 30 is the right basic move (it is Euler time-stepping with `dt = 1/30` month). It is exact enough for **flows** (production, emissions, income and spending accruing, nature stocks, interest). It is **not** enough for four kinds of rules the model has today:
+## 2. Answers about the current model (checked in the code)
+- **Power grid units.** Electricity is in abstract "energy units" per month (`energy.plant_capacity = 5.0` per plant; households use `0.1 + 0.15 x consumption/2000` per person; firms use `energy_per_unit` per output). Fossil plants emit `factor_fossil = 1.0` t CO2 per unit. **The UI shows none of this and no unit.** The magnitudes fit **MWh per month** (a person uses about 0.1 to 0.25 MWh a month; 1 t CO2 per MWh is coal-like), so v5 labels the unit **MWh/month** [PROPOSED] and surfaces supply, demand, rationing and intensity. No model change is needed; the label lives in one config field (`energy.unit_label`) so it can be changed.
+- **People and shops.** Yes in the model: households split their monthly budget between food (Farm), goods (Factory) and **services (Shop)** (`goods.rs`, one `Purchase` event per household and firm). It is **not visible**: the scene draws coins flowing to firms, but figures never walk to a shop. v5 adds shopping trips (cosmetic, driven by real purchase flows) and, more importantly, shows where each household's money went in its ledger.
 
-| Kind of rule | Example | Right treatment |
-|---|---|---|
-| **Compounding or rates per month** | wage up 2% a month, depreciation, regrowth | use `(1+r)^dt`, or `r x dt` for small rates |
-| **Probabilities per month** | fire ignition, drought onset, firm founding | `p_day = 1 - (1 - p_month)^(1/30)` |
-| **Counters in months** | 3 months of rent arrears, `fire_after_months`, drought `months_left` | count in days (x30) or in `dt` units |
-| **Discrete decisions** | hire/fire, set prices, invest, move house, lobby, class change | **do not slice**: run on a cadence |
+## 3. Finance tab (new panel, all values from the sim)
+Sections, each with a monthly value, a trailing-quarter total and a sparkline from history:
+- **Government:** revenue by source (wage tax, profit tax, capital tax, wealth tax, carbon revenue), spending by category (benefits, UBI, public purchases, job guarantee, road/plant upkeep, subsidies, interest), balance, debt, debt/GDP, legitimacy.
+- **Bank:** equity, loans, deposits, capital ratio vs the limit, lending headroom, default rate, interest income, bailouts.
+- **Households (sector and per household):** income by type, taxes, rent, loan payments, spending, saving rate, debt, net worth.
+- **Firms (sector and per firm):** revenue, wage bill, profit, investment, debt, cash.
+- **Money:** supply, created and destroyed this turn, with the sector-balance identity the sim already checks.
+- **Circular flow:** a simple flow diagram (households, firms, government, bank) for the last quarter.
+- **Prices and distribution:** price index, wage share, profit share, Gini, median vs average income.
 
-Also **money is integer cents** and conservation checks are exact, so slicing needs a remainder-carrying helper (`slice(total, day)`: day 30 gets the remainder), never plain division.
+## 4. Transaction ledgers (the traceability feature)
+**Every money movement becomes a ledger entry**, and each account's ledger **reconciles**: `opening balance + sum of entries = closing balance`, checked per account on every tick.
 
-## 3. Proposed design: continuous processes daily, decisions on a staggered monthly cadence [PROPOSED]
-- **Time:** 1 month = **30 ticks (days)**; a turn (quarter) = **90 ticks**. Calendar simplification: 12 x 30 = 360-day years in the sim; the UI date display may still use real dates.
-- **Daily (scaled by `dt`):** production and output, all emissions, nature stocks and the sink, weather (hazard draws per day), income accrual (wages, dividends, benefits, interest, taxes), spending and rent accrual, loan interest, inventories, wellbeing, commute time effects.
-- **Decisions run once every 30 days, staggered:** each firm, household or person has a decision day = `id mod 30`, so layoffs, price changes, moves, investments and class changes are spread across the month. That is what makes aggregate numbers such as unemployment, prices and Gini move almost continuously instead of in monthly steps, while each rule keeps the calibrated monthly logic the Phase 2 tuning was based on.
-- **Player commands** still apply at the turn boundary (`begin_turn`); lead times stay in turns. Political capital regenerates per turn.
-- **Safety net:** a param `time.ticks_per_month` (default 30). With **1** the new engine must reproduce today's behaviour **bit for bit** (the current golden files must still pass). That is the regression test for the whole refactor.
+- **Accounts with a ledger:** each household, each firm, the government, the bank. **Persons have no purse in the model** (money is household-level), so a person's ledger lists **wages earned** (each credited to their household), **employment events** (hired, fired, commute changes) and their share of nothing else; it says so. [PROPOSED]
+- **Entry fields:** turn, month, tick, from, to, amount ($), kind, memo (for example "wage, Factory, Adult 2", "rent, home 3", "interest, loan"), and the account's running balance after the entry.
+- **Kinds:** wage, dividend, rent, benefit, tax (by type), purchase (by sector), lobby, interest, loan_new, loan_repay, loan_writeoff, build, upkeep, subsidy, bailout, wealth_consumption, neutral (mobility, liquidation, payout).
+- **Coverage rule:** all balance changes must be expressed as ledger entries (transfers, and bank money creation and destruction recorded against an `external` account such as "bank credit creation"). The Rust agent audits every delta that touches a balance. Anything it cannot attribute is reported as a bug.
+- **Storage [PROPOSED]:** the ledger lives in the **API wrapper** (like history), not in the model state, so the simulation and its golden hashes are unaffected. Full-detail entries for the last **8 turns** (config `ledger.detail_turns`); older periods are kept as **monthly aggregates per (account, counterparty, kind)** for the whole game, plus **opening balances at turn 0** and closing balances per turn, so a value can be traced all the way back to the start with exact totals even when old detail is rolled up. Saved with the game.
+- **UI:** a **Transactions** section in the inspector for household, firm, government and bank (and a person's earnings and events), filter by kind and period, with "open counterparty" links, a running balance column, and a reconciliation badge (opening + entries = closing). Metrics link to the ledger where they come from (for example debt, savings, tax revenue).
 
-## 4. What changes in the code
-- **`sim-types` / `sim-params`:** a `Clock { day_in_month, ticks_per_month, dt }` passed to every system; `time` block in params. `run.ticks_per_turn` becomes derived (`3 x ticks_per_month`).
-- **`sim-model`:** every system classified into the table above and updated (an audit table of all rules goes into `docs/deviations.md`). Systems stay pure and return deltas; money deltas go through the slicer.
-- **`sim-engine`:** the turn runs `ticks_per_turn` daily ticks; `advance_month` becomes `advance_days(n)` (with `advance_month = advance_days(30)` kept for Relaxed mode and tests). Events and trace are collected per day.
-- **`sim-metrics`:** indicators computed per day. Flow indicators (GDP, income per person, emissions) are **annualised from a trailing 30-day window** so the numbers do not look jittery; stocks (savings, forest, budget) are read directly.
-- **`sim-checks`:** the exact money-conservation and sector-balance checks run **every day**; add a check that daily slices sum to the monthly total.
-- **Weather:** probabilities per day; `months_left` counters in days.
-- **RNG draw order changes**, so goldens and fixtures regenerate. Behaviour will shift (an Euler step is not the old monthly map), so **balance and `budget_b0` need re-calibration** and the baselines A to D are re-run.
+## 5. Energy panel
+Supply (per plant, kind, MWh/month), demand (firms, households), served share, rationing events, grid intensity (t CO2 per MWh), renewable share, emissions by plant. Unit label from config. Ecology tab or its own tab. Hover text explains the unit.
 
-## 5. Wire and web
-- **Contract v2.0 (additive where possible):** `advanceDays(n) -> DaysResult` returning the new day number, a light snapshot (indicators, date, PC, weather, turnPhase) and the events of those days; a full snapshot at month ends and turn ends. `MonthFrame` (the animation frame) stays one per month, **aggregated** from the 30 daily ticks, so the scene's animations keep working. `turnPhase` gains `dayInMonth` and `daysDone`. `advanceMonth` stays as a convenience.
-- **Pressure mode:** at the default pace (1 s = 7 game days) the clock asks for 7 daily ticks a second; the web calls `advanceDays(k)` per animation frame and **every metric** updates from each result. Pause, speeds and the quarter boundary behave as in v3.
-- **Relaxed mode:** `submitTurn` runs 90 ticks at once, as it runs 3 today; the end-of-turn playback is built from the 3 aggregated month frames.
-- **UI:** all metrics tick (GDP, GPI, unemployment, income per person, median income, wealth share, emissions, budget, forest/commons/farm health, stress, money, debt); a day counter in the clock strip; sparklines sample monthly points (not daily); a subtle "live" cue on changing numbers. Respect reduced motion by throttling updates.
-- **Performance estimate:** the sim costs about 0.5 ms per 3-month turn today, so about 15 ms per 90-day turn (30x). The JSON snapshot per tick is the cost to watch: hence the light per-day result.
+## 6. Wire (contract v1.4, additive; section 14 of `docs/snapshot-contract.md`)
+`snapshot.finance`, `snapshot.energy`, `SimPort.ledger(account, query)` returning a `LedgerPage` (opening, entries, rolled-up summary rows, closing, `reconciles`), the existing `purchase` flows, and new per-kind totals in `HistoryPoint`. Schema version unchanged unless the saved wrapper blob changes (it does: the ledger is saved; bump `schemaVersion` to 4 and refuse older saves cleanly).
 
-## 6. Tests
-- **Bit-for-bit regression:** `ticks_per_month = 1` equals today's output (all existing goldens).
-- **Convergence:** with `ticks_per_month` 30 vs 15 vs 60, aggregate quarterly outcomes agree within tolerance (a sign that the Euler step is stable, not a precise proof).
-- **Conservation every day**; slicing sums to monthly totals; staggered decisions touch each agent exactly once a month; weather rates match monthly probabilities in expectation over many seeds; determinism; native-vs-wasm bit-identical.
-- Web: clock and live loop with day ticks (fake timers), metrics update per day, Relaxed regression.
+## 7. Delivery plan
+1. **Rust agent:** ledger capture in the engine (per-tick transaction list alongside events), audit of every balance-changing delta, ledger store with roll-up in `sim-api`, finance aggregates (monthly and trailing quarter), energy metrics, wire v1.4, reconciliation and coverage tests, fixtures, golden, wasm.
+2. **Web agent (parallel, on the mock first):** Finance tab, ledger viewers in inspectors, energy panel, shopping trips in the scene, contract types, mock ledger with the same rules.
+3. You play and tell me which numbers you still cannot trace; independent review.
 
-## 7. Risks
-- **Biggest:** behaviour shifts, so a re-calibration of baselines, `budget_b0` and weather. The `ticks_per_month = 1` switch lets us compare old and new directly.
-- **Audit size:** every rule must be classified; a missed one gives a quiet bug (for example a monthly constant applied 30 times). The audit table and the convergence test are the defence.
-- **Rounding:** integer cents in slices; remainder carry required.
-- **Data volume:** 30x more events; mitigated by aggregation and light day results.
-- **Feel:** some numbers will still move in small integer steps (one person hired or fired changes unemployment by 10 points with 10 workers). That is the small-population effect of Town v2, not a time-step problem.
+## 8. Tests
+- Per-account reconciliation every tick, native and wasm; total of all ledgers equals total money movement; roll-up preserves totals exactly; save/load round trip; ledger memory bounded; every `Delta` variant that changes a balance has a ledger kind (a test enumerates them).
+- Web: ledger viewer logic, roll-up display, filters, finance derivations, energy formatting, shopping-trip planner.
 
-## 8. Delivery plan
-1. You review this doc. I update `docs/causal-model.md` (time-step section), `docs/snapshot-contract.md` (v2.0), `docs/architecture.md`, `docs/how-to.md`.
-2. **Rust agent (staged, one at a time):** (a) clock plumbing and the `ticks_per_month = 1` regression; (b) audit and convert systems; (c) indicators, checks, weather; (d) re-calibration and baselines.
-3. **Wire and web agents:** `advanceDays`, light results, live metrics, day counter, Pressure loop (can start on the mock once the contract exists).
-4. You play; then an independent review.
-5. Start only after the horizon and weather change is committed (same parameter and golden files).
-
-## 9. Open questions
-1. Is **30-day months, 360-day years** acceptable in the sim (UI keeps real calendar dates)? I assume yes.
-2. Should player commands also be able to apply **mid-quarter** (on any day)? I assume no; the turn boundary stays the unit of play.
-3. Daily tick makes the **end-of-turn playback** in Relaxed mode a 3-month replay as today. Is that fine, or should Relaxed mode also play a day-by-day replay?
+## 9. Risks
+- **Coverage gaps:** a balance change with no ledger entry would break reconciliation; the strict per-tick check turns that into a test failure, not a silent gap.
+- **Data volume:** entries per turn could reach a few thousand; the detail window and roll-up bound it.
+- **No behaviour change:** state golden hashes should be unchanged; wire hashes change.
+- **Unit label is cosmetic:** if the user wants realistic physical units everywhere, plants and demand would need re-scaling and a balance pass.

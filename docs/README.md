@@ -15,7 +15,8 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
 | How the pieces fit, turn flow, tick order, save schema | `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
 | `docs/town-v4.md` | DRAFT (weather: fires and drought). Not implemented; planned after v3 | Planning the weather work |
-| `docs/town-v5.md` | DRAFT (daily ticks). Not implemented; starts after the horizon/weather change | Planning the time-step refactor |
+| `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress | Working on finance/ledger/energy |
+| `docs/town-v6.md` | DRAFT, DEFERRED (daily ticks; was v5) | Planning the time-step refactor |
 | `docs/architecture.md` |
 | How to make a change | `docs/how-to.md` |
 | Vocabulary | `docs/glossary.md` |

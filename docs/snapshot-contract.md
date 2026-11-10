@@ -302,3 +302,43 @@ type MetricKey = /* existing */ | 'forest_health' | 'commons_health' | 'farm_hea
 - **HistoryPoint** gains `climateStress`, `forestHealth`, `commonsHealth`, `farmHealth`.
 - `placeable` kinds gain `fire_station`; `levers.json` gains `resilience_spending`; the fixtures gain a weather sample.
 - If the `State` layout changes for saves, bump `schemaVersion` to 3 and refuse older saves with a clear message.
+
+## 14. Contract v1.4: finance, energy and ledgers (additive; `schemaVersion` bumps to 4 because the saved wrapper blob gains the ledger)
+
+Design: `docs/town-v5.md`. Money on the wire is dollars (as elsewhere).
+```ts
+type AccountRef =
+  | { kind: 'household'; id: number } | { kind: 'firm'; id: number }
+  | { kind: 'government' } | { kind: 'bank' } | { kind: 'external'; label: string } // e.g. 'bank credit creation'
+type LedgerKind = 'wage'|'dividend'|'rent'|'benefit'|'tax'|'purchase'|'lobby'|'interest'|'loan_new'|'loan_repay'
+  | 'loan_writeoff'|'build'|'upkeep'|'subsidy'|'bailout'|'wealth_consumption'|'neutral';
+interface LedgerEntry { turn: number; month: 0|1|2; tick: number; from: AccountRef; to: AccountRef; amount: number;
+  kind: LedgerKind; detail?: string /* e.g. 'income tax', 'food' */; memo: string; balanceAfter: number /* of the queried account */ }
+interface LedgerSummaryRow { turn: number; month: 0|1|2; counterparty: AccountRef; kind: LedgerKind; inflow: number; outflow: number; count: number }
+interface LedgerPage { account: AccountRef; openingBalance: number /* at turn 0 */; entries: LedgerEntry[] /* detail window */;
+  summary: LedgerSummaryRow[] /* rolled-up older periods */; closingBalance: number; reconciles: boolean; detailFromTurn: number }
+interface PersonLedger { person: number; household: number; earnings: LedgerEntry[] /* wages earned, credited to the household */; events: SimEvent[] }
+interface SimPort { /* additions */
+  ledger(account: AccountRef, query?: { fromTurn?: number; toTurn?: number; kind?: LedgerKind }): Result<LedgerPage>;
+  personLedger(person: number): Result<PersonLedger>;
+}
+interface Snapshot { /* additions */
+  finance: {
+    government: { revenue: Record<'wageTax'|'profitTax'|'capitalTax'|'wealthTax'|'carbon'|'other', number>;
+                  spending: Record<'benefits'|'ubi'|'publicSpending'|'jobGuarantee'|'upkeep'|'subsidy'|'interest'|'builds'|'other', number>;
+                  balance: number; debt: number; debtToGdp: number; legitimacy: number; basis: 'month' };
+    bank: { equity: number; loans: number; deposits: number; capitalRatio: number; capitalRatioLimit: number; headroom: number; defaultRate: number; interestIncome: number };
+    households: { income: Record<'wages'|'dividends'|'rent'|'interest'|'benefits', number>; taxes: number; rentPaid: number; loanPayments: number; spending: number; savingRate: number; debt: number; netWorth: number };
+    firms: { revenue: number; wageBill: number; profit: number; investment: number; debt: number; cash: number };
+    money: { supply: number; createdThisTurn: number; destroyedThisTurn: number };
+    priceIndex: number; wageShare: number; profitShare: number;
+  };
+  energy: { unit: string /* 'MWh' from config */; supply: { tile: { x: number; y: number }; kind: 'fossil'|'renewable'; capacity: number }[];
+            demand: { firms: number; households: number; total: number }; served: number /* 0..1 */; intensity: number /* tCO2 per unit */;
+            renewableShare: number; emissionsByPlant: { tile: { x: number; y: number }; tonnes: number }[] };
+}
+```
+- Finance flow values are **monthly** for the latest tick with trailing-quarter totals alongside (`*Quarter` fields added by the wire agent; record in `docs/sim-api-notes.md`).
+- `ledger` is legal at any time; entries for the open turn are included. A page's `reconciles` is true iff opening + all entries and roll-ups = closing.
+- `HistoryPoint` gains `govRevenue`, `govSpending`, `bankCapitalRatio`, `renewableShare`, `gridServed`.
+- Fixtures: add `ledger-household.json`, `ledger-government.json`, `finance.json`, `energy.json`.
