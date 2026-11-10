@@ -13,7 +13,9 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
 | The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11, then `docs/sim-api-notes.md` "Town v2" |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
-| How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
+| How the pieces fit, turn flow, tick order, save schema | `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
+| `docs/town-v4.md` | DRAFT (weather: fires and drought). Not implemented; planned after v3 | Planning the weather work |
+| `docs/architecture.md` |
 | How to make a change | `docs/how-to.md` |
 | Vocabulary | `docs/glossary.md` |
 | Open problems and debt | `docs/known-issues.md` |
