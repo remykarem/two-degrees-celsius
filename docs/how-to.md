@@ -146,3 +146,9 @@ Real example: `PeoplePanel.svelte` (commit `7ae59a0`).
 3. Generic widgets come from `web/src/ui-kit`; tokens in `ui-kit/tokens.css` (light and dark).
 4. Tests: logic in `web/tests/panels-logic.test.ts` / `panels-v2.test.ts`; components in `panels-components.test.ts`. Keyboard/a11y: check with `web/playwright/panels-a11y.mjs` (manual).
 5. New store action needed? Add it to `store/game.ts` (+ `Game` interface) and test in `web/tests/game.test.ts`. New cross-component state belongs in the store, never in a module-level variable shared by scene and panels.
+
+## 13. Try Pressure mode (Town v3)
+1. `npm run dev` in `web/`, open `http://localhost:5173/?mode=pressure` (add `&pace=0.02` to make a quarter about 2 s; `pace` is real seconds per game day, default 0.143 = about 13 s per quarter). A plain visit shows the New game screen with Relaxed preselected; `?seed=` or `?mode=` links start straight away.
+2. Other overrides: `timeout=submit|discard|skip`, `budget=<seconds of pause>`, `pause=0`. Defaults live in `web/src/store/clock-config.json`.
+3. Pressure needs the live-turn calls (`begin_turn`, `advance_month`, `finish_turn`) in the wasm package; rebuild with `npm run build:wasm` if the New game screen says it is unavailable. The mock always has them (`?sim=mock`).
+4. Tests: `web/tests/clock.test.ts` (state machine, fake time), `live.test.ts` (game loop), `live-turn.test.ts` (mock equals `submitTurn`), `panels-v3.test.ts`.

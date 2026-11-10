@@ -1,13 +1,16 @@
 <script lang="ts">
-  import { totalMoney, totalPc, type Game } from '../store';
+  import { quarterLabel, totalMoney, totalPc, type Game, type Live } from '../store';
   import { Button } from '../ui-kit';
   import EndTurn from './EndTurn.svelte';
+  import LockButton from './LockButton.svelte';
   import { describeCommand, leadRangeText, leadText, money } from './format';
   import { blockText } from './policy';
 
-  let { game }: { game: Game } = $props();
+  let { game, live = undefined }: { game: Game; live?: Live } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
+  const pressure = $derived($gs.mode === 'pressure' && !!live);
+  const planning = $derived($gs.snapshot ? quarterLabel(Math.min($gs.snapshot.game.lastTurn, $gs.snapshot.turn + ($gs.live?.open ? 1 : 0)), $gs.snapshot.game) : 'the next quarter');
   const pcNow = $derived($gs.snapshot?.pc.current ?? 0);
   const r1 = (v: number) => Math.round(v * 10) / 10;
   const spend = $derived(totalPc($gs.draft));
@@ -19,17 +22,18 @@
 
 <section aria-label="Plan this turn" data-coach="plan">
   <div class="head">
-    <h2>Plan this turn</h2>
+    <h2>{#if pressure}Plan for {planning}{:else}Plan this turn{/if}</h2>
+    {#if pressure}<span class="sum dim">Applies when the next quarter begins</span>{/if}
     <span class="sum num" class:neg={left < 0} title="Political capital now, after this plan">PC {r1(pcNow)} → {r1(left)}</span>
     <span class="sum num" title="Money is charged when each item takes effect, not now (the sim checks it against cash plus the bank's lending room)">Money −{money(totalMoney($gs.draft))} on activation</span>
     {#if leadRange}<span class="sum dim">Takes effect {leadRange}</span>{/if}
     <span class="spacer"></span>
     {#if $gs.draft.length}<Button variant="ghost" onclick={() => game.clearDraft()}>Clear plan</Button>{/if}
-    <EndTurn {game} coach />
+    {#if pressure && live}<LockButton {game} {live} />{:else}<EndTurn {game} coach />{/if}
   </div>
   {#if blocked}<p class="err" role="alert">{blocked} blocked item{blocked === 1 ? '' : 's'} will be skipped. Remove or change {blocked === 1 ? 'it' : 'them'}.</p>{/if}
   {#if $gs.draft.length === 0}
-    <p class="dim">Nothing queued. Open Policies and move a slider, or pick a building and click the map. Ending an empty turn is allowed.</p>
+    <p class="dim">Nothing queued. Open Policies and move a slider, or pick a building and click the map. {pressure ? 'An empty plan is fine.' : 'Ending an empty turn is allowed.'}</p>
   {:else}
     <ol>
       {#each $gs.draft as d, i (d.id)}
@@ -44,7 +48,7 @@
             <span class="num">−{Math.round(d.preview.pc * 10) / 10} PC</span>
             {#if d.preview.money > 0}<span class="num">−{money(d.preview.money)}</span>{/if}
           {/if}
-          <button class="x" aria-label="Remove from plan: {text}" onclick={() => game.removeDraft(d.id)}>✕</button>
+          <button class="x" aria-label="Remove from plan: {text}" disabled={!!$gs.live?.locked} onclick={() => game.removeDraft(d.id)}>✕</button>
         </li>
       {/each}
     </ol>

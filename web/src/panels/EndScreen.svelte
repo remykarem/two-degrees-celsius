@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { quarterLabel, shownTurn, type Game } from '../store';
+  import { quarterLabel, shownTurn, type Game, type Live } from '../store';
   import { Button, Modal } from '../ui-kit';
   import { pct } from './format';
   import Sparkline from './Sparkline.svelte';
   import { generateStory } from './story';
+  import { setUi } from './ui';
 
-  let { game }: { game: Game } = $props();
+  let { game, live }: { game: Game; live: Live } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const snap = $derived($gs.snapshot);
@@ -44,7 +45,7 @@
         {/each}
       </div>
     </div>
-    {#snippet footer()}<Button variant="primary" onclick={() => game.newGame(Date.now() % 100000)}>New game</Button>{/snippet}
+    {#snippet footer()}<Button variant="primary" onclick={() => { live.stop(); setUi({ startOpen: true, nextSeed: Date.now() % 100000 }); }}>New game</Button>{/snippet}
   </Modal>
 {/if}
 

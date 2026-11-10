@@ -1,13 +1,13 @@
 <script lang="ts">
-  import type { Game } from '../store';
+  import type { Game, Live } from '../store';
   import { Button, Modal } from '../ui-kit';
 
-  let { game }: { game: Game } = $props();
+  let { game, live }: { game: Game; live: Live } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const err = $derived($gs.error);
   const WHERE: Record<string, string> = {
-    new_game: 'starting the game', preview: 'working out what your plan costs', end_turn: 'playing the turn', cancel: 'cancelling that item', save: 'saving', load: 'loading',
+    new_game: 'starting the game', preview: 'working out what your plan costs', end_turn: 'playing the turn', live: 'running the live clock', cancel: 'cancelling that item', save: 'saving', load: 'loading',
   };
 </script>
 
@@ -17,7 +17,7 @@
     <p class="msg">{err.message} <span class="code">({err.code})</span></p>
     <p class="dim">Your game is unchanged. Close this and try again, or start a new game.</p>
     {#snippet footer()}
-      <Button onclick={() => game.newGame(Date.now() % 100000)}>New game</Button>
+      <Button onclick={() => live.newGame(Date.now() % 100000, game.state.get().mode)}>New game</Button>
       <Button variant="primary" onclick={() => game.dismissError()}>Close and keep playing</Button>
     {/snippet}
   </Modal>

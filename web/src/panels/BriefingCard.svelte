@@ -8,7 +8,7 @@
   const gs = game.state;
   let dismissedTurn = $state(0);
   const turn = $derived($gs.snapshot?.turn ?? 0);
-  const show = $derived($gs.phase === 'review' && dismissedTurn !== turn && !$ui.drawerOpen);
+  const show = $derived($gs.mode === 'relaxed' && $gs.phase === 'review' && dismissedTurn !== turn && !$ui.drawerOpen);
   const lines = $derived(briefingLines($gs.lastResult, $gs.levers, $gs.actions));
 </script>
 

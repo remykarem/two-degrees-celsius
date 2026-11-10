@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { quarterLabel, shownTurn, type Game } from '../store';
+  import { quarterLabel, shownTurn, type Game, type Live } from '../store';
   import SaveLoad from './SaveLoad.svelte';
+  import ClockStrip from './ClockStrip.svelte';
   import EndTurn from './EndTurn.svelte';
   import { SYSTEM_NAME } from './format';
-  let { game }: { game: Game } = $props();
+  let { game, live = undefined }: { game: Game; live?: Live } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const snap = $derived($gs.snapshot);
@@ -28,7 +29,7 @@
     </div>
     <div class="spacer"></div>
     <SaveLoad {game} />
-    <EndTurn {game} />
+    {#if $gs.mode === 'pressure' && live}<ClockStrip {game} {live} />{:else}<EndTurn {game} />{/if}
   {/if}
 </header>
 

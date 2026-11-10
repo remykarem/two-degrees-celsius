@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GRID_SIZE, layoutOf, selectionTile, tileKey, type Game, type GameState, type Tile } from '../store';
 import { sceneBus, type SceneBus } from '../store/scene-bus';
+import { liveClock } from '../store/scene-live';
 import { personHover } from '../store/scene-people';
 import { createRig } from './camera';
 import { rotateDelta, wheelFactor, ZOOM_MAX, ZOOM_MIN } from './cameraMath';
@@ -148,6 +149,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   ];
   let planMonth: number | null = null;
   let monthStart = 0;
+  /** Pressure mode: the live frame being played (by sequence number), spread over the real month by the clock feed. */
+  let liveSeq = -1;
   const tileColors: THREE.Color = new THREE.Color();
 
   const lensCtx = (s: GameState): LensCtx => ({ descs, snapshot: s.snapshot, layout: layoutOf(s.snapshot), roads, asphalt });
@@ -206,6 +209,16 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   }
 
   function syncPlayback(s: GameState) {
+    const lv = s.mode === 'pressure' && s.live?.frame && s.snapshot ? s.live : null;
+    if (lv) {
+      if (liveSeq !== lv.frameSeq) {
+        liveSeq = lv.frameSeq;
+        plan = planFrame(lv.frame!, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!));
+        commutes = new Map(planCommutes(lv.frame!, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c]));
+      }
+      return;
+    }
+    if (liveSeq !== -1) { liveSeq = -1; plan = null; commutes = null; }
     const active = s.phase === 'playback' && !s.playback.skipped && s.playback.month >= 0 && !!s.lastResult && !!s.snapshot;
     if (!active) {
       if (plan) { plan = null; planMonth = null; commutes = null; }
@@ -446,7 +459,9 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const moving = rig.tick(dt);
     const popping = layer.update(dt / 1000, sec);
     const playing = !!plan;
-    const monthT = playing ? (now - monthStart) / TIMING.monthMs : 0;
+    const feed = liveSeq !== -1 ? liveClock.get() : null;
+    // Pressure mode: the month lasts as long as the clock says (it stretches with 1x/2x/4x and freezes on pause).
+    const monthT = feed ? (feed.active ? feed.monthT : 1) : playing ? (now - monthStart) / TIMING.monthMs : 0;
     const looping = s.lens === 'flows' && flowLoop.length > 0 && !playing;
     if (contextLost) return;
     const animating = moving || popping || playing || dirty;

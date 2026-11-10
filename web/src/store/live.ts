@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import { createClock, gameDate, type Clock, type ClockConfig, type ClockEvent, type ClockState, type GameDate } from './clock';
+import { createClock, gameDate, type GameMode, type Clock, type ClockConfig, type ClockEvent, type ClockState, type GameDate } from './clock';
 import { writable, type Readable } from './readable';
 import { liveClock } from './scene-live';
 import { quarterLabel } from './config';
@@ -24,6 +24,8 @@ export interface Live {
   view: Readable<LiveView>;
   clock: Clock;
   config: ClockConfig;
+  /** Stops the loop, sets the mode, starts a fresh game and (in Pressure mode) the clock. */
+  newGame(seed: number, mode: GameMode): void;
   /** Begins quarter 1 (beginTurn with the current drafts, month 1) and starts the clock. No-op unless the game is in Pressure mode. */
   start(): void;
   stop(): void;
@@ -152,6 +154,12 @@ export function createLive(game: Game, config: ClockConfig, now: () => number = 
       started = true;
       if (!beginAndPlay('submit', 0) && !game.state.get().live?.open) { /* error already reported; the loop may have stopped */ }
       refresh();
+    },
+    newGame(seed, mode) {
+      this.stop();
+      game.setMode(mode);
+      game.newGame(seed);
+      this.start();
     },
     stop() { running = false; started = false; game.setLocked(false); refresh(); },
     tick() { if (running) clock.tick(); },

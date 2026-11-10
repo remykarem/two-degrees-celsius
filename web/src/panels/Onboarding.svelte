@@ -8,7 +8,7 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const active = $derived(!$ui.coachDone && $gs.snapshot?.turn === $gs.snapshot?.game.firstTurn && ($gs.phase === 'review' || $gs.phase === 'plan') && !$ui.systemModal);
+  const active = $derived($gs.mode === 'relaxed' && !$ui.startOpen && !$ui.coachDone && $gs.snapshot?.turn === $gs.snapshot?.game.firstTurn && ($gs.phase === 'review' || $gs.phase === 'plan') && !$ui.systemModal);
   const step = $derived(COACH_STEPS[$ui.coachStep] ?? COACH_STEPS[0]!);
   const last = $derived($ui.coachStep >= COACH_STEPS.length - 1);
 

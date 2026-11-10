@@ -14,4 +14,8 @@ export { default as CrisisBanner } from './CrisisBanner.svelte';
 export { default as SystemModal } from './SystemModal.svelte';
 export { default as WhyModal } from './WhyModal.svelte';
 export { default as Onboarding } from './Onboarding.svelte';
+export { default as ClockStrip } from './ClockStrip.svelte';
+export { default as LockButton } from './LockButton.svelte';
+export { default as QuarterCard } from './QuarterCard.svelte';
+export { default as StartScreen } from './StartScreen.svelte';
 export { default as ErrorScreen } from './ErrorScreen.svelte';

@@ -1,18 +1,25 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { BriefingCard, BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, MetricsPanel, Onboarding, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, ResultsScreen, SystemModal, TopBar, ViewBar, WhyModal } from '../panels';
-  import type { Game } from '../store';
+  import { BriefingCard, BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, MetricsPanel, Onboarding, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, QuarterCard, ResultsScreen, StartScreen, SystemModal, TopBar, ViewBar, WhyModal } from '../panels';
+  import type { Game, Live } from '../store';
   import { attachFocus } from './focus';
-  import { attachKeys } from './keys';
+  import { attachKeys, modalOpen } from './keys';
   import { attachPlayback } from './playback';
   import SceneHost from './SceneHost.svelte';
 
-  let { game, simNotice = undefined }: { game: Game; simNotice?: string } = $props();
+  let { game, live, seed, simNotice = undefined }: { game: Game; live: Live; seed: number; simNotice?: string } = $props();
   let noticeOpen = $state(true);
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   onMount(() => {
-    const offs = [attachPlayback(game), attachKeys(game), attachFocus((fn) => gs.subscribe((s) => fn(s.phase)))];
+    // Pressure mode: the clock is driven from here (the only timer), and pauses while the tab is hidden or any modal dialog is open.
+    const timer = setInterval(() => live.tick(), 50);
+    const onVis = () => live.setHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    onVis();
+    const mo = new MutationObserver(() => live.setBlocking(modalOpen()));
+    mo.observe(document.body, { childList: true, subtree: true });
+    const offs = [() => { clearInterval(timer); document.removeEventListener('visibilitychange', onVis); mo.disconnect(); }, attachPlayback(game), attachKeys(game, live), attachFocus((fn) => gs.subscribe((s) => fn(s.phase)))];
     return () => offs.forEach((f) => f());
   });
   const showTray = $derived($gs.phase === 'review' || $gs.phase === 'plan');
@@ -26,7 +33,7 @@
   {#if simNotice && noticeOpen}
     <div class="simnotice" role="status"><span>{simNotice}</span> <button type="button" onclick={() => (noticeOpen = false)}>Dismiss</button></div>
   {/if}
-  <TopBar {game} />
+  <TopBar {game} {live} />
   <CrisisBanner {game} />
   <BuildPalette {game} />
   <main>
@@ -36,16 +43,18 @@
     <PolicyDrawer {game} />
     <BriefingCard {game} />
     <PlaybackTicker {game} />
+    <QuarterCard {game} />
     <Onboarding {game} />
   </main>
   <ResultsScreen {game} />
-  <EndScreen {game} />
+  <EndScreen {game} {live} />
   <SystemModal {game} />
   <WhyModal {game} />
-  <ErrorScreen {game} />
+  <ErrorScreen {game} {live} />
+  <StartScreen {game} {live} {seed} />
   <MetricsPanel {game} />
   <div class="bottom">
-    {#if showTray}<PlanTray {game} />{/if}
+    {#if showTray}<PlanTray {game} {live} />{/if}
     <PendingList {game} />
   </div>
 </div>

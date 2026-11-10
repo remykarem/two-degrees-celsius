@@ -104,6 +104,8 @@ Note: `SPEC.md` section 11 lists a different, older ordering and "S" numbers do 
 
 The UI must never compute economy numbers. The mock is the one exception by design (it stands in for the sim) and must read its numbers from `content/`.
 
+**Pressure mode (web, Town v3).** Relaxed mode is the phase machine above (`submitTurn`). In Pressure mode the phases stay `review`/`plan` all game long and the quarter plays live: `store/clock.ts` (pure, injected time source, config in `clock-config.json`) emits `month` and `quarter` events; `store/live.ts` turns them into `game.liveBegin/liveMonth/liveFinish` (`beginTurn` + `advanceMonth` + `finishTurn`) and never waits for the player (the plan is submitted at the boundary per `onTimeout`). `store/scene-live.ts` feeds the scene the clock position inside the current month. Saves hold the last turn boundary, never a turn in progress. Details: `docs/web-notes-v3.md`.
+
 ## 6. Determinism and the golden test
 
 - All state is integer money (`Cents(i64)`) plus f64 quantities; no `HashMap`; `libm` for transcendentals; PCG32 seeded by `Rng::new(seed, 54)`. `serde_json` uses `float_roundtrip` so saves restore every f64 bit.

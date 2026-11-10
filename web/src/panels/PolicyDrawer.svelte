@@ -11,6 +11,7 @@
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !$gs.snapshot?.gameOver);
+  const planLocked = $derived(!!$gs.live?.locked);
   const snap = $derived($gs.snapshot);
   const groups = $derived(groupLevers($gs.levers));
   const systemDraft = $derived($gs.draft.find((d) => d.command.type === 'switch_system'));
@@ -38,7 +39,7 @@
   <div class="tog"><Button pressed={open} onclick={() => setUi({ drawerOpen: !open })}><span data-coach="policies">Policies {open ? '▸' : '◂'}</span></Button></div>
   {#if open && snap}
     <section class="drawer" aria-label="Policy drawer">
-      {#if !canEdit}<p class="note">Policies can be changed during Review and Plan.</p>{/if}
+      {#if !canEdit}<p class="note">Policies can be changed during Review and Plan.</p>{:else if planLocked}<p class="note">The plan is locked. Unlock it (Plan tray) to change policies.</p>{/if}
 
       <div class="system">
         <div>
@@ -49,7 +50,7 @@
             <div class="draft" class:bad={systemDraft.preview.blocked}>Queued: switch to {SYSTEM_NAME[systemDraft.command.to]}{systemDraft.preview.blocked ? ' (blocked)' : ''}</div>
           {/if}
         </div>
-        <Button disabled={!canEdit} onclick={() => setUi({ systemModal: true })}>Compare systems…</Button>
+        <Button disabled={!canEdit || planLocked} onclick={() => setUi({ systemModal: true })}>Compare systems…</Button>
       </div>
 
       {#each groups as { group, levers } (group.id)}
@@ -61,7 +62,7 @@
             {#each levers as l (l.key)}
               {@const p = snap.policy[l.key]}
               {@const st = leverStatus(l, snap, $gs.draft)}
-              <PolicyRow lever={l} system={snap.system.current} nominal={p.nominal} effective={p.effective} disabled={canEdit ? st.disabled : 'Locked while the turn plays out'}
+              <PolicyRow lever={l} system={snap.system.current} nominal={p.nominal} effective={p.effective} disabled={canEdit ? (planLocked ? 'The plan is locked' : st.disabled) : 'Locked while the turn plays out'}
                 draftValue={draftNumber(l, $gs.draft)} preview={draftOf(l.key)?.preview} onset={(v) => setLever(l, v)} onreset={() => resetLever(l)} />
             {/each}
           </ul>

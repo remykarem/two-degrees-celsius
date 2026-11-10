@@ -26,7 +26,9 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    say('Game saved to a file.', false);
+    const s = game.state.get();
+    say(s.mode === 'pressure' && s.live?.open
+      ? 'Saved the start of the quarter now playing, with your current drafts. Progress inside a quarter is not saved.' : 'Game saved to a file.', false);
   }
   async function load(e: Event) {
     const f = (e.currentTarget as HTMLInputElement).files?.[0];

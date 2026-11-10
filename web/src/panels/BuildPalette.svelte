@@ -8,7 +8,7 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const locked = $derived($gs.phase === 'playback' || $gs.phase === 'results' || $gs.phase === 'ended');
+  const locked = $derived($gs.phase === 'playback' || $gs.phase === 'results' || $gs.phase === 'ended' || !!$gs.live?.locked);
   const pcFree = $derived(($gs.snapshot?.pc.current ?? 0) - totalPc($gs.draft));
   const items = $derived(paletteActions($gs.actions));
   // Price from the simulation's preview() (a default valid tile, or the hovered tile while building); the action table is only a labelled fallback.
