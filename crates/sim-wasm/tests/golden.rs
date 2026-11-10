@@ -168,11 +168,20 @@ fn live_turn_golden_matches_and_finish_equals_submit() {
     // finishTurn replies hash like submitTurn replies, and the final snapshot is the same.
     let whole: Value =
         serde_json::from_str(&std::fs::read_to_string(dir().join("seed7.json")).unwrap()).unwrap();
+    // Once the game is over (the 600 t budget runs out around turn 23 in this plan) every further
+    // submitTurn returns the same game-over error, and finishTurn answers it with its own error
+    // text; only the turns that really played are comparable (those before the first repeated hash).
+    let whole_turns = whole["turns"].as_array().unwrap();
+    let played = (0..whole_turns.len() - 1)
+        .find(|&i| whole_turns[i]["fnv"] == whole_turns[i + 1]["fnv"])
+        .unwrap_or(whole_turns.len());
+    assert!(played >= 15, "the plan must play past its mid-run export");
     for (l, w) in got["turns"]
         .as_array()
         .unwrap()
         .iter()
-        .zip(whole["turns"].as_array().unwrap())
+        .zip(whole_turns)
+        .take(played)
     {
         assert_eq!(l["finish"], w["fnv"], "turn {}", l["turn"]);
     }

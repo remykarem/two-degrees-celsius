@@ -10,7 +10,7 @@
       },
       "submittedTurn": 1,
       "effectiveTurn": 3,
-      "pcCost": 12.337986511794833,
+      "pcCost": 12.305414581656247,
       "moneyCost": 0.0
     },
     {
@@ -60,7 +60,7 @@
   "snapshot": {
     "schemaVersion": 2,
     "game": {
-      "startYear": 2031,
+      "startYear": 2026,
       "firstTurn": 1,
       "lastTurn": 160,
       "turnsPerYear": 4
@@ -73,7 +73,7 @@
       "monthsDone": 0
     },
     "pc": {
-      "current": 45.16201348820517,
+      "current": 45.19458541834375,
       "cap": 100.0,
       "regenNextTurn": 5.6
     },
@@ -297,7 +297,7 @@
           "kind": "fossil_plant",
           "ref": 0,
           "buildable": false,
-          "emissionsMonthly": 3.4638920310978563
+          "emissionsMonthly": 3.298392842621893
         },
         {
           "x": 11,
@@ -446,7 +446,7 @@
           "kind": "fossil_plant",
           "ref": 1,
           "buildable": false,
-          "emissionsMonthly": 3.4638920310978563
+          "emissionsMonthly": 3.298392842621893
         },
         {
           "x": 11,
@@ -981,7 +981,7 @@
         },
         "submittedTurn": 1,
         "effectiveTurn": 3,
-        "pcCost": 12.337986511794833,
+        "pcCost": 12.305414581656247,
         "moneyCost": 0.0
       },
       {
@@ -1026,7 +1026,7 @@
       },
       "tax_profit": {
         "nominal": 0.25,
-        "effective": 0.11443792150641147
+        "effective": 0.1154557943232423
       },
       "tax_capital": {
         "nominal": 0.4,
@@ -1093,27 +1093,27 @@
         "effective": null
       }
     },
-    "netLobby": 0.5422483139743541,
+    "netLobby": 0.5381768227070308,
     "unionDensity": 0.09842720404279669,
     "indicators": {
-      "gdpAnnual": 387932.52,
-      "gdpRealAnnual": 377901.02759892604,
+      "gdpAnnual": 359353.32,
+      "gdpRealAnnual": 336790.99722495343,
       "unemployment": 0.2,
       "employed": 8.0,
       "labourForce": 10.0,
-      "gini": 0.7217305975104055,
-      "avgIncomePerPerson": 1726.8,
-      "medianIncomePerPerson": 1204.01,
-      "topHouseholdWealthShare": 0.6089517940469151,
-      "wageShare": 0.5832977343585426,
-      "profitShare": 0.3652235187707388,
-      "avgWellbeing": 0.7161134442964562,
-      "remainingBudget": 4400.0,
+      "gini": 0.7171059445198701,
+      "avgIncomePerPerson": 1654.35,
+      "medianIncomePerPerson": 1135.89,
+      "topHouseholdWealthShare": 0.6014254770864542,
+      "wageShare": 0.6287370880558443,
+      "profitShare": 0.3238026575071019,
+      "avgWellbeing": 0.7077225296301394,
+      "remainingBudget": 600.0,
       "budgetShare": 1.0,
       "temperature": 1.3,
-      "gpiAnnual": 79841.16957619427,
-      "moneyInCirculation": 292069.03,
-      "priceIndex": 1.0265452900851082
+      "gpiAnnual": 74862.6867962857,
+      "moneyInCirculation": 292974.14,
+      "priceIndex": 1.066992060241968
     },
     "people": [
       {
@@ -1126,7 +1126,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.9251521122343821,
+        "wellbeing": 0.9265420557003856,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1141,7 +1141,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.9251521122343821,
+        "wellbeing": 0.9265420557003856,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1156,7 +1156,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.5890442366357147,
+        "wellbeing": 0.5712715271241494,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1171,7 +1171,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.5890442366357147,
+        "wellbeing": 0.5712715271241494,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1188,7 +1188,7 @@
         "wage": 3054.39,
         "commuteTiles": 7,
         "commuteMinutes": 42,
-        "wellbeing": 0.8543112721789474,
+        "wellbeing": 0.8461174456240894,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.872
@@ -1205,7 +1205,7 @@
         "wage": 2996.16,
         "commuteTiles": 5,
         "commuteMinutes": 26,
-        "wellbeing": 0.877644604655869,
+        "wellbeing": 0.869450778101011,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.9359999999999999
@@ -1220,7 +1220,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.904311270343779,
+        "wellbeing": 0.896117443788921,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1237,7 +1237,7 @@
         "wage": 3054.39,
         "commuteTiles": 10,
         "commuteMinutes": 44,
-        "wellbeing": 0.8289710287459977,
+        "wellbeing": 0.8216388184522015,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.864
@@ -1254,7 +1254,7 @@
         "wage": 2996.16,
         "commuteTiles": 4,
         "commuteMinutes": 20,
-        "wellbeing": 0.8623043608558856,
+        "wellbeing": 0.8549721505620892,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.96
@@ -1269,7 +1269,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.8789710269108295,
+        "wellbeing": 0.8716388166170332,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1284,7 +1284,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.503052571418009,
+        "wellbeing": 0.4874959793620155,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1301,7 +1301,7 @@
         "wage": 1665.1,
         "commuteTiles": 6,
         "commuteMinutes": 20,
-        "wellbeing": 0.686384840940585,
+        "wellbeing": 0.6708282488845916,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.96
@@ -1316,7 +1316,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.703051506995529,
+        "wellbeing": 0.6874949149395353,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1333,7 +1333,7 @@
         "wage": 1665.1,
         "commuteTiles": 6,
         "commuteMinutes": 36,
-        "wellbeing": 0.6810640888645925,
+        "wellbeing": 0.6765827297762039,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.896
@@ -1350,7 +1350,7 @@
         "wage": 1665.1,
         "commuteTiles": 6,
         "commuteMinutes": 36,
-        "wellbeing": 0.6810640888645925,
+        "wellbeing": 0.6765827297762039,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.896
@@ -1365,7 +1365,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.7243974206074465,
+        "wellbeing": 0.7199160615190581,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1382,7 +1382,7 @@
         "wage": 1474.95,
         "commuteTiles": 3,
         "commuteMinutes": 18,
-        "wellbeing": 0.7117592024826059,
+        "wellbeing": 0.7072781168676194,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.968
@@ -1397,7 +1397,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.7250925353265609,
+        "wellbeing": 0.7206114497115744,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1412,7 +1412,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.23574823393521604,
+        "wellbeing": 0.22604892092215265,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1427,7 +1427,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.4357481350624822,
+        "wellbeing": 0.42604882204941874,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1443,25 +1443,25 @@
         ],
         "home": 0,
         "class": "capitalist",
-        "savings": 60378.38,
+        "savings": 60494.92,
         "debt": 0.0,
-        "netWorth": 466483.24,
+        "netWorth": 449787.63,
         "income": {
           "wages": 0.0,
-          "dividends": 9386.07,
+          "dividends": 8302.91,
           "rent": 0.0,
-          "interest": 158.99,
+          "interest": 158.26,
           "benefits": 0.0,
-          "taxPaid": 3818.02,
+          "taxPaid": 3384.47,
           "rentPaid": 0.0,
           "loanPayments": 0.0,
-          "spending": 5672.1
+          "spending": 5246.01
         },
-        "politicalPower": 0.6092009967770768,
+        "politicalPower": 0.6016517465793669,
         "arrearsMonths": 0,
-        "wellbeing": 0.9251521122343821,
-        "footprintTonnes": 0.863741,
-        "foodMet": 1.0
+        "wellbeing": 0.9265420557003856,
+        "footprintTonnes": 0.8360307499999999,
+        "foodMet": 0.8868631107795599
       },
       {
         "id": 1,
@@ -1472,25 +1472,25 @@
         ],
         "home": 1,
         "class": "rentier",
-        "savings": 1036.51,
+        "savings": 944.64,
         "debt": 112541.03,
-        "netWorth": 133854.36,
+        "netWorth": 132098.51,
         "income": {
           "wages": 0.0,
-          "dividends": 345.09,
+          "dividends": 7.01,
           "rent": 1372.08,
-          "interest": 4.29,
+          "interest": 3.71,
           "benefits": 800.0,
-          "taxPaid": 688.58,
+          "taxPaid": 553.12,
           "rentPaid": 0.0,
           "loanPayments": 761.94,
-          "spending": 1017.03
+          "spending": 819.66
         },
-        "politicalPower": 0.17477973787317003,
+        "politicalPower": 0.17667013783494767,
         "arrearsMonths": 0,
-        "wellbeing": 0.5890442366357147,
-        "footprintTonnes": 0.51485675,
-        "foodMet": 0.8360295930949445
+        "wellbeing": 0.5712715271241494,
+        "footprintTonnes": 0.500624,
+        "foodMet": 0.6114584110406565
       },
       {
         "id": 2,
@@ -1502,25 +1502,25 @@
         ],
         "home": 2,
         "class": "manager",
-        "savings": 62162.91,
+        "savings": 62580.92,
         "debt": 25971.01,
-        "netWorth": 81191.9,
+        "netWorth": 81609.91,
         "income": {
-          "wages": 6287.88,
+          "wages": 6259.43,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 159.55,
+          "interest": 160.67,
           "benefits": 0.0,
-          "taxPaid": 1878.99,
+          "taxPaid": 1879.44,
           "rentPaid": 0.0,
           "loanPayments": 175.83,
-          "spending": 4152.22
+          "spending": 3920.96
         },
-        "politicalPower": 0.10569455367118204,
+        "politicalPower": 0.10885997526647029,
         "arrearsMonths": 0,
-        "wellbeing": 0.8787557157261986,
-        "footprintTonnes": 0.97264875,
-        "foodMet": 1.0
+        "wellbeing": 0.8705618891713405,
+        "footprintTonnes": 0.95679525,
+        "foodMet": 0.8868680840482407
       },
       {
         "id": 3,
@@ -1532,25 +1532,25 @@
         ],
         "home": 3,
         "class": "manager",
-        "savings": 70497.63,
+        "savings": 70950.82,
         "debt": 8657.01,
-        "netWorth": 61840.62,
+        "netWorth": 62293.81,
         "income": {
           "wages": 6062.55,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 180.63,
+          "interest": 181.76,
           "benefits": 0.0,
-          "taxPaid": 1887.42,
+          "taxPaid": 1887.87,
           "rentPaid": 343.02,
           "loanPayments": 58.61,
-          "spending": 3761.76
+          "spending": 3553.22
         },
-        "politicalPower": 0.08072735117282569,
+        "politicalPower": 0.08329505259605495,
         "arrearsMonths": 0,
-        "wellbeing": 0.8567488055042376,
-        "footprintTonnes": 0.94368825,
-        "foodMet": 1.0
+        "wellbeing": 0.8494165952104412,
+        "footprintTonnes": 0.92926425,
+        "foodMet": 0.8868680840482407
       },
       {
         "id": 4,
@@ -1562,25 +1562,25 @@
         ],
         "home": 4,
         "class": "worker",
-        "savings": 12769.91,
+        "savings": 11014.51,
         "debt": 3462.79,
-        "netWorth": 9307.12,
+        "netWorth": 7551.72,
         "income": {
           "wages": 1677.1,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 31.16,
+          "interest": 26.77,
           "benefits": 800.0,
-          "taxPaid": 511.99,
+          "taxPaid": 510.24,
           "rentPaid": 343.02,
           "loanPayments": 23.44,
-          "spending": 1824.75
+          "spending": 1783.27
         },
-        "politicalPower": 0.01214960562568146,
+        "politicalPower": 0.010097647175388373,
         "arrearsMonths": 0,
-        "wellbeing": 0.6308296397847076,
-        "footprintTonnes": 0.79725,
-        "foodMet": 1.0
+        "wellbeing": 0.6152730477287142,
+        "footprintTonnes": 0.79466775,
+        "foodMet": 0.8868680840482407
       },
       {
         "id": 5,
@@ -1592,25 +1592,25 @@
         ],
         "home": 5,
         "class": "worker",
-        "savings": 10140.45,
+        "savings": 10837.61,
         "debt": 2597.1,
-        "netWorth": 7543.35,
+        "netWorth": 8240.51,
         "income": {
           "wages": 3342.2,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 27.82,
+          "interest": 29.56,
           "benefits": 0.0,
-          "taxPaid": 1010.19,
+          "taxPaid": 1010.88,
           "rentPaid": 343.02,
           "loanPayments": 17.58,
-          "spending": 2013.13
+          "spending": 1786.35
         },
-        "politicalPower": 0.00984716298881762,
+        "politicalPower": 0.011018650390276606,
         "arrearsMonths": 0,
-        "wellbeing": 0.6955085327788771,
-        "footprintTonnes": 0.8120115,
-        "foodMet": 1.0
+        "wellbeing": 0.6910271736904887,
+        "footprintTonnes": 0.796296,
+        "foodMet": 0.8868680840482407
       },
       {
         "id": 6,
@@ -1621,25 +1621,25 @@
         ],
         "home": 6,
         "class": "worker",
-        "savings": 5822.38,
+        "savings": 6287.18,
         "debt": 0.0,
-        "netWorth": 5822.38,
+        "netWorth": 6287.18,
         "income": {
           "wages": 1480.95,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 13.63,
+          "interest": 14.79,
           "benefits": 800.0,
-          "taxPaid": 447.94,
+          "taxPaid": 448.41,
           "rentPaid": 343.02,
           "loanPayments": 0.0,
-          "spending": 1510.74
+          "spending": 1359.55
         },
-        "politicalPower": 0.007600591891246188,
+        "politicalPower": 0.008406790157495018,
         "arrearsMonths": 0,
-        "wellbeing": 0.7184258689045835,
-        "footprintTonnes": 0.55383125,
-        "foodMet": 1.0
+        "wellbeing": 0.7139447832895969,
+        "footprintTonnes": 0.54335375,
+        "foodMet": 0.8868631107795599
       },
       {
         "id": 7,
@@ -1650,25 +1650,25 @@
         ],
         "home": null,
         "class": "dependent",
-        "savings": 1606.0,
-        "debt": 2937.56,
-        "netWorth": -1331.56,
+        "savings": 2051.16,
+        "debt": 2902.47,
+        "netWorth": -851.31,
         "income": {
           "wages": 6.0,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 0.0,
+          "interest": 1.16,
           "benefits": 1600.0,
-          "taxPaid": 0.0,
+          "taxPaid": 0.46,
           "rentPaid": 0.0,
-          "loanPayments": 0.04,
-          "spending": 1605.96
+          "loanPayments": 19.65,
+          "spending": 1435.1
         },
         "politicalPower": 0.0,
         "arrearsMonths": 0,
-        "wellbeing": 0.33574818449884913,
-        "footprintTonnes": 0.560447,
-        "foodMet": 1.0
+        "wellbeing": 0.3260488714857857,
+        "footprintTonnes": 0.5484905,
+        "foodMet": 0.8868631107795599
       }
     ],
     "homes": [
@@ -1759,8 +1759,8 @@
           "y": 2
         },
         "capacity": 5.0,
-        "output": 3.4638920310978563,
-        "emissionsMonthly": 3.4638920310978563
+        "output": 3.298392842621893,
+        "emissionsMonthly": 3.298392842621893
       },
       {
         "id": 1,
@@ -1770,8 +1770,8 @@
           "y": 4
         },
         "capacity": 5.0,
-        "output": 3.4638920310978563,
-        "emissionsMonthly": 3.4638920310978563
+        "output": 3.298392842621893,
+        "emissionsMonthly": 3.298392842621893
       }
     ],
     "firms": [
@@ -1790,13 +1790,13 @@
         },
         "workers": 2.0,
         "wage": 1606.66,
-        "price": 100.57,
-        "output": 109.94135159300255,
-        "emissions": 1.3192962191160307,
-        "revenue": 11985.71,
-        "profit": 5030.74,
-        "capital": 133.48188074946248,
-        "debt": 46865.37,
+        "price": 100.83,
+        "output": 109.08202783203268,
+        "emissions": 1.308984333984392,
+        "revenue": 10593.66,
+        "profit": 3804.44,
+        "capital": 129.72403610342792,
+        "debt": 44188.76,
         "greenTech": 0.0
       },
       {
@@ -1814,12 +1814,12 @@
         },
         "workers": 3.0,
         "wage": 1576.03,
-        "price": 24.26,
-        "output": 529.1001259492457,
-        "emissions": 1.0582002518984914,
-        "revenue": 11965.53,
-        "profit": 6283.11,
-        "capital": 58.32808795310374,
+        "price": 26.88,
+        "output": 429.6631672115702,
+        "emissions": 0.8593263344231404,
+        "revenue": 11519.26,
+        "profit": 5882.18,
+        "capital": 58.02699399252887,
         "debt": 15000.16,
         "greenTech": 0.0
       },
@@ -1838,13 +1838,13 @@
         },
         "workers": 3.0,
         "wage": 1576.03,
-        "price": 75.02,
-        "output": 136.08249081158786,
+        "price": 75.28,
+        "output": 134.230299922029,
         "emissions": 0.0,
-        "revenue": 8316.47,
-        "profit": 492.99,
-        "capital": 21.465521375542526,
-        "debt": 21906.65,
+        "revenue": 7773.19,
+        "profit": 10.01,
+        "capital": 20.402412225210472,
+        "debt": 22260.22,
         "greenTech": 0.0
       },
       {
@@ -1873,30 +1873,30 @@
       }
     ],
     "bank": {
-      "equity": 42361.1,
-      "loans": 334430.13,
-      "deposits": 292069.03,
+      "equity": 42318.48,
+      "loans": 335292.62,
+      "deposits": 292974.14,
       "defaultRate": 0.0,
       "failed": false
     },
     "government": {
       "cash": 8000.0,
-      "debt": 94491.45,
-      "debtToGdp": 0.24357702726237024,
+      "debt": 97712.07,
+      "debtToGdp": 0.27191085920675506,
       "legitimacy": 0.7,
-      "receipts": 11778.89,
+      "receipts": 10947.42,
       "spending": 4060.0
     },
     "nature": {
-      "forest": 0.7078872248741163,
-      "commons": 0.7848228270864094,
-      "forestStock": 1415.7744497482324,
-      "commonsStock": 784.8228270864093,
+      "forest": 0.710215723180462,
+      "commons": 0.7948145517356695,
+      "forestStock": 1420.431446360924,
+      "commonsStock": 794.8145517356695,
       "commonsAccess": "open",
       "cumulativeTonnes": 0.0,
-      "netEmissionsMonthly": 10.289570898208838,
-      "grossEmissionsMonthly": 11.705280533210235,
-      "sinkMonthly": 1.415709635001397
+      "netEmissionsMonthly": 9.745053567070855,
+      "grossEmissionsMonthly": 11.165096353651318,
+      "sinkMonthly": 1.4200427865804637
     },
     "housing": {
       "homes": 7,
@@ -1909,9 +1909,9 @@
       "fossilCap": 10.0,
       "renewableCap": -0.0,
       "fossilShare": 1.0,
-      "demand": 6.9277840621957125,
+      "demand": 6.596785685243786,
       "supply": 10.0,
-      "delivered": 6.9277840621957125,
+      "delivered": 6.596785685243786,
       "served": 1.0,
       "gridIntensity": 1.0
     },
