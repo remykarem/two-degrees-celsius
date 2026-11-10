@@ -20,6 +20,7 @@ const POLICY_KEYS = {
   wealth_threshold_usd: 'wealth_threshold', base_rate: 'base_rate', min_wage_usd: 'min_wage', benefit_usd: 'benefit', ubi_usd: 'ubi',
   green_subsidy: 'green_subsidy', campaign_cap: 'campaign_cap', emissions_cap: 'emissions_cap', commons_harvest: 'commons_harvest',
   bank_capital_ratio: 'bank_capital_ratio', bailout: 'bailout', job_guarantee: 'job_guarantee', public_spending_usd: 'public_spending',
+  resilience_spending_usd: 'resilience_spending',
 };
 const camel = (o) => ({ baseCost: o.base_cost, leadTime: o.lead_time, unit: o.unit, minSize: o.min_size });
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
@@ -84,6 +85,19 @@ export function generate() {
   const plantCap = params.energy.plant_capacity;
   const wageBill = sum(active.map((f) => f.wage * f.workers));
 
+  // Town v4 (weather): read when the real content has it, omitted when it does not (the mock then uses its own labelled defaults).
+  const w = params.weather;
+  const num = (v) => (typeof v === 'number' ? v : undefined);
+  const weather = w && [w.onset, w.full, w.curve].every((v) => typeof v === 'number')
+    ? Object.fromEntries(Object.entries({
+      onset: w.onset, full: w.full, curve: w.curve, coverageRadius: num(w.coverage_radius), smokeRadius: num(w.smoke_radius), regrowMonths: num(w.regrow_months),
+      durationMonths: num(w.duration_months), fireStationCostUsd: num(w.fire_station_cost_usd), fireStationUpkeepUsd: num(w.fire_station_upkeep_usd),
+    }).filter(([, v]) => v !== undefined))
+    : undefined;
+  // The new lever's presentation (label, range, arrows) when content/levers.json has it; the mock falls back to its own labelled entry otherwise.
+  const rl = content('levers.json').levers?.resilience_spending;
+  const weatherLever = rl ? { label: rl.label, unit: rl.unit, min: rl.min, max: rl.max, step: rl.step, lobbied: rl.lobbied, arrows: rl.arrows, availableIn: rl.availableIn } : undefined;
+
   return {
     generatedFrom: ['content/params.json', 'content/initial_town.json', 'content/systems/*.json'],
     game: { startYear: START_YEAR, firstTurn: 1, lastTurn: params.run.turns, turnsPerYear: 12 / params.run.ticks_per_turn },
@@ -109,6 +123,8 @@ export function generate() {
       bank: { loans, deposits, equity, headroom: Math.max(0, equity / kappa - loans) },
       labourForce, employed, unemployment: 1 - employed / labourForce,
     },
+    ...(weather ? { weather } : {}),
+    ...(weatherLever ? { weatherLever } : {}),
     carbon: { budget: params.nature.budget_b0, t0: params.nature.t0, tLimit: params.nature.t_limit },
     collapseUnemployment: g.collapse_unemployment,
     // Derived from the starting firms. Monthly firm emissions only; the mock adds household emissions itself (mock-only).

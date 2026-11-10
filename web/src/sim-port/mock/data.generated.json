@@ -132,6 +132,12 @@
       "unit": 0.25,
       "minSize": 0.25
     },
+    "resilience_spending": {
+      "baseCost": 4,
+      "leadTime": 1,
+      "unit": 1000,
+      "minSize": 0.25
+    },
     "switch_system": {
       "baseCost": 45,
       "leadTime": 1,
@@ -156,6 +162,12 @@
       "unit": 1,
       "minSize": 1
     },
+    "place_fire_station": {
+      "baseCost": 4,
+      "leadTime": 2,
+      "unit": 1,
+      "minSize": 1
+    },
     "remove_public_housing": {
       "baseCost": 3,
       "leadTime": 1,
@@ -177,6 +189,12 @@
     "place_road": {
       "baseCost": 0.5,
       "leadTime": 2,
+      "unit": 1,
+      "minSize": 1
+    },
+    "remove_fire_station": {
+      "baseCost": 0.5,
+      "leadTime": 1,
       "unit": 1,
       "minSize": 1
     },
@@ -271,6 +289,44 @@
     "labourForce": 10,
     "employed": 9,
     "unemployment": 0.09999999999999998
+  },
+  "weather": {
+    "onset": 0.5,
+    "full": 0.1,
+    "curve": 1.5,
+    "coverageRadius": 3,
+    "smokeRadius": 2,
+    "regrowMonths": 12,
+    "durationMonths": 3,
+    "fireStationCostUsd": 8000,
+    "fireStationUpkeepUsd": 30
+  },
+  "weatherLever": {
+    "label": "Resilience spending",
+    "unit": "usd_per_month",
+    "min": 0,
+    "max": 20000,
+    "step": 500,
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "forest_health",
+        "direction": "up"
+      },
+      {
+        "metric": "farm_health",
+        "direction": "up"
+      },
+      {
+        "metric": "debt",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
   },
   "carbon": {
     "budget": 600,

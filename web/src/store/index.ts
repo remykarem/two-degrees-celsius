@@ -15,6 +15,11 @@ export {
   createClock, configFromSearch, gameDate, secondsPerQuarter, daysPerTurn, DEFAULT_CONFIG,
   type Clock, type ClockConfig, type ClockEvent, type ClockPhase, type ClockState, type GameDate, type GameMode, type PauseReason, type TimeoutPolicy,
 } from './clock';
+export {
+  weatherOf, healthMeters, healthLevel, HEALTH_WORD, RISK_WORD, stressGauge, stressAt, forecastView, forestStateOf, fireTiles, fireSelection, nearestLandmark, fireLabel, WEATHER_UI,
+  type HealthMeter, type HealthLevel, type StressGauge, type ForecastView,
+} from './weather';
+export { weatherLook, tileFireRisk, isCovered, nearFire, type WeatherLook } from './scene-weather';
 export { createLive, type Live, type LiveView } from './live';
 export { liveClock, type LiveClockFeed } from './scene-live';
 export type { LiveSlice } from './types';

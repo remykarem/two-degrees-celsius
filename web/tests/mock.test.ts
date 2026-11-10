@@ -24,9 +24,9 @@ function tweak(sim: ReturnType<typeof fresh>, f: (s: Record<string, any>) => voi
 }
 
 describe('mock levers', () => {
-  it('describes all 19 levers with sane metadata', () => {
+  it('describes all 20 levers with sane metadata', () => {
     const ls = fresh().levers();
-    expect(ls).toHaveLength(19);
+    expect(ls).toHaveLength(20);
     for (const l of ls) {
       if (l.unit === 'enum') expect(l.options!.length).toBeGreaterThan(1);
       else expect(l.min).toBeLessThan(l.max);
@@ -306,8 +306,8 @@ describe('buildings live on tiles', () => {
   it('actions() carries cost models from content, including roads', () => {
     const a = fresh().actions();
     expect(a.map((x) => x.key).sort()).toEqual([
-      'place:fossil_plant', 'place:public_housing', 'place:renewable_plant', 'place:road',
-      'remove:fossil_plant', 'remove:public_housing', 'remove:renewable_plant', 'remove:road', 'switch_system',
+      'place:fire_station', 'place:fossil_plant', 'place:public_housing', 'place:renewable_plant', 'place:road',
+      'remove:fire_station', 'remove:fossil_plant', 'remove:public_housing', 'remove:renewable_plant', 'remove:road', 'switch_system',
     ]);
     const place = a.find((x) => x.key === 'place:renewable_plant')!;
     expect(place.costModel).toEqual({ base: 2, unit: 1, minSize: 1 });

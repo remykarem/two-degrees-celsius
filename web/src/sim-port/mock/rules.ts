@@ -60,7 +60,7 @@ export function tileProblem(s: MockState, pending: PendingItem[], c: Command): B
   }
   return null;
 }
-const REMOVABLE = ['public_housing', 'fossil_plant', 'renewable_plant', 'road'];
+const REMOVABLE = ['public_housing', 'fossil_plant', 'renewable_plant', 'road', 'fire_station'];
 
 /** Tiles that could take a new `kind` now (empty, nothing queued). */
 export function validTiles(s: MockState, kind: InfraKind): { x: number; y: number }[] {

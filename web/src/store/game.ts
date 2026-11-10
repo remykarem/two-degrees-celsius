@@ -220,7 +220,7 @@ export function createGame(port: SimPort): Game {
     },
     removeAt(t) {
       const kind = tileAt(get().snapshot, t)?.kind;
-      if (kind !== 'public_housing' && kind !== 'fossil_plant' && kind !== 'renewable_plant' && kind !== 'road') return describeTileReason('nothing_to_remove');
+      if (kind !== 'public_housing' && kind !== 'fossil_plant' && kind !== 'renewable_plant' && kind !== 'road' && kind !== 'fire_station') return describeTileReason('nothing_to_remove');
       this.draftCommand({ type: 'remove', tile: { x: t.x, y: t.y } });
       return null;
     },
@@ -322,7 +322,7 @@ export function createGame(port: SimPort): Game {
       if (!parsed.ok) return parsed.message;
       const f = parsed.value;
       const res = safe(() => port.importState(f.simState));
-      if (!res.ok) return res.error.message;
+      if (!res.ok) return /schema|version/i.test(`${res.error.code} ${res.error.message}`) && !/weather/i.test(res.error.message) ? `${res.error.message} (Saves from an older version of the game cannot be loaded.)` : res.error.message;
       const snapshot = res.value;
       const mode: GameMode = f.mode === 'pressure' && liveAvailable ? 'pressure' : 'relaxed';
       store.set({

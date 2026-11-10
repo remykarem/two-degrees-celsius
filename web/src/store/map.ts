@@ -57,7 +57,7 @@ export function layoutOf(snap: Snapshot | null): MapLayout {
       case 'town_hall': out.scenery.push({ kind: 'government', ...at, label: 'Town hall' }); break;
       case 'forest': out.scenery.push({ kind: 'forest', ...at, label: 'Forest' }); break;
       case 'commons': out.scenery.push({ kind: 'commons', ...at, label: 'Commons' }); break;
-      case 'public_housing': case 'fossil_plant': case 'renewable_plant': out.placed.push({ kind: t.kind, ...at, ...(t.ref !== undefined ? { ref: t.ref } : {}) }); break;
+      case 'public_housing': case 'fossil_plant': case 'renewable_plant': case 'fire_station': out.placed.push({ kind: t.kind, ...at, ...(t.ref !== undefined ? { ref: t.ref } : {}) }); break;
       case 'road': out.roads.push(at); break;
       case 'empty': break;
     }

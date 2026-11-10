@@ -1,8 +1,9 @@
-import type { LeverKey, Snapshot, Tile } from '../../contract';
+import type { LeverKey, SchemaVersion, Snapshot, Tile } from '../../contract';
 import { GEN, LEVERS, MOCK } from './data';
 import { effectiveValue, remainingBudget } from './dynamics';
 import { plantTiles } from './frames';
 import { economy, householdViews, median, peopleViews, personIncomes, topWealthShare } from './people';
+import { healthOf, weatherView } from './weather';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
 
 const gdpBase = () => GEN.derived.monthlyOutputValue * 12;
@@ -15,6 +16,7 @@ export function mapTiles(s: MockState): Tile[] {
       const c = cellAt(s, x, y)!;
       const t: Tile = { x, y, kind: c.kind, buildable: c.kind === 'empty' };
       if (c.ref !== undefined) t.ref = c.ref;
+      if (c.kind === 'forest') t.state = c.state ?? 'standing';
       if (c.kind === 'fossil_plant') t.emissionsMonthly = plants ? s.lastPlantEmissions / plants : 0;
       if (c.kind === 'renewable_plant') t.emissionsMonthly = 0;
       tiles.push(t);
@@ -48,7 +50,7 @@ export function buildSnapshot(s: MockState): Snapshot {
   const firmEmissions = (s.lastMonthlyEmissions - s.lastPlantEmissions) / (1 + MOCK.extra.householdEmissionShare!);
   const wellbeing = people.length ? people.reduce((a, p) => a + p.wellbeing, 0) / people.length : 0;
   return {
-    schemaVersion: SCHEMA_VERSION as 2, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
+    schemaVersion: SCHEMA_VERSION as SchemaVersion, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
     map: { width: 12, height: 12, tiles: mapTiles(s) },
     buildings: { publicHousing: counts.public_housing, fossilPlant: counts.fossil_plant, renewablePlant: counts.renewable_plant, road: counts.road },
     gameOver: s.gameOver,
@@ -80,9 +82,10 @@ export function buildSnapshot(s: MockState): Snapshot {
     bank: { equity: s.bank.equity, loans: s.bank.loans, deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1), failed: s.bank.failed },
     government: { cash: s.cash, debt: s.debt, debtToGdp: s.debt / s.gdp, legitimacy: s.legitimacy, receipts: govReceipts, spending: Number(s.policy.public_spending) + Number(s.policy.benefit) * (labour - employed) + counts.road * GEN.build.roadUpkeepUsd },
     nature: {
-      forest: s.forest, commons: s.commons, commonsAccess: s.policy.commons_access as 'open' | 'community', cumulativeTonnes: s.cumulativeTonnes,
+      forest: s.forest, commons: s.commons, forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm, commonsAccess: s.policy.commons_access as 'open' | 'community', cumulativeTonnes: s.cumulativeTonnes,
       netEmissionsMonthly: s.lastMonthlyEmissions - s.lastMonthlyEmissions * 0.1 * s.forest, grossEmissionsMonthly: s.lastMonthlyEmissions, sinkMonthly: s.lastMonthlyEmissions * 0.1 * s.forest,
     },
+    weather: weatherView(s),
     housing: {
       homes: s.homes.length, rentPrivate: GEN.town.rentPrivate, rentPublic: GEN.town.rentPublic,
       occupancy: s.homes.filter((h) => h.household !== null).length / Math.max(1, s.homes.length), unhousedHouseholds: s.households.filter((h) => h.home === null).length,

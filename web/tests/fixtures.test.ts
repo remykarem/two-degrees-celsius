@@ -10,7 +10,7 @@ import { lobbyLines, metricDeltas } from '../src/panels/results';
 import { generateStory } from '../src/panels/story';
 import { planEntities } from '../src/scene/entities';
 import { ctxFromSnapshot, planFlowLoop, planFrame } from '../src/scene/flows';
-import { layoutOf } from '../src/store';
+import { forecastView, healthMeters, layoutOf, weatherLook } from '../src/store';
 
 // Real JSON written by the Rust wire layer (crates/sim-api) into docs/fixtures/. These tests check it against the TypeScript types
 // (key sets are tied to the interfaces with `satisfies Record<keyof T, ...>`, so adding a field to a type breaks this file until it is listed)
@@ -39,7 +39,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array', turnPhase: 'object?' } satisfies Shape<Snapshot>;
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;
@@ -50,7 +50,7 @@ const HOUSEHOLD = { id: 'number', label: 'string', members: 'array', home: 'null
 const HOME = { id: 'number', tile: 'object', owner: 'string', household: 'nullable', rent: 'number', value: 'number' } as unknown as Shape<HomeView>; // owner is a number or "public"
 (HOME as Record<string, unknown>).owner = 'nullable';
 const PLANT = { id: 'number', kind: 'string', tile: 'object', capacity: 'number', output: 'number', emissionsMonthly: 'number' } satisfies Shape<PlantView>;
-const TILE = { x: 'number', y: 'number', kind: 'string', ref: 'number?', buildable: 'boolean', emissionsMonthly: 'number?' } satisfies Shape<Tile>;
+const TILE = { x: 'number', y: 'number', kind: 'string', ref: 'number?', buildable: 'boolean', emissionsMonthly: 'number?', state: 'string?' } satisfies Shape<Tile>;
 const FIRM = { id: 'number', active: 'boolean', sector: 'string', name: 'string', tile: 'object', owner: 'object', workers: 'number', wage: 'number', price: 'number', output: 'number', emissions: 'number',
   revenue: 'number', profit: 'number', capital: 'number', debt: 'number', greenTech: 'number' } satisfies Shape<FirmView>;
 const TURN = { turn: 'number', accepted: 'array', rejected: 'array', activated: 'array', pcBefore: 'number', pcAfter: 'number', months: 'array', policyGaps: 'array', trace: 'array', snapshot: 'object' } satisfies Shape<TurnResult>;
@@ -60,11 +60,11 @@ const LEVER = { key: 'string', label: 'string', unit: 'string', min: 'number', m
 const ACTION = { key: 'string', label: 'string', baseCostPc: 'number', costModel: 'object?', leadTime: 'number', moneyCost: 'number', availableIn: 'array', needsTile: 'boolean?', tileRule: 'string?' } satisfies Shape<ActionInfo>;
 const PENDING = { id: 'number', command: 'object', submittedTurn: 'number', effectiveTurn: 'number', pcCost: 'number', moneyCost: 'number' } satisfies Shape<PendingItem>;
 
-// Contract v1.0 (schemaVersion 2). Skipped, with this message, when the fixtures are still in the old cohort format.
-const current = present && (load<{ schemaVersion: number; map?: unknown }>('snapshot-turn1.json').schemaVersion === 2) && !!load<{ map?: unknown }>('snapshot-turn1.json').map;
+// Contract v1.0 to v1.2 (schemaVersion 2, or 3 since the weather State layout). Skipped, with this message, when the fixtures are still in the old cohort format.
+const current = present && [2, 3].includes(load<{ schemaVersion: number; map?: unknown }>('snapshot-turn1.json').schemaVersion) && !!load<{ map?: unknown }>('snapshot-turn1.json').map;
 if (present && !current) console.warn('TODO: docs/fixtures/*.json are still in the old (cohort, schemaVersion 1) format, so the fixtures tests are skipped. Re-run them once the wire layer has regenerated the fixtures.');
 
-describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScript types (contract v1.0)', () => {
+describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScript types (contract v1.0, v1.2 shapes optional)', () => {
   const snap = current ? load<Snapshot>('snapshot-turn1.json') : (null as never);
   const turn = current ? load<TurnResult>('turn-result.json') : (null as never);
   const levers = current ? load<LeverInfo[]>('levers.json') : (null as never);
@@ -83,8 +83,8 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     ];
     expect(bad).toEqual([]);
   });
-  it('is schemaVersion 2 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
-    expect(snap.schemaVersion).toBe(2);
+  it('is schemaVersion 2 or 3 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
+    expect([2, 3]).toContain(snap.schemaVersion);
     expect(snap.map).toMatchObject({ width: 12, height: 12 });
     expect(snap.map.tiles).toHaveLength(144);
     snap.map.tiles.forEach((t, i) => expect([t.x, t.y]).toEqual([i % 12, Math.floor(i / 12)]));
@@ -94,10 +94,10 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     expect(snap.households.filter((h) => h.home === null)).toHaveLength(1);
     expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
   });
-  it('has 3 month frames, 19 levers, 9 actions, an entry per lever in the policy table', () => {
+  it('has 3 month frames, 20 levers, 11 actions, an entry per lever in the policy table', () => {
     expect(turn.months).toHaveLength(3);
-    expect(levers).toHaveLength(19);
-    expect(actions).toHaveLength(9);
+    expect(levers).toHaveLength(20);
+    expect(actions).toHaveLength(11);
     expect(Object.keys(snap.policy).sort()).toEqual(levers.map((l) => l.key).sort());
   });
   it('tile commands carry their tile; previews are not part of the fixtures, but tiles.json agrees with the map', () => {
@@ -155,6 +155,28 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     expect(levers.find((l) => l.key === 'commons_access')!.optionAvailableIn).toEqual({ community: ['regulated', 'coop'] });
     for (const a of actions) expect(a.costModel!.base).toBe(a.baseCostPc);
     expect(actions.find((a) => a.key === 'place:road')).toMatchObject({ needsTile: true, leadTime: 2 });
+  });
+});
+
+// Contract v1.2 (weather). docs/fixtures/ are written by the Rust wire layer; until they carry a weather block these checks are skipped (and say so).
+const v12 = current && load<{ weather?: unknown }>('snapshot-turn1.json').weather !== undefined;
+if (current && !v12) console.warn('TODO: docs/fixtures/*.json do not carry the contract v1.2 weather block yet, so the v1.2 fixture checks are skipped.');
+describe.skipIf(!v12)('real fixtures against contract v1.2 (weather)', () => {
+  const snap = v12 ? load<Snapshot>('snapshot-turn1.json') : (null as never);
+  const turn = v12 ? load<TurnResult>('turn-result.json') : (null as never);
+  it('has the weather block, health fields, tile state and history fields', () => {
+    expect(conforms(snap.weather, { stress: 'number', drought: 'nullable', fires: 'array', forecast: 'object' }, 'weather')).toEqual([]);
+    expect(conforms(snap.weather.forecast, { fireRisk: 'string', droughtRisk: 'string' }, 'weather.forecast')).toEqual([]);
+    for (const k of ['forestHealth', 'commonsHealth', 'farmHealth'] as const) expect(typeof snap.nature[k]).toBe('number');
+    for (const t of snap.map.tiles) if (t.kind === 'forest') expect(['standing', 'burning', 'regrowing']).toContain(t.state);
+    for (const h of turn.snapshot.history) for (const k of ['climateStress', 'forestHealth', 'commonsHealth', 'farmHealth'] as const) expect(typeof h[k]).toBe('number');
+  });
+  it('the weather UI logic runs on it', () => {
+    expect(forecastView(snap)).toBeTruthy();
+    expect(healthMeters(snap)).toHaveLength(3);
+    expect(() => deriveCrises(snap, turn)).not.toThrow();
+    for (const e of turn.months.flatMap((m) => m.events)) expect(formatEvent(e, turn.snapshot)).toBeTruthy();
+    expect(() => weatherLook(snap)).not.toThrow();
   });
 });
 

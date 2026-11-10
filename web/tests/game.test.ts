@@ -115,7 +115,7 @@ describe('playback driver', () => {
 describe('v0.2 store behaviour', () => {
   it('builds the palette from actions() and the calendar label from the snapshot', () => {
     const g = newGame();
-    expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant', 'road']);
+    expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant', 'road', 'fire_station']);
     const game = g.state.get().snapshot!.game;
     expect(quarterLabel(1, game)).toBe('Q1 2026');
     expect(quarterLabel(6, game)).toBe('Q2 2027');
@@ -227,7 +227,7 @@ describe('v0.3 store behaviour', () => {
     g.setLens('wealth');
     const text = g.exportSave()!;
     const file = JSON.parse(text);
-    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 2 });
+    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 3 });
     expect(Object.keys(file)).toEqual(expect.arrayContaining(['schemaVersion', 'simState', 'lastResult', 'previous', 'uiPrefs']));
     expect(file).not.toHaveProperty('layout');
 

@@ -3,10 +3,11 @@ import type { GameMode } from './clock';
 import type { Selection, Tile } from './map';
 import type { Phase } from './phase';
 
-export type Lens = 'none' | 'emissions' | 'class' | 'wealth' | 'employment' | 'flows' | 'commute';
+export type Lens = 'none' | 'emissions' | 'class' | 'wealth' | 'employment' | 'flows' | 'commute' | 'fire';
 export const LENSES: { id: Lens; label: string }[] = [
   { id: 'none', label: 'None' }, { id: 'emissions', label: 'Emissions' }, { id: 'class', label: 'Class' },
   { id: 'wealth', label: 'Wealth' }, { id: 'employment', label: 'Employment' }, { id: 'flows', label: 'Money flows' }, { id: 'commute', label: 'Commute' },
+  { id: 'fire', label: 'Fire and drought risk' },
 ];
 
 export type CameraAngle = 0 | 1 | 2 | 3;

@@ -6,6 +6,7 @@ import { frame, makeEvents, makeFlows } from './frames';
 import { stepHouseholds, syncJobs } from './people';
 import { activate, evaluate, spend, validTiles } from './rules';
 import { buildSnapshot } from './snapshot';
+import { healthOf, stepWeather, stressNow } from './weather';
 import { buildingCounts, initialState, SCHEMA_VERSION, type MockState } from './state';
 
 const fail = (code: string, message: string): { ok: false; error: { code: string; message: string } } => ({ ok: false, error: { code, message } });
@@ -42,6 +43,7 @@ export function createMockSim(): SimPort {
       emissions: s.lastMonthlyEmissions * (1 - 0.1 * s.forest), budgetShare: remainingBudget(s) / GEN.carbon.budget,
       legitimacy: s.legitimacy, avgWellbeing: ind.avgWellbeing, gpiAnnual: ind.gpiAnnual, debtToGdp: s.debt / s.gdp,
       avgIncomePerPerson: ind.avgIncomePerPerson, medianIncomePerPerson: ind.medianIncomePerPerson, topHouseholdWealthShare: ind.topHouseholdWealthShare,
+      climateStress: stressNow(s), forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm,
     };
   }
 
@@ -105,6 +107,7 @@ export function createMockSim(): SimPort {
       if (open.halted) f = frame(m, [], {});
       else {
         const sysBefore = s.system;
+        const weather = stepWeather(s); // MOCK weather (weather.ts), before the economy step as S11 runs before nature and production
         const out = stepMonth(s);
         spend(s, buildingCounts(s).road * GEN.build.roadUpkeepUsd); // road maintenance, paid by the government
         if (turn === MOCK.dynamics.firmFoundedTurn && m === 0) {
@@ -116,6 +119,7 @@ export function createMockSim(): SimPort {
         stepHouseholds(s, jobEvents);
         const flows = makeFlows(s, out.emissions);
         const events = makeEvents(s, flows, [...(m === 0 ? month0 : []), ...jobEvents]);
+        events.push(...weather.events);
         if (out.bankFailedNow) events.push({ type: 'bank_failed', importance: 3 });
         if (out.bailoutAmount > 0) events.push({ type: 'bank_bailout', importance: 3, amount: Math.round(out.bailoutAmount) });
         if (s.system !== sysBefore) events.push({ type: 'system_switch_completed', importance: 3, to: s.system });
@@ -144,10 +148,12 @@ export function createMockSim(): SimPort {
       const trace: TraceRecord[] = [
         ...policyGaps.map((g) => ({ type: 'policy_gap' as const, ...g, netLobby: s.netLobby })),
         ...(months[2]!.flows.emissions ?? months[1]!.flows.emissions ?? []).map((e) => ({ type: 'emissions' as const, source: e.source, ...(e.id !== undefined ? { id: e.id } : {}), ...(e.tile ? { tile: e.tile } : {}), tonnes: e.tonnes })),
+        ...(s.fireSinkLossTurn > 0 ? [{ type: 'emissions' as const, source: 'fire_sink_loss' as const, tonnes: +s.fireSinkLossTurn.toFixed(2) }] : []),
         ...(months[2]!.flows.wages ?? months[1]!.flows.wages ?? []).map((w) => ({ type: 'income' as const, household: w.household, kind: 'wages' as const, amount: w.amount })),
       ];
 
       // End of turn (Rust: regenerate, then turn += 1). Nothing activates here: items due next turn fire at the start of the next submit.
+      s.fireSinkLossTurn = 0;
       s.pc = Math.min(GEN.pc.cap, s.pc + GEN.pc.regenBase * s.legitimacy);
       s.turn++;
       updateLobby(s);
@@ -172,6 +178,7 @@ export function createMockSim(): SimPort {
       if (!parsed || typeof parsed !== 'object' || typeof parsed.turn !== 'number' || !parsed.rng || !parsed.policy || !Array.isArray(parsed.grid) || !Array.isArray(parsed.people) || !Array.isArray(parsed.pending)) {
         return fail('bad_save', 'The saved game data is incomplete.');
       }
+      if (!('drought' in parsed) || !parsed.weatherRng) return fail('schema_mismatch', 'The save was made before weather was added to the game (Town v3 or earlier), so it cannot be loaded.');
       if (parsed.schemaVersion !== SCHEMA_VERSION) return fail('schema_mismatch', `The save was made by a different version (schema ${String(parsed.schemaVersion)}, expected ${SCHEMA_VERSION}).`);
       s = parsed;
       open = null;

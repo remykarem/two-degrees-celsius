@@ -3,6 +3,7 @@ import { GEN, INFRA_KINDS, LEVERS, LEVER_BY_KEY, MOCK } from './data';
 import { noise } from './rng';
 import { activeNumeric, spend } from './rules';
 import { gini, netWorth } from './people';
+import { weatherSpendMonthly } from './weather';
 import { baseNonPlant, buildingCounts, type MockState } from './state';
 
 // MOCK ONLY. Everything in this file other than the rule hooks (lobbying gap, outcome checks) is an invented toy economy.
@@ -33,7 +34,7 @@ export function policyTotals(s: MockState): Totals {
   const strict = cap > 0 ? 1 - Math.min(1, cap / LEVER_BY_KEY.get('emissions_cap')!.max) : 0; // 0 = no cap
   t.emissions += X.capStrictnessEmissions! * strict;
   t.gdp += X.capStrictnessGdp! * strict;
-  const start = { public_housing: GEN.build.start.publicHousing, fossil_plant: GEN.build.start.fossilPlant, renewable_plant: GEN.build.start.renewablePlant, road: GEN.build.start.road };
+  const start = { public_housing: GEN.build.start.publicHousing, fossil_plant: GEN.build.start.fossilPlant, renewable_plant: GEN.build.start.renewablePlant, road: GEN.build.start.road, fire_station: 0 };
   const counts = buildingCounts(s);
   for (const kind of INFRA_KINDS) {
     const built = counts[kind] - start[kind];
@@ -67,6 +68,7 @@ export function stepMonth(s: MockState): MonthOut {
   s.forest = clamp(s.forest - D.forestDecayMonthly! * (open ? 1 : 0.3) + noise(s.rng, 0.0003), 0, 1);
   s.commons = clamp(s.commons + (open ? -1 : 1) * 0.0004 * (Number(s.policy.commons_harvest) > 1 ? 2 : 0.5) + noise(s.rng, 0.0003), 0, 1);
   spend(s, -((s.gdp / 12) * (0.004 + noise(s.rng, 0.003)))); // negative spend = receipts
+  spend(s, weatherSpendMonthly(s)); // MOCK: resilience spending and fire station upkeep are paid by the government
   // Mock: fossil plants emit in proportion to how many there are and how large their share of the plants is; renewables emit nothing.
   const { fossil_plant: fossil, renewable_plant: renewable } = buildingCounts(s);
   const scale = (s.gdp / (GEN.derived.monthlyOutputValue * 12)) * (1 + t.emissions);

@@ -17,6 +17,10 @@ export interface Generated {
     plantCapacity: number; publicHousingCostUsd: number; plantCostUsd: number; roadCostUsd: number; roadUpkeepUsd: number;
     start: { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number };
   };
+  /** Only when content/params.json has a `weather` block (Town v4). */
+  weather?: { onset: number; full: number; curve: number; coverageRadius?: number; smokeRadius?: number; regrowMonths?: number; durationMonths?: number; fireStationCostUsd?: number; fireStationUpkeepUsd?: number };
+  /** Only when content/levers.json has `resilience_spending`. */
+  weatherLever?: Pick<LeverInfo, 'label' | 'unit' | 'min' | 'max' | 'step' | 'lobbied' | 'arrows' | 'availableIn'>;
   town: {
     govCash: number; govDebt: number; legitimacy: number; unionDensity: number; forest: number; forestMax: number; commons: number; commonsMax: number;
     rentPrivate: number; rentPublic: number; bankOwner: number;
@@ -44,26 +48,52 @@ export const MOCK = mockOnly as unknown as {
   dynamics: Record<string, number>;
   extra: Record<string, number>;
   infraEffect: Partial<Record<InfraKind, { emissions?: number; gdp?: number; wellbeing?: number }>>;
+  weather: WeatherMock;
 };
+
+/** MOCK ONLY: the invented weather numbers (see mock-only.json `weather`). */
+export interface WeatherMock {
+  onset: number; full: number; curve: number;
+  droughtBase: number; droughtStressGain: number; droughtMonthsMin: number; droughtMonthsSpan: number; droughtMonthsStress: number;
+  droughtCommonsLoss: number; droughtFarmLoss: number; communityBuffer: number;
+  fireBase: number; fireStressGain: number; fireDroughtDryness: number; fireMonths: number; spreadBase: number; spreadDrought: number;
+  forestLossPerBurningTile: number; regrowMonths: number; regrowGainPerTile: number; sinkShare: number; smokeWellbeing: number;
+  coverageRadius: number; coverageSpread: number; coverageShorten: number; resilienceMaxEffect: number; resilienceHalfUsd: number;
+  fireStationCostUsd: number; fireStationUpkeepUsd: number; forecastMedium: number; forecastHigh: number;
+  fallbackCosts: Record<string, { baseCost: number; leadTime: number; unit: number; minSize: number }>;
+}
+/** Stress parameters: the real content (params.weather) when it exists, else the labelled mock defaults. */
+/** The mock's weather numbers: its own labelled defaults, with the real content's values winning where content/params.json has them. */
+export const WX: WeatherMock = {
+  ...MOCK.weather,
+  ...(GEN.weather?.coverageRadius !== undefined ? { coverageRadius: GEN.weather.coverageRadius } : {}),
+  ...(GEN.weather?.regrowMonths !== undefined ? { regrowMonths: GEN.weather.regrowMonths } : {}),
+  ...(GEN.weather?.durationMonths !== undefined ? { fireMonths: GEN.weather.durationMonths } : {}),
+  ...(GEN.weather?.fireStationCostUsd !== undefined ? { fireStationCostUsd: GEN.weather.fireStationCostUsd } : {}),
+  ...(GEN.weather?.fireStationUpkeepUsd !== undefined ? { fireStationUpkeepUsd: GEN.weather.fireStationUpkeepUsd } : {}),
+};
+export const STRESS = { onset: GEN.weather?.onset ?? MOCK.weather.onset, full: GEN.weather?.full ?? MOCK.weather.full, curve: GEN.weather?.curve ?? MOCK.weather.curve };
 
 export type PolicyValue = number | boolean | string;
 export interface LeverData extends LeverInfo { default: PolicyValue; effect: Effect }
 
-export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant', 'road'];
-export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road' };
+export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant', 'road', 'fire_station'];
+export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road', fire_station: 'Fire station' };
 /** Action labels as the real wire sends them (docs/fixtures/actions.json). */
-const PLACE_LABEL: Record<InfraKind, string> = { public_housing: 'Build public housing', fossil_plant: 'Build fossil power plant', renewable_plant: 'Build renewable power plant', road: 'Build road' };
-const REMOVE_LABEL: Record<InfraKind, string> = { public_housing: 'Demolish public housing', fossil_plant: 'Decommission fossil power plant', renewable_plant: 'Decommission renewable power plant', road: 'Remove road' };
+const PLACE_LABEL: Record<InfraKind, string> = { public_housing: 'Build public housing', fossil_plant: 'Build fossil power plant', renewable_plant: 'Build renewable power plant', road: 'Build road', fire_station: 'Build fire station' };
+const REMOVE_LABEL: Record<InfraKind, string> = { public_housing: 'Demolish public housing', fossil_plant: 'Decommission fossil power plant', renewable_plant: 'Decommission renewable power plant', road: 'Remove road', fire_station: 'Demolish fire station' };
 
 const cost = (key: string): CostModel & { leadTime: number } => {
-  const c = GEN.turnCosts[key];
+  // The real content may not have the Town v4 entries yet: fall back to the labelled mock numbers.
+  const c = GEN.turnCosts[key] ?? MOCK.weather.fallbackCosts[key];
   if (!c) throw new Error(`content/params.json turn.levers has no entry for ${key}; run npm run sync-mock`);
   return { base: c.baseCost, unit: c.unit, minSize: c.minSize, leadTime: c.leadTime };
 };
 
-export const LEVERS: LeverData[] = MOCK.levers.map((m) => {
+export const LEVERS: LeverData[] = MOCK.levers.map((mock) => {
+  const m: LeverMeta = mock.key === 'resilience_spending' && GEN.weatherLever ? { ...mock, ...GEN.weatherLever } : mock; // real presentation wins when content has it
   const c = cost(m.key);
-  const def = GEN.policyStart[m.key];
+  const def = GEN.policyStart[m.key] ?? (m.key === 'resilience_spending' ? 0 : undefined); // mock default 0 until content/initial_town.json has it
   if (def === undefined) throw new Error(`content/initial_town.json has no starting policy for ${m.key}`);
   const { effect, ...info } = m;
   return { ...info, baseCostPc: c.base, costModel: { base: c.base, unit: c.unit, minSize: c.minSize }, leadTime: c.leadTime, default: def, effect };
@@ -72,7 +102,7 @@ export const LEVER_BY_KEY = new Map<LeverKey, LeverData>(LEVERS.map((l) => [l.ke
 
 export const costKey = (type: 'place' | 'remove', kind: InfraKind) => `${type}_${kind}`;
 const ALL: SystemKey[] = ['market', 'regulated', 'coop'];
-const moneyFor = (kind: InfraKind) => (kind === 'public_housing' ? GEN.build.publicHousingCostUsd : kind === 'road' ? GEN.build.roadCostUsd : GEN.build.plantCostUsd);
+const moneyFor = (kind: InfraKind) => (kind === 'public_housing' ? GEN.build.publicHousingCostUsd : kind === 'road' ? GEN.build.roadCostUsd : kind === 'fire_station' ? WX.fireStationCostUsd : GEN.build.plantCostUsd);
 
 export function actionList(): ActionInfo[] {
   const s = cost('switch_system');

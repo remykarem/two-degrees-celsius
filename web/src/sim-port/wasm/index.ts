@@ -95,9 +95,10 @@ export async function loadWasmPort(): Promise<SimPort> {
   await mod.default({ module_or_path: await wasmUrl() });
   const port = createWasmPort(mod);
   // A package built before contract v1.0 (schemaVersion 1) must not drive this UI: refuse, and the caller falls back to the mock.
+  // Contract v1.2 (weather) is schemaVersion 3; 2 is still accepted, so a package built before the weather State layout keeps working (the UI shows no weather then).
   const probe = port.init(1);
-  if (!probe.ok || probe.value.schemaVersion !== 2 || !probe.value.map) {
-    throw new Error('the wasm package speaks an older contract (schemaVersion is not 2); rebuild it with npm run build:wasm');
+  if (!probe.ok || ![2, 3].includes(probe.value.schemaVersion) || !probe.value.map) {
+    throw new Error('the wasm package speaks an older contract (schemaVersion is not 2 or 3); rebuild it with npm run build:wasm');
   }
   return port;
 }

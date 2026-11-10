@@ -38,9 +38,9 @@ describe('contract types', () => {
     expect(ls.find((l) => l.key === 'public_spending')!.unit).toBe('usd_per_month');
     expect(ls.find((l) => l.key === 'job_guarantee')!.unit).toBe('fraction');
   });
-  it('schemaVersion is 2 and there are 3 month frames per turn', () => {
+  it('schemaVersion is 3 (Town v4 weather layout) and there are 3 month frames per turn', () => {
     const sim = createSimPort();
-    expect(ok(sim.init(1)).schemaVersion).toBe(2);
+    expect(ok(sim.init(1)).schemaVersion).toBe(3);
     expect(ok(sim.submitTurn([])).months).toHaveLength(3);
   });
   it('a failing call is a result, never a thrown exception', () => {

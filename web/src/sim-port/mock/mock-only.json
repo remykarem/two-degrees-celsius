@@ -475,6 +475,35 @@
     "unemployment": -0.06,
     "legitimacy": 0.03
    }
+  },
+  {
+   "key": "resilience_spending",
+   "label": "Resilience spending",
+   "unit": "usd_per_month",
+   "min": 0,
+   "max": 20000,
+   "step": 500,
+   "lobbied": false,
+   "arrows": [
+    {
+     "metric": "forest_health",
+     "direction": "up"
+    },
+    {
+     "metric": "commons_health",
+     "direction": "up"
+    },
+    {
+     "metric": "farm_health",
+     "direction": "up"
+    }
+   ],
+   "availableIn": [
+    "market",
+    "regulated",
+    "coop"
+   ],
+   "effect": {}
   }
  ],
  "dynamics": {
@@ -514,6 +543,60 @@
   },
   "road": {
    "gdp": 0.0006
+  }
+ },
+ "weather": {
+  "_note": "MOCK ONLY: invented weather dynamics, not the real S11 rules (docs/causal-model.md section 11). onset, full and curve are overridden by content/params.json `weather` when that exists (npm run sync-mock).",
+  "onset": 0.5,
+  "full": 0.1,
+  "curve": 1.5,
+  "droughtBase": 0.012,
+  "droughtStressGain": 4,
+  "droughtMonthsMin": 2,
+  "droughtMonthsSpan": 3,
+  "droughtMonthsStress": 3,
+  "droughtCommonsLoss": 0.006,
+  "droughtFarmLoss": 0.35,
+  "communityBuffer": 0.5,
+  "fireBase": 0.035,
+  "fireStressGain": 3,
+  "fireDroughtDryness": 2,
+  "fireMonths": 3,
+  "spreadBase": 0.22,
+  "spreadDrought": 0.3,
+  "forestLossPerBurningTile": 0.02,
+  "regrowMonths": 9,
+  "regrowGainPerTile": 0.002,
+  "sinkShare": 0.1,
+  "smokeWellbeing": 0.002,
+  "coverageRadius": 3,
+  "coverageSpread": 0.3,
+  "coverageShorten": 1,
+  "resilienceMaxEffect": 0.6,
+  "resilienceHalfUsd": 8000,
+  "fireStationCostUsd": 30000,
+  "fireStationUpkeepUsd": 400,
+  "forecastMedium": 0.2,
+  "forecastHigh": 0.45,
+  "fallbackCosts": {
+   "resilience_spending": {
+    "baseCost": 6,
+    "leadTime": 1,
+    "unit": 5000,
+    "minSize": 0.5
+   },
+   "place_fire_station": {
+    "baseCost": 6,
+    "leadTime": 3,
+    "unit": 1,
+    "minSize": 1
+   },
+   "remove_fire_station": {
+    "baseCost": 2,
+    "leadTime": 1,
+    "unit": 1,
+    "minSize": 1
+   }
   }
  }
 }

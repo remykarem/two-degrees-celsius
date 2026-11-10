@@ -24,7 +24,7 @@ export interface SaveFile {
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-const LENS = ['none', 'emissions', 'class', 'wealth', 'employment', 'flows', 'commute'];
+const LENS = ['none', 'emissions', 'class', 'wealth', 'employment', 'flows', 'commute', 'fire'];
 
 export type SaveParse = { ok: true; value: SaveFile } | { ok: false; message: string };
 

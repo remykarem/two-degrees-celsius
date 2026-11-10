@@ -1,15 +1,15 @@
-// Snapshot contract v1.0, Town v2 (docs/snapshot-contract.md section 11 wins over sections 3-10). Types only: no logic, no imports.
+// Snapshot contract v1.2, Town v4 (docs/snapshot-contract.md sections 11 to 13 win over sections 3-10). Types only: no logic, no imports.
 
-/** Snapshot.schemaVersion for contract v1.0. */
-export type SchemaVersion = 2;
+/** Snapshot.schemaVersion. 2 for contract v1.0 to v1.2; the weather State layout may bump it to 3 (section 13), so both are accepted here. */
+export type SchemaVersion = 2 | 3;
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
   | 'wealth_threshold' | 'base_rate' | 'min_wage' | 'benefit' | 'ubi'
   | 'green_subsidy' | 'campaign_cap' | 'emissions_cap' | 'commons_harvest'
   | 'commons_access' | 'bank_capital_ratio' | 'bailout' | 'public_spending'
-  | 'job_guarantee';
-export type InfraKind = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road';
+  | 'job_guarantee' | 'resilience_spending';
+export type InfraKind = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road' | 'fire_station';
 export interface TileRef { x: number; y: number }
 export type SystemKey = 'market' | 'regulated' | 'coop';
 export type ClassKey = 'capitalist' | 'rentier' | 'manager' | 'worker' | 'dependent';
@@ -21,7 +21,8 @@ export type BlockReason =
 export type MetricKey =
   | 'gdp' | 'gpi' | 'unemployment' | 'gini' | 'wage_share' | 'profit_share' | 'wellbeing' | 'emissions'
   | 'avg_income' | 'median_income' | 'top_wealth_share'
-  | 'budget' | 'temperature' | 'legitimacy' | 'debt' | 'money' | 'prices' | 'housing' | 'forest' | 'commons';
+  | 'budget' | 'temperature' | 'legitimacy' | 'debt' | 'money' | 'prices' | 'housing' | 'forest' | 'commons'
+  | 'forest_health' | 'commons_health' | 'farm_health' | 'climate_stress';
 
 export type CommonsAccessWire = { mode: 'open' } | { mode: 'community'; cap: number };
 
@@ -112,7 +113,9 @@ export interface Indicators {
 }
 
 export type TileKind = 'empty' | 'home' | 'public_housing' | 'firm' | 'bank' | 'town_hall'
-  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons';
+  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons' | 'fire_station';
+/** Contract v1.2: the state of a forest tile. */
+export type ForestState = 'standing' | 'burning' | 'regrowing';
 export interface Tile {
   x: number; y: number; kind: TileKind;
   /** Home id for home/public_housing tiles, firm id for firm tiles. */
@@ -120,6 +123,8 @@ export interface Tile {
   buildable: boolean;
   /** Plant tiles only: tonnes per month this plant emits. */
   emissionsMonthly?: number;
+  /** Contract v1.2, forest tiles only. Absent in a package built before v1.2 (read as 'standing'). */
+  state?: ForestState;
 }
 export interface GameMap { width: 12; height: 12; tiles: Tile[] }
 
@@ -181,6 +186,8 @@ export interface NatureView {
   /** Raw stocks in the model's unit. Real wire only. */
   forestStock?: number; commonsStock?: number;
   commonsAccess: 'open' | 'community' | 'enclosed';
+  /** Contract v1.2, 0..1: the forest and commons shares and the farm's resource-health factor. Absent in a package built before v1.2. */
+  forestHealth: number; commonsHealth: number; farmHealth: number;
   cumulativeTonnes: number; netEmissionsMonthly: number; grossEmissionsMonthly: number; sinkMonthly: number;
 }
 export interface HousingView { homes: number; rentPrivate: number; rentPublic: number; occupancy: number; unhousedHouseholds: number }
@@ -193,6 +200,8 @@ export interface HistoryPoint {
   turn: number; gdpRealAnnual: number; unemployment: number; gini: number;
   emissions: number; budgetShare: number; legitimacy: number; avgWellbeing: number; gpiAnnual: number; debtToGdp: number;
   avgIncomePerPerson: number; medianIncomePerPerson: number; topHouseholdWealthShare: number;
+  /** Contract v1.2. */
+  climateStress: number; forestHealth: number; commonsHealth: number; farmHealth: number;
 }
 
 export interface PolicyEntry { nominal: number | boolean | string; effective: number | null }
@@ -204,6 +213,16 @@ export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: 
 
 /** Contract v1.1 (section 12): whether a live turn (beginTurn ... finishTurn) is open, and how many of its 3 months have run. */
 export interface TurnPhase { open: boolean; monthsDone: 0 | 1 | 2 | 3 }
+
+/** Contract v1.2 (section 13): climate stress, the drought, the fires and the forecast. */
+export type RiskLevel = 'low' | 'medium' | 'high';
+export interface Weather {
+  /** 0..1. */
+  stress: number;
+  drought: null | { severity: number; monthsLeft: number };
+  fires: { tile: TileRef; monthsLeft: number }[];
+  forecast: { fireRisk: RiskLevel; droughtRisk: RiskLevel };
+}
 
 export interface Snapshot {
   schemaVersion: SchemaVersion;
@@ -234,6 +253,8 @@ export interface Snapshot {
   bank: BankView;
   government: GovernmentView;
   nature: NatureView;
+  /** Contract v1.2. Absent in a package built before v1.2 (the UI then shows no weather). */
+  weather: Weather;
   housing: HousingView;
   energy: EnergyView;
   history: HistoryPoint[];
@@ -315,10 +336,18 @@ export type SimEvent = Importance & (
   | { type: 'system_switch_completed'; to: SystemKey }
   | { type: 'budget_exhausted' }
   | { type: 'collapse'; reason: CollapseReason }
+  // contract v1.2 (weather)
+  | { type: 'fire_started'; tile: TileRef }
+  | { type: 'fire_spread'; from: TileRef; to: TileRef }
+  | { type: 'fire_out'; tile: TileRef }
+  | { type: 'forest_burned'; tile: TileRef }
+  | { type: 'drought_started'; severity: number; months: number }
+  | { type: 'drought_ended' }
+  | { type: 'home_damaged'; home: number }
 );
 export type SimEventType = SimEvent['type'];
 
 export type TraceRecord =
-  | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant'; id?: number; tile?: TileRef; tonnes: number }
+  | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant' | 'fire_sink_loss'; id?: number; tile?: TileRef; tonnes: number }
   | { type: 'income'; household: number; kind: 'wages' | 'dividends' | 'rent' | 'interest' | 'benefits'; amount: number }
   | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; netLobby: number };
