@@ -1,3 +1,5 @@
+> **Status:** items 1-46 and "Open problems" are HISTORICAL (cohort model; 39-46 superseded). The "Town v2" table (T1-T23) is CURRENT; note T2 is stale (`sim-api` and `sim-wasm` are back in the workspace). Index: `docs/README.md`.
+
 # Deviations from docs/causal-model.md
 
 Status: milestone 1 is a WIP. The demand side was redesigned (model doc section 8, items 1-9) and the game is turn-based. The model is steerable but not calibrated (see tuning-log.md). The `Status` column marks what the redesign changed.
@@ -75,7 +77,7 @@ Rust model for `docs/town-v2.md` (20 people in 8 households, a 12 x 12 map owned
 | # | Deviation or reading | Reason |
 |---|---|---|
 | T1 | All extensive quantities were scaled by 1/50 from the Phase 2 values (capital, output, inventories, government spending G, debts, forest, commons, atmosphere, carbon budget `B0` 220,000 to 4,400 t, lever units for money). Per-person amounts (wages, benefits, prices) are unchanged. | A 1,000-person town became a 20-person one. |
-| T2 | `sim-api` and `sim-wasm` are commented out of the workspace `members`; they do not compile against the new `State`. The wire-layer agent restores them. `docs/fixtures/` and `tests/golden/` (used only by them) are untouched and stale. | Task rules. |
+| T2 | **(Stale: restored in commit e9b4bc7; both are in the workspace `members` now.)** `sim-api` and `sim-wasm` are commented out of the workspace `members`; they do not compile against the new `State`. The wire-layer agent restores them. `docs/fixtures/` and `tests/golden/` (used only by them) are untouched and stale. | Task rules. |
 | T3 | Owners are adults outside the labour force (`labour_force: false`, never hired). Labour force: 10 of the 13 adults; unemployment is "N of 10". With 10 people one job is 10 points, so wages, legitimacy, the union drift and the collapse test read `Indicators.unemployment_smooth` (exponential, weight 0.05); the raw rate is still shown. | Noise: one firm hiring or firing swung unemployment by 10 to 30 points and triggered false collapses. |
 | T4 | The Shop belongs to the Landlord and the bank to the Owner family. The design table says the Landlord has "a stake in the Shop and the bank"; the model has one owner per firm and per bank. | Single `Owner` field. |
 | T5 | Placement validation: off the map, forest and commons tiles give `TileInvalid` (not buildable); any other non-empty tile, or a tile with an order already queued, gives `TileOccupied`. `Remove` of an empty tile gives `NothingToRemove`; of anything but public housing, a plant or a road gives `TileInvalid`. The tile is checked again when the order activates and when it is built; a tile taken in between gives `PolicyBlocked(TileOccupied)` and no cost. `preview()` carries `tile_valid` and `tile_reason`; `turn::valid_tiles(sim, kind)` lists the empty tiles. | Doc names the reasons but not the cases. |

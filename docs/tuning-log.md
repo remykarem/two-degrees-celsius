@@ -1,3 +1,5 @@
+> **Status:** everything before the "Town v2 (Rust model builder)" section is HISTORICAL (cohort model, 1,000 people). The Town v2 section and its baselines are CURRENT. Index: `docs/README.md`.
+
 # Tuning log (milestone 1, WIP)
 
 Seed 42 unless noted; seeds 42 and 7 gave near-identical results (the RNG is used rarely).

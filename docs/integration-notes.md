@@ -1,3 +1,5 @@
+> **Status:** wasm build, determinism and golden sections are CURRENT. "Contract fixes", "Contract issues left" and the playability check are v0.3-era (cohorts, `schemaVersion` 1 and 3, balance collapse at turn 37) and HISTORICAL; the real `schemaVersion` is now 2. See `docs/known-issues.md`.
+
 # Integration notes (real simulation in the browser)
 
 ## Layout and commands

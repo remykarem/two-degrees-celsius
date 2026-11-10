@@ -1,3 +1,7 @@
+> **Current state (read first).** This spec is the original concept plus amendments; the body was not rewritten. The current design is **Town v2**: section 17 below and `docs/town-v2.md`. Index of all docs and which is the source of truth: `docs/README.md`. Entry point for agents: `AGENTS.md`.
+>
+> Superseded by section 17 and `docs/town-v2.md`: section 2 (agents: 10 agents, now 20 people in 8 households), section 5 (entities: cohorts, firms), section 6 (class: derived per household now), sections 12 and 13.1 (the UI owns the map; the simulation owns it now), section 9 (metrics gain average and median income, top wealth share), section 14 (milestones). Section 11 (monthly tick order) is out of date: the implemented order is in `docs/architecture.md` section 4. Sections 1, 3, 4, 8, 10 and 13 (approach) still hold. Numbers in this spec are placeholders; real values are in `content/`.
+
 # Ecological Economics Simulation Game: Spec (v0.1)
 
 Working title: *TBD*

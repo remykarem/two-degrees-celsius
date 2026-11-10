@@ -1,3 +1,5 @@
+> **Status: HISTORICAL** (alignment to contract v0.3, `schemaVersion` 1, cohorts). The current contract is `docs/snapshot-contract.md` section 11 and `web/src/contract/index.ts`.
+
 # Web alignment notes (contract v0.3)
 
 Work done after the independent review of the web app against the real Rust simulation. Contract section 10 wins over sections 3, 4 and 9 of `docs/snapshot-contract.md`. The real fixtures in `docs/fixtures/` (from `crates/sim-api`) are checked by `web/tests/fixtures.test.ts`.

@@ -1,3 +1,5 @@
+> **Status:** CURRENT with the "Town v2 amendment" at the bottom, which overrides the "Decisions" above (map ownership is now the simulation's; palette includes roads; cohort inspector replaced). Index: `docs/README.md`.
+
 # UI Design v0.1
 
 Companion to `SPEC.md` sections 4.1, 12, 12.1 and 13. The game is turn-based (1 turn = 1 quarter). Desktop-first, one screen, the 3D map always visible.

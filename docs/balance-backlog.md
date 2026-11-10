@@ -1,3 +1,5 @@
+> **Status: HISTORICAL** (Phase 1-2, cohort model, numbers superseded by Town v2). Open items are carried into `docs/known-issues.md`; current baselines are in `docs/tuning-log.md` (Town v2).
+
 # Balance and model backlog (parked)
 
 Parked on purpose so the UI work is not blocked. Pick this up as "Milestone 1, Phase 2". Source: builder and reviewer reports after Phase 1 (commits `f85b96b`, `fb110f5`, `363b8a7`).

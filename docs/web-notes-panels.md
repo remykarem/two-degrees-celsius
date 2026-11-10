@@ -1,3 +1,5 @@
+> **Status: HISTORICAL** (v1 panels for the cohort model). Superseded by `docs/web-notes-panels2.md`.
+
 # Web notes: panels (UI builder)
 
 Scope: `web/src/panels/**`, `web/src/ui-kit/**`, `web/src/app/App.svelte`, tests `web/tests/panels-*`, scripts `web/playwright/panels-*.mjs`.

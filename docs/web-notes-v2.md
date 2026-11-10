@@ -1,3 +1,5 @@
+> **Status:** foundation notes for Town v2. The "Left rough" list is mostly fixed by `docs/web-notes-scene2.md` and `docs/web-notes-panels2.md`; the "Contract issues" list is still valid. Consolidated list: `docs/known-issues.md`.
+
 # Web notes: Town v2 foundation
 
 Status: foundation done (types, port, mock, store). Scene and panels are only minimally adapted; two more builders (scene, panels) take over from here. Contract v1.0 is `docs/snapshot-contract.md` section 11, with the real wire shapes in `docs/sim-api-notes.md` ("Town v2").

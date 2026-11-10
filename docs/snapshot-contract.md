@@ -1,3 +1,5 @@
+> **Status: PARTLY HISTORICAL.** Sections 1-8 are the v0.1 draft (UI owns the map, cohort households) and are superseded. Sections 9-11 are current, section 11 (v1.0, Town v2) wins; the code (`web/src/contract/index.ts`, `crates/sim-api`) and `docs/fixtures/` are the final authority. Index: `docs/README.md`.
+
 # Snapshot Contract v0.1 (draft)
 
 The boundary between the Rust simulation and the web front end. Companion to `docs/ui-design.md` (module `web/src/contract` and `web/src/sim-port`) and `SPEC.md` 13.1. Drafted from the code at commit `5382c4a` (`sim-types`, `sim-engine`, `sim-metrics`).

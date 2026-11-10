@@ -1,3 +1,5 @@
+> **Status: HISTORICAL** (v1 scene for the cohort model). Superseded by `docs/web-notes-scene2.md`; the scene bus description remains broadly valid.
+
 # Web notes: 3D scene
 
 Status: the placeholder scene is replaced (`web/src/scene/`). Procedural low-poly town, camera, lenses, playback animation, pending builds, hover and selection. Pure logic is unit tested (`web/tests/scene-*.test.ts`); WebGL is verified with Playwright screenshots (`web/playwright/scene-shots.mjs`, `scene-perf.mjs`).

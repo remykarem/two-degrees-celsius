@@ -1,3 +1,5 @@
+> **Status: PARTLY SUPERSEDED.** Sections 0-3 describe the cohort model (Town v1), superseded by section 10 below and `docs/town-v2.md`. Sections 7-8 (turn layer, demand side) still hold; calibrated numbers in sections 4-9 are historical. Index: `docs/README.md`.
+
 # Causal Model v0.1
 
 Companion to `SPEC.md` (sections 7, 11, 13.2). Essential models only. Every number marked **[P]** is a placeholder to be tuned, not calibrated data. All parameters live in `content/params.json`, never inline in code.

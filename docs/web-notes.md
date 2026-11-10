@@ -1,3 +1,5 @@
+> **Status: HISTORICAL** (web scaffold stage, contract v0.1, mock only). Current web notes: `docs/web-notes-scene2.md`, `docs/web-notes-panels2.md`, `docs/web-notes-v2.md`; architecture: `docs/architecture.md`.
+
 # Web notes (scaffold stage)
 
 Status: scaffold only. The turn loop runs end to end against a **mock** simulation (`web/src/sim-port/mock`, numbers in `data.json`, not an economic model). The scene and panels are placeholders.

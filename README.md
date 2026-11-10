@@ -39,12 +39,14 @@ cargo test --workspace          # simulation
 cd web && npm test              # front end
 ```
 
+**AI agents and contributors: read [AGENTS.md](AGENTS.md) and [docs/README.md](docs/README.md).**
+
 ## Where things are
 
 - `crates/`: the Rust simulation
 - `content/`: all game numbers (JSON)
 - `web/`: the browser app
-- `docs/`: design docs. Start with `SPEC.md`, then `docs/town-v2.md`
+- `docs/`: design docs and notes. Index: `docs/README.md`
 
 ## Deploy
 
