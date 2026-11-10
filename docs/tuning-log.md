@@ -111,3 +111,29 @@ Tried and rejected: wealth consumption 0.004 (recession); Goods output 160 and S
 - **B (sensible play, `baseline_b_sensible.json`):** survives 19 of 20 (95%), median budget left 46%, median minimum legitimacy 0.44, Gini about 0.55 at the end. One seed collapses on mass unemployment after a firm defaults.
 - **C (neglect and extraction):** all 20 runs fail by legitimacy zero at turn 31 to 33 (year 8); Gini rises to about 0.8. It fails earlier than A, which is the design; the cause is the legitimacy rule, not the carbon budget (the budget is exhausted at turn 132 to 135, later than A, because the town collapses first). Fossil plants added in C change nothing: supply already exceeds demand, so a plant only matters when demand outgrows 10 units.
 - **D (carbon tax only):** all 20 runs end in legitimacy zero around turn 154; median budget left 5%. The carbon tax works on firms (green technology cuts their footprint) but the plants stay fossil and inequality keeps eating legitimacy. "Fails" here is marginal (6 turns before the end).
+
+## Carbon budget horizon (Paris 2030)
+Request: the budget took too long to deplete (no-action baseline A: 50% left at turn 64, exhausted at turn 124). The Paris horizon is 2030, about 4 years from now, so the budget should run out in about that time. Decision for the user: A should have 50% left at about turn 8 to 10 and exhaust at about turn 17 to 20; the calendar starts in 2026 so turn 17 is about the end of 2030.
+
+Measured (seed 42, no actions, net emissions about 10.3 t at turn 1 rising to 11.4 t a month by turn 20, so about 33 t a turn): cumulative 288 t at turn 9, 591 t at turn 18. Linear, so `nature.budget_b0` = 600 gives 50% at turn 9 to 10 and exhaustion at turn 18 to 19.
+
+| Parameter | From | To | Why |
+|---|---|---|---|
+| `nature.budget_b0` (`content/params.json`) | 4400 | 600 | see above. Temperature `T = t0 + (t_limit - t0) x cumulative / b0` still works: 1.30 at the start, 1.5 at exhaustion by construction |
+| `game.startYear` (`content/levers.json`, read by the wire `meta`; `web/scripts/sync-mock.mjs` now reads it too instead of a hard-coded 2031) | 2031 | 2026 | turn 17 (Q1 2030) to turn 20 (Q4 2030) |
+
+Nothing else changed: `run.turns` stays 160 (it is already a param). The remaining-budget share, the production climate-damage ratio and temperature all scale by `cumulative / b0`, so they bite 7 times faster per turn; the wellbeing and legitimacy terms were checked and do not collapse early.
+
+### Baselines with the 600 t budget, 20 seeds (turns are 1 quarter)
+Seeds differ by at most one tick (B2).
+- **A (no action):** 50% left at turn 9.7 (tick 29), exhausted at turn 18.7 (19.0 in 2 seeds), outcome `BudgetExhausted` in 20 of 20. No early collapse: seed 42 at the end of the budget has legitimacy 0.57 (never below 0.3 before it), wellbeing 0.70, unemployment 0 to 10%. The loss is the budget alone.
+- **B (sensible play):** cannot win in this horizon. Seed 42 remaining budget: 54% at turn 9, 19% at turn 17, 0% at turn 25.3 (all 20 seeds 25.3 to 26.0). Emissions fall from 10.3 t to 9.0 t a month at turn 9 and 6.6 t at turn 17, 3.4 t at turn 25: the carbon price takes 2 turns, each plant 4 turns, so the cut arrives after most of the 600 t is emitted. B buys about 6.5 turns over A, and the town stays healthier (legitimacy 0.65 to 0.67, wellbeing 0.78 to 0.81, unemployment 0 at turn 17), not a win. With a very large budget the same script survives 160 turns (cumulative 554 t at turn 20, 610 at 25, 783 at 40, 1,284 at 80, 2,388 at 160).
+- **C (neglect and extraction):** 50% at turn 9, budget exhausted at turn 17.3 (tick 52), outcome `BudgetExhausted` in every seed (earlier than A by about 1.5 turns). The old "fails by legitimacy zero at year 8" is no longer the failure mode.
+- **D (carbon tax only):** 50% at turn 10, budget exhausted at turn 19 (tick 57), fails in 20 of 20. Emissions fall only to 10.3 t by turn 17.
+
+### Options to keep a sensible game winnable (not implemented, a decision for the user)
+1. **Shorter game** (`run.turns` = 20, the end of 2030; already a param, no model change). Seed 42 B ends turn 20 with about 8% of the budget left (554 of 600 t): a win, but a thin one that depends on the B script being good, and the UI, fixtures and about ten tests assume 160. Not done: the margin is not clear enough to ship.
+2. **Larger budget.** B needs `b0` above about 800 t to survive 40 turns and about 2,400 t for 160 turns. A 1,000 t budget gives A about 30 turns and B a win at the 40-turn mark only if the game is also shortened.
+3. **Faster emissions response** (plant build time 4 turns, carbon-price lag 2 turns, a larger green subsidy effect): a model change, would need new tuning of B, C, D and 20 seeds.
+4. Changing the starting emissions (smaller fossil plants) is also a model change.
+Recommendation: option 1 together with a modest raise of `b0` (for example 700 to 800 t, so that B wins at turn 20 with 20 to 30% left and A still loses by about turn 22), or accepting that the 4-year Paris game is a "buy time" scenario where success is the best score, not survival. Pick one before the weather model.

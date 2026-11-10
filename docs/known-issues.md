@@ -9,9 +9,9 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | # | Issue | Status | Source |
 |---|---|---|---|
 | B1 | **Inequality does not rise in the no-action run (baseline A).** Seed 42 goes Gini 0.72 -> 0.63 and top share 61% -> 41% by year 40 (managers and workers save, the rich spend savings). The design said inequality should rise. Reported, not forced | open | tuning-log.md (Town v2) |
-| B2 | **Seeds barely matter.** RNG is used only for commons enclosure and firm founding, both rare. 20 seeds of baseline A exhaust the budget between turns 122.7 and 126.7. The 20-seed distribution tests are real but narrow. No shocks or random separations exist | open | deviations.md T23 |
-| B3 | Baseline D (carbon tax only) "fails" only marginally (legitimacy zero around turn 154, 6 turns early; median budget left 5%). Plants stay fossil | open | tuning-log.md |
-| B4 | Baseline C fails by legitimacy zero at turn 31-33, not by the carbon budget (budget exhausted at 132-135). Fails earlier than A as designed, but for a different reason than the carbon story | open | tuning-log.md |
+| B2 | **Seeds barely matter.** RNG is used only for commons enclosure and firm founding, both rare. 20 seeds of baseline A exhaust the budget within one tick of each other (turn 18.7 to 19.0 with the 600 t budget). The 20-seed distribution tests are real but narrow. No shocks or random separations exist | open | deviations.md T23 |
+| B3 | (Numbers before the 600 t budget; D now exhausts it at turn 19.) Baseline D (carbon tax only) "fails" only marginally (legitimacy zero around turn 154, 6 turns early; median budget left 5%). Plants stay fossil | open | tuning-log.md |
+| B4 | (Superseded: with the 600 t budget C now ends by the budget at turn 17.) Baseline C fails by legitimacy zero at turn 31-33, not by the carbon budget (budget exhausted at 132-135). Fails earlier than A as designed, but for a different reason than the carbon story | open | tuning-log.md |
 | B5 | Fossil plants added in C change nothing: supply (10) already exceeds demand (8 to 9.5), so a plant matters only when demand outgrows capacity. Removing a plant rations output | open | tuning-log.md, deviations.md item 46 (pre-v2 form) |
 | B6 | Start is not a fixed point: 48 warm-up ticks run; `goods.wealth_consumption_rate` 0.005 is "a compromise, not a fixed point" | open | tuning-log.md |
 | B7 | Tiny population: one firm closing swings unemployment 10-30 points; mitigated by `unemployment_smooth` and hiring/firing bands (hire 1, fire 1 a month, 3-month wait). Baseline B has 1 of 20 seeds collapsing on mass unemployment after a firm default | open (mitigated) | deviations.md T3, T10; tuning-log.md |
@@ -20,7 +20,9 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | B10 | Government debt/GDP drift, extraction not punished by the economy itself, wage-price spirals when tax/benefit changes are expansionary | unverified (pre-v2 numbers; Phase 2 "Open problems") | deviations.md |
 | B11 | Wealth tax inert at default threshold | resolved for v2: threshold is 150,000 (about twice the average household) | deviations.md T18 |
 | B12 | Phase 2 items (balanced start, deflation, lumpy green investment, budget calibration, extra demand lever) | resolved (and numbers redone for v2) | balance-backlog.md |
-| B13 | Budget `B0` 4,400 t was not recalibrated after the 1/50 scaling; A exhausts it at turn 123 (target 90 to 140) | open (works, not calibrated) | tuning-log.md |
+| B13 | Budget `B0` 4,400 t was not recalibrated after the 1/50 scaling; A exhausts it at turn 123 (target 90 to 140) | resolved: B0 is now 600 t for the Paris 2030 horizon (A exhausts at turn 18 to 19) | tuning-log.md |
+| B14 | **Sensible play (baseline B) cannot win the 600 t, 160-turn game**: the budget is gone at turn 25 whatever is built, because lags (carbon price 2 turns, plant 4 turns) delay the cut. Options (shorter `run.turns`, bigger `B0`, faster response) are in the tuning log | open (decision pending) | tuning-log.md Carbon budget horizon |
+| B15 | `tests/golden` plan plays 26 turns but the game now ends near turn 23, so the native/wasm golden compares only the turns that played (later turns are identical game-over errors) | open (documented) | crates/sim-wasm/tests/golden.rs |
 
 ## Contract and wire
 
