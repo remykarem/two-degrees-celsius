@@ -258,3 +258,25 @@ interface HomeView { id: number; tile: { x: number; y: number }; owner: number /
 - **MonthFrame.flows:** `commutes` are per person (with a tile path), `purchases` are real (household to firm).
 - **Nature:** each plant tile reports `emissionsMonthly`; `TraceRecord.emissions` source adds `'plant'` with the tile.
 - **Versioning:** `schemaVersion` becomes 2. Old saves are refused with a clear message.
+
+## 12. Contract v1.1: live-turn calls for Pressure mode (additive; `schemaVersion` stays 2)
+
+Design: `docs/town-v3.md`. `submitTurn` is unchanged and remains the Relaxed-mode call. Three new calls split it; **run in order they must be bit-identical to `submitTurn`** (same state, events, trace, history, RNG).
+
+```ts
+interface SimPort {  // additions
+  beginTurn(commands: Command[]): Result<TurnStart>;   // charge + queue commands, activate due items
+  advanceMonth(): Result<MonthResult>;                  // run exactly one tick (3 per turn)
+  finishTurn(): Result<TurnResult>;                     // policy gaps, PC regen, turn += 1, history point
+}
+interface TurnStart  { turn: number; accepted: PendingItem[]; rejected: { index: number; command: Command; reason: BlockReason }[];
+                       activated: PendingItem[]; pcBefore: number; snapshot: Snapshot }
+interface MonthResult { month: 0 | 1 | 2; frame: MonthFrame; snapshot: Snapshot }
+// finishTurn returns the same TurnResult as submitTurn (months[] holds the three frames accumulated since beginTurn)
+interface Snapshot { /* addition */ turnPhase: { open: boolean; monthsDone: 0 | 1 | 2 | 3 } }
+```
+- **State machine:** `beginTurn` is legal only when no turn is open (`open: false`); `advanceMonth` only when open and `monthsDone < 3`; `finishTurn` only when open and `monthsDone == 3`. `submitTurn` only when no turn is open. Otherwise `{ ok:false, error:{ code:'turn_state', message } }` and state is unchanged.
+- **Halting:** if an outcome occurs during a month, `advanceMonth` returns the month with `snapshot.gameOver` set; further `advanceMonth`/`finishTurn` calls complete the turn bookkeeping if possible, else return `game_over`.
+- **Saves:** `exportState` is legal only when no turn is open (a turn boundary); otherwise `turn_state`. `importState` always yields `turnPhase.open: false`.
+- **Previews:** `preview(commands)` is legal at any time and costs commands as for the next `beginTurn` (it does not see the turn in progress).
+- Fixtures: add `turn-start.json` and `month-result.json` to `docs/fixtures/`.
