@@ -20,7 +20,7 @@ Then run all tests. Baseline tests A-D in `tests/scenarios.rs` (20 seeds each) c
 
 ## 1. Add a policy lever
 
-Real example to follow: `job_guarantee` (the newest lever).
+Real example to follow: `job_guarantee`; `resilience_spending` (Town v4) is the newest lever and the first that the government pays out monthly (see `government.rs`, the `upkeep` sum). Count of levers: 20 (`LeverKey::ALL`, `LEVER_KEYS` has 31 keys with the place/remove actions).
 
 Rust
 - `crates/sim-types/src/enums.rs`: add a `PolicyChange::<Name>(type)` variant, its `key()` string, `value()` arm, and add the key to the lever-name list (the array ending `"job_guarantee", "switch_system", "place_..."`). `crates/sim-types/src/state.rs`: add the field to `Policy` (and to the effective policy if lobbied).
@@ -39,7 +39,7 @@ Tests/commands: add a sign or behaviour test in `tests/scenarios.rs` (see `job_g
 
 ## 2. Add a buildable kind
 
-Real example: **road** (`place:road`, `remove:road`). Needs tile rules, costs, lever table, wire, palette, scene mesh.
+Real examples: **road** (`place:road`, `remove:road`) and the **fire station** (`place:fire_station`, `remove:fire_station`, Town v4: its cost and upkeep are in `weather.fire_station_*`, its effect is read by `sim-model/src/weather.rs::covered`; the buildable list is now public housing, fossil plant, renewable plant, road, fire station). Needs tile rules, costs, lever table, wire, palette, scene mesh.
 
 Rust
 - `crates/sim-types/src/enums.rs`: `InfraKind` and `TileKind` variants; `place_<kind>` / `remove_<kind>` names in the lever-name list and `lever_key()` mapping (`InfraKind::Road => "place_road"`).
@@ -60,7 +60,7 @@ Tests: roads tests in `tests/scenarios.rs` (`roads_are_built_on_their_tile_cost_
 
 Real example: `electricity_rationed` (raised in `sim-model/src/production.rs`).
 
-1. `crates/sim-types/src/enums.rs`: add a variant to `Event`.
+1. `crates/sim-types/src/enums.rs`: add a variant to `Event` (the Town v4 weather events, `FireStarted` etc., are recent examples).
 2. Emit it from a system: `d.events.push(Event::...)` in the relevant `crates/sim-model/src/<system>.rs`.
 3. `crates/sim-api/src/events.rs`: add the `SimEventKind` variant (wire shape, snake_case tag, camelCase fields), the `from_sim` arm, and its **importance** (3 game-shaping, 2 notable, 1 routine) in `importance()`. The match is exhaustive, so the compiler points here.
 4. `crates/sim-api/tests/wire.rs`: add it to the list of every kind (near `K::ElectricityRationed`).
@@ -83,7 +83,7 @@ Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via
 
 ## 5. Add a new tick system (a new rule module)
 
-1. `crates/sim-model/src/<name>.rs` with `pub fn run(s:&State, p:&Params, r:&mut Rng) -> Deltas` (pure; no mutation; `libm`). Declare it in `crates/sim-model/src/lib.rs` and add it to `TICK_ORDER` (the array length is part of the type: update it). Order matters: the engine applies each system's deltas (and runs the checks) before the next system runs, so a later system sees the state the earlier ones produced this tick.
+1. `crates/sim-model/src/<name>.rs` with `pub fn run(s:&State, p:&Params, r:&mut Rng) -> Deltas` (pure; no mutation; `libm`). Declare it in `crates/sim-model/src/lib.rs` and add it to `TICK_ORDER` (the array length is part of the type: update it). Order matters (`TICK_ORDER` has 13 systems; S11 weather runs third, before production and nature, and is the example of a system that draws from the RNG): the engine applies each system's deltas (and runs the checks) before the next system runs, so a later system sees the state the earlier ones produced this tick.
 2. `crates/sim-types/src/enums.rs`: add a `SystemId` variant and its `name()` (used in violation messages).
 3. New state: fields in `sim-types/src/state.rs` (and `Deltas` / `Delta` variants in `deltas.rs` plus an arm in `crates/sim-engine/src/apply.rs`), initial values in `sim-engine/src/init.rs`, numbers in `content/params.json` with a struct in `sim-params` (`deny_unknown_fields`).
 4. Invariants: extend `crates/sim-checks/src/lib.rs` if the system adds money or structure that must hold. Money must go through `Delta` money operations so `check_money` stays exact.

@@ -137,3 +137,24 @@ Seeds differ by at most one tick (B2).
 3. **Faster emissions response** (plant build time 4 turns, carbon-price lag 2 turns, a larger green subsidy effect): a model change, would need new tuning of B, C, D and 20 seeds.
 4. Changing the starting emissions (smaller fossil plants) is also a model change.
 Recommendation: option 1 together with a modest raise of `b0` (for example 700 to 800 t, so that B wins at turn 20 with 20 to 30% left and A still loses by about turn 22), or accepting that the 4-year Paris game is a "buy time" scenario where success is the best score, not survival. Pick one before the weather model.
+
+## Town v4: weather (forest fires and drought)
+Goal: weather that works, is tunable (every number in `content/params.json` under `weather`) and is gentle by default. It is **not** tuned for baseline B to win: the game length and `budget_b0` may still change.
+
+Start values (first guess, kept): `onset` 0.50, `full` 0.10, `curve` 1.5; `drought_base` 0.01 a month (x(1 + 4s)); `fire_base` 0.012 a month (x(1 + 3s) x dryness x standing share); `spread_p` 0.10 per neighbour a month; fire lasts 3 months; `burn_frac` 0.30; `a_c` 0.8, `a_f` 0.3, `a_e` 0.1, community buffer 0.5; fire station 8,000 dollars, upkeep 30, radius 3, spread cut 0.6, duration cut 0.34; resilience scale 2,000 dollars a month, cuts 0.5 (ignition) and 0.4 (drought). Nothing was iterated to hit an outcome; the one change made while building was structural (weather off during the warm-up, deviation W14).
+
+### Baselines with weather, 20 seeds (1 to 20), counted until the budget is exhausted (the game ends there)
+Command: `cargo test -p sim-engine --test weather weather_baselines -- --nocapture` (it also re-runs each script with `fire_base` and `drought_base` at 0 for the "off" column).
+
+| Script | 50% left at turn | Exhausted at turn (weather on / off) | Fires started (mean) | Droughts started (mean) | Burnt tiles (mean) | Runs with a fire / a drought | Farm health low point (on / off) |
+|---|---|---|---|---|---|---|---|
+| A no action | 9.7 | 18.7 / 18.7 | 0.75 | 1.00 | 1.10 | 12 / 13 of 20 | 0.72 / 0.74 |
+| B sensible play | 10.0 | 25.4 / 25.4 | 1.10 | 1.05 | 1.60 | 15 / 14 | 0.72 / 0.74 |
+| C neglect | 9.0 | 17.7 / 17.7 | 1.25 | 0.85 | 1.65 | 17 / 12 | 0.56 / 0.60 |
+| D carbon tax only | 9.7 | 19.2 / 19.3 | 0.95 | 1.00 | 1.20 | 14 / 14 | 0.72 / 0.74 |
+
+Reading: with a 600 t budget onset is at turn 10 and the game is over at turn 19 (A), so a typical run sees about one fire and one drought, and the weather moves the exhaustion turn by at most about 0.1 turn and the farm health low point by 0.02 to 0.04 (0.04 in C, where the commons is also over-harvested). A to D keep their order and outcomes; the A-D baseline tests pass unchanged. B lasts longer (turn 25), so it meets more weather (1.1 fires) at higher stress. The weather is felt as events and as farm and wellbeing hits, not as a change to the budget race. After the budget is exhausted stress stays at 1 (about 0.05 droughts and 0.07 ignitions a month), which only matters if the game is lengthened to play on.
+
+Sign checks done in `tests/weather.rs`: higher stress raises ignition (measured over 20,000 draws against the formula); burning lowers the sink and raises net emissions once; stations cut burnt area (paired seeds); the community commons loses less regrowth in a drought; resilience spending lowers ignition and drought damage with diminishing returns.
+
+Easy knobs if the weather should bite more: `fire_base`, `drought_base`, `a_f` (the farm), `smoke_wellbeing`; less: the reverse, or raise `onset`'s distance from `full`.

@@ -76,16 +76,17 @@ Each system returns `Deltas`; `apply()` applies money operations, then field cha
 |---|---|---|---|---|
 | 1 | Policy | `policy.rs` | S0/system | Resets per-tick flows; advances an economic-system transition |
 | 2 | Labour | `labour.rs` | S1 | Individual hiring/firing, wages, job guarantee |
-| 3 | Production | `production.rs` | S2 | Output from effective labour (skill x commute-adjusted hours), electricity demand and rationing, firm direct emissions |
-| 4 | Nature | `nature.rs` | S7 | Emissions by source (firm, households, plants, sink), forest, commons, cumulative emissions, atmosphere |
-| 5 | Goods | `goods.rs` | S3 | Household spending, firm sales, housing market, rent, evictions and moves |
-| 6 | Income | `income.rs` | S4 | Wages, dividends by system, rent, interest, taxes on income |
-| 7 | Credit | `credit.rs` | S5 | Lending, repayment, defaults, bank failure/bailout |
-| 8 | Government | `government.rs` | S8 | Taxes, benefits, public spending, builds (pays `pending_build`), road upkeep, legitimacy |
-| 9 | Investment | `investment.rs` | S6 | Capital investment, green technology |
-| 10 | Class | `class.rs` | S9 | Derived class per household, mobility, founding a firm in the dormant slot |
-| 11 | Lobbying | `lobbying.rs` | S9b | Net lobbying; `effective = nominal x (1 - net_lobby)` for carbon price, profit tax, wealth tax, caps |
-| 12 | Wellbeing | `wellbeing.rs` | S10 | Per-person wellbeing (incl. commute, unhoused, local pollution) |
+| 3 | Weather | `weather.rs` | S11 | Town v4: climate stress from the budget remaining, drought, forest fires (ignition, spread, burn, regrow), forest stock loss. Draws from the sim RNG (draw order in the module header). Runs **before** production and nature so they see this tick's drought and burnt forest |
+| 4 | Production | `production.rs` | S2 | Output from effective labour (skill x commute-adjusted hours; the farm also loses output in a drought, every firm a little in smoke), electricity demand (up in a drought) and rationing, firm direct emissions |
+| 5 | Nature | `nature.rs` | S7 | Emissions by source (firm, households, plants, sink), forest, commons, cumulative emissions, atmosphere |
+| 6 | Goods | `goods.rs` | S3 | Household spending, firm sales, housing market, rent, evictions and moves |
+| 7 | Income | `income.rs` | S4 | Wages, dividends by system, rent, interest, taxes on income |
+| 8 | Credit | `credit.rs` | S5 | Lending, repayment, defaults, bank failure/bailout |
+| 9 | Government | `government.rs` | S8 | Taxes, benefits, public spending, builds (pays `pending_build`), road and fire-station upkeep, `resilience_spending`, legitimacy |
+| 10 | Investment | `investment.rs` | S6 | Capital investment, green technology |
+| 11 | Class | `class.rs` | S9 | Derived class per household, mobility, founding a firm in the dormant slot |
+| 12 | Lobbying | `lobbying.rs` | S9b | Net lobbying; `effective = nominal x (1 - net_lobby)` for carbon price, profit tax, wealth tax, caps |
+| 13 | Wellbeing | `wellbeing.rs` | S10 | Per-person wellbeing (incl. commute, unhoused, local pollution, smoke from fires) |
 
 Then, in `step()`: `sim_metrics::compute` (indicators), `check_outcome`, a money check, household income by type into the trace, `tick += 1`.
 
@@ -113,14 +114,14 @@ The UI must never compute economy numbers. The mock is the one exception by desi
   - Native: `crates/sim-wasm/tests/golden.rs`. Wasm: `web/tests/wasm-golden.test.ts` (skipped if `web/src/sim-port/wasm/pkg` is not built).
   - Any intended simulation change makes both fail until `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` is run and the diff is understood.
 - `tests/scenarios.rs` also has `same_seed_gives_identical_state`, invariants over several seeds, an insta snapshot (`golden_snapshot_seed_42`), and 20-seed baseline tests A-D.
-- Seeds matter little: the RNG is used only for commons enclosure and firm founding (`deviations.md` T23).
+- Seeds matter since Town v4: S11 weather draws from the RNG every tick once climate stress is above zero (`deviations.md` Town v4). Before onset the RNG is used only for commons enclosure and firm founding.
 
 ## 7. Save/load and schema versions
 
 | Version | Where | Value | Meaning |
 |---|---|---|---|
-| `SCHEMA_VERSION` | `sim-types/src/lib.rs` (re-exported by sim-api, sent as `Snapshot.schemaVersion`) | 2 | Layout of `State` and of the wire. Bump when either changes shape. Town v1 was 1 |
+| `SCHEMA_VERSION` | `sim-types/src/lib.rs` (re-exported by sim-api, sent as `Snapshot.schemaVersion`) | 3 | Layout of `State` and of the wire. Bump when either changes shape. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) is 3 |
 | Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 
-`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the real one (2).
+`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the real one (now 3).

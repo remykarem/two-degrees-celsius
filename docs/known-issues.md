@@ -9,7 +9,7 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | # | Issue | Status | Source |
 |---|---|---|---|
 | B1 | **Inequality does not rise in the no-action run (baseline A).** Seed 42 goes Gini 0.72 -> 0.63 and top share 61% -> 41% by year 40 (managers and workers save, the rich spend savings). The design said inequality should rise. Reported, not forced | open | tuning-log.md (Town v2) |
-| B2 | **Seeds barely matter.** RNG is used only for commons enclosure and firm founding, both rare. 20 seeds of baseline A exhaust the budget within one tick of each other (turn 18.7 to 19.0 with the 600 t budget). The 20-seed distribution tests are real but narrow. No shocks or random separations exist | open | deviations.md T23 |
+| B2 | **(Resolved by Town v4 weather: S11 draws from the RNG once stress is above zero, so seeds differ in fires and droughts; the economy itself still barely depends on the seed before turn 10.)** Old text: Seeds barely matter. RNG is used only for commons enclosure and firm founding, both rare. 20 seeds of baseline A exhaust the budget within one tick of each other (turn 18.7 to 19.0 with the 600 t budget). The 20-seed distribution tests are real but narrow. No shocks or random separations exist | open | deviations.md T23 |
 | B3 | (Numbers before the 600 t budget; D now exhausts it at turn 19.) Baseline D (carbon tax only) "fails" only marginally (legitimacy zero around turn 154, 6 turns early; median budget left 5%). Plants stay fossil | open | tuning-log.md |
 | B4 | (Superseded: with the 600 t budget C now ends by the budget at turn 17.) Baseline C fails by legitimacy zero at turn 31-33, not by the carbon budget (budget exhausted at 132-135). Fails earlier than A as designed, but for a different reason than the carbon story | open | tuning-log.md |
 | B5 | Fossil plants added in C change nothing: supply (10) already exceeds demand (8 to 9.5), so a plant matters only when demand outgrows capacity. Removing a plant rations output | open | tuning-log.md, deviations.md item 46 (pre-v2 form) |
@@ -83,3 +83,15 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 ## Resolved milestones (for orientation)
 
 Cohorts replaced by people and households; the map moved into the sim; roads; plants that emit; the Shop; ten-system doc reconciled; wire and wasm ported to schema 2; scene and panels v2; GitHub Pages deploy.
+
+## Town v4 (weather)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| W-1 | Weather is mild by default: about one fire and one drought per game inside the 19-turn budget horizon, so it barely moves baselines A to D. Tunable in `params.json` `weather`; a longer game or a bigger `budget_b0` will meet far more weather (stress stays at 1 once the budget is gone) | open (by design) | tuning-log.md Town v4 |
+| W-2 | Forest stock is a scalar; fire tiles are a view, and `regrowing` is a display state that does not slow regrowth beyond the logistic rule | open (deviations W3) | deviations.md |
+| W-3 | `fire_sink_loss` in `flows.emissions` is informational; a client that sums all emission lines would double count the sink loss | open (documented in sim-api-notes) | contract section 13 |
+| W-4 | No `Buildings.fireStation` count and no wire field for fire-station coverage; clients derive both from tiles | open | sim-api-notes.md |
+| W-5 | `home_damage_prob` is implemented but off; no eviction risk, and a damaged home keeps its tenant | open (optional in the design) | deviations W13 |
+| W-6 | The native-vs-wasm golden hashes every reply, so the weather block, forecast and tile states are covered every turn; whether a fire or drought actually occurs in the seed 7 plan was not checked | open | tests/golden |
+| W-7 | Web tests pinning 19 levers / schema 2 / fixture key sets fail until the web side is updated (`wasm-golden.test.ts` fails today on the lever count) | open (web agent) | this commit |
