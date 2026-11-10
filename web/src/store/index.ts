@@ -11,3 +11,10 @@ export { LENSES, type GameState, type Lens, type CameraAngle, type DraftItem, ty
 export { quarterLabel, shownTurn } from './config';
 export { paletteActions, type PaletteAction } from './palette';
 export { sceneBus, type SceneBus } from './scene-bus';
+export {
+  createClock, configFromSearch, gameDate, secondsPerQuarter, daysPerTurn, DEFAULT_CONFIG,
+  type Clock, type ClockConfig, type ClockEvent, type ClockPhase, type ClockState, type GameDate, type GameMode, type PauseReason, type TimeoutPolicy,
+} from './clock';
+export { createLive, type Live, type LiveView } from './live';
+export { liveClock, type LiveClockFeed } from './scene-live';
+export type { LiveSlice } from './types';

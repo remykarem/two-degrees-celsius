@@ -1,4 +1,5 @@
-import type { Snapshot, TurnResult } from '../contract';
+import type { Command, Snapshot, TurnResult } from '../contract';
+import type { GameMode } from './clock';
 import type { CameraAngle, Lens } from './types';
 
 export const SAVE_FORMAT = 'ecotown-save';
@@ -15,10 +16,15 @@ export interface SaveFile {
   previous: Snapshot | null;
   uiPrefs: { lens: Lens; camera: CameraAngle };
   savedAt: string;
+  /** Town v3 (optional, so older saves still load). A Pressure save holds the last turn boundary, never a turn in progress. */
+  mode?: GameMode;
+  clock?: { speed: number; slow: boolean };
+  /** The drafted plan, as commands. */
+  drafts?: Command[];
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-const LENS = ['none', 'emissions', 'class', 'wealth', 'employment', 'flows'];
+const LENS = ['none', 'emissions', 'class', 'wealth', 'employment', 'flows', 'commute'];
 
 export type SaveParse = { ok: true; value: SaveFile } | { ok: false; message: string };
 
@@ -34,5 +40,8 @@ export function parseSave(text: string): SaveParse {
   if (raw.previous !== null && !(isObj(raw.previous) && typeof raw.previous.turn === 'number')) return { ok: false, message: 'The save has a damaged previous snapshot.' };
   const ui = raw.uiPrefs;
   if (!isObj(ui) || !LENS.includes(String(ui.lens)) || ![0, 1, 2, 3].includes(Number(ui.camera))) return { ok: false, message: 'The save has damaged view settings.' };
+  if (raw.mode !== undefined && raw.mode !== 'relaxed' && raw.mode !== 'pressure') return { ok: false, message: 'The save has an unknown game mode.' };
+  if (raw.drafts !== undefined && !Array.isArray(raw.drafts)) return { ok: false, message: 'The save has a damaged plan.' };
+  if (raw.clock !== undefined && !(isObj(raw.clock) && typeof raw.clock.speed === 'number' && typeof raw.clock.slow === 'boolean')) return { ok: false, message: 'The save has damaged clock settings.' };
   return { ok: true, value: raw as unknown as SaveFile };
 }
