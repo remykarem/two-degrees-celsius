@@ -485,5 +485,40 @@
       "regulated",
       "coop"
     ]
+  },
+  {
+    "key": "resilience_spending",
+    "label": "Resilience spending",
+    "unit": "usd_per_month",
+    "min": 0.0,
+    "max": 20000.0,
+    "step": 500.0,
+    "baseCostPc": 4.0,
+    "leadTime": 1,
+    "costModel": {
+      "base": 4.0,
+      "unit": 1000.0,
+      "minSize": 0.25
+    },
+    "lobbied": false,
+    "arrows": [
+      {
+        "metric": "forest_health",
+        "direction": "up"
+      },
+      {
+        "metric": "farm_health",
+        "direction": "up"
+      },
+      {
+        "metric": "debt",
+        "direction": "up"
+      }
+    ],
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ]
   }
 ]

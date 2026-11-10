@@ -94,6 +94,25 @@
     "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
   },
   {
+    "key": "place:fire_station",
+    "label": "Build fire station",
+    "baseCostPc": 4.0,
+    "leadTime": 2,
+    "costModel": {
+      "base": 4.0,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "moneyCost": 8000.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ],
+    "needsTile": true,
+    "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
+  },
+  {
     "key": "remove:public_housing",
     "label": "Demolish public housing",
     "baseCostPc": 3.0,
@@ -168,5 +187,24 @@
     ],
     "needsTile": true,
     "tileRule": "a tile that holds a road (fixed town buildings cannot be removed)"
+  },
+  {
+    "key": "remove:fire_station",
+    "label": "Remove fire station",
+    "baseCostPc": 0.5,
+    "leadTime": 1,
+    "costModel": {
+      "base": 0.5,
+      "unit": 1.0,
+      "minSize": 1.0
+    },
+    "moneyCost": 0.0,
+    "availableIn": [
+      "market",
+      "regulated",
+      "coop"
+    ],
+    "needsTile": true,
+    "tileRule": "a tile that holds a fire station"
   }
 ]

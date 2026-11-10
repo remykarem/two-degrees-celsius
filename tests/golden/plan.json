@@ -82,6 +82,19 @@
      "x": 9,
      "y": 3
     }
+   },
+   {
+    "type": "place",
+    "kind": "fire_station",
+    "tile": {
+     "x": 2,
+     "y": 2
+    }
+   },
+   {
+    "type": "set_policy",
+    "lever": "resilience_spending",
+    "value": 1500
    }
   ],
   [

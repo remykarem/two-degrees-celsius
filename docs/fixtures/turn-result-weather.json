@@ -1,0 +1,4739 @@
+{
+  "turn": 17,
+  "accepted": [],
+  "rejected": [],
+  "activated": [],
+  "pcBefore": 100.0,
+  "pcAfter": 100.0,
+  "months": [
+    {
+      "month": 0,
+      "events": [
+        {
+          "importance": 1,
+          "type": "person_hired",
+          "person": 18,
+          "firm": 1
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 4,
+          "firm": 0,
+          "tiles": 7,
+          "minutes": 42
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 5,
+          "firm": 2,
+          "tiles": 5,
+          "minutes": 26
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 7,
+          "firm": 0,
+          "tiles": 10,
+          "minutes": 44
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 8,
+          "firm": 2,
+          "tiles": 4,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 10,
+          "firm": 0,
+          "tiles": 2,
+          "minutes": 12
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 11,
+          "firm": 2,
+          "tiles": 6,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 13,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 14,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 16,
+          "firm": 1,
+          "tiles": 3,
+          "minutes": 18
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 18,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 1,
+          "amount": 1108.28
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 1,
+          "amount": 1108.28
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 1,
+          "amount": 1662.42
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 1,
+          "amount": 1662.41
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 4,
+          "firm": 1,
+          "amount": 1481.02
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 5,
+          "firm": 1,
+          "amount": 1662.41
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 1,
+          "amount": 1108.28
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 1,
+          "amount": 1108.28
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 0,
+          "amount": 2309.87
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 0,
+          "amount": 139.07
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 0,
+          "amount": 1136.36
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 0,
+          "amount": 903.55
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 5,
+          "firm": 0,
+          "amount": 17.61
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 0,
+          "amount": 133.96
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 0,
+          "amount": 249.53
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 2,
+          "amount": 1889.89
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 2,
+          "amount": 113.79
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 2,
+          "amount": 929.75
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 2,
+          "amount": 739.27
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 5,
+          "firm": 2,
+          "amount": 14.41
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 2,
+          "amount": 109.6
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 2,
+          "amount": 204.16
+        },
+        {
+          "importance": 2,
+          "type": "class_changed",
+          "household": 7,
+          "to": "worker"
+        }
+      ],
+      "flows": {
+        "commutes": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 7,
+            "minutes": 42
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 5,
+            "minutes": 26
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 10,
+            "minutes": 44
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 4,
+            "minutes": 20
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 2,
+            "minutes": 12
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 6,
+            "minutes": 20
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "from": {
+              "x": 5,
+              "y": 8
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 3,
+            "minutes": 18
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "from": null,
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          }
+        ],
+        "purchases": [
+          {
+            "household": 0,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1108.28
+          },
+          {
+            "household": 1,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1108.28
+          },
+          {
+            "household": 2,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1662.42
+          },
+          {
+            "household": 3,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1662.41
+          },
+          {
+            "household": 4,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1481.02
+          },
+          {
+            "household": 5,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1662.41
+          },
+          {
+            "household": 6,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1108.28
+          },
+          {
+            "household": 7,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1108.28
+          },
+          {
+            "household": 0,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 2309.87
+          },
+          {
+            "household": 1,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 139.07
+          },
+          {
+            "household": 2,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 1136.36
+          },
+          {
+            "household": 3,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 903.55
+          },
+          {
+            "household": 5,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 17.61
+          },
+          {
+            "household": 6,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 133.96
+          },
+          {
+            "household": 7,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 249.53
+          },
+          {
+            "household": 0,
+            "firm": 2,
+            "sector": "services",
+            "amount": 1889.89
+          },
+          {
+            "household": 1,
+            "firm": 2,
+            "sector": "services",
+            "amount": 113.79
+          },
+          {
+            "household": 2,
+            "firm": 2,
+            "sector": "services",
+            "amount": 929.75
+          },
+          {
+            "household": 3,
+            "firm": 2,
+            "sector": "services",
+            "amount": 739.27
+          },
+          {
+            "household": 5,
+            "firm": 2,
+            "sector": "services",
+            "amount": 14.41
+          },
+          {
+            "household": 6,
+            "firm": 2,
+            "sector": "services",
+            "amount": 109.6
+          },
+          {
+            "household": 7,
+            "firm": 2,
+            "sector": "services",
+            "amount": 204.16
+          }
+        ],
+        "rent": [
+          {
+            "household": 3,
+            "home": 3,
+            "amount": 355.02
+          },
+          {
+            "household": 4,
+            "home": 4,
+            "amount": 355.02
+          },
+          {
+            "household": 5,
+            "home": 5,
+            "amount": 355.02
+          },
+          {
+            "household": 6,
+            "home": 6,
+            "amount": 355.02
+          }
+        ],
+        "wages": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "amount": 2776.69
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "amount": 2670.77
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "amount": 2776.69
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "amount": 2670.77
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "amount": 1200.0
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "amount": 1488.73
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "amount": 1488.73
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "amount": 1488.73
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "amount": 1319.87
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "amount": 1200.0
+          }
+        ],
+        "emissions": [
+          {
+            "source": "firm",
+            "id": 0,
+            "tonnes": 1.7066301245386515
+          },
+          {
+            "source": "firm",
+            "id": 1,
+            "tonnes": 0.7968866192432378
+          },
+          {
+            "source": "firm",
+            "id": 2,
+            "tonnes": 0.0
+          },
+          {
+            "source": "households",
+            "tonnes": 2.4000000000000004
+          },
+          {
+            "source": "plant",
+            "id": 0,
+            "tile": {
+              "x": 10,
+              "y": 2
+            },
+            "tonnes": 3.795583758636442
+          },
+          {
+            "source": "plant",
+            "id": 1,
+            "tile": {
+              "x": 10,
+              "y": 4
+            },
+            "tonnes": 3.795583758636442
+          },
+          {
+            "source": "sink",
+            "tonnes": -1.2628586370943182
+          }
+        ]
+      }
+    },
+    {
+      "month": 1,
+      "events": [
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 4,
+          "firm": 0,
+          "tiles": 7,
+          "minutes": 42
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 5,
+          "firm": 2,
+          "tiles": 5,
+          "minutes": 26
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 7,
+          "firm": 0,
+          "tiles": 10,
+          "minutes": 44
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 8,
+          "firm": 2,
+          "tiles": 4,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 10,
+          "firm": 0,
+          "tiles": 2,
+          "minutes": 12
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 11,
+          "firm": 2,
+          "tiles": 6,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 13,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 14,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 16,
+          "firm": 1,
+          "tiles": 3,
+          "minutes": 18
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 18,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 1,
+          "amount": 933.74
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 1,
+          "amount": 933.74
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 1,
+          "amount": 1400.61
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 1,
+          "amount": 1400.61
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 4,
+          "firm": 1,
+          "amount": 1248.83
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 5,
+          "firm": 1,
+          "amount": 1400.6
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 1,
+          "amount": 933.74
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 1,
+          "amount": 933.74
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 0,
+          "amount": 2036.58
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 0,
+          "amount": 119.55
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 0,
+          "amount": 1101.34
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 0,
+          "amount": 887.09
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 0,
+          "amount": 119.65
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 0,
+          "amount": 256.07
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 2,
+          "amount": 1666.29
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 2,
+          "amount": 97.82
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 2,
+          "amount": 901.09
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 2,
+          "amount": 725.8
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 2,
+          "amount": 97.9
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 2,
+          "amount": 209.51
+        }
+      ],
+      "flows": {
+        "commutes": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 7,
+            "minutes": 42
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 5,
+            "minutes": 26
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 10,
+            "minutes": 44
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 4,
+            "minutes": 20
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 2,
+            "minutes": 12
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 6,
+            "minutes": 20
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "from": {
+              "x": 5,
+              "y": 8
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 3,
+            "minutes": 18
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "from": null,
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          }
+        ],
+        "purchases": [
+          {
+            "household": 0,
+            "firm": 1,
+            "sector": "food",
+            "amount": 933.74
+          },
+          {
+            "household": 1,
+            "firm": 1,
+            "sector": "food",
+            "amount": 933.74
+          },
+          {
+            "household": 2,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1400.61
+          },
+          {
+            "household": 3,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1400.61
+          },
+          {
+            "household": 4,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1248.83
+          },
+          {
+            "household": 5,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1400.6
+          },
+          {
+            "household": 6,
+            "firm": 1,
+            "sector": "food",
+            "amount": 933.74
+          },
+          {
+            "household": 7,
+            "firm": 1,
+            "sector": "food",
+            "amount": 933.74
+          },
+          {
+            "household": 0,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 2036.58
+          },
+          {
+            "household": 1,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 119.55
+          },
+          {
+            "household": 2,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 1101.34
+          },
+          {
+            "household": 3,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 887.09
+          },
+          {
+            "household": 6,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 119.65
+          },
+          {
+            "household": 7,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 256.07
+          },
+          {
+            "household": 0,
+            "firm": 2,
+            "sector": "services",
+            "amount": 1666.29
+          },
+          {
+            "household": 1,
+            "firm": 2,
+            "sector": "services",
+            "amount": 97.82
+          },
+          {
+            "household": 2,
+            "firm": 2,
+            "sector": "services",
+            "amount": 901.09
+          },
+          {
+            "household": 3,
+            "firm": 2,
+            "sector": "services",
+            "amount": 725.8
+          },
+          {
+            "household": 6,
+            "firm": 2,
+            "sector": "services",
+            "amount": 97.9
+          },
+          {
+            "household": 7,
+            "firm": 2,
+            "sector": "services",
+            "amount": 209.51
+          }
+        ],
+        "rent": [
+          {
+            "household": 3,
+            "home": 3,
+            "amount": 356.8
+          },
+          {
+            "household": 4,
+            "home": 4,
+            "amount": 356.8
+          },
+          {
+            "household": 5,
+            "home": 5,
+            "amount": 356.8
+          },
+          {
+            "household": 6,
+            "home": 6,
+            "amount": 356.8
+          }
+        ],
+        "wages": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "amount": 2785.55
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "amount": 2678.22
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "amount": 2785.55
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "amount": 2678.22
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "amount": 1200.0
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "amount": 1492.97
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "amount": 1492.97
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "amount": 1492.97
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "amount": 1323.65
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "amount": 1200.0
+          }
+        ],
+        "emissions": [
+          {
+            "source": "firm",
+            "id": 0,
+            "tonnes": 1.711121303862782
+          },
+          {
+            "source": "firm",
+            "id": 1,
+            "tonnes": 0.7877883130003744
+          },
+          {
+            "source": "firm",
+            "id": 2,
+            "tonnes": 0.0
+          },
+          {
+            "source": "households",
+            "tonnes": 2.4000000000000004
+          },
+          {
+            "source": "plant",
+            "id": 0,
+            "tile": {
+              "x": 10,
+              "y": 2
+            },
+            "tonnes": 3.78426547510351
+          },
+          {
+            "source": "plant",
+            "id": 1,
+            "tile": {
+              "x": 10,
+              "y": 4
+            },
+            "tonnes": 3.78426547510351
+          },
+          {
+            "source": "sink",
+            "tonnes": -1.263268869148885
+          }
+        ]
+      }
+    },
+    {
+      "month": 2,
+      "events": [
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 4,
+          "firm": 0,
+          "tiles": 7,
+          "minutes": 42
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 5,
+          "firm": 2,
+          "tiles": 5,
+          "minutes": 26
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 7,
+          "firm": 0,
+          "tiles": 10,
+          "minutes": 44
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 8,
+          "firm": 2,
+          "tiles": 4,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 10,
+          "firm": 0,
+          "tiles": 2,
+          "minutes": 12
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 11,
+          "firm": 2,
+          "tiles": 6,
+          "minutes": 20
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 13,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 14,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 16,
+          "firm": 1,
+          "tiles": 3,
+          "minutes": 18
+        },
+        {
+          "importance": 1,
+          "type": "commuted",
+          "person": 18,
+          "firm": 1,
+          "tiles": 6,
+          "minutes": 36
+        },
+        {
+          "importance": 2,
+          "type": "fire_started",
+          "tile": {
+            "x": 2,
+            "y": 0
+          }
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 1,
+          "amount": 926.89
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 1,
+          "amount": 926.89
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 1,
+          "amount": 1390.34
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 1,
+          "amount": 1390.34
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 4,
+          "firm": 1,
+          "amount": 1390.34
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 5,
+          "firm": 1,
+          "amount": 1390.33
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 1,
+          "amount": 926.89
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 1,
+          "amount": 926.89
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 0,
+          "amount": 1824.14
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 0,
+          "amount": 154.76
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 0,
+          "amount": 1069.96
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 0,
+          "amount": 870.06
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 0,
+          "amount": 103.82
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 0,
+          "amount": 239.79
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 0,
+          "firm": 2,
+          "amount": 1492.48
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 1,
+          "firm": 2,
+          "amount": 126.63
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 2,
+          "firm": 2,
+          "amount": 875.42
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 3,
+          "firm": 2,
+          "amount": 711.87
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 6,
+          "firm": 2,
+          "amount": 84.94
+        },
+        {
+          "importance": 1,
+          "type": "purchase",
+          "household": 7,
+          "firm": 2,
+          "amount": 196.19
+        }
+      ],
+      "flows": {
+        "commutes": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 7,
+            "minutes": 42
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "from": {
+              "x": 3,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 5,
+            "minutes": 26
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 10,
+            "minutes": 44
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "from": {
+              "x": 2,
+              "y": 6
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 4,
+            "minutes": 20
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 9,
+              "y": 3
+            },
+            "tiles": 2,
+            "minutes": 12
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "from": {
+              "x": 8,
+              "y": 4
+            },
+            "to": {
+              "x": 5,
+              "y": 7
+            },
+            "tiles": 6,
+            "minutes": 20
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "from": {
+              "x": 3,
+              "y": 7
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "from": {
+              "x": 5,
+              "y": 8
+            },
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 3,
+            "minutes": 18
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "from": null,
+            "to": {
+              "x": 7,
+              "y": 9
+            },
+            "tiles": 6,
+            "minutes": 36
+          }
+        ],
+        "purchases": [
+          {
+            "household": 0,
+            "firm": 1,
+            "sector": "food",
+            "amount": 926.89
+          },
+          {
+            "household": 1,
+            "firm": 1,
+            "sector": "food",
+            "amount": 926.89
+          },
+          {
+            "household": 2,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1390.34
+          },
+          {
+            "household": 3,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1390.34
+          },
+          {
+            "household": 4,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1390.34
+          },
+          {
+            "household": 5,
+            "firm": 1,
+            "sector": "food",
+            "amount": 1390.33
+          },
+          {
+            "household": 6,
+            "firm": 1,
+            "sector": "food",
+            "amount": 926.89
+          },
+          {
+            "household": 7,
+            "firm": 1,
+            "sector": "food",
+            "amount": 926.89
+          },
+          {
+            "household": 0,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 1824.14
+          },
+          {
+            "household": 1,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 154.76
+          },
+          {
+            "household": 2,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 1069.96
+          },
+          {
+            "household": 3,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 870.06
+          },
+          {
+            "household": 6,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 103.82
+          },
+          {
+            "household": 7,
+            "firm": 0,
+            "sector": "goods",
+            "amount": 239.79
+          },
+          {
+            "household": 0,
+            "firm": 2,
+            "sector": "services",
+            "amount": 1492.48
+          },
+          {
+            "household": 1,
+            "firm": 2,
+            "sector": "services",
+            "amount": 126.63
+          },
+          {
+            "household": 2,
+            "firm": 2,
+            "sector": "services",
+            "amount": 875.42
+          },
+          {
+            "household": 3,
+            "firm": 2,
+            "sector": "services",
+            "amount": 711.87
+          },
+          {
+            "household": 6,
+            "firm": 2,
+            "sector": "services",
+            "amount": 84.94
+          },
+          {
+            "household": 7,
+            "firm": 2,
+            "sector": "services",
+            "amount": 196.19
+          }
+        ],
+        "rent": [
+          {
+            "household": 3,
+            "home": 3,
+            "amount": 358.58
+          },
+          {
+            "household": 4,
+            "home": 4,
+            "amount": 358.58
+          },
+          {
+            "household": 5,
+            "home": 5,
+            "amount": 358.58
+          },
+          {
+            "household": 6,
+            "home": 6,
+            "amount": 358.58
+          }
+        ],
+        "wages": [
+          {
+            "person": 4,
+            "household": 2,
+            "firm": 0,
+            "amount": 2795.79
+          },
+          {
+            "person": 5,
+            "household": 2,
+            "firm": 2,
+            "amount": 2686.98
+          },
+          {
+            "person": 7,
+            "household": 3,
+            "firm": 0,
+            "amount": 2795.79
+          },
+          {
+            "person": 8,
+            "household": 3,
+            "firm": 2,
+            "amount": 2686.98
+          },
+          {
+            "person": 10,
+            "household": 4,
+            "firm": 0,
+            "amount": 1200.0
+          },
+          {
+            "person": 11,
+            "household": 4,
+            "firm": 2,
+            "amount": 1497.94
+          },
+          {
+            "person": 13,
+            "household": 5,
+            "firm": 1,
+            "amount": 1497.94
+          },
+          {
+            "person": 14,
+            "household": 5,
+            "firm": 1,
+            "amount": 1497.94
+          },
+          {
+            "person": 16,
+            "household": 6,
+            "firm": 1,
+            "amount": 1328.08
+          },
+          {
+            "person": 18,
+            "household": 7,
+            "firm": 1,
+            "amount": 1200.0
+          }
+        ],
+        "emissions": [
+          {
+            "source": "fire_sink_loss",
+            "tonnes": 0.025273886156819175
+          },
+          {
+            "source": "firm",
+            "id": 0,
+            "tonnes": 1.7154960925985108
+          },
+          {
+            "source": "firm",
+            "id": 1,
+            "tonnes": 0.7749930455242189
+          },
+          {
+            "source": "firm",
+            "id": 2,
+            "tonnes": 0.0
+          },
+          {
+            "source": "households",
+            "tonnes": 2.4000000000000004
+          },
+          {
+            "source": "plant",
+            "id": 0,
+            "tile": {
+              "x": 10,
+              "y": 2
+            },
+            "tonnes": 3.6862416220014738
+          },
+          {
+            "source": "plant",
+            "id": 1,
+            "tile": {
+              "x": 10,
+              "y": 4
+            },
+            "tonnes": 3.6862416220014738
+          },
+          {
+            "source": "sink",
+            "tonnes": -1.2384204216841397
+          }
+        ]
+      }
+    }
+  ],
+  "policyGaps": [
+    {
+      "lever": "carbon_price",
+      "nominal": 0.0,
+      "effective": 0.0
+    },
+    {
+      "lever": "wealth_tax",
+      "nominal": 0.0,
+      "effective": 0.0
+    },
+    {
+      "lever": "tax_profit",
+      "nominal": 0.25,
+      "effective": 0.1084473020552443
+    },
+    {
+      "lever": "emissions_cap",
+      "nominal": 0.0,
+      "effective": 0.0
+    }
+  ],
+  "trace": [
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 0,
+      "tonnes": 1.7066301245386515
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 1,
+      "tonnes": 0.7968866192432378
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 2,
+      "tonnes": 0.0
+    },
+    {
+      "type": "emissions",
+      "source": "households",
+      "tonnes": 2.4000000000000004
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 0,
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "tonnes": 3.795583758636442
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 1,
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "tonnes": 3.795583758636442
+    },
+    {
+      "type": "emissions",
+      "source": "sink",
+      "tonnes": -1.2628586370943182
+    },
+    {
+      "type": "policy_gap",
+      "lever": "carbon_price",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5711268965310697
+    },
+    {
+      "type": "policy_gap",
+      "lever": "wealth_tax",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5711268965310697
+    },
+    {
+      "type": "policy_gap",
+      "lever": "tax_profit",
+      "nominal": 0.25,
+      "effective": 0.10721827586723257,
+      "netLobby": 0.5711268965310697
+    },
+    {
+      "type": "policy_gap",
+      "lever": "emissions_cap",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5711268965310697
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "dividends",
+      "amount": 7166.37
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "interest",
+      "amount": 151.01
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "dividends",
+      "amount": 666.5
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "rent",
+      "amount": 1420.08
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "interest",
+      "amount": 5.29
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "wages",
+      "amount": 5647.65
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "interest",
+      "amount": 187.12
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "wages",
+      "amount": 5459.46
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "interest",
+      "amount": 202.48
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "wages",
+      "amount": 2700.73
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "interest",
+      "amount": 5.93
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "wages",
+      "amount": 2989.46
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "interest",
+      "amount": 27.95
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "wages",
+      "amount": 1325.87
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "interest",
+      "amount": 14.44
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "wages",
+      "amount": 1206.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "interest",
+      "amount": 4.23
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 0,
+      "tonnes": 1.711121303862782
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 1,
+      "tonnes": 0.7877883130003744
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 2,
+      "tonnes": 0.0
+    },
+    {
+      "type": "emissions",
+      "source": "households",
+      "tonnes": 2.4000000000000004
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 0,
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "tonnes": 3.78426547510351
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 1,
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "tonnes": 3.78426547510351
+    },
+    {
+      "type": "emissions",
+      "source": "sink",
+      "tonnes": -1.263268869148885
+    },
+    {
+      "type": "policy_gap",
+      "lever": "carbon_price",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5689171178675552
+    },
+    {
+      "type": "policy_gap",
+      "lever": "wealth_tax",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5689171178675552
+    },
+    {
+      "type": "policy_gap",
+      "lever": "tax_profit",
+      "nominal": 0.25,
+      "effective": 0.10777072053311121,
+      "netLobby": 0.5689171178675552
+    },
+    {
+      "type": "policy_gap",
+      "lever": "emissions_cap",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5689171178675552
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "dividends",
+      "amount": 5808.37
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "interest",
+      "amount": 146.6
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "dividends",
+      "amount": 465.39
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "rent",
+      "amount": 1427.2
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "interest",
+      "amount": 5.31
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "wages",
+      "amount": 5632.83
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "interest",
+      "amount": 188.59
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "wages",
+      "amount": 5475.77
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "interest",
+      "amount": 203.84
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "wages",
+      "amount": 2704.97
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "interest",
+      "amount": 6.62
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "wages",
+      "amount": 2997.94
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "interest",
+      "amount": 28.82
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "wages",
+      "amount": 1329.65
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "interest",
+      "amount": 15.02
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "wages",
+      "amount": 1206.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "interest",
+      "amount": 4.81
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "emissions",
+      "source": "fire_sink_loss",
+      "tonnes": 0.025273886156819175
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 0,
+      "tonnes": 1.7154960925985108
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 1,
+      "tonnes": 0.7749930455242189
+    },
+    {
+      "type": "emissions",
+      "source": "firm",
+      "id": 2,
+      "tonnes": 0.0
+    },
+    {
+      "type": "emissions",
+      "source": "households",
+      "tonnes": 2.4000000000000004
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 0,
+      "tile": {
+        "x": 10,
+        "y": 2
+      },
+      "tonnes": 3.6862416220014738
+    },
+    {
+      "type": "emissions",
+      "source": "plant",
+      "id": 1,
+      "tile": {
+        "x": 10,
+        "y": 4
+      },
+      "tonnes": 3.6862416220014738
+    },
+    {
+      "type": "emissions",
+      "source": "sink",
+      "tonnes": -1.2384204216841397
+    },
+    {
+      "type": "policy_gap",
+      "lever": "carbon_price",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5662107917790228
+    },
+    {
+      "type": "policy_gap",
+      "lever": "wealth_tax",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5662107917790228
+    },
+    {
+      "type": "policy_gap",
+      "lever": "tax_profit",
+      "nominal": 0.25,
+      "effective": 0.1084473020552443,
+      "netLobby": 0.5662107917790228
+    },
+    {
+      "type": "policy_gap",
+      "lever": "emissions_cap",
+      "nominal": 0.0,
+      "effective": 0.0,
+      "netLobby": 0.5662107917790228
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "dividends",
+      "amount": 5491.42
+    },
+    {
+      "type": "income",
+      "household": 0,
+      "kind": "interest",
+      "amount": 143.91
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "dividends",
+      "amount": 319.19
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "rent",
+      "amount": 1434.32
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "interest",
+      "amount": 5.06
+    },
+    {
+      "type": "income",
+      "household": 1,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "wages",
+      "amount": 5642.65
+    },
+    {
+      "type": "income",
+      "household": 2,
+      "kind": "interest",
+      "amount": 190.18
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "wages",
+      "amount": 5494.77
+    },
+    {
+      "type": "income",
+      "household": 3,
+      "kind": "interest",
+      "amount": 205.33
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "wages",
+      "amount": 2709.94
+    },
+    {
+      "type": "income",
+      "household": 4,
+      "kind": "interest",
+      "amount": 6.96
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "wages",
+      "amount": 3007.88
+    },
+    {
+      "type": "income",
+      "household": 5,
+      "kind": "interest",
+      "amount": 29.73
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "wages",
+      "amount": 1334.08
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "interest",
+      "amount": 15.7
+    },
+    {
+      "type": "income",
+      "household": 6,
+      "kind": "benefits",
+      "amount": 800.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "wages",
+      "amount": 1206.0
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "interest",
+      "amount": 5.48
+    },
+    {
+      "type": "income",
+      "household": 7,
+      "kind": "benefits",
+      "amount": 800.0
+    }
+  ],
+  "snapshot": {
+    "schemaVersion": 3,
+    "game": {
+      "startYear": 2026,
+      "firstTurn": 1,
+      "lastTurn": 160,
+      "turnsPerYear": 4
+    },
+    "turn": 18,
+    "tick": 51,
+    "gameOver": null,
+    "turnPhase": {
+      "open": false,
+      "monthsDone": 0
+    },
+    "pc": {
+      "current": 100.0,
+      "cap": 100.0,
+      "regenNextTurn": 4.683666587888284
+    },
+    "system": {
+      "current": "market",
+      "transition": null
+    },
+    "map": {
+      "width": 12,
+      "height": 12,
+      "tiles": [
+        {
+          "x": 0,
+          "y": 0,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "kind": "forest",
+          "buildable": false,
+          "state": "burning"
+        },
+        {
+          "x": 3,
+          "y": 0,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 4,
+          "y": 0,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 5,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 0,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 1,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 2,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 2,
+          "kind": "home",
+          "ref": 0,
+          "buildable": false
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": "home",
+          "ref": 1,
+          "buildable": false
+        },
+        {
+          "x": 5,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 2,
+          "kind": "fossil_plant",
+          "ref": 0,
+          "buildable": false,
+          "emissionsMonthly": 3.6862416220014738
+        },
+        {
+          "x": 11,
+          "y": 2,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 3,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 3,
+          "kind": "firm",
+          "ref": 0,
+          "buildable": false
+        },
+        {
+          "x": 10,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 3,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 4,
+          "kind": "home",
+          "ref": 2,
+          "buildable": false
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "kind": "home",
+          "ref": 4,
+          "buildable": false
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "kind": "fossil_plant",
+          "ref": 1,
+          "buildable": false,
+          "emissionsMonthly": 3.6862416220014738
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 5,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 5,
+          "kind": "town_hall",
+          "buildable": false
+        },
+        {
+          "x": 6,
+          "y": 5,
+          "kind": "bank",
+          "buildable": false
+        },
+        {
+          "x": 7,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 5,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 6,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 6,
+          "kind": "home",
+          "ref": 3,
+          "buildable": false
+        },
+        {
+          "x": 3,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 6,
+          "kind": "road",
+          "buildable": false
+        },
+        {
+          "x": 6,
+          "y": 6,
+          "kind": "road",
+          "buildable": false
+        },
+        {
+          "x": 7,
+          "y": 6,
+          "kind": "road",
+          "buildable": false
+        },
+        {
+          "x": 8,
+          "y": 6,
+          "kind": "road",
+          "buildable": false
+        },
+        {
+          "x": 9,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 6,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 7,
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing"
+        },
+        {
+          "x": 1,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 7,
+          "kind": "home",
+          "ref": 5,
+          "buildable": false
+        },
+        {
+          "x": 4,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 7,
+          "kind": "firm",
+          "ref": 2,
+          "buildable": false
+        },
+        {
+          "x": 6,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 7,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 1,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 8,
+          "kind": "home",
+          "ref": 6,
+          "buildable": false
+        },
+        {
+          "x": 6,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 8,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 9,
+          "y": 8,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 10,
+          "y": 8,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 11,
+          "y": 8,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 1,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 9,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 9,
+          "kind": "firm",
+          "ref": 1,
+          "buildable": false
+        },
+        {
+          "x": 8,
+          "y": 9,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 9,
+          "y": 9,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 10,
+          "y": 9,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 11,
+          "y": 9,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 0,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 1,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 10,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 10,
+          "y": 10,
+          "kind": "commons",
+          "buildable": false
+        },
+        {
+          "x": 11,
+          "y": 10,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 0,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 1,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 2,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 3,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 4,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 5,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 6,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 7,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 8,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 9,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 10,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        },
+        {
+          "x": 11,
+          "y": 11,
+          "kind": "empty",
+          "buildable": true
+        }
+      ]
+    },
+    "buildings": {
+      "publicHousing": 0,
+      "fossilPlant": 2,
+      "renewablePlant": 0,
+      "road": 4
+    },
+    "pending": [],
+    "policy": {
+      "carbon_price": {
+        "nominal": 0.0,
+        "effective": 0.0
+      },
+      "tax_wage": {
+        "nominal": 0.3,
+        "effective": null
+      },
+      "tax_profit": {
+        "nominal": 0.25,
+        "effective": 0.1084473020552443
+      },
+      "tax_capital": {
+        "nominal": 0.4,
+        "effective": null
+      },
+      "wealth_tax": {
+        "nominal": 0.0,
+        "effective": 0.0
+      },
+      "wealth_threshold": {
+        "nominal": 150000.0,
+        "effective": null
+      },
+      "base_rate": {
+        "nominal": 0.04,
+        "effective": null
+      },
+      "min_wage": {
+        "nominal": 1200.0,
+        "effective": null
+      },
+      "benefit": {
+        "nominal": 800.0,
+        "effective": null
+      },
+      "ubi": {
+        "nominal": 0.0,
+        "effective": null
+      },
+      "green_subsidy": {
+        "nominal": 0.0,
+        "effective": null
+      },
+      "campaign_cap": {
+        "nominal": 1.0,
+        "effective": null
+      },
+      "emissions_cap": {
+        "nominal": 0.0,
+        "effective": 0.0
+      },
+      "commons_harvest": {
+        "nominal": 1.0,
+        "effective": null
+      },
+      "commons_access": {
+        "nominal": "open",
+        "effective": null
+      },
+      "bank_capital_ratio": {
+        "nominal": 0.1,
+        "effective": null
+      },
+      "bailout": {
+        "nominal": false,
+        "effective": null
+      },
+      "public_spending": {
+        "nominal": 8000.0,
+        "effective": null
+      },
+      "job_guarantee": {
+        "nominal": 0.0,
+        "effective": null
+      },
+      "resilience_spending": {
+        "nominal": 0.0,
+        "effective": null
+      }
+    },
+    "netLobby": 0.5662107917790228,
+    "unionDensity": 0.05,
+    "indicators": {
+      "gdpAnnual": 336100.08,
+      "gdpRealAnnual": 369818.6437743205,
+      "unemployment": 0.0,
+      "employed": 10.0,
+      "labourForce": 10.0,
+      "gini": 0.7102140877067236,
+      "avgIncomePerPerson": 1482.13,
+      "medianIncomePerPerson": 1177.09,
+      "topHouseholdWealthShare": 0.5604239540816056,
+      "wageShare": 0.6924837387720943,
+      "profitShare": 0.2646368902976756,
+      "avgWellbeing": 0.6723229451564917,
+      "remainingBudget": 50.30084151222843,
+      "budgetShare": 0.08383473585371405,
+      "temperature": 1.4832330528292572,
+      "gpiAnnual": 67936.70084417377,
+      "moneyInCirculation": 300162.38,
+      "priceIndex": 0.9088240564883554
+    },
+    "people": [
+      {
+        "id": 0,
+        "label": "Adult 1",
+        "household": 0,
+        "ageBand": "adult",
+        "skill": 0.6,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.8699746467424018,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 1,
+        "label": "Adult 2",
+        "household": 0,
+        "ageBand": "adult",
+        "skill": 0.6,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.8699746467424018,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 2,
+        "label": "Adult 1",
+        "household": 1,
+        "ageBand": "adult",
+        "skill": 0.6,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.5726212012349541,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 3,
+        "label": "Retired 1",
+        "household": 1,
+        "ageBand": "retired",
+        "skill": 0.4,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.5726212012349541,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 4,
+        "label": "Adult 1",
+        "household": 2,
+        "ageBand": "adult",
+        "skill": 0.938409933129513,
+        "job": {
+          "firm": 0
+        },
+        "wage": 2795.79,
+        "commuteTiles": 7,
+        "commuteMinutes": 42,
+        "wellbeing": 0.8013408075277487,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.872
+      },
+      {
+        "id": 5,
+        "label": "Adult 2",
+        "household": 2,
+        "ageBand": "adult",
+        "skill": 0.938409933129513,
+        "job": {
+          "firm": 2
+        },
+        "wage": 2686.98,
+        "commuteTiles": 5,
+        "commuteMinutes": 26,
+        "wellbeing": 0.8246741408610821,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.9359999999999999
+      },
+      {
+        "id": 6,
+        "label": "Child 1",
+        "household": 2,
+        "ageBand": "child",
+        "skill": 0.3,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.8513408075277488,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 7,
+        "label": "Adult 1",
+        "household": 3,
+        "ageBand": "adult",
+        "skill": 0.938409933129513,
+        "job": {
+          "firm": 0
+        },
+        "wage": 2795.79,
+        "commuteTiles": 10,
+        "commuteMinutes": 44,
+        "wellbeing": 0.774999901632095,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.864
+      },
+      {
+        "id": 8,
+        "label": "Adult 2",
+        "household": 3,
+        "ageBand": "adult",
+        "skill": 0.938409933129513,
+        "job": {
+          "firm": 2
+        },
+        "wage": 2686.98,
+        "commuteTiles": 4,
+        "commuteMinutes": 20,
+        "wellbeing": 0.8083332349654282,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.96
+      },
+      {
+        "id": 9,
+        "label": "Child 1",
+        "household": 3,
+        "ageBand": "child",
+        "skill": 0.3,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.824999901632095,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 10,
+        "label": "Adult 1",
+        "household": 4,
+        "ageBand": "adult",
+        "skill": 0.3825364947564302,
+        "job": {
+          "firm": 0
+        },
+        "wage": 1200.0,
+        "commuteTiles": 2,
+        "commuteMinutes": 12,
+        "wellbeing": 0.5353715720630273,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.992
+      },
+      {
+        "id": 11,
+        "label": "Adult 2",
+        "household": 4,
+        "ageBand": "adult",
+        "skill": 0.5520058430173608,
+        "job": {
+          "firm": 2
+        },
+        "wage": 1497.94,
+        "commuteTiles": 6,
+        "commuteMinutes": 20,
+        "wellbeing": 0.522075916371852,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.96
+      },
+      {
+        "id": 12,
+        "label": "Child 1",
+        "household": 4,
+        "ageBand": "child",
+        "skill": 0.3,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.5387425830385187,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 13,
+        "label": "Adult 1",
+        "household": 5,
+        "ageBand": "adult",
+        "skill": 0.5520058430173608,
+        "job": {
+          "firm": 1
+        },
+        "wage": 1497.94,
+        "commuteTiles": 6,
+        "commuteMinutes": 36,
+        "wellbeing": 0.6426169108753883,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.896
+      },
+      {
+        "id": 14,
+        "label": "Adult 2",
+        "household": 5,
+        "ageBand": "adult",
+        "skill": 0.5520058430173608,
+        "job": {
+          "firm": 1
+        },
+        "wage": 1497.94,
+        "commuteTiles": 6,
+        "commuteMinutes": 36,
+        "wellbeing": 0.6426169108753883,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.896
+      },
+      {
+        "id": 15,
+        "label": "Child 1",
+        "household": 5,
+        "ageBand": "child",
+        "skill": 0.3,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.6859502442087215,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 16,
+        "label": "Adult 1",
+        "household": 6,
+        "ageBand": "adult",
+        "skill": 0.4968052587156245,
+        "job": {
+          "firm": 1
+        },
+        "wage": 1328.08,
+        "commuteTiles": 3,
+        "commuteMinutes": 18,
+        "wellbeing": 0.6828862212562755,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.968
+      },
+      {
+        "id": 17,
+        "label": "Retired 1",
+        "household": 6,
+        "ageBand": "retired",
+        "skill": 0.4,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.6962195545896088,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 18,
+        "label": "Adult 1",
+        "household": 7,
+        "ageBand": "adult",
+        "skill": 0.28991046360510253,
+        "job": {
+          "firm": 1
+        },
+        "wage": 1200.0,
+        "commuteTiles": 6,
+        "commuteMinutes": 36,
+        "wellbeing": 0.31619626939211426,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.896
+      },
+      {
+        "id": 19,
+        "label": "Retired 1",
+        "household": 7,
+        "ageBand": "retired",
+        "skill": 0.4,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.4129022303580322,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      }
+    ],
+    "households": [
+      {
+        "id": 0,
+        "label": "Owner family",
+        "members": [
+          0,
+          1
+        ],
+        "home": 0,
+        "class": "capitalist",
+        "savings": 55964.91,
+        "debt": 0.0,
+        "netWorth": 427676.61,
+        "income": {
+          "wages": 0.0,
+          "dividends": 5491.42,
+          "rent": 0.0,
+          "interest": 143.91,
+          "benefits": 0.0,
+          "taxPaid": 2254.13,
+          "rentPaid": 0.0,
+          "loanPayments": 0.0,
+          "spending": 4243.51
+        },
+        "politicalPower": 0.5605716483482323,
+        "arrearsMonths": 0,
+        "wellbeing": 0.8699746467424018,
+        "footprintTonnes": 0.8211729218074443,
+        "foodMet": 0.7749916387959866
+      },
+      {
+        "id": 1,
+        "label": "Landlord",
+        "members": [
+          2,
+          3
+        ],
+        "home": 1,
+        "class": "rentier",
+        "savings": 1435.39,
+        "debt": 96552.62,
+        "netWorth": 149424.51,
+        "income": {
+          "wages": 0.0,
+          "dividends": 319.19,
+          "rent": 1434.32,
+          "interest": 5.06,
+          "benefits": 800.0,
+          "taxPaid": 703.43,
+          "rentPaid": 0.0,
+          "loanPayments": 653.69,
+          "spending": 1208.28
+        },
+        "politicalPower": 0.1958507469852845,
+        "arrearsMonths": 0,
+        "wellbeing": 0.5726212012349541,
+        "footprintTonnes": 0.5438072527502429,
+        "foodMet": 0.7749916387959866
+      },
+      {
+        "id": 2,
+        "label": "Manager A",
+        "members": [
+          4,
+          5,
+          6
+        ],
+        "home": 2,
+        "class": "manager",
+        "savings": 74551.91,
+        "debt": 22281.36,
+        "netWorth": 97270.55,
+        "income": {
+          "wages": 5642.65,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 190.18,
+          "benefits": 0.0,
+          "taxPaid": 1720.9,
+          "rentPaid": 0.0,
+          "loanPayments": 150.86,
+          "spending": 3335.72
+        },
+        "politicalPower": 0.12726875626360515,
+        "arrearsMonths": 0,
+        "wellbeing": 0.8257852519721932,
+        "footprintTonnes": 0.9491117896018431,
+        "foodMet": 0.7749944258639911
+      },
+      {
+        "id": 3,
+        "label": "Manager B",
+        "members": [
+          7,
+          8,
+          9
+        ],
+        "home": 3,
+        "class": "manager",
+        "savings": 80571.42,
+        "debt": 7427.13,
+        "netWorth": 73144.29,
+        "income": {
+          "wages": 5494.77,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 205.33,
+          "benefits": 0.0,
+          "taxPaid": 1726.96,
+          "rentPaid": 358.58,
+          "loanPayments": 50.29,
+          "spending": 2972.27
+        },
+        "politicalPower": 0.09584768227731436,
+        "arrearsMonths": 0,
+        "wellbeing": 0.8027776794098728,
+        "footprintTonnes": 0.9181133610479647,
+        "foodMet": 0.7749944258639911
+      },
+      {
+        "id": 4,
+        "label": "Worker A",
+        "members": [
+          10,
+          11,
+          12
+        ],
+        "home": 4,
+        "class": "worker",
+        "savings": 1970.42,
+        "debt": 2970.86,
+        "netWorth": -1000.44,
+        "income": {
+          "wages": 2709.94,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 6.96,
+          "benefits": 0.0,
+          "taxPaid": 812.16,
+          "rentPaid": 358.58,
+          "loanPayments": 20.11,
+          "spending": 1390.34
+        },
+        "politicalPower": 0.0,
+        "arrearsMonths": 0,
+        "wellbeing": 0.5320633571577994,
+        "footprintTonnes": 0.7776861984557482,
+        "foodMet": 0.7749944258639911
+      },
+      {
+        "id": 5,
+        "label": "Worker B",
+        "members": [
+          13,
+          14,
+          15
+        ],
+        "home": 5,
+        "class": "worker",
+        "savings": 11008.62,
+        "debt": 2228.13,
+        "netWorth": 8780.49,
+        "income": {
+          "wages": 3007.88,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 29.73,
+          "benefits": 0.0,
+          "taxPaid": 910.65,
+          "rentPaid": 358.58,
+          "loanPayments": 15.08,
+          "spending": 1390.33
+        },
+        "politicalPower": 0.01150588262951402,
+        "arrearsMonths": 0,
+        "wellbeing": 0.6570613553198327,
+        "footprintTonnes": 0.7897636012940241,
+        "foodMet": 0.7749888517279822
+      },
+      {
+        "id": 6,
+        "label": "Worker C",
+        "members": [
+          16,
+          17
+        ],
+        "home": 6,
+        "class": "worker",
+        "savings": 6698.47,
+        "debt": 0.0,
+        "netWorth": 6698.47,
+        "income": {
+          "wages": 1334.08,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 15.7,
+          "benefits": 800.0,
+          "taxPaid": 404.7,
+          "rentPaid": 358.58,
+          "loanPayments": 0.0,
+          "spending": 1115.65
+        },
+        "politicalPower": 0.008777620567567502,
+        "arrearsMonths": 0,
+        "wellbeing": 0.6895528879229422,
+        "footprintTonnes": 0.5438215766120792,
+        "foodMet": 0.7749916387959866
+      },
+      {
+        "id": 7,
+        "label": "Destitute household",
+        "members": [
+          18,
+          19
+        ],
+        "home": null,
+        "class": "worker",
+        "savings": 2625.7,
+        "debt": 2490.12,
+        "netWorth": 135.58,
+        "income": {
+          "wages": 1206.0,
+          "dividends": 0.0,
+          "rent": 0.0,
+          "interest": 5.48,
+          "benefits": 800.0,
+          "taxPaid": 362.19,
+          "rentPaid": 0.0,
+          "loanPayments": 16.86,
+          "spending": 1362.87
+        },
+        "politicalPower": 0.00017766292848229548,
+        "arrearsMonths": 0,
+        "wellbeing": 0.3645492498750732,
+        "footprintTonnes": 0.5635590624523483,
+        "foodMet": 0.7749916387959866
+      }
+    ],
+    "homes": [
+      {
+        "id": 0,
+        "tile": {
+          "x": 3,
+          "y": 2
+        },
+        "owner": 0,
+        "household": 0,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 1,
+        "tile": {
+          "x": 4,
+          "y": 2
+        },
+        "owner": 1,
+        "household": 1,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 2,
+        "tile": {
+          "x": 3,
+          "y": 4
+        },
+        "owner": 2,
+        "household": 2,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 3,
+        "tile": {
+          "x": 2,
+          "y": 6
+        },
+        "owner": 1,
+        "household": 3,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 4,
+        "tile": {
+          "x": 8,
+          "y": 4
+        },
+        "owner": 1,
+        "household": 4,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 5,
+        "tile": {
+          "x": 3,
+          "y": 7
+        },
+        "owner": 1,
+        "household": 5,
+        "rent": 358.58,
+        "value": 45000.0
+      },
+      {
+        "id": 6,
+        "tile": {
+          "x": 5,
+          "y": 8
+        },
+        "owner": 1,
+        "household": 6,
+        "rent": 358.58,
+        "value": 45000.0
+      }
+    ],
+    "plants": [
+      {
+        "id": 0,
+        "kind": "fossil",
+        "tile": {
+          "x": 10,
+          "y": 2
+        },
+        "capacity": 5.0,
+        "output": 3.6862416220014738,
+        "emissionsMonthly": 3.6862416220014738
+      },
+      {
+        "id": 1,
+        "kind": "fossil",
+        "tile": {
+          "x": 10,
+          "y": 4
+        },
+        "capacity": 5.0,
+        "output": 3.6862416220014738,
+        "emissionsMonthly": 3.6862416220014738
+      }
+    ],
+    "firms": [
+      {
+        "id": 0,
+        "active": true,
+        "sector": "goods",
+        "name": "Factory",
+        "owner": {
+          "kind": "household",
+          "id": 0
+        },
+        "tile": {
+          "x": 9,
+          "y": 3
+        },
+        "workers": 3.0,
+        "wage": 1392.09,
+        "price": 85.4,
+        "output": 142.95800771654257,
+        "emissions": 1.7154960925985108,
+        "revenue": 11191.91,
+        "profit": 3630.28,
+        "capital": 142.34686281033802,
+        "debt": 77470.75,
+        "greenTech": 0.0
+      },
+      {
+        "id": 1,
+        "active": true,
+        "sector": "food",
+        "name": "Farm",
+        "owner": {
+          "kind": "household",
+          "id": 0
+        },
+        "tile": {
+          "x": 7,
+          "y": 9
+        },
+        "workers": 4.0,
+        "wage": 1337.91,
+        "price": 24.52,
+        "output": 387.4965227621094,
+        "emissions": 0.7749930455242189,
+        "revenue": 9268.91,
+        "profit": 3325.78,
+        "capital": 59.34851262016186,
+        "debt": 4375.33,
+        "greenTech": 0.0
+      },
+      {
+        "id": 2,
+        "active": true,
+        "sector": "services",
+        "name": "Shop",
+        "owner": {
+          "kind": "household",
+          "id": 1
+        },
+        "tile": {
+          "x": 5,
+          "y": 7
+        },
+        "workers": 3.0,
+        "wage": 1337.91,
+        "price": 62.42,
+        "output": 147.44117903850537,
+        "emissions": 0.0,
+        "revenue": 7487.52,
+        "profit": 455.98,
+        "capital": 21.765869095032414,
+        "debt": 22419.75,
+        "greenTech": 0.0
+      },
+      {
+        "id": 3,
+        "active": false,
+        "sector": "services",
+        "name": "Shop 2",
+        "owner": {
+          "kind": "household",
+          "id": 1
+        },
+        "tile": {
+          "x": 7,
+          "y": 7
+        },
+        "workers": 0.0,
+        "wage": 1650.0,
+        "price": 70.0,
+        "output": 0.0,
+        "emissions": 0.0,
+        "revenue": 0.0,
+        "profit": 0.0,
+        "capital": 0.0,
+        "debt": 0.0,
+        "greenTech": 0.0
+      }
+    ],
+    "bank": {
+      "equity": 43446.02,
+      "loans": 343608.4,
+      "deposits": 300162.38,
+      "defaultRate": 0.0,
+      "failed": false
+    },
+    "government": {
+      "cash": 8000.0,
+      "debt": 105392.35,
+      "debtToGdp": 0.31357430798588326,
+      "legitimacy": 0.5854583234860355,
+      "receipts": 9790.4,
+      "spending": 2460.0
+    },
+    "nature": {
+      "forest": 0.6194493800218317,
+      "commons": 0.780693832298072,
+      "forestStock": 1238.8987600436633,
+      "commonsStock": 780.693832298072,
+      "commonsAccess": "open",
+      "cumulativeTonnes": 549.6991584877716,
+      "netEmissionsMonthly": 11.024551960441539,
+      "grossEmissionsMonthly": 12.262972382125678,
+      "sinkMonthly": 1.2384204216841397,
+      "forestHealth": 0.6194493800218317,
+      "commonsHealth": 0.780693832298072,
+      "farmHealth": 0.7000716061599519
+    },
+    "weather": {
+      "stress": 1.0,
+      "drought": {
+        "severity": 0.6102680268618108,
+        "monthsLeft": 1
+      },
+      "fires": [
+        {
+          "tile": {
+            "x": 2,
+            "y": 0
+          },
+          "monthsLeft": 3
+        }
+      ],
+      "forecast": {
+        "fireRisk": "high",
+        "droughtRisk": "high"
+      }
+    },
+    "housing": {
+      "homes": 7,
+      "rentPrivate": 358.58,
+      "rentPublic": 130.0,
+      "occupancy": 1.0,
+      "unhousedHouseholds": 1
+    },
+    "energy": {
+      "fossilCap": 10.0,
+      "renewableCap": -0.0,
+      "fossilShare": 1.0,
+      "demand": 7.372483244002947,
+      "supply": 10.0,
+      "delivered": 7.372483244002947,
+      "served": 1.0,
+      "gridIntensity": 1.0
+    },
+    "history": [
+      {
+        "turn": 1,
+        "gdpRealAnnual": 359121.7244901109,
+        "unemployment": 0.2,
+        "gini": 0.7192279473961505,
+        "emissions": 10.282400637482263,
+        "budgetShare": 0.9488331702812347,
+        "legitimacy": 0.6917885326357527,
+        "avgWellbeing": 0.7102882677018678,
+        "gpiAnnual": 78634.03980257185,
+        "debtToGdp": 0.2633764272485445,
+        "avgIncomePerPerson": 1715.1,
+        "medianIncomePerPerson": 1158.26,
+        "topHouseholdWealthShare": 0.6026804636758737,
+        "climateStress": 0.0,
+        "forestHealth": 0.7104815210987617,
+        "commonsHealth": 0.7934053020707735,
+        "farmHealth": 0.7519434115847676
+      },
+      {
+        "turn": 2,
+        "gdpRealAnnual": 366260.8196063246,
+        "unemployment": 0.2,
+        "gini": 0.7208077564114397,
+        "emissions": 10.302442743166322,
+        "budgetShare": 0.8973476394820125,
+        "legitimacy": 0.683367648813554,
+        "avgWellbeing": 0.7088495533507493,
+        "gpiAnnual": 78480.19159593887,
+        "debtToGdp": 0.267392971765286,
+        "avgIncomePerPerson": 1722.14,
+        "medianIncomePerPerson": 1186.81,
+        "topHouseholdWealthShare": 0.6027156387466742,
+        "climateStress": 0.0,
+        "forestHealth": 0.7106880620884908,
+        "commonsHealth": 0.7920144569485582,
+        "farmHealth": 0.7513512595185246
+      },
+      {
+        "turn": 3,
+        "gdpRealAnnual": 374274.3125567854,
+        "unemployment": 0.2,
+        "gini": 0.7220005161664724,
+        "emissions": 10.31675389513379,
+        "budgetShare": 0.845787296313527,
+        "legitimacy": 0.674693843783912,
+        "avgWellbeing": 0.7061021961798131,
+        "gpiAnnual": 78618.97659022693,
+        "debtToGdp": 0.2702877319838664,
+        "avgIncomePerPerson": 1727.34,
+        "medianIncomePerPerson": 1212.81,
+        "topHouseholdWealthShare": 0.6019561446451445,
+        "climateStress": 0.0,
+        "forestHealth": 0.7108184772558349,
+        "commonsHealth": 0.7906568029955104,
+        "farmHealth": 0.7507376401256727
+      },
+      {
+        "turn": 4,
+        "gdpRealAnnual": 383050.57752408634,
+        "unemployment": 0.2,
+        "gini": 0.7228732555050539,
+        "emissions": 10.331342488599944,
+        "budgetShare": 0.7941551296928919,
+        "legitimacy": 0.6657719767652571,
+        "avgWellbeing": 0.7029296383578243,
+        "gpiAnnual": 78969.53600317155,
+        "debtToGdp": 0.27221571126767047,
+        "avgIncomePerPerson": 1731.65,
+        "medianIncomePerPerson": 1237.95,
+        "topHouseholdWealthShare": 0.6005017278617387,
+        "climateStress": 0.0,
+        "forestHealth": 0.7108585211882975,
+        "commonsHealth": 0.7893459154445592,
+        "farmHealth": 0.7501022183164283
+      },
+      {
+        "turn": 5,
+        "gdpRealAnnual": 392627.31227937096,
+        "unemployment": 0.2,
+        "gini": 0.7234276587143355,
+        "emissions": 10.347217017536432,
+        "budgetShare": 0.742445849120755,
+        "legitimacy": 0.6566214393826656,
+        "avgWellbeing": 0.6996366672060654,
+        "gpiAnnual": 79510.339796674,
+        "debtToGdp": 0.27323318789304546,
+        "avgIncomePerPerson": 1733.21,
+        "medianIncomePerPerson": 1257.87,
+        "topHouseholdWealthShare": 0.5984091367048836,
+        "climateStress": 0.0,
+        "forestHealth": 0.7108003181737079,
+        "commonsHealth": 0.7880953062660256,
+        "farmHealth": 0.7494478122198668
+      },
+      {
+        "turn": 6,
+        "gdpRealAnnual": 391377.23006105964,
+        "unemployment": 0.1,
+        "gini": 0.7243055300028776,
+        "emissions": 10.727805992278888,
+        "budgetShare": 0.6887216526460892,
+        "legitimacy": 0.6476107759657049,
+        "avgWellbeing": 0.70077021288187,
+        "gpiAnnual": 76395.98237956602,
+        "debtToGdp": 0.27805036178397996,
+        "avgIncomePerPerson": 1690.34,
+        "medianIncomePerPerson": 1249.85,
+        "topHouseholdWealthShare": 0.5974296185978878,
+        "climateStress": 0.0,
+        "forestHealth": 0.7108217446240233,
+        "commonsHealth": 0.7869202032325147,
+        "farmHealth": 0.748870973928269
+      },
+      {
+        "turn": 7,
+        "gdpRealAnnual": 395925.1981717557,
+        "unemployment": 0.1,
+        "gini": 0.7248926772560804,
+        "emissions": 10.742478602540274,
+        "budgetShare": 0.6350289288202754,
+        "legitimacy": 0.6393060218829496,
+        "avgWellbeing": 0.6991984859115316,
+        "gpiAnnual": 75935.97812985451,
+        "debtToGdp": 0.27820111653854,
+        "avgIncomePerPerson": 1681.57,
+        "medianIncomePerPerson": 1266.57,
+        "topHouseholdWealthShare": 0.595944945478252,
+        "climateStress": 0.0,
+        "forestHealth": 0.7107353615664637,
+        "commonsHealth": 0.785839180637237,
+        "farmHealth": 0.7482872711018503
+      },
+      {
+        "turn": 8,
+        "gdpRealAnnual": 401988.82513243775,
+        "unemployment": 0.1,
+        "gini": 0.725166662686116,
+        "emissions": 10.752838451054398,
+        "budgetShare": 0.5812806319175914,
+        "legitimacy": 0.6315611595610503,
+        "avgWellbeing": 0.6970733567536704,
+        "gpiAnnual": 75954.1110013426,
+        "debtToGdp": 0.2772116883946129,
+        "avgIncomePerPerson": 1676.94,
+        "medianIncomePerPerson": 1279.62,
+        "topHouseholdWealthShare": 0.5939550797614989,
+        "climateStress": 0.0,
+        "forestHealth": 0.7106269479384894,
+        "commonsHealth": 0.7848705155195991,
+        "farmHealth": 0.7477487317290442
+      },
+      {
+        "turn": 9,
+        "gdpRealAnnual": 407827.75395917485,
+        "unemployment": 0.1,
+        "gini": 0.7251498526254082,
+        "emissions": 10.761616804647005,
+        "budgetShare": 0.5274878093303681,
+        "legitimacy": 0.6242884632526652,
+        "avgWellbeing": 0.6950372212053801,
+        "gpiAnnual": 76052.67163785084,
+        "debtToGdp": 0.27616370960636416,
+        "avgIncomePerPerson": 1672.35,
+        "medianIncomePerPerson": 1290.96,
+        "topHouseholdWealthShare": 0.59103743439718,
+        "climateStress": 0.0,
+        "forestHealth": 0.7104898805596319,
+        "commonsHealth": 0.7840323249733963,
+        "farmHealth": 0.7472611027665141
+      },
+      {
+        "turn": 10,
+        "gdpRealAnnual": 401255.4989168551,
+        "unemployment": 0.0,
+        "gini": 0.7256997985631407,
+        "emissions": 11.256532613093064,
+        "budgetShare": 0.47109169966609643,
+        "legitimacy": 0.617779385632072,
+        "avgWellbeing": 0.6985656774350896,
+        "gpiAnnual": 71829.72778473409,
+        "debtToGdp": 0.282422938782,
+        "avgIncomePerPerson": 1622.67,
+        "medianIncomePerPerson": 1272.15,
+        "topHouseholdWealthShare": 0.5899946299791389,
+        "climateStress": 0.019428704818617536,
+        "forestHealth": 0.7105172523088261,
+        "commonsHealth": 0.7833453173839723,
+        "farmHealth": 0.7469312848463991
+      },
+      {
+        "turn": 11,
+        "gdpRealAnnual": 400959.5293165303,
+        "unemployment": 0.0,
+        "gini": 0.7259162778491052,
+        "emissions": 11.328436149836374,
+        "budgetShare": 0.41459352856141796,
+        "legitimacy": 0.6122081989107284,
+        "avgWellbeing": 0.671834419529332,
+        "gpiAnnual": 70874.69347706795,
+        "debtToGdp": 0.2830398641081987,
+        "avgIncomePerPerson": 1610.91,
+        "medianIncomePerPerson": 1276.01,
+        "topHouseholdWealthShare": 0.588516878158134,
+        "climateStress": 0.0986611519957981,
+        "forestHealth": 0.6552714171493041,
+        "commonsHealth": 0.7829494007063346,
+        "farmHealth": 0.7191104089278193
+      },
+      {
+        "turn": 12,
+        "gdpRealAnnual": 413497.09747252363,
+        "unemployment": 0.1,
+        "gini": 0.7248064024946804,
+        "emissions": 10.955445645800886,
+        "budgetShare": 0.35915891487506096,
+        "legitimacy": 0.6072243330759955,
+        "avgWellbeing": 0.6802996030550997,
+        "gpiAnnual": 74652.12358534675,
+        "debtToGdp": 0.2745487868778657,
+        "avgIncomePerPerson": 1651.62,
+        "medianIncomePerPerson": 1299.4,
+        "topHouseholdWealthShare": 0.5854623816700076,
+        "climateStress": 0.2089315646969226,
+        "forestHealth": 0.6296617395856345,
+        "commonsHealth": 0.7828969044967832,
+        "farmHealth": 0.7062793220412089
+      },
+      {
+        "turn": 13,
+        "gdpRealAnnual": 414008.25407940906,
+        "unemployment": 0.1,
+        "gini": 0.7230521724638771,
+        "emissions": 10.976367448759278,
+        "budgetShare": 0.3042582274593312,
+        "legitimacy": 0.6025804262880745,
+        "avgWellbeing": 0.682542297141777,
+        "gpiAnnual": 74545.16904841992,
+        "debtToGdp": 0.27518893970208663,
+        "avgIncomePerPerson": 1643.51,
+        "medianIncomePerPerson": 1294.19,
+        "topHouseholdWealthShare": 0.5815452480021657,
+        "climateStress": 0.34232237623198997,
+        "forestHealth": 0.6300370478921931,
+        "commonsHealth": 0.7830500727589111,
+        "farmHealth": 0.7065435603255521
+      },
+      {
+        "turn": 14,
+        "gdpRealAnnual": 418131.62976711907,
+        "unemployment": 0.1,
+        "gini": 0.7211517074158595,
+        "emissions": 10.972061379630492,
+        "budgetShare": 0.24938893437617934,
+        "legitimacy": 0.5980852248172869,
+        "avgWellbeing": 0.6837578693360562,
+        "gpiAnnual": 75639.59967251655,
+        "debtToGdp": 0.2736522238595794,
+        "avgIncomePerPerson": 1646.91,
+        "medianIncomePerPerson": 1289.32,
+        "topHouseholdWealthShare": 0.5773244891039289,
+        "climateStress": 0.495918577672038,
+        "forestHealth": 0.6304482992348779,
+        "commonsHealth": 0.7834106407400264,
+        "farmHealth": 0.7069294699874522
+      },
+      {
+        "turn": 15,
+        "gdpRealAnnual": 420237.04530181515,
+        "unemployment": 0.1,
+        "gini": 0.7191215163061958,
+        "emissions": 10.963149727184733,
+        "budgetShare": 0.19455783883151687,
+        "legitimacy": 0.5937177289115276,
+        "avgWellbeing": 0.6846384954417531,
+        "gpiAnnual": 76528.22818196277,
+        "debtToGdp": 0.2736162555076084,
+        "avgIncomePerPerson": 1648.6,
+        "medianIncomePerPerson": 1283.01,
+        "topHouseholdWealthShare": 0.5728372484442832,
+        "climateStress": 0.6672729026486547,
+        "forestHealth": 0.6308790852900873,
+        "commonsHealth": 0.7839945103129151,
+        "farmHealth": 0.7074367978015013
+      },
+      {
+        "turn": 16,
+        "gdpRealAnnual": 420633.1486516566,
+        "unemployment": 0.1,
+        "gini": 0.7165563203656129,
+        "emissions": 11.059175698036757,
+        "budgetShare": 0.13960231799091957,
+        "legitimacy": 0.5894712309214635,
+        "avgWellbeing": 0.6853048103535159,
+        "gpiAnnual": 77167.31142778005,
+        "debtToGdp": 0.2752869481789277,
+        "avgIncomePerPerson": 1648.81,
+        "medianIncomePerPerson": 1272.42,
+        "topHouseholdWealthShare": 0.567132573869621,
+        "climateStress": 0.8552301374400182,
+        "forestHealth": 0.6314293185471591,
+        "commonsHealth": 0.7837297972812888,
+        "farmHealth": 0.7075795579142239
+      },
+      {
+        "turn": 17,
+        "gdpRealAnnual": 369818.6437743205,
+        "unemployment": 0.0,
+        "gini": 0.7102140877067236,
+        "emissions": 11.024551960441539,
+        "budgetShare": 0.08383473585371405,
+        "legitimacy": 0.5854583234860355,
+        "avgWellbeing": 0.6723229451564917,
+        "gpiAnnual": 67936.70084417377,
+        "debtToGdp": 0.31357430798588326,
+        "avgIncomePerPerson": 1482.13,
+        "medianIncomePerPerson": 1177.09,
+        "topHouseholdWealthShare": 0.5604239540816056,
+        "climateStress": 1.0,
+        "forestHealth": 0.6194493800218317,
+        "commonsHealth": 0.780693832298072,
+        "farmHealth": 0.7000716061599519
+      }
+    ]
+  }
+}

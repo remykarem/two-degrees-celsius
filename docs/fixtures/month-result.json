@@ -550,7 +550,7 @@
     }
   },
   "snapshot": {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -581,31 +581,36 @@
           "x": 0,
           "y": 0,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
           "y": 0,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 2,
           "y": 0,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 3,
           "y": 0,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 4,
           "y": 0,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 5,
@@ -653,13 +658,15 @@
           "x": 0,
           "y": 1,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
           "y": 1,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 2,
@@ -725,13 +732,15 @@
           "x": 0,
           "y": 2,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
           "y": 2,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 2,
@@ -801,13 +810,15 @@
           "x": 0,
           "y": 3,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
           "y": 3,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 2,
@@ -874,7 +885,8 @@
           "x": 0,
           "y": 4,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
@@ -950,7 +962,8 @@
           "x": 0,
           "y": 5,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
@@ -1022,7 +1035,8 @@
           "x": 0,
           "y": 6,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
@@ -1095,7 +1109,8 @@
           "x": 0,
           "y": 7,
           "kind": "forest",
-          "buildable": false
+          "buildable": false,
+          "state": "standing"
         },
         {
           "x": 1,
@@ -1581,6 +1596,10 @@
         "effective": null
       },
       "job_guarantee": {
+        "nominal": 0.0,
+        "effective": null
+      },
+      "resilience_spending": {
         "nominal": 0.0,
         "effective": null
       }
@@ -2388,7 +2407,19 @@
       "cumulativeTonnes": 10.150836537377407,
       "netEmissionsMonthly": 10.150836537377407,
       "grossEmissionsMonthly": 11.57126798373833,
-      "sinkMonthly": 1.420431446360924
+      "sinkMonthly": 1.420431446360924,
+      "forestHealth": 0.7103075497961083,
+      "commonsHealth": 0.7943437568545161,
+      "farmHealth": 0.7523256533253122
+    },
+    "weather": {
+      "stress": 0.0,
+      "drought": null,
+      "fires": [],
+      "forecast": {
+        "fireRisk": "low",
+        "droughtRisk": "low"
+      }
     },
     "housing": {
       "homes": 7,
