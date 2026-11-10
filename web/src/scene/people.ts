@@ -64,7 +64,7 @@ export function planStands(layout: MapLayout, snap: Snapshot): PersonStand[] {
   return out;
 }
 
-export interface CommutePlan { person: number; path: Pt[]; t0: number; t1: number; minutes: number }
+export interface CommutePlan { person: number; path: Pt[]; t0: number; t1: number; minutes: number; /** Town v5: a shopping trip (same walk as a commute, to a firm the household spent money at). Absent means a commute. */ kind?: 'shop' }
 
 /** Move `p` a distance `d` toward `to`. */
 const toward = (p: Pt, to: Pt, d: number): Pt => { const l = Math.hypot(to[0] - p[0], to[1] - p[1]); return l < 1e-9 ? p : [p[0] + ((to[0] - p[0]) / l) * Math.min(d, l), p[1] + ((to[1] - p[1]) / l) * Math.min(d, l)]; };
@@ -99,6 +99,57 @@ export function planCommutes(frame: Pick<MonthFrame, 'month' | 'flows'>, layout:
     out.push({ person: c.person, path: pts, t0, t1: Math.min(1, t0 + dur), minutes: c.minutes });
   }
   return out;
+}
+
+/** Most shopping figures walking in one month. Cosmetic: the real purchases are in the ledgers, not on the map. */
+export const MAX_SHOPPING_TRIPS = 5;
+
+/**
+ * Town v5 shopping trips: for the biggest real `flows.purchases` (household at a firm), one member of the household who is not already
+ * walking to work goes to that firm's tile and back, along the same road-preferring router as a commute. At most `cap` trips, one per
+ * household, at most one per firm per sector first so the Shop, the Farm and the Factory all see visitors. Empty or missing purchases give no trips.
+ */
+export function planShopping(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], busy: ReadonlySet<number>, turn: number, cap = MAX_SHOPPING_TRIPS): CommutePlan[] {
+  const buys = (frame.flows?.purchases ?? []).filter((p) => p.amount > 0);
+  if (!buys.length || cap <= 0) return [];
+  const n = layout.gridSize;
+  const firmTile = new Map(layout.scenery.filter((x) => x.kind === 'firm' && x.ref !== undefined).map((x) => [x.ref!, { x: x.x, y: x.y }] as const));
+  const ranked = [...buys].sort((a, b) => b.amount - a.amount || a.household - b.household || a.firm - b.firm);
+  const chosen: typeof ranked = [];
+  const usedHh = new Set<number>();
+  const take = (p: (typeof ranked)[number]) => { chosen.push(p); usedHh.add(p.household); };
+  const sectorsSeen = new Set<string>();
+  for (const p of ranked) { if (chosen.length >= cap) break; if (!usedHh.has(p.household) && !sectorsSeen.has(p.sector)) { sectorsSeen.add(p.sector); take(p); } }
+  for (const p of ranked) { if (chosen.length >= cap) break; if (!usedHh.has(p.household)) take(p); }
+  const out: CommutePlan[] = [];
+  const walking = new Set(busy);
+  for (const p of chosen) {
+    const to = firmTile.get(p.firm);
+    if (!to) continue;
+    const member = stands.filter((s) => s.household === p.household && s.ageBand !== 'child' && !walking.has(s.id)).sort((a, b) => a.id - b.id)[0];
+    if (!member) continue;
+    walking.add(member.id);
+    const tiles = route(layout, member.tile, to);
+    const seed = frame.month * 1013 + turn * 37 + member.id * 11 + 5;
+    const dur = Math.min(0.5, 0.22 + 0.04 * tiles.length);
+    const t0 = 0.05 + (0.93 - dur - 0.05) * hash01(seed);
+    const pts: Pt[] = tiles.map((t) => centreOf(t, n));
+    const ox = (hash01(seed + 3) - 0.5) * 0.3, oz = (hash01(seed + 4) - 0.5) * 0.3;
+    for (let i = 1; i < pts.length - 1; i++) pts[i] = [pts[i]![0] + ox * 0.5, pts[i]![1] + oz * 0.5];
+    if (pts.length === 1) pts.push([pts[0]![0], pts[0]![1]]);
+    pts[0] = member.at;
+    const last = pts.length - 1;
+    const door = toward(pts[last]!, pts[last - 1]!, 0.42);
+    pts[last] = [door[0] + ox, door[1] + oz];
+    out.push({ person: member.id, path: pts, t0, t1: Math.min(1, t0 + dur), minutes: 0, kind: 'shop' });
+  }
+  return out;
+}
+
+/** Commutes first, then shopping trips for people who are not commuting this month. */
+export function planTrips(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
+  const commutes = planCommutes(frame, layout, stands, turn);
+  return [...commutes, ...planShopping(frame, layout, stands, new Set(commutes.map((c) => c.person)), turn)];
 }
 
 export interface Pose { x: number; z: number; heading: number; walking: boolean }

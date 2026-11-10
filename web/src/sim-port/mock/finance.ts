@@ -34,7 +34,7 @@ export function financeView(s: MockState, households: HouseholdView[], ind: { mo
   };
 }
 
-const HOUSEHOLD_BASE = 0.1, HOUSEHOLD_PER_CONSUMPTION = 0.15, CONSUMPTION_SCALE = 2000, FIRM_PER_UNIT = 0.01, FOSSIL_FACTOR = 1; // MOCK: the Town v5 doc's example values
+const HOUSEHOLD_BASE = 0.1, HOUSEHOLD_PER_CONSUMPTION = 0.15, CONSUMPTION_SCALE = 2000, FIRM_PER_UNIT = 0.0065, FOSSIL_FACTOR = 1; // MOCK: the Town v5 doc's example values
 
 export function energyView(s: MockState, households: HouseholdView[], firmOutput: number): EnergyView {
   const fossil = plantTiles(s);

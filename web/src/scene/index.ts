@@ -12,7 +12,7 @@ import { entityAt, factsFor, planEntities, type EntityDesc } from './entities';
 import { ctxFromSnapshot, emissionsFromSnapshot, planEmitters, planFlowLoop, planFrame, type Emitter, type FramePlan, type Track } from './flows';
 import type { PersonView } from '../contract';
 import { createIsland } from './island';
-import { planCommutes, campTiles, planStands, type CommutePlan, type PersonStand } from './people';
+import { planTrips, campTiles, planStands, type CommutePlan, type PersonStand } from './people';
 import { PeopleLayer } from './peopleLayer';
 import { roadGeometry } from './roads';
 import { buildModel, makeTintMaterial, setTint, type BuiltModel } from './geometry';
@@ -227,7 +227,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       if (liveSeq !== lv.frameSeq) {
         liveSeq = lv.frameSeq;
         plan = planFrame(lv.frame!, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!));
-        commutes = new Map(planCommutes(lv.frame!, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c]));
+        commutes = new Map(planTrips(lv.frame!, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c]));
       }
       return;
     }
@@ -243,7 +243,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       monthStart = performance.now();
       const frame = s.lastResult!.months[planMonth];
       plan = frame ? planFrame(frame, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!)) : null;
-      commutes = frame ? new Map(planCommutes(frame, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c])) : null;
+      commutes = frame ? new Map(planTrips(frame, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c])) : null;
     }
   }
 

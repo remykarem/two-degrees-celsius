@@ -70,5 +70,8 @@ await page.locator('aside[aria-label="Metrics"]').evaluate((el) => (el.scrollTop
 await page.waitForTimeout(300);
 await shot('6-energy');
 check('energy panel', (await page.getByTestId('energy-panel').count()) === 1);
+// shopping trips: play a turn and look at the scene during playback
+await page.evaluate(() => { window.__game.select(null); window.__game.endTurn(); });
+for (const [i, ms] of [[1, 900], [2, 700], [3, 700]]) { await page.waitForTimeout(ms); await shot(`7-shopping-${i}`); }
 console.log(errors.length ? errors.join('\n') : 'no console errors');
 await browser.close();
