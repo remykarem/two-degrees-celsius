@@ -84,22 +84,22 @@
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
   <div class="scroll" role="region" aria-label="Transactions table" tabindex="0" onkeydown={onKey}>
     <table>
-      <thead><tr><th scope="col">Date</th><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">Detail</th><th scope="col">Memo</th><th scope="col" class="n">Amount</th><th scope="col" class="n">{names.balance}</th>{#if showDebt}<th scope="col" class="n">Debt change</th><th scope="col" class="n">{names.debt}</th>{/if}</tr></thead>
+      <thead><tr><th scope="col">Date</th><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">What</th><th scope="col" class="n">Amount</th><th scope="col" class="n">{names.balance}</th>{#if showDebt}<th scope="col" class="n">Debt change</th><th scope="col" class="n">{names.debt}</th>{/if}</tr></thead>
       <tbody>
         {#each slice.items as r (r.key)}
           <tr>
             <td class="date" title="Turn {r.turn}, month {r.month + 1}">{r.date}</td>
             <td>{#if r.selectable}<button type="button" class="lnk" onclick={() => onselect(r.counterparty)} aria-label="Open {r.counterpartyLabel}">{r.counterpartyLabel}</button>{:else}<span class="ext" title={externalHint(r.counterparty)}>{r.counterpartyLabel}</span>{/if}</td>
-            <td>{r.kindLabel}</td><td class="dim">{r.detail}</td><td class="memo">{r.memo}</td>
+            <td>{r.kindLabel}</td><td class="memo">{r.memo}</td>
             <td class="n amt" class:pos={r.amount >= 0} class:neg={r.amount < 0}>{r.amountText}</td><td class="n">{r.balanceText}</td>
             {#if showDebt}<td class="n amt" class:pos={r.debtDelta < 0} class:neg={r.debtDelta > 0}>{r.debtText}</td><td class="n">{exact(r.debtAfter)}</td>{/if}
           </tr>
         {:else}
-          <tr><td colspan={showDebt ? 9 : 7} class="empty">{page.entries.length ? 'No transactions match these filters.' : 'No transactions yet. They appear once a month has been played.'}</td></tr>
+          <tr><td colspan={showDebt ? 8 : 6} class="empty">{page.entries.length ? 'No transactions match these filters.' : 'No transactions yet. They appear once a month has been played.'}</td></tr>
         {/each}
       </tbody>
       {#if rows.length}
-        <tfoot><tr><td colspan="5">Total of the {rows.length} shown ({totals.count} entries): in {exact(totals.inflow)}, out {exact(totals.outflow)}</td><td class="n amt" class:pos={totals.net >= 0} class:neg={totals.net < 0}>{signedExact(totals.net)}</td><td></td>{#if showDebt}<td></td><td></td>{/if}</tr></tfoot>
+        <tfoot><tr><td colspan="4">Total of the {rows.length} shown ({totals.count} entries): in {exact(totals.inflow)}, out {exact(totals.outflow)}</td><td class="n amt" class:pos={totals.net >= 0} class:neg={totals.net < 0}>{signedExact(totals.net)}</td><td></td>{#if showDebt}<td></td><td></td>{/if}</tr></tfoot>
       {/if}
     </table>
   </div>

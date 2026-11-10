@@ -69,7 +69,7 @@ export interface LedgerRow {
 export const signedMoney = (v: number): string => `${v >= 0 ? '+' : '-'}${money(Math.abs(v)).replace('-', '')}`;
 const money2 = (v: number): string => { const c = Math.round(v * 100) / 100; return `${c < 0 ? '-' : ''}$${Math.abs(c).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; };
 export const exact = money2;
-export const signedExact = (v: number): string => `${v >= 0 ? '+' : '-'}${money2(Math.abs(v)).replace('-', '')}`;
+export const signedExact = (v: number): string => `${Math.round(v * 100) / 100 >= 0 ? '+' : '-'}${money2(Math.abs(v)).replace('-', '')}`;
 /** Debt column text: blank when the entry leaves debt alone. */
 export const debtChangeText = (v: number): string => (Math.abs(v) < 0.005 ? '' : signedExact(v));
 
@@ -79,7 +79,7 @@ export function positionNames(a: AccountRef): { balance: string; debt: string } 
     case 'household': return { balance: 'Savings', debt: 'Debt' };
     case 'firm': return { balance: 'Cash', debt: 'Debt' };
     case 'government': return { balance: 'Cash', debt: 'Public debt' };
-    case 'bank': return { balance: 'Equity', debt: 'Loans outstanding' };
+    case 'bank': return { balance: 'Equity', debt: 'Loans' };
     case 'external': return { balance: 'Balance', debt: 'Debt' };
   }
 }

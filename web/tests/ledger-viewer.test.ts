@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AccountRef, LedgerEntry, LedgerPage, Snapshot } from '../src/contract';
 import { createMockSim } from '../src/sim-port/mock';
 import {
-  accountLabel, accountSelection, counterpartiesIn, earningsRows, exact, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, rowTotals, selectionAccount, signedExact, turnsIn,
+  accountLabel, accountSelection, counterpartiesIn, earningsRows, entryEffect, externalHint, turnSpan, exact, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, rowTotals, selectionAccount, signedExact, turnsIn,
 } from '../src/panels/ledger';
 import { ok, reconciles as sameRule } from './helpers';
 
@@ -177,5 +177,45 @@ describe('the mock passes the same reconciliation rule as the viewer', () => {
       expect(sameRule(p)).toBe(true);
       expect(p.reconciles).toBe(true);
     }
+  });
+});
+
+describe('ledger viewer: debt, external accounts and the real posting rules', () => {
+  const ext: AccountRef = { kind: 'external', label: 'bank credit creation' };
+  const loan = (to: AccountRef): LedgerEntry => ({ turn: 1, month: 0, tick: 0, from: ext, to, amount: 100, kind: 'loan_new', detail: 'new loan', memo: '', balanceAfter: 0, debtAfter: 0 });
+  it('a new loan raises the borrower\'s balance and debt, and only the bank\'s loans (it is a bystander)', () => {
+    expect(entryEffect(loan(FIRM), FIRM)).toEqual({ balance: 100, debt: 100 });
+    expect(entryEffect(loan(FIRM), BANK)).toEqual({ balance: 0, debt: 100 });
+  });
+  it('a repayment lowers balance and debt; a write-off lowers the borrower\'s debt and the bank\'s equity and loans; a bailout adds public debt', () => {
+    const repay: LedgerEntry = { ...loan(FIRM), from: FIRM, to: { kind: 'external', label: 'bank credit destruction' }, kind: 'loan_repay' };
+    expect(entryEffect(repay, FIRM)).toEqual({ balance: -100, debt: -100 });
+    expect(entryEffect(repay, BANK)).toEqual({ balance: 0, debt: -100 });
+    const wo: LedgerEntry = { ...loan(FIRM), from: BANK, to: FIRM, kind: 'loan_writeoff' };
+    expect(entryEffect(wo, FIRM)).toEqual({ balance: 0, debt: -100 });
+    expect(entryEffect(wo, BANK)).toEqual({ balance: -100, debt: -100 });
+    const bail: LedgerEntry = { ...loan(FIRM), from: GOV, to: BANK, kind: 'bailout' };
+    expect(entryEffect(bail, GOV)).toEqual({ balance: 0, debt: 100 });
+    expect(entryEffect(bail, BANK)).toEqual({ balance: 100, debt: 100 });
+  });
+  it('a page whose debt does not add up is not reconciled even if the sim says so, and so is one whose balance chain breaks', () => {
+    const base: LedgerPage = { account: FIRM, openingBalance: 10, openingDebt: 50, closingBalance: 110, closingDebt: 150, reconciles: true, detailFromTurn: 1, summary: [],
+      entries: [{ ...loan(FIRM), balanceAfter: 110, debtAfter: 150 }] };
+    expect(reconcile(base)).toMatchObject({ ok: true, brokenEntries: 0 });
+    expect(reconcile({ ...base, closingDebt: 120 }).ok).toBe(false);
+    expect(reconcile({ ...base, entries: [{ ...base.entries[0]!, debtAfter: 140 }] }).brokenEntries).toBe(1);
+    expect(reconcile({ ...base, summary: [{ turn: 1, month: 0, counterparty: GOV, kind: 'purchase', inflow: 5, outflow: 0, count: 1, net: 5, debtNet: 0 }] }).ok).toBe(false);
+  });
+  it('rows show a loan as cash in plus debt up, and a bystander loan as no cash; external accounts have a plain-words hint and no ledger', () => {
+    const page: LedgerPage = { account: BANK, openingBalance: 0, openingDebt: 0, closingBalance: 0, closingDebt: 100, reconciles: true, detailFromTurn: 1, summary: [], entries: [{ ...loan(FIRM), balanceAfter: 0, debtAfter: 100 }] };
+    const [r] = ledgerRows(page, null);
+    expect(r).toMatchObject({ amount: 0, amountText: 'no cash', debtDelta: 100, debtText: '+$100.00', counterparty: FIRM });
+    expect(ledgerRows({ ...page, account: FIRM }, null)[0]).toMatchObject({ amount: 100, debtDelta: 100, selectable: false, counterparty: ext });
+    expect(externalHint(ext)).toMatch(/creates/);
+    expect(accountSelection(ext)).toBeNull();
+  });
+  it('dates an event by its turn', () => {
+    const g = snap.game;
+    expect(turnSpan(g.firstTurn, g)).toMatch(/^Jan to Mar \d{4}$/);
   });
 });
