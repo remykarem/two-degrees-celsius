@@ -109,6 +109,8 @@ Real example: the **Shop** (Services) added in Town v2 (commits `4fb53fc` to `e9
 - Where: `content/params.json` (rules and costs), `content/initial_town.json` (the start: people, households, tiles, firms, policy), `content/systems/*.json`, `content/levers.json` (UI metadata only: labels, ranges, arrows).
 - Try first without editing: `cargo run -p sim-cli -- --seed 42 --set labour.wage_up=1.01` (prefix `town.`, `market.`, `regulated.` or `coop.` for the other files).
 - Edit, then: `cd web && npm run sync-mock`; `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `cargo test --workspace`; `cd web && npm run build:wasm && npm test`. Some tests hard-code values (for example `web/tests/mock-sync.test.ts` pins `GEN.pc`, `GEN.carbon.budget`, `policyStart`; `tests/scenarios.rs` checks start Gini and baselines). Update them only if the change is intended.
+- To see weather at once without playing 14 turns: `cargo run -p sim-cli -- --seed 3 --set weather.force_stress=0.7` (`weather.force_stress` is `null` in `params.json`; the web has no URL option for it).
+- After any Rust change run `cd web && npm run build:wasm`, or the browser keeps an old package (or the mock).
 - Judge on 20 seeds and baselines A-D, not one run. Record the change and result in `docs/tuning-log.md`. Do not tune just to hit a target (`AGENTS.md`).
 
 ## 9. Add a lens

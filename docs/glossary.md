@@ -6,7 +6,7 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 
 | Term | Meaning |
 |---|---|
-| **Turn** | One player decision round = one quarter = 3 ticks. 160 turns per game (`run.turns`). `State.turn` starts at 1 |
+| **Turn** | One player decision round = one quarter = 3 ticks. 40 turns per game (`run.turns`; was 160). `State.turn` starts at 1 |
 | **Tick** | One simulated month. `step()` runs every system once. `ticks_per_turn` = 3. 48 extra warm-up ticks run before the game starts |
 | **Month frame** | The per-tick slice of a `TurnResult` (`months[0..2]`): events plus flows, used for playback animation |
 | **PC (political capital)** | The per-turn currency for player actions. Start 60, cap 100, regenerates `pc_base x legitimacy` (8 x legitimacy) each turn |

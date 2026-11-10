@@ -27,7 +27,7 @@ Design: `docs/town-v4.md` (section 6 UI and scene). Rules: `docs/causal-model.md
 - Not tested in a real browser: reduced motion (code path only), WebGL context loss with fires on screen.
 
 ## Contract issues
-1. The stress curve parameters (`onset`, `full`, `curve`), the fire-station `coverage_radius` and `smoke_radius` are not on the wire. The web copies them in `store/weather.ts` (`WEATHER_UI`) to draw the gauge marks, the ring and the haze; they only decide pixels, but they can drift from `content/params.json`.
+1. (Horizon: `onset`, `full`, `curve` are now on the wire, optional in the TypeScript type; `stressGauge` reads them and falls back to `WEATHER_UI`.) The stress curve parameters (`onset`, `full`, `curve`), the fire-station `coverage_radius` and `smoke_radius` are not on the wire. The web copies them in `store/weather.ts` (`WEATHER_UI`) to draw the gauge marks, the ring and the haze; they only decide pixels, but they can drift from `content/params.json`.
 2. `Buildings` (summary counts) has no fire-station count.
 3. A `regrowing` tile has no months left, and a freshly burnt tile cannot be told from one that is almost grown back: the charred look is one model.
 4. `fire_sink_loss` is a trace source only; `MonthFlows.emissions` has no equivalent, so nothing can show it per month.

@@ -21,8 +21,8 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | B11 | Wealth tax inert at default threshold | resolved for v2: threshold is 150,000 (about twice the average household) | deviations.md T18 |
 | B12 | Phase 2 items (balanced start, deflation, lumpy green investment, budget calibration, extra demand lever) | resolved (and numbers redone for v2) | balance-backlog.md |
 | B13 | Budget `B0` 4,400 t was not recalibrated after the 1/50 scaling; A exhausts it at turn 123 (target 90 to 140) | resolved: B0 is now 600 t for the Paris 2030 horizon (A exhausts at turn 18 to 19) | tuning-log.md |
-| B14 | **Sensible play (baseline B) cannot win the 600 t, 160-turn game**: the budget is gone at turn 25 whatever is built, because lags (carbon price 2 turns, plant 4 turns) delay the cut. Options (shorter `run.turns`, bigger `B0`, faster response) are in the tuning log | open (decision pending) | tuning-log.md Carbon budget horizon |
-| B15 | `tests/golden` plan plays 26 turns but the game now ends near turn 23, so the native/wasm golden compares only the turns that played (later turns are identical game-over errors) | open (documented) | crates/sim-wasm/tests/golden.rs |
+| B14 | **(Updated by the Horizon pass: 40 turns, 900 t.) Baseline B keeps a carbon margin (never exhausts the budget; 18 to 20% left when the game stops) but the town collapses at turn 22 to 26 (bank failure or mass unemployment), because climate damage to farm output (`production.climate_damage` x (cumulative / b0)^2) fails the farm; with the weather off it collapses at turn 30; with `climate_damage` 0 it survives. B survives only with a budget of 1,500 t or more, which lets A survive too. A decision for the user: rebalance the farm and climate damage, or accept B as buying time. See tuning-log "Horizon".** Old text: **Sensible play (baseline B) cannot win the 600 t, 160-turn game**: the budget is gone at turn 25 whatever is built, because lags (carbon price 2 turns, plant 4 turns) delay the cut. Options (shorter `run.turns`, bigger `B0`, faster response) are in the tuning log | open (decision pending) | tuning-log.md Carbon budget horizon |
+| B15 | `tests/golden` plan plays 26 turns but the game now ends near turn 23 (with the 900 t budget and 40 turns it ends near turn 27, so most of the plan plays), so the native/wasm golden compares only the turns that played (later turns are identical game-over errors) | open (documented) | crates/sim-wasm/tests/golden.rs |
 
 ## Contract and wire
 
@@ -88,10 +88,20 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 
 | # | Issue | Status | Source |
 |---|---|---|---|
-| W-1 | Weather is mild by default: about one fire and one drought per game inside the 19-turn budget horizon, so it barely moves baselines A to D. Tunable in `params.json` `weather`; a longer game or a bigger `budget_b0` will meet far more weather (stress stays at 1 once the budget is gone) | open (by design) | tuning-log.md Town v4 |
+| W-1 | (Resolved by the Horizon pass: weather starts at 75% of the budget left, about 16 events in a no-action game, an event within 3 turns of onset in 19 of 20 seeds. It now moves baseline B's collapse about 5 turns earlier. Old text: weather was mild, about one fire and one drought per game.) Stress stays at 1 once the budget is gone | resolved (by design) | tuning-log.md Town v4 |
 | W-2 | Forest stock is a scalar; fire tiles are a view, and `regrowing` is a display state that does not slow regrowth beyond the logistic rule | open (deviations W3) | deviations.md |
 | W-3 | `fire_sink_loss` in `flows.emissions` is informational; a client that sums all emission lines would double count the sink loss | open (documented in sim-api-notes) | contract section 13 |
 | W-4 | No `Buildings.fireStation` count and no wire field for fire-station coverage; clients derive both from tiles | open | sim-api-notes.md |
 | W-5 | `home_damage_prob` is implemented but off; no eviction risk, and a damaged home keeps its tenant | open (optional in the design) | deviations W13 |
 | W-6 | The native-vs-wasm golden hashes every reply, so the weather block, forecast and tile states are covered every turn; whether a fire or drought actually occurs in the seed 7 plan was not checked | open | tests/golden |
 | W-7 | Web tests pinning 19 levers / schema 2 / fixture key sets fail until the web side is updated (`wasm-golden.test.ts` fails today on the lever count) | open (web agent) | this commit |
+
+## Horizon (40 turns, 900 t)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| H-1 | Hard-coded 160-turn text remains in docs: `AGENTS.md` (fixed), `docs/glossary.md`, `docs/ui-design.md` ("Turn 1/160" mock-up), `docs/balance-backlog.md`, `docs/sim-api-notes.md` item 10, `docs/town-v3.md`, and protected `SPEC.md` / `docs/causal-model.md`. The web reads `game.lastTurn` (the top bar shows Turn n/40); the start screen copy was changed to "10 years" | open (docs only) | grep |
+| H-2 | The brief's "an event within 3 turns in 90% of seeds" and "3 to 6 events by exhaustion" conflict; the shipped weather has 16 events in a no-action game | open (decision) | tuning-log Horizon |
+| H-3 | `web/src/sim-port/mock/mock-only.json` still says `onset` 0.5 and `web/src/store/weather.ts` `WEATHER_UI` keeps the old onset/full/curve as the fallback for a package without the new wire fields; both are overridden by the real numbers | open (harmless) | |
+| H-4 | There is no web URL option to force weather stress; use `sim-cli --set weather.force_stress=0.7` | open | how-to |
+| W-8 | (Was contract issue 1 in web-notes-v4) The stress curve is now on the wire (`weather.onset`, `full`, `curve`); `coverage_radius` and `smoke_radius` still are not | partly resolved | sim-api-notes |

@@ -5,7 +5,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 ## What this is
 
 - A turn-based game: the player runs a small town's economy and must stay under a 1.5 C carbon budget while keeping the town livable.
-- 1 turn = 1 quarter = 3 monthly ticks; a game is 160 turns (40 years). Player actions cost political capital (PC) and take effect after a lead time.
+- 1 turn = 1 quarter = 3 monthly ticks; a game is 40 turns (10 years, 2026 to 2036; `run.turns`, 900 t budget; weather starts at 75% budget left). Player actions cost political capital (PC) and take effect after a lead time.
 - Town v2 world: 20 people in 8 households, 7 homes, a 12 x 12 tile map owned by the simulation, 3 firms (Factory, Farm, Shop) plus one dormant slot, a bank, a government, forest and commons.
 - Rust simulation (deterministic, no I/O) -> JSON wire layer -> compiled to wasm -> TypeScript/Svelte/Three.js front end. A TypeScript mock of the sim exists as a fallback.
 - All game numbers live in `content/*.json`. The code holds rules, not values.
@@ -91,7 +91,7 @@ npm test                   # vitest (22 files, 289 tests at last count)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)
-npm run build:wasm         # builds sim-wasm into web/src/sim-port/wasm/pkg (gitignored)
+npm run build:wasm         # REBUILD WITH THIS AFTER ANY RUST CHANGE (else the browser runs an old package or the mock); builds sim-wasm into web/src/sim-port/wasm/pkg (gitignored)
 npm run sync-mock          # regenerate mock/data.generated.json from content/
 ```
 

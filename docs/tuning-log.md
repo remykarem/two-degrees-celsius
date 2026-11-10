@@ -158,3 +158,40 @@ Reading: with a 600 t budget onset is at turn 10 and the game is over at turn 19
 Sign checks done in `tests/weather.rs`: higher stress raises ignition (measured over 20,000 draws against the formula); burning lowers the sink and raises net emissions once; stations cut burnt area (paired seeds); the community commons loses less regrowth in a drought; resilience spending lowers ignition and drought damage with diminishing returns.
 
 Easy knobs if the weather should bite more: `fire_base`, `drought_base`, `a_f` (the farm), `smoke_wellbeing`; less: the reverse, or raise `onset`'s distance from `full`.
+
+## Horizon: 40 turns, ~900 t, weather visibility pass
+Request (user): a 40-turn game (10 years, 2026 to 2036), a carbon budget of about 900 t, and weather that the player SEES: it starts when 75% of the budget is left (first asked at 50%, then changed to 75%) and intensifies gradually. The user had played to 50% left and seen no fire or drought (the old defaults give about 2.5 events a game, some seeds none; they may also have been on the mock or a stale wasm package, see README). Method: a throwaway probe test over seeds 1 to 20, baselines A to D, no behaviour tuning; the probe was deleted.
+
+### Changed
+| Parameter | From | To | Why |
+|---|---|---|---|
+| `run.turns` | 160 | 40 | the user's decision; tests and the web mock read it (the mock's `lastTurn` comes from `sync-mock`) |
+| `nature.budget_b0` | 600 | 900 | A: 75% left at turn 7.3, exhausted at turn 27.5 (target 26 to 30) in 20 of 20 seeds |
+| `weather.onset` | 0.50 | 0.75 | user decision (stress starts at 75% of the budget left) |
+| `weather.full` | 0.10 | 0.10 (unchanged) | stress is 1 at 10% left, about turn 24 in A |
+| `weather.curve` | 1.5 | 1.0 | a linear ramp, so the first turns after onset already have some stress; still gradual |
+| `weather.drought_base`, `fire_base` | 0.01, 0.012 | 0.12, 0.09 | per month at zero stress; needed so the first event comes soon |
+| `weather.drought_stress_gain`, `fire_stress_gain` | 4.0, 3.0 | 1.0, 1.0 | frequency doubles from onset to full stress; severity, duration and spread still scale with stress |
+| `weather.force_stress` (new) | n/a | `null` | development override: a number 0..1 fixes the stress from tick 1 |
+
+### Result, 20 seeds, events counted until the budget is exhausted (fires started + droughts started)
+| | 75% left at turn | exhausted at turn | outcome | events a game (mean, range) | seeds with an event within 3 turns of onset |
+|---|---|---|---|---|---|
+| A no action | 7.3 | 27.4 | budget 19, bank failure at turn 27 in 1 | 16.1 (11 to 20) | 19 of 20 |
+| B sensible | 7.3 | not exhausted | collapse in 20 of 20 (bank failure or mass unemployment, turns 22 to 30) | 25.7 over the game to the collapse (21 to 32) | 19 of 20 |
+| C neglect | 7.0 | 25.8 | budget 20 | 17.0 | 19 of 20 |
+| D carbon tax only | 7.3 | 28.4 | budget 20 | 17.1 | 19 of 20 |
+
+Events per 3 turns after onset in A: about 1.9, 1.9, 2.4, 2.2, 2.6, 2.9, 2.3. The player sees an event within about 1 turn in most seeds (first delay: median 3 months); the worst seed waited 13 months. Weather off (the same code with both base odds at 0): A exhausts at 27.7, C at 25.8, D at 29.0.
+Compromise, stated plainly: the brief asked for both "an event within about 3 turns in 90% of seeds" and "roughly 3 to 6 events by exhaustion". They conflict. Stress is near zero just after onset, so a 90% chance of an event in 9 months needs about 0.2 events a month from the start, and 50 months later that is 12 to 20 events. Visibility won (19 of 20 seeds, 95%); the count is 16 in A. The pattern is steady rather than sharply rising: the frequency rises from about 1.9 to 2.9 per 3 turns; what rises most is severity, duration and spread (they scale with stress). If this is too busy, lower the two bases and raise the two gains: visibility drops (0.08/0.06 with gains 1.5 gave 18 of 20 and 10 events at the old 50% onset).
+
+### Baseline B: honest answer, it cannot win in 40 turns at 900 t
+- By carbon alone B has a margin: it never exhausts 900 t; about 18 to 20% of the budget is left when the game stops, and it would need more than about 800 t.
+- The town collapses first. Cause (measured by switching parts off): `production.climate_damage` x (cumulative / b0)^2 cuts farm output; at about 15% damage (turn 28 with b0 900) the farm fails, unemployment goes to 70% and the bank fails. With `climate_damage` 0 the same B script survives 40 turns in 20 of 20 seeds with 13% of the budget left. With `climate_damage` 0.15 it still collapses.
+- Before the weather bump (old weather, 900 t): collapse at turn 28 to 30 in 20 of 20 seeds, budget left 19.7%, 3.4 events. With the weather switched off: turn 30 (17 of 20), left 20.1%. With the new weather: turn 22 to 26, because fires and droughts cut farm health (lowest farm health in B 0.47, mean 0.52, against 0.70 without weather).
+- Budget needed for B to survive 40 turns: 1,500 to 1,600 t (18 of 20 seeds; 1,200 t still collapses at turn 31). At 1,500 t A is not exhausted in 40 turns in 12 of 20 seeds, so no budget satisfies both "A fails clearly before 40" and "B wins". The shipped 900 t favours A. Options for the user: lower `production.climate_damage` (a model change, needs a new tuning round), make the farm less fragile, or accept B as a "buy time" strategy.
+- C and D fail (by the budget); A fails.
+Sanity of what scales with cumulative / b0: temperature is 1.30 at the start and 1.5 at exhaustion by construction (final mean 1.57 in A at turn 28); legitimacy in A stays above 0.45 until the end (lowest 0.53 mean-seed minimum); wellbeing is above 0.45 in every seed; the farm health low point in A is 0.41 to 0.54 (0.69 without weather).
+
+### Developer override
+`cargo run -p sim-cli -- --seed 3 --turns 6 --set weather.force_stress=0.7` (verified: stress 0.70 from tick 1, droughts and fires begin at once; a value outside 0..1 is refused). `--set` works because every param is overridable. A web URL option is not added: it would need a web change (`WasmSim.init` already accepts a params JSON string, but the web never passes one).
