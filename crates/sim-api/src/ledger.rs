@@ -241,29 +241,34 @@ impl Entry {
     }
 }
 
+/// One roll-up row: all entries of one month with the same sender, receiver, kind and posting,
+/// summed exactly. A row is stored once (not per account); each account's view of it is derived
+/// from its posting, which is linear in the amount, so account totals stay exact.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct RollRow {
-    account: LedgerAccount,
     turn: u32,
     month: u8,
-    counterparty: LedgerAccount,
+    from: LedgerAccount,
+    to: LedgerAccount,
     kind: LedgerKind,
-    inflow: i64,
-    outflow: i64,
+    posting: Posting,
+    amount: i64,
     count: u32,
-    net: i64,
-    debt_net: i64,
 }
 
 impl RollRow {
-    fn key(&self) -> (LedgerAccount, u32, u8, LedgerAccount, LedgerKind) {
+    fn key(&self) -> (u32, u8, LedgerAccount, LedgerAccount, LedgerKind, Posting) {
         (
-            self.account,
             self.turn,
             self.month,
-            self.counterparty,
+            self.from,
+            self.to,
             self.kind,
+            self.posting,
         )
+    }
+    fn effects(&self) -> Vec<(LedgerAccount, Position)> {
+        effects_of(self.posting, self.from, self.to, Cents(self.amount))
     }
 }
 
@@ -520,41 +525,25 @@ impl LedgerStore {
     }
 
     fn roll_entry(&mut self, e: &Entry) {
-        let month = (e.tick % 3) as u8;
         for (acct, eff) in e.effects() {
             self.window_base.add(acct, eff);
-            let counterparty = if acct == e.from {
-                e.to
-            } else if acct == e.to {
-                e.from
-            } else if matches!(e.from, LedgerAccount::External(_)) {
-                e.to
-            } else {
-                e.from
-            };
-            let row = RollRow {
-                account: acct,
-                turn: e.turn(),
-                month,
-                counterparty,
-                kind: e.kind,
-                inflow: if acct == e.to { e.amount } else { 0 },
-                outflow: if acct == e.from { e.amount } else { 0 },
-                count: 1,
-                net: eff.balance.0,
-                debt_net: eff.debt.0,
-            };
-            match self.rollups.binary_search_by(|r| r.key().cmp(&row.key())) {
-                Ok(i) => {
-                    let r = &mut self.rollups[i];
-                    r.inflow += row.inflow;
-                    r.outflow += row.outflow;
-                    r.count += 1;
-                    r.net += row.net;
-                    r.debt_net += row.debt_net;
-                }
-                Err(i) => self.rollups.insert(i, row),
+        }
+        let row = RollRow {
+            turn: e.turn(),
+            month: (e.tick % 3) as u8,
+            from: e.from,
+            to: e.to,
+            kind: e.kind,
+            posting: e.posting,
+            amount: e.amount,
+            count: 1,
+        };
+        match self.rollups.binary_search_by(|r| r.key().cmp(&row.key())) {
+            Ok(i) => {
+                self.rollups[i].amount += row.amount;
+                self.rollups[i].count += 1;
             }
+            Err(i) => self.rollups.insert(i, row),
         }
     }
 
@@ -563,13 +552,9 @@ impl LedgerStore {
     pub fn verify(&self, s: &State) -> Result<(), String> {
         let mut b = self.opening.clone();
         for r in &self.rollups {
-            b.add(
-                r.account,
-                Position {
-                    balance: Cents(r.net),
-                    debt: Cents(r.debt_net),
-                },
-            );
+            for (a, eff) in r.effects() {
+                b.add(a, eff);
+            }
         }
         if b != self.window_base {
             return Err("roll-ups do not add up to the window's opening positions".into());
@@ -628,17 +613,38 @@ impl LedgerStore {
         let mut summary: Vec<LedgerSummaryRow> = self
             .rollups
             .iter()
-            .filter(|r| r.account == acct && q.turn_ok(r.turn) && q.kind_ok(r.kind))
-            .map(|r| LedgerSummaryRow {
-                turn: r.turn,
-                month: r.month,
-                counterparty: AccountRef::from_sim(r.counterparty),
-                kind: LedgerKindKey::from_sim(r.kind),
-                inflow: Cents(r.inflow).dollars(),
-                outflow: Cents(r.outflow).dollars(),
-                count: r.count,
-                net: Cents(r.net).dollars(),
-                debt_net: Cents(r.debt_net).dollars(),
+            .filter(|r| q.turn_ok(r.turn) && q.kind_ok(r.kind))
+            .filter_map(|r| {
+                let eff = r.effects().into_iter().find(|(a, _)| *a == acct)?.1;
+                // The other end of the row; for the bank as a bystander of a loan, the borrower.
+                let counterparty = if acct == r.from {
+                    r.to
+                } else if acct == r.to {
+                    r.from
+                } else if matches!(r.from, LedgerAccount::External(_)) {
+                    r.to
+                } else {
+                    r.from
+                };
+                Some(LedgerSummaryRow {
+                    turn: r.turn,
+                    month: r.month,
+                    counterparty: AccountRef::from_sim(counterparty),
+                    kind: LedgerKindKey::from_sim(r.kind),
+                    inflow: if acct == r.to {
+                        Cents(r.amount).dollars()
+                    } else {
+                        0.0
+                    },
+                    outflow: if acct == r.from {
+                        Cents(r.amount).dollars()
+                    } else {
+                        0.0
+                    },
+                    count: r.count,
+                    net: eff.balance.dollars(),
+                    debt_net: eff.debt.dollars(),
+                })
             })
             .collect();
         summary.sort_by(|a, b| {
@@ -666,11 +672,10 @@ impl LedgerStore {
     /// `window_base` for `acct` equals `opening` plus the account's roll-up rows.
     fn rolled_base_ok(&self, acct: LedgerAccount) -> bool {
         let mut p = self.opening.get(acct).unwrap_or(Position::ZERO);
-        for r in self.rollups.iter().filter(|r| r.account == acct) {
-            p += Position {
-                balance: Cents(r.net),
-                debt: Cents(r.debt_net),
-            };
+        for r in &self.rollups {
+            if let Some((_, eff)) = r.effects().into_iter().find(|(a, _)| *a == acct) {
+                p += eff;
+            }
         }
         p == self.window_base.get(acct).unwrap_or(Position::ZERO)
     }

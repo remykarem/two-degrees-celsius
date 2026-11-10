@@ -1,7 +1,7 @@
 {
   "actions": "9120d5597d63372b",
   "cancel2": "77cd6db1e9e20b74",
-  "export": "6dce2947551fdfea",
+  "export": "5e450db83fac8ee1",
   "finalSnapshot": "20b3f46d5ed7f762",
   "import": "800a9ade9bf3a018",
   "init": "215e8e0685e5128c",
@@ -17,32 +17,32 @@
       "person8": "926c1f5cd36e8438"
     },
     "12": {
-      "bank": "c644c565920c09ad",
+      "bank": "7848478a4f51871a",
       "firm0": "635a61e403bd23ad",
       "government": "fc3ef8aec32a9f7f",
       "governmentTaxes": "73f1508eb40b5049",
       "household0": "a51a3c01e6149345",
-      "household3": "da13e1773d987b35",
+      "household3": "edbbce87f798179a",
       "person3": "e0ea6edc7c365e76",
       "person8": "b9aa704e5851e3c3"
     },
     "15": {
-      "bank": "c106857a5ab50df4",
+      "bank": "06f530343c61b37d",
       "firm0": "51fc62f1a50b4c98",
       "government": "87900a2804236945",
       "governmentTaxes": "bf5126d1c2d76ab5",
       "household0": "5ad050fc8f4979a3",
-      "household3": "c79ca2fa453df793",
+      "household3": "469d8953d230bbe8",
       "person3": "e0ea6edc7c365e76",
       "person8": "8b2da3786b1c18c5"
     },
     "20": {
-      "bank": "2bffe42b6f9ed4e2",
+      "bank": "c68ccb629c29368a",
       "firm0": "86c68c3cd61799ba",
       "government": "1091748fb12ad3e4",
       "governmentTaxes": "619eccc6eae7edf5",
       "household0": "937453ee10d4d382",
-      "household3": "2f095b0c6899a948",
+      "household3": "d819f8f5d6b335ea",
       "person3": "e0ea6edc7c365e76",
       "person8": "120cc449622d26d8"
     },

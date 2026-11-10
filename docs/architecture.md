@@ -17,9 +17,12 @@ content/*.json ──include_str!──> sim-api (content.rs)
  │      │                                                                       │
  │ sim-engine: step() tick loop, apply() deltas, turn layer (PC, pending,       │
  │             lead times), submit_turn_with(), Plan, init + warm-up            │
+ │             apply_money() records every money movement as a Transaction and  │
+ │             step() reconciles opening + transactions = closing (Town v5)     │
  │      │                                                                       │
  │ sim-api: Api = wire JSON (camelCase), wire validation, frames, history,      │
- │          save/load, fixtures      <── docs/snapshot-contract.md (the wire)   │
+ │          LEDGER (detail window + roll-ups), finance, energy, save/load,      │
+ │          fixtures                 <── docs/snapshot-contract.md (the wire)   │
  └──────┬───────────────────────────────────────────────────────────────────────┘
         │ native: sim-cli (headless), tests          wasm: sim-wasm (WasmSim, JSON strings in/out)
         v
@@ -44,8 +47,8 @@ Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the
 | sim-types | `State` (people, households, homes, firms, bank, gov, nature, map, plants, pending, policy, effective policy), `Command`, `Event`, `TraceRecord`, `Delta`/`Deltas`, `SCHEMA_VERSION` (2), `MAX_FIRMS` (4) |
 | sim-params | `Params` (run, turn, labour, production, space, energy, goods, income, credit, invest, nature, government, class, lobby, wellbeing, metrics, initial town, 3 systems). Content is passed in as JSON text; no file I/O |
 | sim-model | One module per system; `TICK_ORDER`; `space.rs` (map, commute routes); `util.rs` |
-| sim-engine | `init` (builds the town, runs 48 warm-up ticks, then `reset_clock`), `step`, `begin_turn` / `advance_month` / `finish_turn`, `submit_turn_with`, `turn.rs` (validate, preview, queue, activate_due, cancel, regenerate), `apply.rs`, `commands.rs`, `plan.rs` |
-| sim-api | `Api::{init, reset, snapshot, levers, actions, preview, valid_tiles, submit_turn, begin_turn, advance_month, finish_turn, cancel_pending, export_state, import_state}`; `keys.rs` (closed enums), `meta.rs` (levers/actions from `content/levers.json` + params), `events.rs` (importance), `frames.rs`, `history.rs`, `persist.rs`, `fixtures.rs` |
+| sim-engine | `init` (builds the town, runs 48 warm-up ticks, then `reset_clock`), `step` (returns events, trace, **transactions** and person earnings, and fails if the ledger does not reconcile), `begin_turn` / `advance_month` / `finish_turn`, `submit_turn_with`, `turn.rs` (validate, preview, queue, activate_due, cancel, regenerate), `apply.rs` (the only place a balance changes; records the transactions), `commands.rs`, `plan.rs` |
+| sim-api | `Api::{init, reset, snapshot, levers, actions, preview, valid_tiles, submit_turn, begin_turn, advance_month, finish_turn, cancel_pending, export_state, import_state}`; `keys.rs` (closed enums), `meta.rs` (levers/actions and the `ledger`/`energy` config from `content/levers.json` + params), `events.rs` (importance), `frames.rs`, `history.rs`, `ledger.rs` (transaction store, roll-up, pages), `finance.rs` (finance and energy views), `persist.rs`, `fixtures.rs` |
 | sim-wasm | `WasmSim` mirrors `Api` with JSON strings. Replies are `{"ok":true,"value":..}` or `{"ok":false,"error":{"code","message"}}`. Panic hook; panics abort in wasm, so `sim-api` validates input instead |
 
 ## 3. Turn flow (`Api::submit_turn` -> `sim_engine::submit_turn_with`)
@@ -60,6 +63,7 @@ Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the
 7. **Policy gaps** for the four lobbied levers (nominal vs effective), measured at end of turn.
 8. **Regenerate PC**: `pc += pc_base x legitimacy`, capped at `pc_cap` (60 start, 100 cap, 8 base). `turn += 1`.
 9. **History**: the api appends one `HistoryPoint` per played turn (kept in `Api`, saved in the blob, not in `State`).
+   **Ledger (Town v5)**: each tick's `StepOutput.transactions` is recorded in the `Api`'s `LedgerStore` as the ticks run (on a copy, kept only if the turn succeeds; live turns record each month). The store checks the transactions against the state's balances every tick, keeps full detail for `ledger.detail_turns` turns (8) and rolls older turns up to monthly rows. It lives beside the history in the save blob, never in `State`, so the model cannot read it.
 10. **Result**: `TurnResult { accepted, rejected, activated, pcBefore, pcAfter, months[3], policyGaps, trace, snapshot }`.
 
 **Live turn (Town v3, contract section 12).** `submit_turn_with` is `begin_turn` (steps 4-5) + `advance_month` x3 (step 6) + `finish_turn` (steps 7-8) in `sim-engine`; progress is `Sim::turn_phase` (`TurnPhase { open, months_done }`, outside `State` and saves). `Api::{begin_turn, advance_month, finish_turn}` run the same steps one call at a time, keeping the accumulating frames, events and trace in a private `Live` struct, and `finish_turn` returns the same `TurnResult` as `submit_turn` (step 9-10). Out-of-order calls return `turn_state` and change nothing; `submit_turn` and `export_state` are refused while a turn is open; `import_state` and `reset` close it. The split path is tested equal to `submit_turn` in `crates/sim-api/tests/turn_split.rs`.
@@ -124,8 +128,9 @@ The UI must never compute economy numbers. The mock is the one exception by desi
 
 | Version | Where | Value | Meaning |
 |---|---|---|---|
-| `SCHEMA_VERSION` | `sim-types/src/lib.rs` (re-exported by sim-api, sent as `Snapshot.schemaVersion`) | 3 | Layout of `State` and of the wire. Bump when either changes shape. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) is 3 |
-| Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
+| `SCHEMA_VERSION` (state) | `sim-types/src/lib.rs` | 3 | Layout of `State`. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) is 3 |
+| `SCHEMA_VERSION` (wire) | `sim-api/src/lib.rs` (sent as `Snapshot.schemaVersion`, written in the save blob) | 4 | Layout of the wire and of the saved wrapper blob. Town v5 (ledger in the blob, finance and energy on the snapshot) is 4; before v5 it was the same number as the state's |
+| Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history, ledger }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 
 `paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the real one (now 3).

@@ -196,7 +196,7 @@ impl Purpose {
 
 /// How a transaction moves the positions of its two accounts. This is the whole ledger
 /// mapping of the money operations: one posting per `MoneyOp` variant (a test enumerates them).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Posting {
     /// Deposit moves: `from` balance falls, `to` balance rises (`MoneyOp::Transfer`).
     Transfer,
