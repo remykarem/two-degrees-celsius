@@ -117,8 +117,8 @@ describe('v0.2 store behaviour', () => {
     const g = newGame();
     expect(paletteActions(g.state.get().actions).map((p) => p.kind)).toEqual(['public_housing', 'fossil_plant', 'renewable_plant', 'road']);
     const game = g.state.get().snapshot!.game;
-    expect(quarterLabel(1, game)).toBe('Q1 2031');
-    expect(quarterLabel(6, game)).toBe('Q2 2032');
+    expect(quarterLabel(1, game)).toBe('Q1 2026');
+    expect(quarterLabel(6, game)).toBe('Q2 2027');
   });
 });
 

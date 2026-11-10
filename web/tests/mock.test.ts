@@ -427,7 +427,7 @@ describe('people, households and homes', () => {
   it('every home holds at most one household; every tile holds one thing; homes sit on home tiles', () => {
     const sim = fresh(2);
     let s = ok(sim.init(2));
-    for (let i = 0; i < 40; i++) s = ok(sim.submitTurn([])).snapshot;
+    for (let i = 0; i < 15; i++) s = ok(sim.submitTurn([])).snapshot; // the 600 t budget ends a do-nothing game near turn 21
     const seen = new Set<number>();
     for (const h of s.households) if (h.home !== null) { expect(seen.has(h.home)).toBe(false); seen.add(h.home); expect(s.homes[h.home]!.household).toBe(h.id); }
     for (const home of s.homes) expect(['home', 'public_housing']).toContain(s.map.tiles[home.tile.y * 12 + home.tile.x]!.kind);
@@ -503,7 +503,7 @@ describe('turn result shape', () => {
   it('carries a calendar, a mock flag, and payload-only events', () => {
     const sim = fresh();
     const s = ok(sim.init(1));
-    expect(s.game).toEqual({ startYear: 2031, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 });
+    expect(s.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 160, turnsPerYear: 4 });
     expect(s.mock).toBe(true);
     for (const e of ok(sim.submitTurn([])).months.flatMap((m) => m.events)) {
       expect(e).not.toHaveProperty('text');
@@ -552,13 +552,13 @@ describe('determinism and persistence', () => {
 });
 
 describe('game over', () => {
-  it('doing nothing exhausts the carbon budget between turn 90 and 140', () => {
+  it('doing nothing exhausts the 600 t carbon budget between turn 15 and 25 (Paris 2030 horizon)', () => {
     const sim = fresh(11);
     let s = ok(sim.init(11));
     while (!s.gameOver) s = ok(sim.submitTurn([])).snapshot;
     expect(s.gameOver.outcome).toBe('budget_exhausted');
-    expect(s.gameOver.turn).toBeGreaterThanOrEqual(90);
-    expect(s.gameOver.turn).toBeLessThanOrEqual(140);
+    expect(s.gameOver.turn).toBeGreaterThanOrEqual(15);
+    expect(s.gameOver.turn).toBeLessThanOrEqual(25);
   });
   it('submitTurn after game over is an error result', () => {
     const sim = fresh(11);
@@ -641,7 +641,7 @@ describe('a full run (160 turns)', () => {
       return { turns, log: log.join(','), outcome: JSON.stringify(s.gameOver), final: JSON.stringify(s) };
     };
     const a = run();
-    expect(a.turns).toBeGreaterThan(30);
+    expect(a.turns).toBeGreaterThan(15); // a 600 t budget ends the game near turn 21, long before 160
     const b = run();
     expect(b.final).toBe(a.final);
     expect(b.log).toBe(a.log);

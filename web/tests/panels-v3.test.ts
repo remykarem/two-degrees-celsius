@@ -24,11 +24,11 @@ describe('Pressure panels', () => {
     expect(top).toContain('Slow pace');
     expect(top).toContain('4x');
     expect(top).not.toContain('End turn');
-    expect(top).toContain('1 Jan 2031');
-    expect(html(LockButton, { game, live })).toContain('Lock plan · applies Q2 2031');
+    expect(top).toContain('1 Jan 2026');
+    expect(html(LockButton, { game, live })).toContain('Lock plan · applies Q2 2026');
     const tray = html(PlanTray, { game, live });
     expect(tray).toContain('Applies when the next quarter begins');
-    expect(tray).toContain('Plan for Q2 2031');
+    expect(tray).toContain('Plan for Q2 2026');
   });
   it('shows a locked plan and a non-blocking summary card after a quarter', () => {
     const { game, live } = pressure();
@@ -38,7 +38,7 @@ describe('Pressure panels', () => {
     for (let i = 0; i < 3; i++) game.liveMonth();
     game.liveFinish();
     const card = html(QuarterCard, { game });
-    expect(card).toContain('Q1 2031 finished');
+    expect(card).toContain('Q1 2026 finished');
     expect(card).not.toContain('aria-modal');
   });
   it('does not render the clock in Relaxed mode', () => {

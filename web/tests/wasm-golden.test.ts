@@ -33,8 +33,8 @@ describe.skipIf(!present)('wasm build against the native golden run', () => {
       const reply = sim.submit_turn(JSON.stringify(cmds));
       ms += performance.now() - t0;
       const v = JSON.parse(reply);
-      const snap = v.value.snapshot;
-      turns.push({ turn, ok: v.ok, fnv: fnv(reply), gdpRealAnnual: snap.indicators.gdpRealAnnual, legitimacy: snap.government.legitimacy, temperature: snap.indicators.temperature });
+      const snap = v.value?.snapshot; // undefined after game over (the 600 t budget runs out near turn 23)
+      turns.push({ turn, ok: v.ok, fnv: fnv(reply), gdpRealAnnual: snap?.indicators.gdpRealAnnual ?? null, legitimacy: snap?.government.legitimacy ?? null, temperature: snap?.indicators.temperature ?? null });
       if (turn === plan.exportAfterTurn) {
         const blob = sim.export_state();
         got.export = fnv(blob);
@@ -45,7 +45,7 @@ describe.skipIf(!present)('wasm build against the native golden run', () => {
     got.finalSnapshot = fnv(sim.snapshot());
     console.info(`wasm: ${(ms / plan.turns.length).toFixed(1)} ms per submit_turn (mean of ${plan.turns.length})`);
     // Bit-identical iff every hash matches. The headline floats are compared first so a failure says which turn drifted.
-    const headline = (t: { turn: number; gdpRealAnnual: number; legitimacy: number; temperature: number }) => [t.turn, t.gdpRealAnnual, t.legitimacy, t.temperature];
+    const headline = (t: { turn: number; gdpRealAnnual: number | null; legitimacy: number | null; temperature: number | null }) => [t.turn, t.gdpRealAnnual, t.legitimacy, t.temperature];
     expect((got.turns as typeof want.turns).map(headline)).toEqual(want.turns.map(headline));
     expect(got).toEqual(want);
   });

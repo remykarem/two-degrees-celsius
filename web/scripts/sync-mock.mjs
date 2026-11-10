@@ -12,8 +12,8 @@ const repo = resolve(here, '..', '..');
 const content = (p) => JSON.parse(readFileSync(resolve(repo, 'content', p), 'utf8'));
 export const OUT_PATH = resolve(here, '..', 'src', 'sim-port', 'mock', 'data.generated.json');
 
-/** UI_CHOICE: content/ has no calendar start; the UI picks the first year shown. */
-const START_YEAR = 2031;
+/** The calendar start year lives in content/levers.json (`game.startYear`), the same file the wire layer reads. */
+const START_YEAR = content('levers.json').game.startYear;
 const SYSTEM_KEYS = { market: 'market', regulated: 'regulated', coop: 'coop' };
 const POLICY_KEYS = {
   carbon_price_usd: 'carbon_price', tax_wage: 'tax_wage', tax_profit: 'tax_profit', tax_capital: 'tax_capital', wealth_tax: 'wealth_tax',

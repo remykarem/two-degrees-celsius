@@ -357,7 +357,7 @@ describe('v0.3 panels logic', () => {
   it('shownTurn is the same for the top bar and the end screen at game over', () => {
     const over = { ...snapshot!, turn: 161, gameOver: { turn: 160, outcome: 'survived' as const } };
     expect(shownTurn(over)).toBe(160);
-    expect(quarterLabel(shownTurn(over), over.game)).toBe('Q4 2070');
+    expect(quarterLabel(shownTurn(over), over.game)).toBe('Q4 2065');
     expect(shownTurn({ ...snapshot!, turn: 7 })).toBe(7);
   });
 });
