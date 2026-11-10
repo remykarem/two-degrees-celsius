@@ -889,7 +889,7 @@ fn tally_with(script: &Plan, seed: u64, weather_off: bool) -> Tally {
     t
 }
 
-/// Prints baselines A-D over seeds 1..=20 (until the budget is exhausted, where the game ends).
+/// Prints baselines A-F over seeds 1..=20 (until the budget is exhausted, where the game ends).
 /// Run with `cargo test -p sim-engine --test weather weather_baselines -- --nocapture`.
 #[test]
 fn weather_baselines_over_twenty_seeds() {
@@ -904,6 +904,20 @@ fn weather_baselines_over_twenty_seeds() {
             "D",
             Plan::from_json(include_str!(
                 "../content/scenarios/baseline_d_carbon_only.json"
+            ))
+            .unwrap(),
+        ),
+        (
+            "E",
+            Plan::from_json(include_str!(
+                "../content/scenarios/baseline_e_adaptation_only.json"
+            ))
+            .unwrap(),
+        ),
+        (
+            "F",
+            Plan::from_json(include_str!(
+                "../content/scenarios/baseline_f_renewables_only.json"
             ))
             .unwrap(),
         ),
@@ -932,5 +946,11 @@ fn weather_baselines_over_twenty_seeds() {
             off.iter().map(|t| t.farm_low).sum::<f64>() / n,
         );
         assert!(ts.iter().all(|t| t.farm_low > 0.0));
+        // Winnable (docs/tuning-log.md): the weather stays clearly visible in every script,
+        // including B, which plays all 40 turns now (measured: about 22 to 23 events a game over 40 turns).
+        assert!(
+            mean(&|t| (t.fires + t.droughts) as f64) >= 8.0,
+            "{name}: weather events per game stay visible"
+        );
     }
 }

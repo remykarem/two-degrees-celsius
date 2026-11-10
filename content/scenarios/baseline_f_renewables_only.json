@@ -1,0 +1,51 @@
+{
+  "name": "Baseline F: renewables only (two plants, then close the fossil plants)",
+  "turns": [
+    {
+      "turn": 1,
+      "place": [
+        {
+          "kind": "RenewablePlant",
+          "tile": [
+            11,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "place": [
+        {
+          "kind": "RenewablePlant",
+          "tile": [
+            11,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 9,
+      "remove": [
+        {
+          "tile": [
+            10,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 11,
+      "remove": [
+        {
+          "tile": [
+            10,
+            4
+          ]
+        }
+      ]
+    }
+  ]
+}

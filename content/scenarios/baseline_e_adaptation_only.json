@@ -1,0 +1,50 @@
+{
+  "name": "Baseline E: adaptation only (fire stations and resilience spending)",
+  "turns": [
+    {
+      "turn": 1,
+      "set": {
+        "resilience_spending": 500
+      },
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            7,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            3,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 16,
+      "set": {
+        "resilience_spending": 750
+      }
+    }
+  ]
+}

@@ -195,3 +195,30 @@ Sanity of what scales with cumulative / b0: temperature is 1.30 at the start and
 
 ### Developer override
 `cargo run -p sim-cli -- --seed 3 --turns 6 --set weather.force_stress=0.7` (verified: stress 0.70 from tick 1, droughts and fires begin at once; a value outside 0..1 is refused). `--set` works because every param is overridable. A web URL option is not added: it would need a web change (`WasmSim.init` already accepts a params JSON string, but the web never passes one).
+
+## Winnable: plan B with adaptation
+Request: make baseline B (sensible play) able to win the 40-turn, 900 t game, preferring (a) a better plan, then (b) lower `production.climate_damage`, (c) a farm-fragility mitigation, (d) a larger budget. No parameter was changed: (a) worked. Weather parameters are untouched, so visibility is as before: no-action game 16.1 events (11 to 20), an event within 3 turns of onset in 19 of 20 seeds (`a_no_action_game_shows_weather...`).
+
+### What was wrong with B
+The old plan B predated weather and adaptation: carbon price ramp, three renewables, roads, public housing, a wealth tax, the commons harvest cap. It collapsed in 20 of 20 seeds (turns 22 to 26). Cause, measured: farm output falls (climate damage and drought), food gets dearer, wages follow (about +38% in 4.5 years at full employment against +13% for goods prices), the Services firm's profit goes negative and it defaults, unemployment jumps and the bank fails.
+
+### Findings from the experiments (20 seeds, survived of 20)
+- Fire stations carry the result. Renewables, fossil plants closed and roads with stations, and nothing else: 20 of 20; the same with no stations: 15 of 20.
+- Government borrowing kills it. Public housing (40,000 dollars) added to B: 1 of 20; a third renewable plant: 1 of 20 (the earlier plan only worked because those two builds were rejected as `InsufficientFunds`); `public_spending` 10,000: 5 of 20; resilience spending 2,000 a month: 5 to 6 of 20, 1,000: 19, 500: 20.
+- Carbon price ramp, green subsidy, benefit and a wealth tax are neutral here (19 to 20 of 20 each way). A bank capital ratio of 0.15 lowers it (14).
+- With the old climate damage the shipped B wins; with `climate_damage` 0.2 and 0.1 it wins 20 and 18 of 20 in an earlier variant; the response is not monotonic because outcomes are decided by one firm defaulting. So (b) was not needed and no value was searched.
+
+### Plan B now (`content/scenarios/baseline_b_sensible.json`, no command rejected, PC never binding)
+Turn 1: carbon price 50, green subsidy 0.4, resilience spending 500, fire station (2,3), renewable plant (11,3). Turn 2: renewable (11,5), benefit 800. Turn 3: fire station near the farm (7,8). Turn 4: commons harvest cap 0.6. Turn 6: third fire station (3,6) among the forest. Turn 7: roads (4,6), (9,6). Turn 9: remove the first fossil plant, carbon price 100; turn 11: remove the second. Turn 16: carbon price 150, resilience 750. Turn 17: wealth threshold 100,000 and tax 0.005. Turn 24: carbon price 200. Not used: public housing (net loss), a third plant (borrowing), community commons (needs a 45 PC system switch), UBI, job guarantee, minimum wage (not helpful or not needed; not all were tested individually).
+
+### Results, seeds 1 to 20
+| Script | Survived | Outcome | Budget left (median) | Farm health low point | Weather events a game |
+|---|---|---|---|---|---|
+| A no action | 0 of 20 | budget exhausted (1 bank failure), turn 27.0 to 28.0 | 0 | 0.53 mean | 16.1 |
+| B sensible with adaptation | 20 of 20 | survived 40 turns | 30% | 0.57 to 0.69 | 22.6 |
+| C neglect | 0 of 20 | budget exhausted, first loss tick 75 to 81 | 0 | 0.31 mean | 17.0 |
+| D carbon tax only | 0 of 20 | budget exhausted | 0 | 0.52 mean | 17.1 |
+| E adaptation only (3 stations, resilience 500 then 750) | 0 of 20 | budget exhausted (1 bank failure) | 0 | 0.62 mean | 15.3 |
+| F renewables only (2 plants, both fossil closed) | 13 of 20 | 7 mass unemployment | 29% | 0.48 mean | 23.7 |
+
+Honest remainder: F does not fail in most seeds, so "a single tool must not be enough" is met for D and E only (known-issues WN-1). B also sits near a cliff (WN-2). Not claimed: B was not tried by a human, and the Regulated and Coop systems were not tested for a winning plan.

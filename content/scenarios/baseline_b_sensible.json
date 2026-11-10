@@ -1,157 +1,157 @@
 {
- "name": "Baseline B: sensible play within the PC budget",
- "turns": [
-  {
-   "turn": 1,
-   "set": {
-    "carbon_price": 50,
-    "green_subsidy": 0.4
-   }
-  },
-  {
-   "turn": 2,
-   "set": {
-    "benefit": 1000
-   },
-   "place": [
+  "name": "Baseline B: sensible play with adaptation, within the PC budget",
+  "turns": [
     {
-     "kind": "PublicHousing",
-     "tile": [
-      4,
-      5
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 3,
-   "place": [
-    {
-     "kind": "RenewablePlant",
-     "tile": [
-      11,
-      3
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 5,
-   "place": [
-    {
-     "kind": "RenewablePlant",
-     "tile": [
-      11,
-      5
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 6,
-   "place": [
-    {
-     "kind": "Road",
-     "tile": [
-      4,
-      6
-     ]
+      "turn": 1,
+      "set": {
+        "carbon_price": 50,
+        "green_subsidy": 0.4,
+        "resilience_spending": 500.0
+      },
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            2,
+            3
+          ]
+        },
+        {
+          "kind": "RenewablePlant",
+          "tile": [
+            11,
+            3
+          ]
+        }
+      ],
+      "remove": []
     },
     {
-     "kind": "Road",
-     "tile": [
-      9,
-      6
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 8,
-   "place": [
-    {
-     "kind": "Road",
-     "tile": [
-      9,
-      5
-     ]
+      "turn": 2,
+      "set": {
+        "benefit": 800.0
+      },
+      "place": [
+        {
+          "kind": "RenewablePlant",
+          "tile": [
+            11,
+            5
+          ]
+        }
+      ],
+      "remove": []
     },
     {
-     "kind": "Road",
-     "tile": [
-      9,
-      4
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 9,
-   "set": {
-    "carbon_price": 100,
-    "commons_harvest": 0.6
-   }
-  },
-  {
-   "turn": 12,
-   "place": [
+      "turn": 3,
+      "set": {},
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            7,
+            8
+          ]
+        }
+      ],
+      "remove": []
+    },
     {
-     "kind": "RenewablePlant",
-     "tile": [
-      11,
-      7
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 16,
-   "remove": [
+      "turn": 4,
+      "set": {
+        "commons_harvest": 0.6
+      },
+      "place": [],
+      "remove": []
+    },
     {
-     "tile": [
-      10,
-      2
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 17,
-   "set": {
-    "carbon_price": 150,
-    "wealth_threshold": 100000,
-    "wealth_tax": 0.005
-   }
-  },
-  {
-   "turn": 20,
-   "remove": [
+      "turn": 6,
+      "set": {},
+      "place": [
+        {
+          "kind": "FireStation",
+          "tile": [
+            3,
+            6
+          ]
+        }
+      ],
+      "remove": []
+    },
     {
-     "tile": [
-      10,
-      4
-     ]
-    }
-   ]
-  },
-  {
-   "turn": 25,
-   "set": {
-    "carbon_price": 200,
-    "tax_profit": 0.3
-   }
-  },
-  {
-   "turn": 30,
-   "place": [
+      "turn": 7,
+      "set": {},
+      "place": [
+        {
+          "kind": "Road",
+          "tile": [
+            4,
+            6
+          ]
+        },
+        {
+          "kind": "Road",
+          "tile": [
+            9,
+            6
+          ]
+        }
+      ],
+      "remove": []
+    },
     {
-     "kind": "PublicHousing",
-     "tile": [
-      2,
-      5
-     ]
+      "turn": 9,
+      "set": {
+        "carbon_price": 100.0
+      },
+      "place": [],
+      "remove": [
+        {
+          "tile": [
+            10,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 11,
+      "set": {},
+      "place": [],
+      "remove": [
+        {
+          "tile": [
+            10,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "turn": 16,
+      "set": {
+        "carbon_price": 150.0,
+        "resilience_spending": 750.0
+      },
+      "place": [],
+      "remove": []
+    },
+    {
+      "turn": 17,
+      "set": {
+        "wealth_threshold": 100000,
+        "wealth_tax": 0.005
+      },
+      "place": [],
+      "remove": []
+    },
+    {
+      "turn": 24,
+      "set": {
+        "carbon_price": 200.0
+      },
+      "place": [],
+      "remove": []
     }
-   ]
-  }
- ]
+  ]
 }

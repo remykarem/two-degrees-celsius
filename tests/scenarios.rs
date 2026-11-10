@@ -1286,6 +1286,8 @@ fn long_commutes_cost_wellbeing() {
 const SCENARIO_B: &str = include_str!("../content/scenarios/baseline_b_sensible.json");
 const SCENARIO_C: &str = include_str!("../content/scenarios/baseline_c_neglect.json");
 const SCENARIO_D: &str = include_str!("../content/scenarios/baseline_d_carbon_only.json");
+const SCENARIO_E: &str = include_str!("../content/scenarios/baseline_e_adaptation_only.json");
+const SCENARIO_F: &str = include_str!("../content/scenarios/baseline_f_renewables_only.json");
 const SEEDS: std::ops::RangeInclusive<u64> = 1..=20;
 
 struct Run {
@@ -1301,6 +1303,8 @@ struct Run {
     legitimacy_min_before_exhaustion: f64,
     budget_left_share: f64,
     gini_start: f64,
+    /// Lowest farm health (resource-health share, 0..1) over the run.
+    farm_min: f64,
 }
 
 fn play(script: &Plan, seed: u64) -> Run {
@@ -1310,9 +1314,11 @@ fn play(script: &Plan, seed: u64) -> Run {
     let mut half = None;
     let mut legit_min = 1.0f64;
     let mut legit_pre = 1.0f64;
+    let mut farm_min = 1.0f64;
     let turns = sim.params.run.turns;
     sim_engine::run(&mut sim, turns, script, |s, _| {
         legit_min = legit_min.min(s.state.gov.legitimacy.0);
+        farm_min = farm_min.min(sim_metrics::farm_health(&s.state, &s.params));
         if exhausted.is_none() {
             legit_pre = legit_pre.min(s.state.gov.legitimacy.0);
         }
@@ -1333,6 +1339,7 @@ fn play(script: &Plan, seed: u64) -> Run {
         legitimacy_min_before_exhaustion: legit_pre,
         budget_left_share: sim.state.indicators.remaining_budget.0 / sim.params.nature.budget_b0,
         gini_start,
+        farm_min,
     }
 }
 
@@ -1395,28 +1402,33 @@ fn baseline_a_no_action_runs_the_budget_out_by_turn_30() {
     );
 }
 
-/// Baseline B (sensible play) in the 40-turn, 900 t game. HONEST RESULT, not a win. By carbon
-/// alone B has a margin: emissions fall with lags (a carbon price takes 2 turns, a plant 4), the
-/// budget is never exhausted and about 18 to 20% of it is left when the game stops (it would need
-/// more than about 800 t). But the town collapses first: climate damage to farm output
-/// (`production.climate_damage` x (cumulative / b0)^2) is about 15% by turn 28, the farm fails,
-/// unemployment jumps to 70% and the bank fails (`BankFailureCascade`; turn 30 with the weather
-/// off, turns 22 to 26 with the Horizon weather, which stresses the farm from 25% of the budget
-/// used). With
-/// `climate_damage` = 0 the same script survives all 40 turns with 13% left. B survives only with
-/// a budget of about 1,500 t or more, which lets A survive too. Not forced by tuning behaviour;
-/// see docs/tuning-log.md ("Horizon") and docs/known-issues.md. When the model is rebalanced so B
-/// wins, flip the collapse assertion.
+/// Baseline B (sensible play with ALL current tools) in the 40-turn, 900 t game: it WINS. The old
+/// plan B was written before weather and adaptation existed and used none of the adaptation tools;
+/// it collapsed in 20 of 20 seeds at turns 22 to 26. The rewritten plan keeps the carbon price
+/// ramp, green subsidy, two renewable plants then closing both fossil plants, roads, three fire
+/// stations (near forest and near the farm), resilience spending (500, then 750 a month), a
+/// commons harvest cap, a benefit and a small wealth tax, all inside the political-capital budget
+/// (no command is rejected). Measured over seeds 1 to 20: survives all 40 turns in 20 of 20, about
+/// 30% of the budget left. Findings that shaped it (docs/tuning-log.md, "Winnable"): fire stations
+/// are what keep the farm alive; extra public housing and plants are paid by government borrowing
+/// and tip the bank over; resilience spending above about 1,000 a month does the same.
+/// Community-managed commons needs the Regulated or Coop system (a 45 PC switch), so B uses the
+/// harvest cap instead.
 #[test]
-fn baseline_b_sensible_play_keeps_budget_margin_but_the_town_collapses_before_turn_40() {
+fn baseline_b_sensible_play_with_adaptation_survives_in_most_seeds() {
     let rs = runs(&Plan::from_json(SCENARIO_B).unwrap());
     let a = runs(&Plan::default());
     println!(
-        "B: survived {:.0}%, outcomes {:?}, median budget left {:.2}, median legitimacy min {:.2}",
+        "B: survived {:.0}%, outcomes {:?}, median budget left {:.2}, median legitimacy min {:.2}, farm health low {:?}",
         100.0 * share(&rs, |r| matches!(r.outcome, Outcome::Survived)),
         rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
         median(rs.iter().map(|r| r.budget_left_share).collect()),
-        median(rs.iter().map(|r| r.legitimacy_min).collect())
+        median(rs.iter().map(|r| r.legitimacy_min).collect()),
+        rs.iter().map(|r| (r.farm_min * 100.0).round() / 100.0).collect::<Vec<_>>()
+    );
+    assert!(
+        share(&rs, |r| matches!(r.outcome, Outcome::Survived)) >= 0.7,
+        "B (design requirement, causal model section 9) wins in at least 70% of seeds"
     );
     assert!(
         share(&rs, |r| r.exhausted_tick.is_none()) >= 0.9,
@@ -1424,8 +1436,8 @@ fn baseline_b_sensible_play_keeps_budget_margin_but_the_town_collapses_before_tu
     );
     let left = median(rs.iter().map(|r| r.budget_left_share).collect());
     assert!(
-        (0.05..=0.35).contains(&left),
-        "B keeps a positive carbon margin at the end: {left}"
+        (0.15..=0.45).contains(&left),
+        "B keeps a clear carbon margin at the end: {left}"
     );
     assert!(
         a.iter().all(|r| !matches!(r.outcome, Outcome::Survived)),
@@ -1435,14 +1447,45 @@ fn baseline_b_sensible_play_keeps_budget_margin_but_the_town_collapses_before_tu
         share(&a, |r| matches!(r.outcome, Outcome::BudgetExhausted)) >= 0.9,
         "A fails by the budget (in a rare seed a bank failure at the same time)"
     );
-    // Known problem (docs/known-issues.md): the economy fails before turn 40.
-    assert!(
-        share(&rs, |r| matches!(
-            r.outcome,
-            Outcome::Collapse(CollapseReason::BankFailureCascade)
-        )) >= 0.9,
-        "B ends in a bank-failure cascade (known issue, not a win)"
+}
+
+/// Baseline E: adaptation only (three fire stations and resilience spending, nothing else). One
+/// tool family is not enough: the carbon budget runs out. Measured: fails in 20 of 20 seeds.
+#[test]
+fn baseline_e_adaptation_only_fails_in_most_seeds() {
+    let rs = runs(&Plan::from_json(SCENARIO_E).unwrap());
+    println!(
+        "E: outcomes {:?}, median budget left {:.2}",
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
+        median(rs.iter().map(|r| r.budget_left_share).collect())
     );
+    assert!(share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.7);
+}
+
+/// Baseline F: renewables only (two plants, then both fossil plants closed). HONEST RESULT: this
+/// does NOT satisfy "a single tool must not be enough". The grid is about half of the emissions,
+/// so closing it cuts the cumulative total to about 640 t (71% of the budget) and the town
+/// survives in about 13 of 20 seeds (65%); the other 7 collapse (mass unemployment) when fires
+/// and droughts hit an unprotected farm. The assertion pins what is measured: it is clearly
+/// worse than B (which wins in every seed) but not a failure in most seeds. Recorded as a known
+/// issue in docs/known-issues.md; the smallest lever that would change it is a stronger weather
+/// or climate-damage setting, which moves B too (B has a cliff near `a_f` 0.5 with more fires).
+#[test]
+fn baseline_f_renewables_only_is_clearly_worse_than_b_but_often_survives() {
+    let rs = runs(&Plan::from_json(SCENARIO_F).unwrap());
+    let b = runs(&Plan::from_json(SCENARIO_B).unwrap());
+    let fs = share(&rs, |r| matches!(r.outcome, Outcome::Survived));
+    let bs = share(&b, |r| matches!(r.outcome, Outcome::Survived));
+    println!(
+        "F: survived {:.0}%, outcomes {:?}",
+        100.0 * fs,
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>()
+    );
+    assert!(
+        (0.4..=0.85).contains(&fs),
+        "F survival share {fs} (measured 0.65)"
+    );
+    assert!(bs > fs + 0.2, "B ({bs}) must beat renewables alone ({fs})");
 }
 
 /// Baseline C: neglect and extraction fails inside the budget horizon (by tick 84, turn 28) in most seeds, and
