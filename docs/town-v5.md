@@ -52,3 +52,49 @@ Supply (per plant, kind, MWh/month), demand (firms, households), served share, r
 - **Data volume:** entries per turn could reach a few thousand; the detail window and roll-up bound it.
 - **No behaviour change:** state golden hashes should be unchanged; wire hashes change.
 - **Unit label is cosmetic:** if the user wants realistic physical units everywhere, plants and demand would need re-scaling and a balance pass.
+
+## 10. v5.1 addendum: the "How the model works" explorer (user request, queued after v5)
+
+**Request:** show the key modelling assumptions in the UI, for example how emissions are calculated, or how much power a household usually needs.
+
+**Principle:** the explanations must be **generated from the real parameters and real model functions**, never hand-copied into the UI, so they cannot go stale when `content/params.json` changes. They must also be **honest about what is placeholder** (the numbers are tuned for gameplay, not calibrated to real data) and what the model leaves out.
+
+### Catalog (a new content file, authored text with parameter references)
+`content/assumptions.json`: one entry per topic with:
+- `id`, `title`, `group` (Emissions and energy, People and households, Production and prices, Nature and climate, Weather, Government and policy, Finance and credit, Class and politics, Scoring and win/lose);
+- `summary` (plain language, two or three sentences);
+- `formula` (human-readable, with named symbols);
+- `params`: the parameter paths used (for example `energy.hh_energy_base_pc`), resolved to **live values with units** by the API;
+- `examples`: worked examples **computed by the model's own functions** (for example "a household of 3 spending $2,000 a month uses X MWh a month"; "a fossil plant running at full output emits Y t CO2 a month"; "a firm making N units with green tech 20% emits Z t");
+- `status`: `placeholder` | `tuned` | `rough_real_world` (with a one-line note, for example "1 t CO2 per MWh is coal-like");
+- `leaves_out`: what the simplification ignores (closed economy, 20 people, no trade, no births, and so on);
+- `code`: the Rust file for developers (shown in a collapsed "for developers" line).
+
+### Initial topics (minimum set)
+1. Emissions: firm process emissions, energy emissions attributed to plants, household footprint, the sink, net emissions, grid intensity.
+2. Power: household demand per person, firm demand per unit of output, plant capacity, rationing rule, the unit (MWh per month).
+3. Carbon budget: `budget_b0`, how remaining share and the temperature display are derived, why a 40-turn game uses a small budget.
+4. Production and wages: output function, effective hours and commutes, wage and price rules.
+5. Household spending and housing: budget split between food, goods and services; rent; evictions and moves.
+6. Money and credit: how bank lending creates money, capital ratio, defaults.
+7. Taxes, benefits, political capital and lobbying: the effective-policy gap.
+8. Class: how class is derived from ownership and income.
+9. Nature: forest and commons growth, harvest, collapse threshold, climate damage to the farm.
+10. Weather: stress curve, drought and fire rules, forecast.
+11. Scoring: GPI, Gini, win and lose conditions.
+12. "What this model leaves out" (a standing section).
+
+### Wire (contract v1.5, additive; section 15 of `docs/snapshot-contract.md`)
+`SimPort.assumptions(): Result<AssumptionTopic[]>`; static for a given params file, so the web caches it. Values are resolved in Rust from `Params`; examples call the model functions through a small registry in `sim-api` so there is **one implementation** of each formula.
+
+### UI
+- A **"How it works"** button (top bar) opening a searchable explorer: groups on the left, topic cards on the right (summary, formula, live parameter values with units, worked examples, status badge, what it leaves out).
+- **Contextual links** "How is this calculated?" from: each metric, the energy panel, health meters, the stress gauge, the inspector (for example a household's energy use or footprint), the ledger kinds, and policy levers.
+- In Pressure mode opening the explorer **pauses the clock** (it is reading time); a note says so.
+- Accessible (keyboard, headings, search with live results), printable-friendly, light/dark.
+
+### Tests
+A test fails if a catalog entry references a parameter path that does not exist, if an example's function is missing, or if a documented group has no entry; examples are recomputed in tests so they match the live model; a `params` section with player-visible effect and no catalog entry is flagged (warning list, not a failure). Web: explorer filtering, contextual-link resolution (every link target exists), formatting of units.
+
+### Delivery
+After the v5 Rust and web agents finish (same wire and panels): a Rust agent for the catalog, the API call and the example registry (plus moving any inline formula that an example needs into a callable model function **without changing behaviour**), then a web agent for the explorer and links. The catalog text is authored by an agent from the code and docs, then reviewed by the user.

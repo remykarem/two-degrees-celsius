@@ -342,3 +342,20 @@ interface Snapshot { /* additions */
 - `ledger` is legal at any time; entries for the open turn are included. A page's `reconciles` is true iff opening + all entries and roll-ups = closing.
 - `HistoryPoint` gains `govRevenue`, `govSpending`, `bankCapitalRatio`, `renewableShare`, `gridServed`.
 - Fixtures: add `ledger-household.json`, `ledger-government.json`, `finance.json`, `energy.json`.
+
+## 15. Contract v1.5: the model explorer (additive; queued after v1.4)
+
+Design: `docs/town-v5.md` section 10.
+```ts
+interface AssumptionParam { path: string /* e.g. 'energy.hh_energy_base_pc' */; label: string; value: number | string | boolean; unit: string }
+interface AssumptionExample { label: string; inputs: Record<string, number | string>; result: { value: number; unit: string }; note?: string /* computed by the model's own function */ }
+interface AssumptionTopic {
+  id: string; title: string;
+  group: 'emissions_energy'|'people_households'|'production_prices'|'nature_climate'|'weather'|'government_policy'|'finance_credit'|'class_politics'|'scoring'|'leaves_out';
+  summary: string; formula: string; params: AssumptionParam[]; examples: AssumptionExample[];
+  status: 'placeholder' | 'tuned' | 'rough_real_world'; statusNote: string; leavesOut: string[]; code: string[] /* Rust file paths, for developers */;
+  related: string[] /* topic ids */; usedBy: string[] /* UI anchors: metric keys, lever keys, panel ids */ }
+interface SimPort { assumptions(): Result<AssumptionTopic[]> }
+```
+- Values come from the live `Params`; examples come from the model's functions; both are produced in Rust. The web must not hard-code any number or formula text from the model.
+- `usedBy` lets the UI place "How is this calculated?" links (a `MetricKey`, `LeverKey`, or panel id).
