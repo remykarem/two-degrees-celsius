@@ -193,6 +193,66 @@ pub struct TileView {
     /// Plant tiles only: tonnes of CO2 emitted per month.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub emissions_monthly: Option<f64>,
+    /// Forest tiles only (contract v1.2): standing, burning or regrowing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<ForestTileState>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ForestTileState {
+    Standing,
+    Burning,
+    Regrowing,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RiskKey {
+    Low,
+    Medium,
+    High,
+}
+
+impl RiskKey {
+    pub fn from_sim(r: st::RiskLevel) -> RiskKey {
+        match r {
+            st::RiskLevel::Low => RiskKey::Low,
+            st::RiskLevel::Medium => RiskKey::Medium,
+            st::RiskLevel::High => RiskKey::High,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DroughtView {
+    pub severity: f64,
+    pub months_left: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FireView {
+    pub tile: Tile,
+    pub months_left: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForecastView {
+    pub fire_risk: RiskKey,
+    pub drought_risk: RiskKey,
+}
+
+/// Contract v1.2: climate stress (0..1), the active drought, burning tiles and the forecast.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WeatherView {
+    pub stress: f64,
+    pub drought: Option<DroughtView>,
+    pub fires: Vec<FireView>,
+    pub forecast: ForecastView,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -306,6 +366,10 @@ pub struct NatureView {
     pub net_emissions_monthly: f64,
     pub gross_emissions_monthly: f64,
     pub sink_monthly: f64,
+    /// Contract v1.2: 0..=1. Forest and commons shares, and the farm's resource-health factor.
+    pub forest_health: f64,
+    pub commons_health: f64,
+    pub farm_health: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -366,6 +430,7 @@ pub struct Snapshot {
     pub bank: BankView,
     pub government: GovernmentView,
     pub nature: NatureView,
+    pub weather: WeatherView,
     pub housing: HousingView,
     pub energy: EnergyView,
     pub history: Vec<HistoryPoint>,
@@ -379,6 +444,42 @@ pub fn buildings(sim: &Sim) -> Buildings {
         fossil_plant: count(st::TileKind::FossilPlant),
         renewable_plant: count(st::TileKind::RenewablePlant),
         road: count(st::TileKind::Road),
+    }
+}
+
+fn forest_state(s: &st::State, t: st::Tile) -> ForestTileState {
+    if s.weather.fires.iter().any(|f| f.tile == t) {
+        ForestTileState::Burning
+    } else if s.weather.regrowing.iter().any(|g| g.tile == t) {
+        ForestTileState::Regrowing
+    } else {
+        ForestTileState::Standing
+    }
+}
+
+fn weather_view(sim: &Sim) -> WeatherView {
+    let s = &sim.state;
+    let (fire, drought) = sim_model::weather::forecast(s, &sim.params);
+    WeatherView {
+        // The metric, so the number always agrees with `climate_stress` in the history.
+        stress: s.indicators.climate_stress,
+        drought: s.weather.drought.map(|d| DroughtView {
+            severity: d.severity,
+            months_left: d.months_left,
+        }),
+        fires: s
+            .weather
+            .fires
+            .iter()
+            .map(|f| FireView {
+                tile: Tile::from_sim(f.tile),
+                months_left: f.months_left,
+            })
+            .collect(),
+        forecast: ForecastView {
+            fire_risk: RiskKey::from_sim(fire),
+            drought_risk: RiskKey::from_sim(drought),
+        },
     }
 }
 
@@ -401,6 +502,7 @@ fn map_view(s: &st::State) -> MapView {
                 reference: c.id,
                 buildable: c.kind == st::TileKind::Empty,
                 emissions_monthly,
+                state: (c.kind == st::TileKind::Forest).then(|| forest_state(s, t)),
             }
         })
         .collect();
@@ -509,6 +611,10 @@ fn policy(sim: &Sim) -> BTreeMap<LeverKey, PolicyEntry> {
     );
     m.insert(LeverKey::PublicSpending, plain(p.public_spending.dollars()));
     m.insert(LeverKey::JobGuarantee, plain(p.job_guarantee.0));
+    m.insert(
+        LeverKey::ResilienceSpending,
+        plain(p.resilience_spending.dollars()),
+    );
     m
 }
 
@@ -726,7 +832,11 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
             net_emissions_monthly: s.nature.net_emissions.0,
             gross_emissions_monthly: s.nature.gross_emissions.0,
             sink_monthly: s.nature.sink.0,
+            forest_health: s.indicators.forest_health,
+            commons_health: s.indicators.commons_health,
+            farm_health: s.indicators.farm_health,
         },
+        weather: weather_view(sim),
         housing: HousingView {
             homes: s.homes.len() as u32,
             rent_private: s.housing.rent_private.dollars(),

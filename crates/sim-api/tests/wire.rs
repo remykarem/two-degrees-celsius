@@ -150,8 +150,27 @@ fn every_event_and_trace_variant_round_trips() {
         K::Collapse {
             reason: CollapseReason::MassUnemployment,
         },
+        K::FireStarted {
+            tile: Tile { x: 1, y: 0 },
+        },
+        K::FireSpread {
+            from: Tile { x: 1, y: 0 },
+            to: Tile { x: 2, y: 0 },
+        },
+        K::FireOut {
+            tile: Tile { x: 1, y: 0 },
+        },
+        K::ForestBurned {
+            tile: Tile { x: 1, y: 0 },
+        },
+        K::DroughtStarted {
+            severity: 0.6,
+            months: 4,
+        },
+        K::DroughtEnded,
+        K::HomeDamaged { home: 2 },
     ];
-    assert_eq!(kinds.len(), 26);
+    assert_eq!(kinds.len(), 33);
     for k in kinds {
         let e = SimEvent::new(k);
         assert!((1..=3).contains(&e.importance));
@@ -283,14 +302,15 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
         "bank",
         "government",
         "nature",
+        "weather",
         "housing",
         "energy",
         "history",
     ] {
         assert!(j.get(k).is_some(), "snapshot lacks {k}");
     }
-    assert_eq!(j["policy"].as_object().unwrap().len(), 19);
-    assert_eq!(j["schemaVersion"], 2);
+    assert_eq!(j["policy"].as_object().unwrap().len(), 20);
+    assert_eq!(j["schemaVersion"], 3);
     assert_eq!(j["map"]["width"], 12);
     assert_eq!(j["map"]["tiles"].as_array().unwrap().len(), 144);
     for k in [
@@ -378,8 +398,8 @@ fn initial_town_map_people_homes_and_shape() {
 #[test]
 fn metadata_is_consistent_with_params_and_start_policy() {
     let api = Api::init(1).unwrap();
-    assert_eq!(api.levers().len(), 19);
-    assert_eq!(api.actions().len(), 9);
+    assert_eq!(api.levers().len(), 20);
+    assert_eq!(api.actions().len(), 11);
     for a in api.actions() {
         assert_eq!(a.needs_tile, a.key != "switch_system", "{}", a.key);
         assert_eq!(a.tile_rule.is_some(), a.needs_tile, "{}", a.key);
@@ -641,12 +661,12 @@ fn old_saves_are_refused_with_a_clear_error() {
     let mut api = Api::init(3).unwrap();
     let blob = api.export_state().unwrap();
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    assert_eq!(v["schemaVersion"], 2);
+    assert_eq!(v["schemaVersion"], 3);
     v["schemaVersion"] = serde_json::json!(1);
     let e = api.import_state(&v.to_string()).unwrap_err();
     assert_eq!(e.code, "schema_mismatch");
     assert!(e.message.contains("schemaVersion"), "{}", e.message);
-    // A v2 blob whose ids or tiles point at nothing is refused, not trusted.
+    // A current blob whose ids or tiles point at nothing is refused, not trusted.
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
     v["state"]["persons"][0]["household"] = serde_json::json!(99);
     assert_eq!(
@@ -754,4 +774,174 @@ fn valid_tiles_match_the_map_and_queued_builds() {
     for k in InfraKind::ALL {
         assert!(!api.valid_tiles(k).contains(&t), "{k:?}");
     }
+}
+
+// ---------- contract v1.2: weather ----------
+
+#[test]
+fn weather_block_health_fields_and_tile_state_match_the_contract() {
+    let api = Api::init(1).unwrap();
+    let j = serde_json::to_value(api.snapshot()).unwrap();
+    let w = &j["weather"];
+    assert_eq!(w["stress"], 0.0);
+    assert!(w["drought"].is_null() && w["fires"].as_array().unwrap().is_empty());
+    assert_eq!(
+        w["forecast"],
+        serde_json::json!({"fireRisk":"low","droughtRisk":"low"})
+    );
+    for k in ["forestHealth", "commonsHealth", "farmHealth"] {
+        let v = j["nature"][k].as_f64().unwrap();
+        assert!((0.0..=1.0).contains(&v), "{k} {v}");
+    }
+    // Forest tiles carry a state; no other tile does.
+    for t in j["map"]["tiles"].as_array().unwrap() {
+        let forest = t["kind"] == "forest";
+        assert_eq!(t.get("state").is_some(), forest, "{t}");
+        if forest {
+            assert_eq!(t["state"], "standing");
+        }
+    }
+    assert_eq!(j["policy"]["resilience_spending"]["nominal"], 0.0);
+    let m = &j["history"];
+    assert!(m.as_array().unwrap().is_empty());
+}
+
+#[test]
+fn history_points_carry_the_weather_metrics() {
+    let mut api = Api::init(1).unwrap();
+    let t = api.submit_turn(&[]).unwrap();
+    let p = serde_json::to_value(t.snapshot.history.last().unwrap()).unwrap();
+    for k in [
+        "climateStress",
+        "forestHealth",
+        "commonsHealth",
+        "farmHealth",
+    ] {
+        assert!(p[k].is_number(), "history lacks {k}");
+    }
+}
+
+#[test]
+fn weather_events_and_fire_sink_loss_have_the_documented_wire_shapes() {
+    let ev = |k: SimEventKind| serde_json::to_value(SimEvent::new(k)).unwrap();
+    use SimEventKind as K;
+    let t = |x, y| Tile { x, y };
+    assert_eq!(
+        ev(K::FireSpread {
+            from: t(1, 0),
+            to: t(2, 0)
+        }),
+        serde_json::json!({"importance":1,"type":"fire_spread","from":{"x":1,"y":0},"to":{"x":2,"y":0}})
+    );
+    assert_eq!(
+        ev(K::DroughtStarted {
+            severity: 0.5,
+            months: 3
+        }),
+        serde_json::json!({"importance":3,"type":"drought_started","severity":0.5,"months":3})
+    );
+    assert_eq!(ev(K::DroughtEnded)["type"], "drought_ended");
+    assert_eq!(ev(K::ForestBurned { tile: t(1, 0) })["importance"], 3);
+    let line = EmissionLine {
+        source: EmissionSourceKind::FireSinkLoss,
+        id: None,
+        tile: None,
+        tonnes: 0.2,
+    };
+    assert_eq!(
+        serde_json::to_value(line).unwrap(),
+        serde_json::json!({"source":"fire_sink_loss","tonnes":0.2})
+    );
+}
+
+#[test]
+fn a_weather_turn_reports_events_and_the_fire_sink_loss_trace() {
+    let t = sim_api::fixtures::weather_sample().unwrap();
+    let j = serde_json::to_value(&t).unwrap();
+    let has_loss = j["trace"].as_array().unwrap().iter().any(|r| {
+        r["type"] == "emissions"
+            && r["source"] == "fire_sink_loss"
+            && r["tonnes"].as_f64().unwrap() > 0.0
+    });
+    assert!(has_loss, "a turn with fires traces the sink lost");
+    for m in j["months"].as_array().unwrap() {
+        for e in m["events"].as_array().unwrap() {
+            assert!(e["importance"].is_u64());
+        }
+    }
+}
+
+#[test]
+fn fire_station_and_resilience_spending_work_through_the_wire() {
+    let mut api = Api::init(1).unwrap();
+    assert!(api
+        .actions()
+        .iter()
+        .any(|a| a.key == "place:fire_station" && a.money_cost > 0.0));
+    assert!(api.actions().iter().any(|a| a.key == "remove:fire_station"));
+    let res = api
+        .levers()
+        .iter()
+        .find(|l| l.key == LeverKey::ResilienceSpending)
+        .unwrap();
+    assert_eq!(res.lead_time, 1);
+    let tile = api.valid_tiles(InfraKind::FireStation)[0];
+    let cmds = [
+        Command::Place {
+            kind: InfraKind::FireStation,
+            tile,
+        },
+        num(LeverKey::ResilienceSpending, 2000.0),
+        num(LeverKey::ResilienceSpending, 1e9),
+    ];
+    let prev = api.preview(&cmds).unwrap();
+    assert!(prev[0].tile_valid && prev[0].money > 0.0);
+    // Out of range is refused before the engine sees it.
+    let bad = api.preview(&cmds[2..]).unwrap();
+    assert_eq!(bad[0].blocked, Some(BlockReason::InvalidCommand));
+    let r = api.submit_turn(&cmds[..2]).unwrap();
+    assert_eq!(r.accepted.len(), 2);
+    for _ in 0..3 {
+        api.submit_turn(&[]).unwrap();
+    }
+    let s = api.snapshot();
+    assert_eq!(
+        s.policy[&LeverKey::ResilienceSpending].nominal,
+        sim_api::snapshot::PolicyScalar::Number(2000.0)
+    );
+    assert!(s
+        .map
+        .tiles
+        .iter()
+        .any(|t| t.kind == sim_api::keys::TileKindKey::FireStation));
+}
+
+#[test]
+fn saves_round_trip_with_weather_and_refuse_old_or_inconsistent_ones() {
+    let mut api = sim_api::Api::init(3).unwrap();
+    for _ in 0..15 {
+        api.submit_turn(&[]).unwrap();
+    }
+    let blob = api.export_state().unwrap();
+    let snap = api.snapshot();
+    let mut other = sim_api::Api::init(9).unwrap();
+    assert_eq!(other.import_state(&blob).unwrap(), snap);
+    assert_eq!(other.export_state().unwrap(), blob);
+    // A version-2 save (before weather) is refused and says why.
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["schemaVersion"] = serde_json::json!(2);
+    let e = other.import_state(&v.to_string()).unwrap_err();
+    assert_eq!(e.code, "schema_mismatch");
+    assert!(
+        e.message.contains("weather") && e.message.contains("new game"),
+        "{}",
+        e.message
+    );
+    // A fire on a tile that is not forest is refused.
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["state"]["weather"]["fires"] = serde_json::json!([{"tile":{"x":11,"y":11},"months_left":2}]);
+    assert_eq!(
+        other.import_state(&v.to_string()).unwrap_err().code,
+        "bad_state"
+    );
 }

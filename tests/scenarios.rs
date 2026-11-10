@@ -605,8 +605,10 @@ fn harvesting_above_sustainable_yield_eventually_lowers_the_commons() {
     let ca = collect(&mut a, 240, &Plan::default(), commons);
     let cb = collect(&mut b, 240, &heavy, commons);
     assert!(cb[239] < ca[239], "commons {} vs {}", cb[239], ca[239]);
+    // Town v4: droughts (S11) lower farm output and so the harvest itself, so the decline is
+    // shallower than before weather (it used to fall below half; it now ends at about 0.54).
     assert!(
-        cb[239] < 0.5 * cb[0],
+        cb[239] < 0.6 * cb[0],
         "heavy harvest should shrink the commons: {} -> {}",
         cb[0],
         cb[239]

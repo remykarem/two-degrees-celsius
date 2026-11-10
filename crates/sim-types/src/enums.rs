@@ -41,6 +41,8 @@ pub enum TileKind {
     Road,
     Forest,
     Commons,
+    /// Town v4: reduces fire spread and duration within the coverage radius.
+    FireStation,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -88,6 +90,7 @@ pub enum InfraKind {
     FossilPlant,
     RenewablePlant,
     Road,
+    FireStation,
 }
 
 /// One policy lever change. Money levers are in cents, shares in model units.
@@ -122,6 +125,8 @@ pub enum PolicyChange {
     PublicSpending(Cents),
     /// Share of the unemployed the government hires at the minimum wage.
     JobGuarantee(Rate),
+    /// Government spending per month on fire and drought resilience, in cents (Town v4).
+    ResilienceSpending(Cents),
 }
 
 impl PolicyChange {
@@ -147,6 +152,7 @@ impl PolicyChange {
             PolicyChange::Bailout(_) => "bailout",
             PolicyChange::PublicSpending(_) => "public_spending",
             PolicyChange::JobGuarantee(_) => "job_guarantee",
+            PolicyChange::ResilienceSpending(_) => "resilience_spending",
         }
     }
 
@@ -156,6 +162,7 @@ impl PolicyChange {
         Some(match *self {
             PolicyChange::CarbonPrice(c)
             | PolicyChange::PublicSpending(c)
+            | PolicyChange::ResilienceSpending(c)
             | PolicyChange::WealthThreshold(c)
             | PolicyChange::MinWage(c)
             | PolicyChange::Benefit(c)
@@ -202,11 +209,13 @@ impl Command {
                 InfraKind::FossilPlant => "place_fossil_plant",
                 InfraKind::RenewablePlant => "place_renewable_plant",
                 InfraKind::Road => "place_road",
+                InfraKind::FireStation => "place_fire_station",
             },
             Command::Remove { tile } => match map.kind_at(*tile) {
                 Some(TileKind::PublicHousing) => "remove_public_housing",
                 Some(TileKind::FossilPlant) => "remove_fossil_plant",
                 Some(TileKind::RenewablePlant) => "remove_renewable_plant",
+                Some(TileKind::FireStation) => "remove_fire_station",
                 _ => "remove_road",
             },
         }
@@ -214,7 +223,7 @@ impl Command {
 }
 
 /// Every key the lever table must define.
-pub const LEVER_KEYS: [&str; 28] = [
+pub const LEVER_KEYS: [&str; 31] = [
     "carbon_price",
     "tax_wage",
     "tax_profit",
@@ -234,15 +243,18 @@ pub const LEVER_KEYS: [&str; 28] = [
     "bailout",
     "public_spending",
     "job_guarantee",
+    "resilience_spending",
     "switch_system",
     "place_public_housing",
     "place_fossil_plant",
     "place_renewable_plant",
     "place_road",
+    "place_fire_station",
     "remove_public_housing",
     "remove_fossil_plant",
     "remove_renewable_plant",
     "remove_road",
+    "remove_fire_station",
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -289,6 +301,7 @@ pub enum SystemId {
     Class,
     Lobbying,
     Wellbeing,
+    Weather,
     Metrics,
     Commands,
 }
@@ -308,6 +321,7 @@ impl SystemId {
             SystemId::Class => "S9 class and mobility",
             SystemId::Lobbying => "S9b lobbying",
             SystemId::Wellbeing => "S10 wellbeing",
+            SystemId::Weather => "S11 weather",
             SystemId::Metrics => "metrics",
             SystemId::Commands => "commands",
         }
@@ -323,6 +337,9 @@ pub enum EmissionSource {
     /// Energy emissions, attributed to the power plant that burns the fuel.
     Plant(PlantId),
     Sink,
+    /// Sink capacity lost to fire this month (tonnes per month of sink; informational: the
+    /// sink itself is `sigma x forest` in S7 and is not reduced a second time).
+    FireSinkLoss,
 }
 
 /// A holder of a deposit.
@@ -445,6 +462,36 @@ pub enum Event {
     Collapse {
         reason: CollapseReason,
     },
+    /// Town v4 weather (docs/causal-model.md section 11).
+    FireStarted {
+        tile: Tile,
+    },
+    FireSpread {
+        from: Tile,
+        to: Tile,
+    },
+    FireOut {
+        tile: Tile,
+    },
+    ForestBurned {
+        tile: Tile,
+    },
+    DroughtStarted {
+        severity: Rate,
+        months: u32,
+    },
+    DroughtEnded,
+    HomeDamaged {
+        home: HomeId,
+    },
+}
+
+/// Forecast level of a hazard (deterministic, from state).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RiskLevel {
+    Low,
+    Medium,
+    High,
 }
 
 /// Contribution records that explain why a number changed.

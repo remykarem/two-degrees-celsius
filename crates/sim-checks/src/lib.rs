@@ -95,6 +95,7 @@ pub fn all_floats(s: &State) -> Vec<(String, f64)> {
     add("nature sink".into(), n.sink.0);
     add("nature atmosphere".into(), n.atmosphere.0);
     add("nature depletion".into(), n.depletion.0);
+    add("weather stress".into(), s.weather.stress);
     add("housing occupancy".into(), s.housing.occupancy.0);
     add("energy demand".into(), s.energy.demand.0);
     add("energy supply".into(), s.energy.supply.0);
@@ -301,6 +302,7 @@ pub fn check_state(
         SystemId::Commands
             | SystemId::Policy
             | SystemId::Labour
+            | SystemId::Weather
             | SystemId::Production
             | SystemId::Nature
             | SystemId::Goods
@@ -497,6 +499,55 @@ pub fn check_people_homes_tiles(s: &State, tick: u32, system: SystemId) -> Resul
             format!("plant {}", pl.id.0),
         )
         .or_else(|e| fail(tick, system, e))?;
+    }
+    // Weather (Town v4): fires and regrowing tiles are forest tiles, each in one state only.
+    let w = &s.weather;
+    for (i, f) in w.fires.iter().enumerate() {
+        if m.kind_at(f.tile) != Some(TileKind::Forest) {
+            return fail(
+                tick,
+                system,
+                format!(
+                    "fire at ({}, {}) is not on a forest tile",
+                    f.tile.x, f.tile.y
+                ),
+            );
+        }
+        if f.months_left == 0 || w.fires[..i].iter().any(|o| o.tile == f.tile) {
+            return fail(
+                tick,
+                system,
+                format!(
+                    "fire at ({}, {}) is duplicated or has no time left",
+                    f.tile.x, f.tile.y
+                ),
+            );
+        }
+    }
+    for (i, g) in w.regrowing.iter().enumerate() {
+        if m.kind_at(g.tile) != Some(TileKind::Forest)
+            || w.regrowing[..i].iter().any(|o| o.tile == g.tile)
+            || w.fires.iter().any(|f| f.tile == g.tile)
+        {
+            return fail(
+                tick,
+                system,
+                format!(
+                    "tile ({}, {}) is regrowing on a non-forest tile or in two states",
+                    g.tile.x, g.tile.y
+                ),
+            );
+        }
+    }
+    if !(0.0..=1.0).contains(&w.stress)
+        || w.drought
+            .is_some_and(|d| !(0.0..=1.0).contains(&d.severity))
+    {
+        return fail(
+            tick,
+            system,
+            "weather stress or drought severity out of 0..1".into(),
+        );
     }
     // Everything else on the map is scenery or a road and carries no id.
     for (i, c) in m.cells.iter().enumerate() {

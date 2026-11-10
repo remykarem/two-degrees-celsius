@@ -337,6 +337,33 @@
         "regulated",
         "coop"
       ]
+    },
+    "resilience_spending": {
+      "label": "Resilience spending",
+      "unit": "usd_per_month",
+      "min": 0,
+      "max": 20000,
+      "step": 500,
+      "lobbied": false,
+      "arrows": [
+        {
+          "metric": "forest_health",
+          "direction": "up"
+        },
+        {
+          "metric": "farm_health",
+          "direction": "up"
+        },
+        {
+          "metric": "debt",
+          "direction": "up"
+        }
+      ],
+      "availableIn": [
+        "market",
+        "regulated",
+        "coop"
+      ]
     }
   },
   "actions": {
@@ -384,6 +411,15 @@
       ],
       "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
     },
+    "place:fire_station": {
+      "label": "Build fire station",
+      "availableIn": [
+        "market",
+        "regulated",
+        "coop"
+      ],
+      "tileRule": "an empty tile (not forest, commons or occupied, and with nothing queued on it)"
+    },
     "remove:public_housing": {
       "label": "Demolish public housing",
       "availableIn": [
@@ -419,6 +455,15 @@
         "coop"
       ],
       "tileRule": "a tile that holds a road (fixed town buildings cannot be removed)"
+    },
+    "remove:fire_station": {
+      "label": "Remove fire station",
+      "availableIn": [
+        "market",
+        "regulated",
+        "coop"
+      ],
+      "tileRule": "a tile that holds a fire station"
     }
   }
 }

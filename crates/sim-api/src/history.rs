@@ -21,6 +21,11 @@ pub struct HistoryPoint {
     pub avg_income_per_person: f64,
     pub median_income_per_person: f64,
     pub top_household_wealth_share: f64,
+    /// Contract v1.2: climate stress and the three health shares, 0..=1.
+    pub climate_stress: f64,
+    pub forest_health: f64,
+    pub commons_health: f64,
+    pub farm_health: f64,
 }
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
@@ -55,5 +60,9 @@ pub fn point(s: &State, p: &Params, played_turn: u32) -> HistoryPoint {
         avg_income_per_person: i.avg_income_pp.dollars(),
         median_income_per_person: i.median_income_pp.dollars(),
         top_household_wealth_share: i.top_wealth_share.0,
+        climate_stress: i.climate_stress,
+        forest_health: i.forest_health,
+        commons_health: i.commons_health,
+        farm_health: i.farm_health,
     }
 }

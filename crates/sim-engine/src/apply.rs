@@ -309,6 +309,7 @@ fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
             }
         }
         Delta::Nature(n) => s.nature = n,
+        Delta::Weather(w) => s.weather = w,
         Delta::Housing(h) => s.housing = h,
         Delta::Energy(e) => s.energy = e,
         Delta::Effective(e) => s.effective = e,
@@ -361,6 +362,7 @@ pub fn set_policy(s: &mut State, c: PolicyChange) {
         PolicyChange::Bailout(b) => pol.bailout = b,
         PolicyChange::PublicSpending(v) => pol.public_spending = v.max(Cents::ZERO),
         PolicyChange::JobGuarantee(v) => pol.job_guarantee = clamp01(v),
+        PolicyChange::ResilienceSpending(v) => pol.resilience_spending = v.max(Cents::ZERO),
     }
 }
 

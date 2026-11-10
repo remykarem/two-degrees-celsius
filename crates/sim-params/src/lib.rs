@@ -293,6 +293,82 @@ pub struct NatureParams {
     pub atmosphere_start: f64,
 }
 
+/// Town v4 weather: forest fires and drought (docs/town-v4.md, docs/causal-model.md section 11).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WeatherParams {
+    /// Stress is 0 while the budget remaining is above this share of `budget_b0`.
+    pub onset: f64,
+    /// Stress is 1 when the budget remaining is at or below this share.
+    pub full: f64,
+    /// Exponent of the stress curve.
+    pub curve: f64,
+    /// Monthly drought odds are `drought_base x (1 + drought_stress_gain x s)`.
+    pub drought_base: f64,
+    pub drought_stress_gain: f64,
+    /// Severity is `sev_min + u x (sev_span_base + sev_span_stress x s)`, capped at 1.
+    pub sev_min: f64,
+    pub sev_span_base: f64,
+    pub sev_span_stress: f64,
+    /// Months are `dur_min + floor(u x (dur_span_base + dur_span_stress x s))`.
+    pub dur_min: f64,
+    pub dur_span_base: f64,
+    pub dur_span_stress: f64,
+    /// Commons regrowth is multiplied by `1 - a_c x d x (1 - community_buffer if community)`.
+    pub a_c: f64,
+    /// Farm productivity is multiplied by `1 - a_f x d`.
+    pub a_f: f64,
+    /// Electricity demand (households and firms) is multiplied by `1 + a_e x d`.
+    pub a_e: f64,
+    /// Share of the commons drought penalty a community-managed commons avoids.
+    pub community_buffer: f64,
+    /// Monthly ignition odds: `fire_base x (1 + fire_stress_gain x s) x dryness x standing share`.
+    pub fire_base: f64,
+    pub fire_stress_gain: f64,
+    /// Dryness is `1 + dry_commons x (1 - commons health) + dry_drought x d`.
+    pub dry_commons: f64,
+    pub dry_drought: f64,
+    /// Monthly odds that a burning tile spreads to each adjacent standing forest tile.
+    pub spread_p: f64,
+    /// Spread odds are multiplied by `1 + spread_drought x d`.
+    pub spread_drought: f64,
+    /// Months a fire burns on a tile.
+    pub duration_months: u32,
+    /// Share of a tile's forest stock (forest / forest tiles) lost per burning tile per month.
+    pub burn_frac: f64,
+    /// Months a burnt tile shows as regrowing before it counts as standing again.
+    pub regrow_months: u32,
+    /// Tiles (Chebyshev) from a burning tile within which people suffer smoke.
+    pub smoke_radius: u32,
+    /// Wellbeing target penalty for a household whose home is in smoke.
+    pub smoke_wellbeing: f64,
+    /// Output penalty for a firm in smoke.
+    pub smoke_productivity: f64,
+    /// Odds per month that a home next to a fire is damaged. Zero = off (the default).
+    pub home_damage_prob: f64,
+    pub home_repair_cost_usd: f64,
+    /// Tiles (Chebyshev) around a fire station that it covers.
+    pub coverage_radius: u32,
+    /// Share of spread odds removed on a covered tile.
+    pub station_spread_cut: f64,
+    /// Share of burn duration removed for a fire that starts or spreads on a covered tile.
+    pub station_duration_cut: f64,
+    pub fire_station_cost_usd: f64,
+    pub fire_station_upkeep_usd: f64,
+    /// Resilience effect is `max x (1 - exp(-spending / scale))` (diminishing returns).
+    pub resilience_scale_usd: f64,
+    pub resilience_ignition_cut_max: f64,
+    pub resilience_drought_cut_max: f64,
+    /// Forecast: expected tiles burning per quarter at which risk reads medium and high.
+    pub forecast_fire_medium: f64,
+    pub forecast_fire_high: f64,
+    /// Forecast: odds of a drought starting within a quarter at which risk reads medium and high.
+    pub forecast_drought_medium: f64,
+    pub forecast_drought_high: f64,
+    /// Extra tiles per spread-odds unit and burning month assumed for the forecast's fire size.
+    pub forecast_size_gain: f64,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GovParams {
@@ -546,6 +622,8 @@ pub struct PolicyInit {
     pub bailout: bool,
     pub public_spending_usd: f64,
     pub job_guarantee: f64,
+    #[serde(default)]
+    pub resilience_spending_usd: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -583,6 +661,7 @@ pub struct Params {
     pub credit: CreditParams,
     pub invest: InvestParams,
     pub nature: NatureParams,
+    pub weather: WeatherParams,
     pub government: GovParams,
     pub class: ClassParams,
     pub lobby: LobbyParams,
@@ -615,6 +694,7 @@ struct CoreParams {
     credit: CreditParams,
     invest: InvestParams,
     nature: NatureParams,
+    weather: WeatherParams,
     government: GovParams,
     class: ClassParams,
     lobby: LobbyParams,
@@ -647,6 +727,7 @@ impl Params {
             credit: core.credit,
             invest: core.invest,
             nature: core.nature,
+            weather: core.weather,
             government: core.government,
             class: core.class,
             lobby: core.lobby,
@@ -698,6 +779,11 @@ impl Params {
         pos("space.slow_minutes", self.space.slow_minutes as f64);
         pos("space.fast_minutes", self.space.fast_minutes as f64);
         pos("energy.plant_capacity", self.energy.plant_capacity);
+        pos("weather.curve", self.weather.curve);
+        pos(
+            "weather.resilience_scale_usd",
+            self.weather.resilience_scale_usd,
+        );
         let mut share = |name: &str, v: f64| {
             if !(0.0..=1.0).contains(&v) {
                 errs.push(format!("{name} must be in [0, 1] (got {v})"));
@@ -726,6 +812,24 @@ impl Params {
             }
             if !(0.0..=1.0).contains(&s.lambda_max) {
                 errs.push(format!("systems.{n}.lambda_max out of range"));
+            }
+        }
+        let w = &self.weather;
+        if !(w.onset > w.full && w.full >= 0.0 && w.onset <= 1.0) {
+            errs.push("weather: need 0 <= full < onset <= 1".into());
+        }
+        for (n, v) in [
+            ("spread_p", w.spread_p),
+            ("burn_frac", w.burn_frac),
+            ("community_buffer", w.community_buffer),
+            ("station_spread_cut", w.station_spread_cut),
+            ("station_duration_cut", w.station_duration_cut),
+            ("home_damage_prob", w.home_damage_prob),
+            ("resilience_ignition_cut_max", w.resilience_ignition_cut_max),
+            ("resilience_drought_cut_max", w.resilience_drought_cut_max),
+        ] {
+            if !(0.0..=1.0).contains(&v) {
+                errs.push(format!("weather.{n} must be in [0, 1] (got {v})"));
             }
         }
         self.validate_town(&mut errs);

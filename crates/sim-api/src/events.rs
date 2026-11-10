@@ -92,6 +92,28 @@ pub enum SimEventKind {
     Collapse {
         reason: CollapseReason,
     },
+    /// Contract v1.2 (weather).
+    FireStarted {
+        tile: Tile,
+    },
+    FireSpread {
+        from: Tile,
+        to: Tile,
+    },
+    FireOut {
+        tile: Tile,
+    },
+    ForestBurned {
+        tile: Tile,
+    },
+    DroughtStarted {
+        severity: f64,
+        months: u32,
+    },
+    DroughtEnded,
+    HomeDamaged {
+        home: u32,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -192,6 +214,25 @@ impl SimEvent {
             st::Event::Collapse { reason } => K::Collapse {
                 reason: CollapseReason::from_sim(reason),
             },
+            st::Event::FireStarted { tile } => K::FireStarted {
+                tile: Tile::from_sim(tile),
+            },
+            st::Event::FireSpread { from, to } => K::FireSpread {
+                from: Tile::from_sim(from),
+                to: Tile::from_sim(to),
+            },
+            st::Event::FireOut { tile } => K::FireOut {
+                tile: Tile::from_sim(tile),
+            },
+            st::Event::ForestBurned { tile } => K::ForestBurned {
+                tile: Tile::from_sim(tile),
+            },
+            st::Event::DroughtStarted { severity, months } => K::DroughtStarted {
+                severity: severity.0,
+                months,
+            },
+            st::Event::DroughtEnded => K::DroughtEnded,
+            st::Event::HomeDamaged { home } => K::HomeDamaged { home: home.0 },
         };
         SimEvent::new(kind)
     }
@@ -209,6 +250,8 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::BankBailout { .. }
         | K::FirmClosed { .. }
         | K::HouseholdEvicted { .. }
+        | K::DroughtStarted { .. }
+        | K::ForestBurned { .. }
         | K::SystemSwitchCompleted { .. } => 3,
         K::LoanDefaulted { .. }
         | K::FirmFounded { .. }
@@ -223,8 +266,15 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::Built { .. }
         | K::Removed { .. }
         | K::ElectricityRationed { .. }
+        | K::FireStarted { .. }
+        | K::HomeDamaged { .. }
         | K::SystemSwitchStarted { .. } => 2,
-        K::Commuted { .. } | K::PersonHired { .. } | K::Purchase { .. } => 1,
+        K::Commuted { .. }
+        | K::PersonHired { .. }
+        | K::Purchase { .. }
+        | K::FireSpread { .. }
+        | K::FireOut { .. }
+        | K::DroughtEnded => 1,
     }
 }
 
@@ -235,6 +285,8 @@ pub enum EmissionSourceKind {
     Households,
     Plant,
     Sink,
+    /// Sink capacity lost to fire; informational, not a term of net emissions.
+    FireSinkLoss,
 }
 
 /// One emissions line, used by both `TraceRecord::Emissions` and `MonthFlows.emissions`.
@@ -269,6 +321,7 @@ impl EmissionLine {
                     .map(|x| Tile::from_sim(x.tile)),
             ),
             st::EmissionSource::Sink => (EmissionSourceKind::Sink, None, None),
+            st::EmissionSource::FireSinkLoss => (EmissionSourceKind::FireSinkLoss, None, None),
         };
         EmissionLine {
             source,

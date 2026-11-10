@@ -264,6 +264,7 @@ impl Meta {
                 "place:public_housing" => params.government.public_housing_cost_usd,
                 "place:fossil_plant" | "place:renewable_plant" => params.government.plant_cost_usd,
                 "place:road" => params.government.road_cost_usd,
+                "place:fire_station" => params.weather.fire_station_cost_usd,
                 _ => 0.0,
             };
             actions.push(ActionInfo {

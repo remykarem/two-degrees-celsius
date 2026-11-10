@@ -78,6 +78,7 @@ pub(crate) fn numeric_change(lever: LeverKey, v: f64) -> Option<st::PolicyChange
         LeverKey::BankCapitalRatio => P::BankCapitalRatio(r(v)),
         LeverKey::PublicSpending => P::PublicSpending(usd(v)),
         LeverKey::JobGuarantee => P::JobGuarantee(r(v)),
+        LeverKey::ResilienceSpending => P::ResilienceSpending(usd(v)),
         LeverKey::CommonsAccess | LeverKey::Bailout => return None,
     })
 }

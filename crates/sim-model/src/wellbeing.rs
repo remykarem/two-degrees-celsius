@@ -42,6 +42,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             }
             _ => 0.0,
         };
+        // Smoke (S11): a home within `smoke_radius` tiles of a burning tile.
+        let smoke = match h.home.and_then(|id| s.home(id)) {
+            Some(home) if crate::weather::burning_near(s, home.tile, p.weather.smoke_radius) => 1.0,
+            _ => 0.0,
+        };
         let mut sum = 0.0;
         for m in &h.members {
             let x = s.person(*m);
@@ -63,7 +68,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 + wp.w_environment * environment
                 + wp.w_security * security
                 - wp.w_commute * commute.min(1.0)
-                - wp.w_local_pollution * local;
+                - wp.w_local_pollution * local
+                - p.weather.smoke_wellbeing * smoke;
             let wb = ((1.0 - wp.smoothing) * x.wellbeing.0 + wp.smoothing * target).clamp(0.0, 1.0);
             sum += wb;
             d.changes.push(Delta::Person(

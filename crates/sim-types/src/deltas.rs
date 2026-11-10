@@ -156,6 +156,7 @@ pub enum Delta {
     Bank(BankPatch),
     Gov(GovPatch),
     Nature(Nature),
+    Weather(Weather),
     Housing(Housing),
     Energy(Energy),
     Effective(EffectivePolicy),

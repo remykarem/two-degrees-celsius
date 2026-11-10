@@ -123,6 +123,31 @@ pub fn temperature(cumulative: Tonnes, p: &Params) -> f64 {
     p.nature.t0 + (p.nature.t_limit - p.nature.t0) * cumulative.0 / p.nature.budget_b0
 }
 
+/// Climate stress 0..1 (docs/causal-model.md section 11): 0 until the carbon budget remaining
+/// falls to `onset` of `budget_b0`, 1 at `full`, rising along `curve` in between.
+pub fn climate_stress(cumulative: Tonnes, p: &Params) -> f64 {
+    let w = &p.weather;
+    let remaining = 1.0 - cumulative.0 / p.nature.budget_b0;
+    let x = ((w.onset - remaining) / (w.onset - w.full)).clamp(0.0, 1.0);
+    libm::pow(x, w.curve)
+}
+
+/// Forest stock over its maximum, 0..1.
+pub fn forest_health(s: &State, p: &Params) -> f64 {
+    (s.nature.forest.0 / p.nature.forest_max).clamp(0.0, 1.0)
+}
+
+/// Commons stock over its maximum, 0..1.
+pub fn commons_health(s: &State, p: &Params) -> f64 {
+    (s.nature.commons.0 / p.nature.commons_max).clamp(0.0, 1.0)
+}
+
+/// Resource health of the farm: the mean of forest and commons health. Production raises
+/// this to `farm_health_exp` to scale the farm's output.
+pub fn farm_health(s: &State, p: &Params) -> f64 {
+    (0.5 * (forest_health(s, p) + commons_health(s, p))).clamp(0.0, 1.0)
+}
+
 /// Compute all derived indicators from the current state.
 pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
     let sales_value: Cents = Cents::sum(s.firms.iter().filter(|f| f.active).map(|f| f.revenue));
@@ -182,6 +207,10 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
         gpi_annual: gpi,
         money: s.total_deposits(),
         price_index,
+        forest_health: forest_health(s, p),
+        commons_health: commons_health(s, p),
+        farm_health: farm_health(s, p),
+        climate_stress: climate_stress(s.nature.cumulative, p),
     }
 }
 

@@ -72,7 +72,7 @@ pub fn import(blob: &str, params: &Params) -> ApiResult<Imported> {
         return Err(ApiError::new(
             code::SCHEMA_MISMATCH,
             format!(
-                "save has schemaVersion {:?}, this build reads {}",
+                "save has schemaVersion {:?}, this build reads {} (Town v4 added weather to the saved state, so older saves cannot be loaded; start a new game)",
                 version,
                 crate::SCHEMA_VERSION
             ),

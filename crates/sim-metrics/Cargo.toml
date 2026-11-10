@@ -10,3 +10,4 @@ workspace = true
 [dependencies]
 sim-types.workspace = true
 sim-params.workspace = true
+libm.workspace = true

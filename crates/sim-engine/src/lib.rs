@@ -43,6 +43,7 @@ impl Sim {
         s.tick = 0;
         s.outcome = None;
         s.nature.cumulative = Tonnes::ZERO;
+        s.weather = Weather::default();
         s.nature.atmosphere = Tonnes(self.params.nature.atmosphere_start);
         s.gov.legitimacy = Rate(self.params.initial.legitimacy);
         s.bank.failed = false;
@@ -100,10 +101,16 @@ pub fn init(params: Params, seed: u64) -> Result<Sim, String> {
     sim.state.indicators = sim_metrics::compute(&sim.state, &sim.params, &sim.base_prices);
     check_state(&sim.state, 0, SystemId::Commands, sim.initial_population)
         .map_err(|v| v.to_string())?;
-    // Settle: run the economy for a while with no player input, then start the clock.
+    // Settle: run the economy for a while with no player input, then start the clock. The
+    // warm-up emits as the real game does, so the carbon budget looks spent; weather is switched
+    // off while settling (no hazards can start) and its state is cleared with the clock.
+    let weather = sim.params.weather.clone();
+    sim.params.weather.fire_base = 0.0;
+    sim.params.weather.drought_base = 0.0;
     for _ in 0..sim.params.run.warmup_ticks {
         step(&mut sim).map_err(|v| v.to_string())?;
     }
+    sim.params.weather = weather;
     sim.reset_clock();
     Ok(sim)
 }

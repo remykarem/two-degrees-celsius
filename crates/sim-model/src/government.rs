@@ -76,11 +76,18 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         .iter()
         .filter(|h| h.owner == HomeOwner::Public)
         .count() as f64;
+    let stations = s
+        .map
+        .cells
+        .iter()
+        .filter(|c| c.kind == TileKind::FireStation)
+        .count() as f64;
     let upkeep = Cents::from_dollars(
         public_homes * gp.housing_upkeep_usd
             + s.plants.len() as f64 * gp.plant_upkeep_usd
-            + roads * gp.road_upkeep_usd,
-    );
+            + roads * gp.road_upkeep_usd
+            + stations * p.weather.fire_station_upkeep_usd,
+    ) + s.policy.resilience_spending;
     let mut nature = s.nature.clone();
     let mut build_cost = Cents::ZERO;
     let (mut next_home, mut next_plant) = (s.next_home_id, s.next_plant_id);
@@ -148,6 +155,16 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     },
                 ));
                 Cents::from_dollars(gp.road_cost_usd)
+            }
+            InfraKind::FireStation => {
+                d.changes.push(Delta::SetTile(
+                    *tile,
+                    MapTile {
+                        kind: TileKind::FireStation,
+                        id: None,
+                    },
+                ));
+                Cents::from_dollars(p.weather.fire_station_cost_usd)
             }
         };
         d.events.push(Event::Built {

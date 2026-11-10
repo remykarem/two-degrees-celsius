@@ -88,7 +88,15 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     let c0 = n.commons.0;
     let sink = np.sink_sigma * f0;
     let df = np.forest_growth * f0 * (1.0 - f0 / np.forest_max) - harvest_f - n.pending_clearing.0;
-    let dc = np.commons_growth * c0 * (1.0 - c0 / np.commons_max) - harvest_c;
+    // Drought (S11) slows commons regrowth; a community-managed commons keeps part of it.
+    let buffer = match n.commons_access {
+        CommonsAccess::Community { .. } => p.weather.community_buffer,
+        _ => 0.0,
+    };
+    let drought_factor =
+        1.0 - p.weather.a_c * crate::weather::effective_drought(s, p) * (1.0 - buffer);
+    let dc =
+        np.commons_growth * c0 * (1.0 - c0 / np.commons_max) * drought_factor.max(0.0) - harvest_c;
     n.forest = Units((f0 + df).clamp(0.0, np.forest_max));
     n.commons = Units((c0 + dc).clamp(0.0, np.commons_max));
     n.pending_clearing = Units::ZERO;

@@ -283,6 +283,39 @@ pub struct Nature {
     pub pending_clearing: Units,
 }
 
+/// An active drought (Town v4).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Drought {
+    /// 0..1.
+    pub severity: f64,
+    pub months_left: u32,
+}
+
+/// A burning forest tile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Fire {
+    pub tile: Tile,
+    pub months_left: u32,
+}
+
+/// A burnt forest tile that is growing back.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Regrowing {
+    pub tile: Tile,
+    pub months_left: u32,
+}
+
+/// Weather state (Town v4). A forest tile is `burning` if it is in `fires`, `regrowing` if it is
+/// in `regrowing`, otherwise `standing`; the lists never share a tile.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Weather {
+    /// Climate stress 0..1 as of the last S11 run.
+    pub stress: f64,
+    pub drought: Option<Drought>,
+    pub fires: Vec<Fire>,
+    pub regrowing: Vec<Regrowing>,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Housing {
     /// Market rent of a privately owned home that is rented out.
@@ -329,6 +362,8 @@ pub struct Policy {
     pub public_spending: Cents,
     /// Share of the unemployed the government employs at the minimum wage.
     pub job_guarantee: Rate,
+    /// Monthly government spending on resilience (Town v4).
+    pub resilience_spending: Cents,
 }
 
 /// Policy as actually applied after lobbying (S9b).
@@ -373,6 +408,13 @@ pub struct Indicators {
     pub gpi_annual: f64,
     pub money: Cents,
     pub price_index: f64,
+    /// Town v4: forest stock over its maximum, 0..1.
+    pub forest_health: f64,
+    pub commons_health: f64,
+    /// The farm's resource-health factor (mean of the two shares).
+    pub farm_health: f64,
+    /// Climate stress 0..1 from the carbon budget remaining.
+    pub climate_stress: f64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -419,6 +461,7 @@ pub struct State {
     pub bank: Bank,
     pub gov: Government,
     pub nature: Nature,
+    pub weather: Weather,
     pub housing: Housing,
     pub energy: Energy,
     pub policy: Policy,

@@ -27,6 +27,7 @@ fn active_value(p: &Policy, c: &PolicyChange) -> Option<f64> {
         PolicyChange::BankCapitalRatio(_) => p.bank_capital_ratio.0,
         PolicyChange::PublicSpending(_) => p.public_spending.dollars(),
         PolicyChange::JobGuarantee(_) => p.job_guarantee.0,
+        PolicyChange::ResilienceSpending(_) => p.resilience_spending.dollars(),
         PolicyChange::CommonsAccess(_) | PolicyChange::Bailout(_) => return None,
     })
 }
@@ -37,6 +38,7 @@ fn build_cost(p: &Params, c: &Command) -> Cents {
             InfraKind::PublicHousing => p.government.public_housing_cost_usd,
             InfraKind::FossilPlant | InfraKind::RenewablePlant => p.government.plant_cost_usd,
             InfraKind::Road => p.government.road_cost_usd,
+            InfraKind::FireStation => p.weather.fire_station_cost_usd,
         }),
         _ => Cents::ZERO,
     }
@@ -104,7 +106,8 @@ pub fn tile_problem(s: &State, pending: &[PendingCommand], c: &Command) -> Optio
                 TileKind::PublicHousing
                 | TileKind::FossilPlant
                 | TileKind::RenewablePlant
-                | TileKind::Road,
+                | TileKind::Road
+                | TileKind::FireStation,
             ) => None,
             Some(_) => Some(BlockReason::TileInvalid),
         },

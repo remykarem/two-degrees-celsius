@@ -3,7 +3,7 @@
 use crate::Sim;
 use sim_types::*;
 
-pub const CSV_HEADER: &str = "tick,turn,pc,year,gdp_annual,gdp_real_annual,unemployment,gini,avg_income_pp,median_income_pp,top_wealth_share,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_firms,em_households,em_plants,forest,commons,system,employed,wage_goods,price_goods,inventory_goods,profit_goods,investment,gov_purchases,lent,top_savings,pending,gov_receipts,gov_spending,gov_cash,unhoused,energy_served,roads";
+pub const CSV_HEADER: &str = "tick,turn,pc,year,gdp_annual,gdp_real_annual,unemployment,gini,avg_income_pp,median_income_pp,top_wealth_share,emissions_gross_month,emissions_net_month,cumulative_emissions,remaining_budget,temperature,bank_equity,money_in_circulation,legitimacy,wage_share,profit_share,wellbeing,gpi_annual,price_index,gov_debt,em_firms,em_households,em_plants,forest,commons,system,employed,wage_goods,price_goods,inventory_goods,profit_goods,investment,gov_purchases,lent,top_savings,pending,gov_receipts,gov_spending,gov_cash,unhoused,energy_served,roads,climate_stress,burning,drought,farm_health";
 
 /// Emissions by source this tick, read from the trace: firms (direct), households (direct), plants.
 pub fn emissions_by_source(trace: &[TraceRecord]) -> (f64, f64, f64) {
@@ -14,7 +14,7 @@ pub fn emissions_by_source(trace: &[TraceRecord]) -> (f64, f64, f64) {
                 EmissionSource::Firm(_) => firms += tonnes.0,
                 EmissionSource::Households => hh += tonnes.0,
                 EmissionSource::Plant(_) => plants += tonnes.0,
-                EmissionSource::Sink => {}
+                EmissionSource::Sink | EmissionSource::FireSinkLoss => {}
             }
         }
     }
@@ -32,7 +32,7 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
         .filter(|c| c.kind == TileKind::Road)
         .count();
     format!(
-        "{},{},{:.1},{:.3},{:.0},{:.0},{:.5},{:.5},{:.0},{:.0},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?},{:.1},{:.2},{:.3},{:.1},{:.0},{:.0},{:.0},{:.0},{:.0},{},{:.0},{:.0},{:.0},{},{:.3},{}",
+        "{},{},{:.1},{:.3},{:.0},{:.0},{:.5},{:.5},{:.0},{:.0},{:.5},{:.3},{:.3},{:.3},{:.3},{:.5},{:.0},{:.0},{:.5},{:.5},{:.5},{:.5},{:.0},{:.5},{:.0},{:.3},{:.3},{:.3},{:.1},{:.1},{:?},{:.1},{:.2},{:.3},{:.1},{:.0},{:.0},{:.0},{:.0},{:.0},{},{:.0},{:.0},{:.0},{},{:.3},{},{:.4},{},{:.3},{:.4}",
         s.tick,
         s.turn,
         s.political_capital,
@@ -79,6 +79,10 @@ pub fn csv_row(sim: &Sim, trace: &[TraceRecord]) -> String {
         s.gov.cash.dollars(),
         s.housing.unhoused_households,
         s.energy.served.0,
-        roads
+        roads,
+        i.climate_stress,
+        s.weather.fires.len(),
+        s.weather.drought.map_or(0.0, |d| d.severity),
+        i.farm_health
     )
 }

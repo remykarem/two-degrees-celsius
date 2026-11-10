@@ -25,3 +25,7 @@ proptest.workspace = true
 [[test]]
 name = "scenarios"
 path = "../../tests/scenarios.rs"
+
+[[test]]
+name = "weather"
+path = "../../tests/weather.rs"

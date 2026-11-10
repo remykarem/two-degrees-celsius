@@ -15,6 +15,7 @@ sim-types.workspace = true
 sim-rng.workspace = true
 sim-params.workspace = true
 sim-metrics.workspace = true
+sim-model.workspace = true
 sim-checks.workspace = true
 sim-engine.workspace = true
 

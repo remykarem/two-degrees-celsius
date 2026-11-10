@@ -245,6 +245,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         bailout: pol.bailout,
         public_spending: Cents::from_dollars(pol.public_spending_usd),
         job_guarantee: Rate(pol.job_guarantee),
+        resilience_spending: Cents::from_dollars(pol.resilience_spending_usd),
     };
     let effective = EffectivePolicy {
         carbon_price: policy.carbon_price,
@@ -305,6 +306,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
             depletion: Units::ZERO,
             pending_clearing: Units::ZERO,
         },
+        weather: Weather::default(),
         housing: Housing {
             rent_private: Cents::from_dollars(t.rent_private_usd),
             rent_public: Cents::from_dollars(t.rent_public_usd),

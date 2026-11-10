@@ -25,10 +25,11 @@ pub enum LeverKey {
     Bailout,
     PublicSpending,
     JobGuarantee,
+    ResilienceSpending,
 }
 
 impl LeverKey {
-    pub const ALL: [LeverKey; 19] = [
+    pub const ALL: [LeverKey; 20] = [
         LeverKey::CarbonPrice,
         LeverKey::TaxWage,
         LeverKey::TaxProfit,
@@ -48,6 +49,7 @@ impl LeverKey {
         LeverKey::Bailout,
         LeverKey::PublicSpending,
         LeverKey::JobGuarantee,
+        LeverKey::ResilienceSpending,
     ];
 
     /// The key used in `content/params.json` (`turn.levers`); identical to the wire string.
@@ -72,6 +74,7 @@ impl LeverKey {
             LeverKey::Bailout => "bailout",
             LeverKey::PublicSpending => "public_spending",
             LeverKey::JobGuarantee => "job_guarantee",
+            LeverKey::ResilienceSpending => "resilience_spending",
         }
     }
 
@@ -97,6 +100,7 @@ impl LeverKey {
             P::Bailout(_) => LeverKey::Bailout,
             P::PublicSpending(_) => LeverKey::PublicSpending,
             P::JobGuarantee(_) => LeverKey::JobGuarantee,
+            P::ResilienceSpending(_) => LeverKey::ResilienceSpending,
         }
     }
 
@@ -117,14 +121,16 @@ pub enum InfraKind {
     FossilPlant,
     RenewablePlant,
     Road,
+    FireStation,
 }
 
 impl InfraKind {
-    pub const ALL: [InfraKind; 4] = [
+    pub const ALL: [InfraKind; 5] = [
         InfraKind::PublicHousing,
         InfraKind::FossilPlant,
         InfraKind::RenewablePlant,
         InfraKind::Road,
+        InfraKind::FireStation,
     ];
     pub fn as_str(self) -> &'static str {
         match self {
@@ -132,6 +138,7 @@ impl InfraKind {
             InfraKind::FossilPlant => "fossil_plant",
             InfraKind::RenewablePlant => "renewable_plant",
             InfraKind::Road => "road",
+            InfraKind::FireStation => "fire_station",
         }
     }
     pub fn to_sim(self) -> st::InfraKind {
@@ -140,6 +147,7 @@ impl InfraKind {
             InfraKind::FossilPlant => st::InfraKind::FossilPlant,
             InfraKind::RenewablePlant => st::InfraKind::RenewablePlant,
             InfraKind::Road => st::InfraKind::Road,
+            InfraKind::FireStation => st::InfraKind::FireStation,
         }
     }
     pub fn from_sim(k: st::InfraKind) -> InfraKind {
@@ -148,6 +156,7 @@ impl InfraKind {
             st::InfraKind::FossilPlant => InfraKind::FossilPlant,
             st::InfraKind::RenewablePlant => InfraKind::RenewablePlant,
             st::InfraKind::Road => InfraKind::Road,
+            st::InfraKind::FireStation => InfraKind::FireStation,
         }
     }
 }
@@ -255,6 +264,10 @@ pub enum MetricKey {
     AvgIncome,
     MedianIncome,
     TopWealthShare,
+    ForestHealth,
+    CommonsHealth,
+    FarmHealth,
+    ClimateStress,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -335,6 +348,7 @@ pub enum TileKindKey {
     Road,
     Forest,
     Commons,
+    FireStation,
 }
 
 impl TileKindKey {
@@ -351,6 +365,7 @@ impl TileKindKey {
             st::TileKind::Road => TileKindKey::Road,
             st::TileKind::Forest => TileKindKey::Forest,
             st::TileKind::Commons => TileKindKey::Commons,
+            st::TileKind::FireStation => TileKindKey::FireStation,
         }
     }
 }

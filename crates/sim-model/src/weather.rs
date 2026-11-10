@@ -1,0 +1,334 @@
+//! S11 weather (Town v4): climate stress, drought, forest fires, and the forecast.
+//! Rules: docs/causal-model.md section 11. Runs before production (S2) and nature (S7).
+//!
+//! RNG draw order per tick (it fixes every seeded outcome):
+//! 1. Drought onset: one `chance` if no drought was active at the start of the tick and stress
+//!    is above zero; on a hit, two `next_f64` draws (severity, then months).
+//! 2. Fire spread: for each fire that survives this tick, in list order, for each neighbour in
+//!    the order north, east, south, west that is a standing forest tile not already burning:
+//!    one `chance`.
+//! 3. Ignition: one `chance` if stress is above zero and a standing forest tile exists; on a hit,
+//!    one `below(standing tiles)` picks the tile, in row-major order.
+//! 4. Home damage, only if `home_damage_prob > 0`: one `chance` per home next to a burning tile.
+//!
+//! The forecast never draws.
+//!
+//! Helpers take the `Weather` to read explicitly, because within one tick the rules must see the
+//! drought and fires as updated earlier in the same call, before the engine applies the deltas.
+
+use crate::util::{apportion, labour_weights};
+use libm::exp;
+use sim_metrics::{climate_stress, commons_health};
+use sim_params::Params;
+use sim_rng::Rng;
+use sim_types::*;
+
+/// Share (0..1) of the maximum effect that the current resilience spending buys.
+pub fn resilience_share(s: &State, p: &Params) -> f64 {
+    let spend = s.policy.resilience_spending.dollars().max(0.0);
+    1.0 - exp(-spend / p.weather.resilience_scale_usd)
+}
+
+/// Drought severity after resilience spending: the damage factor used by commons, farm and demand.
+pub fn effective_drought(s: &State, p: &Params) -> f64 {
+    let sev = s.weather.drought.map_or(0.0, |d| d.severity);
+    sev * (1.0 - p.weather.resilience_drought_cut_max * resilience_share(s, p))
+}
+
+fn tile_of(m: &Map, i: usize) -> Tile {
+    Tile {
+        x: (i % m.width as usize) as u8,
+        y: (i / m.width as usize) as u8,
+    }
+}
+
+/// Is `t` within the coverage radius of a fire station?
+pub fn covered(s: &State, p: &Params, t: Tile) -> bool {
+    s.map.cells.iter().enumerate().any(|(i, c)| {
+        c.kind == TileKind::FireStation
+            && tile_of(&s.map, i).chebyshev(t) <= p.weather.coverage_radius
+    })
+}
+
+/// Is a burning tile within `radius` (Chebyshev) of `t`?
+pub fn burning_near(s: &State, t: Tile, radius: u32) -> bool {
+    s.weather
+        .fires
+        .iter()
+        .any(|f| f.tile.chebyshev(t) <= radius)
+}
+
+fn forest_tiles(m: &Map) -> Vec<Tile> {
+    m.tiles()
+        .filter(|t| m.kind_at(*t) == Some(TileKind::Forest))
+        .collect()
+}
+
+fn is_standing(w: &Weather, t: Tile) -> bool {
+    !w.fires.iter().any(|f| f.tile == t) && !w.regrowing.iter().any(|g| g.tile == t)
+}
+
+/// Dryness multiplier of fire odds: rises with a drought and with a degraded commons.
+pub fn dryness(s: &State, p: &Params, w: &Weather) -> f64 {
+    let c = &p.weather;
+    1.0 + c.dry_commons * (1.0 - commons_health(s, p))
+        + c.dry_drought * w.drought.map_or(0.0, |d| d.severity)
+}
+
+/// Monthly odds that a fire ignites somewhere, at climate stress `stress`.
+pub fn ignition_p(s: &State, p: &Params, w: &Weather, stress: f64) -> f64 {
+    if stress <= 0.0 {
+        return 0.0;
+    }
+    let c = &p.weather;
+    let forest = forest_tiles(&s.map);
+    if forest.is_empty() {
+        return 0.0;
+    }
+    let standing = forest.iter().filter(|t| is_standing(w, **t)).count() as f64;
+    let share = standing / forest.len() as f64;
+    let cut = c.resilience_ignition_cut_max * resilience_share(s, p);
+    (c.fire_base * (1.0 + c.fire_stress_gain * stress) * dryness(s, p, w) * share * (1.0 - cut))
+        .clamp(0.0, 1.0)
+}
+
+/// Monthly odds that a drought starts, at climate stress `stress`.
+pub fn drought_p(p: &Params, stress: f64) -> f64 {
+    if stress <= 0.0 {
+        return 0.0;
+    }
+    let c = &p.weather;
+    (c.drought_base * (1.0 + c.drought_stress_gain * stress)).clamp(0.0, 1.0)
+}
+
+/// Odds that fire spreads from a burning tile to the adjacent standing tile `to`.
+pub fn spread_p(s: &State, p: &Params, w: &Weather, to: Tile) -> f64 {
+    let c = &p.weather;
+    let cut = if covered(s, p, to) {
+        c.station_spread_cut
+    } else {
+        0.0
+    };
+    let d = w.drought.map_or(0.0, |d| d.severity);
+    (c.spread_p * (1.0 + c.spread_drought * d) * (1.0 - cut)).clamp(0.0, 1.0)
+}
+
+/// Months a fire starting or spreading on `t` burns.
+pub fn fire_duration(s: &State, p: &Params, t: Tile) -> u32 {
+    let c = &p.weather;
+    if covered(s, p, t) {
+        ((c.duration_months as f64 * (1.0 - c.station_duration_cut)).round() as u32).max(1)
+    } else {
+        c.duration_months.max(1)
+    }
+}
+
+/// Forecast (fire risk, drought risk), computed from the state only. It never draws random
+/// numbers, so it cannot reveal what will happen, only how likely it is.
+pub fn forecast(s: &State, p: &Params) -> (RiskLevel, RiskLevel) {
+    let c = &p.weather;
+    let w = &s.weather;
+    let stress = climate_stress(s.nature.cumulative, p);
+    let level = |x: f64, med: f64, high: f64| {
+        if x >= high {
+            RiskLevel::High
+        } else if x >= med {
+            RiskLevel::Medium
+        } else {
+            RiskLevel::Low
+        }
+    };
+    let quarter = p.run.ticks_per_turn as f64;
+    let fire = if !w.fires.is_empty() {
+        RiskLevel::High
+    } else {
+        let standing: Vec<Tile> = forest_tiles(&s.map)
+            .into_iter()
+            .filter(|t| is_standing(w, *t))
+            .collect();
+        let cov = if standing.is_empty() {
+            0.0
+        } else {
+            standing.iter().filter(|t| covered(s, p, **t)).count() as f64 / standing.len() as f64
+        };
+        let d = w.drought.map_or(0.0, |d| d.severity);
+        let spread = c.spread_p * (1.0 + c.spread_drought * d) * (1.0 - c.station_spread_cut * cov);
+        let dur = c.duration_months as f64 * (1.0 - c.station_duration_cut * cov);
+        // Four neighbours; each is reached with `spread` odds per burning month.
+        let size = 1.0 + c.forecast_size_gain * 4.0 * spread * dur;
+        level(
+            quarter * ignition_p(s, p, w, stress) * size,
+            c.forecast_fire_medium,
+            c.forecast_fire_high,
+        )
+    };
+    let drought = if w.drought.is_some() {
+        RiskLevel::High
+    } else {
+        level(
+            quarter * drought_p(p, stress),
+            c.forecast_drought_medium,
+            c.forecast_drought_high,
+        )
+    };
+    (fire, drought)
+}
+
+pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
+    let mut d = Deltas::new();
+    let c = &p.weather;
+    let stress = climate_stress(s.nature.cumulative, p);
+    let mut wx = s.weather.clone();
+    wx.stress = stress;
+
+    // ---- Drought ----
+    if let Some(dr) = wx.drought {
+        if dr.months_left <= 1 {
+            wx.drought = None;
+            d.events.push(Event::DroughtEnded);
+        } else {
+            wx.drought = Some(Drought {
+                severity: dr.severity,
+                months_left: dr.months_left - 1,
+            });
+        }
+    } else if stress > 0.0 && r.chance(drought_p(p, stress)) {
+        let sev_u = r.next_f64();
+        let dur_u = r.next_f64();
+        let severity =
+            (c.sev_min + sev_u * (c.sev_span_base + c.sev_span_stress * stress)).min(1.0);
+        let months = (c.dur_min + (dur_u * (c.dur_span_base + c.dur_span_stress * stress)).floor())
+            .max(1.0) as u32;
+        wx.drought = Some(Drought {
+            severity,
+            months_left: months,
+        });
+        d.events.push(Event::DroughtStarted {
+            severity: Rate(severity),
+            months,
+        });
+    }
+
+    // ---- Fires ----
+    let forest = forest_tiles(&s.map);
+    // Regrowth counts down; a tile is standing again when it ends.
+    let mut regrowing: Vec<Regrowing> = wx
+        .regrowing
+        .iter()
+        .filter(|g| g.months_left > 1)
+        .map(|g| Regrowing {
+            tile: g.tile,
+            months_left: g.months_left - 1,
+        })
+        .collect();
+    // Fires burn one more month or go out and leave a regrowing tile.
+    let mut fires: Vec<Fire> = Vec::new();
+    for f in &wx.fires {
+        if f.months_left <= 1 {
+            d.events.push(Event::FireOut { tile: f.tile });
+            d.events.push(Event::ForestBurned { tile: f.tile });
+            regrowing.push(Regrowing {
+                tile: f.tile,
+                months_left: c.regrow_months.max(1),
+            });
+        } else {
+            fires.push(Fire {
+                tile: f.tile,
+                months_left: f.months_left - 1,
+            });
+        }
+    }
+    // What the spread and ignition rules read: this tick's drought, fires and regrowth.
+    let mut view = Weather {
+        stress,
+        drought: wx.drought,
+        fires: fires.clone(),
+        regrowing: regrowing.clone(),
+    };
+    let survivors = fires.len();
+    for i in 0..survivors {
+        let from = fires[i].tile;
+        for (dx, dy) in [(0i32, -1i32), (1, 0), (0, 1), (-1, 0)] {
+            let (nx, ny) = (from.x as i32 + dx, from.y as i32 + dy);
+            if !(0..=u8::MAX as i32).contains(&nx) || !(0..=u8::MAX as i32).contains(&ny) {
+                continue;
+            }
+            let to = Tile {
+                x: nx as u8,
+                y: ny as u8,
+            };
+            if s.map.kind_at(to) != Some(TileKind::Forest) || !is_standing(&view, to) {
+                continue;
+            }
+            if r.chance(spread_p(s, p, &view, to)) {
+                fires.push(Fire {
+                    tile: to,
+                    months_left: fire_duration(s, p, to),
+                });
+                view.fires = fires.clone();
+                d.events.push(Event::FireSpread { from, to });
+            }
+        }
+    }
+    // Ignition.
+    if stress > 0.0 {
+        let standing: Vec<Tile> = forest
+            .iter()
+            .copied()
+            .filter(|t| is_standing(&view, *t))
+            .collect();
+        if !standing.is_empty() && r.chance(ignition_p(s, p, &view, stress)) {
+            let tile = standing[r.below(standing.len() as u32) as usize];
+            fires.push(Fire {
+                tile,
+                months_left: fire_duration(s, p, tile),
+            });
+            d.events.push(Event::FireStarted { tile });
+        }
+    }
+
+    // ---- Burning: forest stock lost this month ----
+    let burning = fires.len() as f64;
+    if burning > 0.0 && !forest.is_empty() {
+        let tile_stock = s.nature.forest.0 / forest.len() as f64;
+        let loss = (burning * c.burn_frac * tile_stock).min(s.nature.forest.0);
+        let mut n = s.nature.clone();
+        n.forest = Units((n.forest.0 - loss).max(0.0));
+        d.changes.push(Delta::Nature(n));
+        d.trace.push(TraceRecord::Emissions {
+            source: EmissionSource::FireSinkLoss,
+            tonnes: Tonnes(p.nature.sink_sigma * loss),
+        });
+    }
+
+    // ---- Optional damage to homes next to a fire ----
+    if c.home_damage_prob > 0.0 && !fires.is_empty() {
+        let lw = labour_weights(s);
+        for home in &s.homes {
+            if !fires.iter().any(|f| f.tile.chebyshev(home.tile) <= 1) {
+                continue;
+            }
+            if r.chance(c.home_damage_prob) {
+                d.events.push(Event::HomeDamaged { home: home.id });
+                let payer = match home.owner {
+                    HomeOwner::Household(h) => Account::Household(h),
+                    HomeOwner::Public => Account::Government,
+                };
+                let cost = Cents::from_dollars(c.home_repair_cost_usd);
+                for (h, part) in apportion(cost, &lw).into_iter().enumerate() {
+                    d.transfer(
+                        payer,
+                        Account::Household(HouseholdId(h as u32)),
+                        part,
+                        FlowKind::Wage,
+                    );
+                }
+            }
+        }
+    }
+
+    wx.fires = fires;
+    wx.regrowing = regrowing;
+    d.changes.push(Delta::Weather(wx));
+    d
+}

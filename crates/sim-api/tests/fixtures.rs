@@ -8,7 +8,7 @@ fn committed_fixtures_are_current_and_deterministic() {
     let first = sim_api::fixtures::generate().unwrap();
     let second = sim_api::fixtures::generate().unwrap();
     assert_eq!(first, second, "fixtures differ between two runs");
-    assert_eq!(first.len(), 7);
+    assert_eq!(first.len(), 8);
     for (name, body) in first {
         let committed = std::fs::read_to_string(dir.join(&name))
             .unwrap_or_else(|e| panic!("{name}: {e} (run the fixtures example)"));
@@ -41,15 +41,46 @@ fn fixtures_have_the_documented_content() {
         .unwrap()
         .is_empty());
     let snap = read("snapshot-turn1.json");
-    assert_eq!(snap["schemaVersion"], 2);
+    assert_eq!(snap["schemaVersion"], 3);
     assert_eq!(snap["people"].as_array().unwrap().len(), 20);
     assert_eq!(snap["households"].as_array().unwrap().len(), 8);
     assert_eq!(snap["homes"].as_array().unwrap().len(), 7);
     assert_eq!(snap["map"]["tiles"].as_array().unwrap().len(), 144);
-    assert_eq!(read("levers.json").as_array().unwrap().len(), 19);
-    assert_eq!(read("actions.json").as_array().unwrap().len(), 9);
+    assert_eq!(read("levers.json").as_array().unwrap().len(), 20);
+    assert_eq!(read("actions.json").as_array().unwrap().len(), 11);
     let tiles = read("tiles.json");
-    for k in ["public_housing", "fossil_plant", "renewable_plant", "road"] {
+    for k in [
+        "public_housing",
+        "fossil_plant",
+        "renewable_plant",
+        "road",
+        "fire_station",
+    ] {
         assert!(!tiles[k].as_array().unwrap().is_empty(), "{k}");
     }
+    // Contract v1.2: the weather block, and a weather turn with a burning tile and a drought.
+    assert_eq!(snap["weather"]["stress"], 0.0);
+    assert_eq!(snap["weather"]["forecast"]["fireRisk"], "low");
+    assert!(snap["nature"]["farmHealth"].as_f64().unwrap() > 0.0);
+    let w = read("turn-result-weather.json");
+    let weather = &w["snapshot"]["weather"];
+    assert!(!weather["fires"].as_array().unwrap().is_empty());
+    assert!(weather["stress"].as_f64().unwrap() > 0.0);
+    let states: Vec<&str> = w["snapshot"]["map"]["tiles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|t| t["state"].as_str())
+        .collect();
+    assert!(states.contains(&"burning") && states.contains(&"standing"));
+    let kinds: Vec<&str> = w["months"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|m| m["events"].as_array().unwrap())
+        .filter_map(|e| e["type"].as_str())
+        .collect();
+    assert!(kinds
+        .iter()
+        .any(|k| k.starts_with("fire_") || k.starts_with("drought_")));
 }

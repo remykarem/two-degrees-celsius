@@ -66,6 +66,7 @@ pub fn lever(name: &str, v: f64) -> Result<PolicyChange, String> {
         "bank_capital_ratio" => PolicyChange::BankCapitalRatio(Rate(v)),
         "bailout" => PolicyChange::Bailout(v > 0.5),
         "public_spending" => PolicyChange::PublicSpending(c(v)),
+        "resilience_spending" => PolicyChange::ResilienceSpending(c(v)),
         "job_guarantee" => PolicyChange::JobGuarantee(Rate(v)),
         "commons_community_cap" => {
             PolicyChange::CommonsAccess(CommonsAccess::Community { cap: Rate(v) })

@@ -48,6 +48,46 @@ fn valid_tiles_sample(api: &Api) -> BTreeMap<&'static str, Vec<Tile>> {
         .collect()
 }
 
+/// A turn in which weather events happen while a fire burns, ideally with a drought active too,
+/// played with no commands. Produced by a deterministic search: for each seed from `FIXTURE_SEED`
+/// up to 60 seeds, play turns of doing nothing until the game ends (a no-action game lasts about
+/// 19 turns) and take the first turn whose events include a weather event and whose snapshot has
+/// both a burning tile and a drought; if no seed gives both, the first turn with a burning tile.
+pub fn weather_sample() -> ApiResult<crate::turn::TurnResult> {
+    use crate::events::SimEventKind as K;
+    let mut fallback = None;
+    for seed in FIXTURE_SEED..FIXTURE_SEED + 60 {
+        let mut api = Api::init(seed)?;
+        for _ in 0..40 {
+            let Ok(t) = api.submit_turn(&[]) else { break };
+            let weather_event = t.months.iter().flat_map(|m| &m.events).any(|e| {
+                matches!(
+                    e.kind,
+                    K::FireStarted { .. }
+                        | K::FireSpread { .. }
+                        | K::FireOut { .. }
+                        | K::ForestBurned { .. }
+                        | K::DroughtStarted { .. }
+                        | K::DroughtEnded
+                )
+            });
+            let w = &t.snapshot.weather;
+            if weather_event && !w.fires.is_empty() {
+                if w.drought.is_some() {
+                    return Ok(t);
+                }
+                fallback.get_or_insert(t);
+            }
+        }
+    }
+    fallback.ok_or_else(|| {
+        ApiError::new(
+            crate::error::code::BAD_STATE,
+            "no weather sample found in 60 seeds".to_string(),
+        )
+    })
+}
+
 /// `(file name, contents)` for every fixture.
 pub fn generate() -> ApiResult<Vec<(String, String)>> {
     let mut api = Api::init(FIXTURE_SEED)?;
@@ -68,5 +108,9 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
         ("levers.json".to_string(), levers),
         ("actions.json".to_string(), actions),
         ("tiles.json".to_string(), tiles),
+        (
+            "turn-result-weather.json".to_string(),
+            pretty(&weather_sample()?)?,
+        ),
     ])
 }

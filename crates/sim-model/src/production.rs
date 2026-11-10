@@ -9,9 +9,7 @@ use sim_types::*;
 
 /// Resource health of the farm: average of forest and commons relative to capacity.
 pub fn resource_health(s: &State, p: &Params) -> f64 {
-    let f = s.nature.forest.0 / p.nature.forest_max;
-    let c = s.nature.commons.0 / p.nature.commons_max;
-    (0.5 * (f + c)).clamp(0.0, 1.0)
+    sim_metrics::farm_health(s, p)
 }
 
 /// Share of farm output lost to climate damage: 0.3 * (CE/B0)^2.
@@ -32,9 +30,15 @@ pub fn capacity(s: &State, p: &Params, f: &Firm, l: f64) -> f64 {
             p.production.farm_health_exp,
         );
         y *= climate_factor(s, p).max(0.0);
+        // Drought (S11): the farm loses output while it lasts.
+        y *= (1.0 - p.weather.a_f * crate::weather::effective_drought(s, p)).max(0.0);
         if let CommonsAccess::Community { .. } = s.nature.commons_access {
             y *= 1.0 - p.nature.community_coord_cost;
         }
+    }
+    // Smoke from a fire nearby costs every firm a little output (S11).
+    if crate::weather::burning_near(s, f.tile, p.weather.smoke_radius) {
+        y *= 1.0 - p.weather.smoke_productivity;
     }
     y * (1.0 - s.output_penalty.0).max(0.0)
 }
@@ -58,6 +62,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let ep = &p.energy;
     let gi = grid_intensity(s, p);
+    // A drought raises electricity demand (cooling, pumping): S11.
+    let heat = 1.0 + p.weather.a_e * crate::weather::effective_drought(s, p);
 
     // Electricity the households would like, from last month's consumption.
     let mut hh_use = Vec::with_capacity(s.households.len());
@@ -65,8 +71,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let n = h.members.len() as f64;
         let cons_pc = h.consumption.dollars() / n.max(1.0);
         hh_use.push(
-            n * (ep.hh_energy_base_pc
-                + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd),
+            heat * n
+                * (ep.hh_energy_base_pc
+                    + ep.hh_energy_consumption_pc * cons_pc / ep.hh_ref_consumption_usd),
         );
     }
 
@@ -84,7 +91,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         plans.push(Plan {
             id: f.id,
             y0,
-            e_eff: f.energy_per_unit.0 * green,
+            e_eff: f.energy_per_unit.0 * green * heat,
             iota: f.intensity_base.0 * green,
         });
     }

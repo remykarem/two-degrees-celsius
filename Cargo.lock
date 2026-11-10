@@ -525,6 +525,7 @@ dependencies = [
  "sim-checks",
  "sim-engine",
  "sim-metrics",
+ "sim-model",
  "sim-params",
  "sim-rng",
  "sim-types",
@@ -571,6 +572,7 @@ dependencies = [
 name = "sim-metrics"
 version = "0.1.0"
 dependencies = [
+ "libm",
  "sim-params",
  "sim-types",
 ]
