@@ -202,8 +202,13 @@ export interface Buildings { publicHousing: number; fossilPlant: number; renewab
 
 export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
 
+/** Contract v1.1 (section 12): whether a live turn (beginTurn ... finishTurn) is open, and how many of its 3 months have run. */
+export interface TurnPhase { open: boolean; monthsDone: 0 | 1 | 2 | 3 }
+
 export interface Snapshot {
   schemaVersion: SchemaVersion;
+  /** Contract v1.1. Absent in a package built before v1.1 (the UI then treats it as closed). */
+  turnPhase?: TurnPhase;
   game: GameCalendar;
   turn: number;
   tick: number;
@@ -236,6 +241,18 @@ export interface Snapshot {
 
 export interface RejectedCommand { index: number; command: Command; reason: BlockReason }
 export interface PolicyGap { lever: LeverKey; nominal: number; effective: number }
+
+/** Contract v1.1: what beginTurn returns. */
+export interface TurnStart {
+  turn: number;
+  accepted: PendingItem[];
+  rejected: RejectedCommand[];
+  activated: PendingItem[];
+  pcBefore: number;
+  snapshot: Snapshot;
+}
+/** Contract v1.1: what advanceMonth returns. */
+export interface MonthResult { month: 0 | 1 | 2; frame: MonthFrame; snapshot: Snapshot }
 
 export interface TurnResult {
   turn: number;

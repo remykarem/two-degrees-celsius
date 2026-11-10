@@ -39,7 +39,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array' } satisfies Shape<Snapshot>;
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', energy: 'object', history: 'array', turnPhase: 'object?' } satisfies Shape<Snapshot>;
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;

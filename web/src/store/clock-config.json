@@ -1,0 +1,10 @@
+{
+  "mode": "relaxed",
+  "realSecondsPerGameDay": 0.143,
+  "speeds": [1, 2, 4],
+  "onTimeout": "submit",
+  "allowPause": true,
+  "pauseBudgetSeconds": null,
+  "pauseWhenHidden": true,
+  "slowPace": 0.5
+}

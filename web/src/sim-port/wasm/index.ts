@@ -1,4 +1,4 @@
-import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, TileRef, TurnResult } from '../../contract';
+import type { ActionInfo, Command, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 
 /**
@@ -16,6 +16,10 @@ export interface WasmSimInstance {
   valid_tiles?(kind: string): string;
   preview(commandsJson: string): string;
   submit_turn(commandsJson: string): string;
+  /** Contract v1.1 live-turn exports. Missing in a package built before they landed: Pressure mode is then unavailable. */
+  begin_turn?(commandsJson: string): string;
+  advance_month?(): string;
+  finish_turn?(): string;
   cancel_pending(id: number): string;
   export_state(): string;
   import_state(blob: string): string;
@@ -61,6 +65,13 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
       return r.ok ? r.value.map.tiles.filter((t) => t.kind === 'empty' && t.buildable).map(({ x, y }) => ({ x, y })) : [];
     },
     submitTurn: (commands: Command[]) => call<TurnResult>(() => sim.submit_turn(JSON.stringify(commands))),
+    liveTurn: typeof sim.begin_turn === 'function' && typeof sim.advance_month === 'function' && typeof sim.finish_turn === 'function',
+    beginTurn: (commands: Command[]) => sim.begin_turn
+      ? call<TurnStart>(() => sim.begin_turn!(JSON.stringify(commands))) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1). Rebuild it with npm run build:wasm.'),
+    advanceMonth: () => sim.advance_month
+      ? call<MonthResult>(() => sim.advance_month!()) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1).'),
+    finishTurn: () => sim.finish_turn
+      ? call<TurnResult>(() => sim.finish_turn!()) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1).'),
     cancelPending: (id) => call(() => sim.cancel_pending(id)),
     exportState: () => call<string>(() => sim.export_state()),
     importState: (blob) => call<Snapshot>(() => sim.import_state(blob)),

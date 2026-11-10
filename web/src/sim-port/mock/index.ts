@@ -1,4 +1,4 @@
-import type { Command, HistoryPoint, PendingItem, Result, SimEvent, TraceRecord, TurnResult } from '../../contract';
+import type { Command, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 import { actionList, GEN, LEVERS, MOCK } from './data';
 import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
@@ -14,7 +14,10 @@ const GAP_LEVERS = ['carbon_price', 'wealth_tax', 'tax_profit', 'emissions_cap']
 
 export function createMockSim(): SimPort {
   let s: MockState = initialState(1);
-  const snap = () => buildSnapshot(s);
+  /** The turn in progress (contract section 12). Lives outside MockState: a save is only legal at a turn boundary, so it is never serialised. */
+  let open: { turn: number; pcBefore: number; accepted: PendingItem[]; rejected: TurnResult['rejected']; activated: PendingItem[]; month0: SimEvent[]; months: MonthFrame[]; halted: boolean } | null = null;
+  const snap = () => ({ ...buildSnapshot(s), turnPhase: { open: open !== null, monthsDone: (open ? open.months.length : 0) as 0 | 1 | 2 | 3 } });
+  const turnState = (message: string) => fail('turn_state', message);
 
   /** Rust activate_due: runs at the START of a submit, before the ticks. */
   function activateDue(out: PendingItem[], events: SimEvent[]) {
@@ -42,8 +45,9 @@ export function createMockSim(): SimPort {
     };
   }
 
-  return {
+  const port: SimPort = {
     init(seed) {
+      open = null;
       s = initialState(seed);
       s.gini = s.gini0 = wealthGini(s);
       return ok(snap());
@@ -57,10 +61,21 @@ export function createMockSim(): SimPort {
     },
 
     submitTurn(commands: Command[]): Result<TurnResult> {
+      // Exactly the live-turn calls in order (contract section 12): one code path, so the two can never drift apart.
+      if (open) return turnState('submitTurn needs no turn to be open (a live turn is in progress).');
+      const begun = port.beginTurn(commands);
+      if (!begun.ok) return begun;
+      for (let m = 0; m < 3; m++) {
+        const r = port.advanceMonth();
+        if (!r.ok) return r;
+      }
+      return port.finishTurn();
+    },
+
+    beginTurn(commands: Command[]): Result<TurnStart> {
+      if (open) return turnState('A turn is already open: call advanceMonth and finishTurn first.');
       if (s.gameOver) return fail('game_over', 'The game is over: no more turns can be played. Start a new game or load a save.');
       if (!Array.isArray(commands)) return fail('invalid_command', 'commands must be a list');
-      const turn = s.turn;
-      const pcBefore = s.pc;
       const ev = evaluate(s, commands);
       const accepted = ev.accepted;
       const rejected: TurnResult['rejected'] = [];
@@ -71,15 +86,24 @@ export function createMockSim(): SimPort {
           month0.push({ type: 'policy_blocked', importance: 2, reason: p.blocked });
         }
       });
+      const pcBefore = s.pc;
       s.pending.push(...accepted);
       s.nextPendingId += accepted.length;
       s.pc = ev.pcLeft;
       const activated: PendingItem[] = [];
       activateDue(activated, month0);
+      open = { turn: s.turn, pcBefore, accepted, rejected, activated, month0, months: [], halted: false };
+      return ok({ turn: open.turn, accepted, rejected, activated, pcBefore, snapshot: snap() });
+    },
 
-      let halted = false;
-      const months = ([0, 1, 2] as const).map((m) => {
-        if (halted) return frame(m, [], {});
+    advanceMonth(): Result<MonthResult> {
+      if (!open) return turnState('No turn is open: call beginTurn first.');
+      if (open.months.length >= 3) return turnState('All 3 months have run: call finishTurn.');
+      const { turn, month0 } = open;
+      const m = open.months.length as 0 | 1 | 2;
+      let f: MonthFrame;
+      if (open.halted) f = frame(m, [], {});
+      else {
         const sysBefore = s.system;
         const out = stepMonth(s);
         spend(s, buildingCounts(s).road * GEN.build.roadUpkeepUsd); // road maintenance, paid by the government
@@ -99,11 +123,19 @@ export function createMockSim(): SimPort {
         if (end && !s.gameOver) {
           s.gameOver = { turn, outcome: end.outcome };
           events.push(end.event === 'budget_exhausted' ? { type: 'budget_exhausted', importance: 3 } : { type: 'collapse', importance: 3, reason: end.event });
-          halted = true;
+          open.halted = true;
         }
-        return frame(m, events, flows);
-      });
+        f = frame(m, events, flows);
+      }
+      open.months.push(f);
+      return ok({ month: m, frame: f, snapshot: snap() });
+    },
 
+    finishTurn(): Result<TurnResult> {
+      if (!open) return turnState('No turn is open: call beginTurn first.');
+      if (open.months.length < 3) return turnState(`Only ${open.months.length} of 3 months have run: call advanceMonth.`);
+      const { turn, accepted, rejected, activated, pcBefore, months } = open;
+      open = null;
       s.history.push(historyPoint());
       const policyGaps = GAP_LEVERS.map((k) => {
         const l = LEVERS.find((x) => x.key === k)!;
@@ -133,7 +165,7 @@ export function createMockSim(): SimPort {
       return ok({ refundPc, snapshot: snap() });
     },
 
-    exportState: () => ok(JSON.stringify(s)),
+    exportState: () => (open ? turnState('A turn is open: a save is only possible at a turn boundary (finish the turn first).') : ok(JSON.stringify(s))),
     importState(blob) {
       let parsed: MockState;
       try { parsed = JSON.parse(blob) as MockState; } catch { return fail('bad_save', 'The saved game data is not valid JSON.'); }
@@ -142,7 +174,9 @@ export function createMockSim(): SimPort {
       }
       if (parsed.schemaVersion !== SCHEMA_VERSION) return fail('schema_mismatch', `The save was made by a different version (schema ${String(parsed.schemaVersion)}, expected ${SCHEMA_VERSION}).`);
       s = parsed;
+      open = null;
       return ok(snap());
     },
   };
+  return port;
 }
