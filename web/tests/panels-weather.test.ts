@@ -41,6 +41,18 @@ describe('stress gauge and health derivation', () => {
     expect(stressGauge(withWeather({ stress: 0 }))!.text).toMatch(/50%/);
     expect(stressGauge(withWeather({ stress: 0.9 }))!.word).toBe('Severe');
   });
+  it('the gauge reads onset and full from the wire (contract v1.3) and falls back to the old constants without them', () => {
+    const wired = withWeather({ stress: 0 });
+    wired.weather!.onset = 0.75; wired.weather!.full = 0.2; wired.weather!.curve = 1;
+    const g = stressGauge(wired)!;
+    expect(g).toMatchObject({ onset: 0.75, full: 0.2 });
+    expect(g.text).toMatch(/75%/);
+    expect(stressGauge(withWeather({ stress: 0.5 }))!.text).toMatch(/10% budget left/); // no fields: WEATHER_UI
+    expect(stressGauge(withWeather({ stress: 0 }))).toMatchObject({ onset: WEATHER_UI.onset, full: WEATHER_UI.full });
+    // the mock snapshot carries the curve from content/params.json
+    const mock = base().weather!;
+    expect(mock).toMatchObject({ onset: 0.75, full: 0.1, curve: 1 });
+  });
   it('three health meters with a number and a word each (colour is never the only cue), from the wire fields', () => {
     const s = structuredClone(base());
     s.nature.forestHealth = 0.82; s.nature.commonsHealth = 0.5; s.nature.farmHealth = 0.1;

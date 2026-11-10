@@ -61,7 +61,7 @@ export function forecastOf(s: MockState): Weather['forecast'] {
 
 export function weatherView(s: MockState): Weather {
   const fires = forestCells(s).filter((c) => c.state === 'burning').map((c) => ({ tile: { x: c.x, y: c.y }, monthsLeft: cellAt(s, c.x, c.y)!.left ?? 1 }));
-  return { stress: stressNow(s), drought: s.drought ? { ...s.drought } : null, fires, forecast: forecastOf(s) };
+  return { stress: stressNow(s), onset: STRESS.onset, full: STRESS.full, curve: STRESS.curve, drought: s.drought ? { ...s.drought } : null, fires, forecast: forecastOf(s) };
 }
 
 export interface WeatherMonth { events: SimEvent[] }

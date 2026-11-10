@@ -1,14 +1,14 @@
 {
   "actions": "9120d5597d63372b",
-  "cancel2": "3565984ece6ae318",
-  "export": "3ccbe0881d6b63cb",
-  "finalSnapshot": "aceda50f36f7ad4b",
-  "import": "68a3a7612db85157",
-  "init": "acc88767cb9d858b",
+  "cancel2": "99924c6f0a2efe17",
+  "export": "bcba22d5832af999",
+  "finalSnapshot": "573a8591d6b35a0f",
+  "import": "febc29b5b4dce9f9",
+  "init": "3e6db3648b41f5d2",
   "levers": "67d8596584b5a7f9",
   "turns": [
     {
-      "fnv": "3ac07d9fa34b0119",
+      "fnv": "6371e051947ce316",
       "gdpRealAnnual": 373643.56888156047,
       "legitimacy": 0.6918247922210627,
       "ok": true,
@@ -16,7 +16,7 @@
       "turn": 1
     },
     {
-      "fnv": "31843be36257c7e5",
+      "fnv": "3d9b1983cdb52d38",
       "gdpRealAnnual": 427756.94230338855,
       "legitimacy": 0.6835428797599991,
       "ok": true,
@@ -24,7 +24,7 @@
       "turn": 2
     },
     {
-      "fnv": "3ba6bb83d70022d9",
+      "fnv": "a8936afd79690eb0",
       "gdpRealAnnual": 454758.2923029503,
       "legitimacy": 0.6762239768023434,
       "ok": true,
@@ -32,7 +32,7 @@
       "turn": 3
     },
     {
-      "fnv": "f5004929d8dee0ac",
+      "fnv": "276be07bcf8bdb8b",
       "gdpRealAnnual": 458314.2924150045,
       "legitimacy": 0.6712361629016201,
       "ok": true,
@@ -40,7 +40,7 @@
       "turn": 4
     },
     {
-      "fnv": "838b604c644223f7",
+      "fnv": "b55fd68047747c46",
       "gdpRealAnnual": 462276.8988711465,
       "legitimacy": 0.6704331095194975,
       "ok": true,
@@ -48,7 +48,7 @@
       "turn": 5
     },
     {
-      "fnv": "86c6b2fe034d494e",
+      "fnv": "f41860ddc6c061a7",
       "gdpRealAnnual": 466943.34902626177,
       "legitimacy": 0.6726283428631501,
       "ok": true,
@@ -56,7 +56,7 @@
       "turn": 6
     },
     {
-      "fnv": "2c637571ec5c4455",
+      "fnv": "729f0bfca0cba27a",
       "gdpRealAnnual": 471420.4109094504,
       "legitimacy": 0.6759673652803468,
       "ok": true,
@@ -64,7 +64,7 @@
       "turn": 7
     },
     {
-      "fnv": "5e37949672a99828",
+      "fnv": "64543c8d432d495e",
       "gdpRealAnnual": 475867.4663569764,
       "legitimacy": 0.6795439783049516,
       "ok": true,
@@ -72,147 +72,147 @@
       "turn": 8
     },
     {
-      "fnv": "c97b6304b3c2ab66",
-      "gdpRealAnnual": 480241.21161442617,
-      "legitimacy": 0.6832630401808529,
+      "fnv": "cc37fa05bdd4fc8f",
+      "gdpRealAnnual": 480187.92535136495,
+      "legitimacy": 0.6832742876090342,
       "ok": true,
-      "temperature": 1.3609077282504196,
+      "temperature": 1.3609069309812252,
       "turn": 9
     },
     {
-      "fnv": "7dfe9aabc7c53dc7",
-      "gdpRealAnnual": 484292.0509836703,
-      "legitimacy": 0.6871436889875387,
+      "fnv": "03d47fbf32aff9d9",
+      "gdpRealAnnual": 484249.6757842585,
+      "legitimacy": 0.6871044335868957,
       "ok": true,
-      "temperature": 1.366292759210996,
+      "temperature": 1.3663066698838056,
       "turn": 10
     },
     {
-      "fnv": "b3d5f484da9ea6af",
-      "gdpRealAnnual": 503613.4677208607,
-      "legitimacy": 0.6912187638552915,
+      "fnv": "a326306cc849a0b8",
+      "gdpRealAnnual": 488256.165692817,
+      "legitimacy": 0.6908766273946316,
       "ok": true,
-      "temperature": 1.371560457384326,
+      "temperature": 1.3717560258264394,
       "turn": 11
     },
     {
-      "fnv": "94717657fdb9c01c",
-      "gdpRealAnnual": 507920.4576769778,
-      "legitimacy": 0.6955236726342952,
+      "fnv": "007713e19a4dafae",
+      "gdpRealAnnual": 492118.60804598365,
+      "legitimacy": 0.6949288832890501,
       "ok": true,
-      "temperature": 1.3768015700977412,
+      "temperature": 1.3772423185249718,
       "turn": 12
     },
     {
-      "fnv": "ae7ebc837f217330",
-      "gdpRealAnnual": 512039.6711119557,
-      "legitimacy": 0.7000418408987061,
+      "fnv": "6f649b7db83f7d12",
+      "gdpRealAnnual": 495758.36846572295,
+      "legitimacy": 0.6991735406590556,
       "ok": true,
-      "temperature": 1.382076586465351,
+      "temperature": 1.382760587502342,
       "turn": 13
     },
     {
-      "fnv": "1f9837d8c06a0419",
-      "gdpRealAnnual": 515289.0250875845,
-      "legitimacy": 0.7047736688311919,
+      "fnv": "df53b1f7e3ee867f",
+      "gdpRealAnnual": 499166.10507827805,
+      "legitimacy": 0.7035959699687618,
       "ok": true,
-      "temperature": 1.3873902631194426,
+      "temperature": 1.3883161048900108,
       "turn": 14
     },
     {
-      "fnv": "6a0c40fe5b8a975f",
-      "gdpRealAnnual": 491376.9794777433,
-      "legitimacy": 0.7096984839547379,
+      "fnv": "4a0f5c06d8874607",
+      "gdpRealAnnual": 502347.9588427119,
+      "legitimacy": 0.7081973249269138,
       "ok": true,
-      "temperature": 1.3927282265316991,
+      "temperature": 1.393920688290993,
       "turn": 15
     },
     {
-      "fnv": "50b82921d802c2b7",
-      "gdpRealAnnual": 494061.5249454101,
-      "legitimacy": 0.7154985100503946,
+      "fnv": "d155b1c16608f5d4",
+      "gdpRealAnnual": 504902.2925746365,
+      "legitimacy": 0.7136820599530186,
       "ok": true,
-      "temperature": 1.3981208576057793,
+      "temperature": 1.3996114693310981,
       "turn": 16
     },
     {
-      "fnv": "45f0c12111325678",
-      "gdpRealAnnual": 494438.09443734377,
-      "legitimacy": 0.7217519653199211,
+      "fnv": "ab169ea22753b189",
+      "gdpRealAnnual": 508579.5301190691,
+      "legitimacy": 0.7195499727382613,
       "ok": true,
-      "temperature": 1.4034844005928087,
+      "temperature": 1.4052890619692153,
       "turn": 17
     },
     {
-      "fnv": "961a338a59d35d95",
-      "gdpRealAnnual": 496005.1064836722,
-      "legitimacy": 0.7280925659636638,
+      "fnv": "84969c5fbefb26a7",
+      "gdpRealAnnual": 511977.7181941374,
+      "legitimacy": 0.725038546793601,
       "ok": true,
-      "temperature": 1.4088889115713168,
+      "temperature": 1.4110269220701017,
       "turn": 18
     },
     {
-      "fnv": "b65062568fdd4b3d",
-      "gdpRealAnnual": 495710.48329143634,
-      "legitimacy": 0.7346238839891975,
+      "fnv": "4e05b28df3ff2291",
+      "gdpRealAnnual": 514644.96658113354,
+      "legitimacy": 0.730824854503084,
       "ok": true,
-      "temperature": 1.4143300700139434,
+      "temperature": 1.4168234392992682,
       "turn": 19
     },
     {
-      "fnv": "7fc14d36fb8bab8f",
-      "gdpRealAnnual": 480427.79985881236,
-      "legitimacy": 0.7414394156977534,
+      "fnv": "3bcce72e463fa428",
+      "gdpRealAnnual": 516673.2251843267,
+      "legitimacy": 0.7368971045108681,
       "ok": true,
-      "temperature": 1.4198235024075998,
+      "temperature": 1.4226686639090351,
       "turn": 20
     },
     {
-      "fnv": "5a72a72c89b8481a",
-      "gdpRealAnnual": 493017.2307014276,
-      "legitimacy": 0.74858294477649,
+      "fnv": "ea0323c738f8fce6",
+      "gdpRealAnnual": 516876.3216722885,
+      "legitimacy": 0.7431718803438997,
       "ok": true,
-      "temperature": 1.4253530209368168,
+      "temperature": 1.4285601231481797,
       "turn": 21
     },
     {
-      "fnv": "87dc7bfafba32cd8",
-      "gdpRealAnnual": 507985.7183575637,
-      "legitimacy": 0.7561745305471577,
+      "fnv": "e87afcc01f08dd7e",
+      "gdpRealAnnual": 519700.18125158723,
+      "legitimacy": 0.7497254012394968,
       "ok": true,
-      "temperature": 1.4309489114422713,
+      "temperature": 1.4345033714096582,
       "turn": 22
     },
     {
-      "fnv": "e89a79e410a2bdb3",
-      "gdpRealAnnual": 508432.68629161245,
-      "legitimacy": 0.7644873297261796,
+      "fnv": "524ca53ce5adbc38",
+      "gdpRealAnnual": 520969.1090735998,
+      "legitimacy": 0.7563060588492106,
       "ok": true,
-      "temperature": 1.4366026558505067,
+      "temperature": 1.4405379253232233,
       "turn": 23
     },
     {
-      "fnv": "826322875e44b176",
-      "gdpRealAnnual": 509155.2149664828,
-      "legitimacy": 0.7732904582108074,
+      "fnv": "dccc3f30f784c3df",
+      "gdpRealAnnual": 522428.9760528417,
+      "legitimacy": 0.7633992873367071,
       "ok": true,
-      "temperature": 1.4422828845465547,
+      "temperature": 1.446618026701909,
       "turn": 24
     },
     {
-      "fnv": "45b93ae7c92118b2",
-      "gdpRealAnnual": 493366.19798848295,
-      "legitimacy": 0.7824593928656153,
+      "fnv": "d26551ef94f74955",
+      "gdpRealAnnual": 524007.4508334488,
+      "legitimacy": 0.7709135108156695,
       "ok": true,
-      "temperature": 1.4480037333991989,
+      "temperature": 1.4527363693705289,
       "turn": 25
     },
     {
-      "fnv": "ad32faea58dd4ea3",
-      "gdpRealAnnual": 504211.70585362066,
-      "legitimacy": 0.7919386675536235,
+      "fnv": "4a9cab2ebe27a04d",
+      "gdpRealAnnual": 522133.4511727575,
+      "legitimacy": 0.7786131205382951,
       "ok": true,
-      "temperature": 1.4537333646783297,
+      "temperature": 1.4588971705157798,
       "turn": 26
     }
   ]

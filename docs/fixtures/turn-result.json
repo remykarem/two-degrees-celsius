@@ -4252,6 +4252,9 @@
     },
     "weather": {
       "stress": 0.0,
+      "onset": 0.75,
+      "full": 0.1,
+      "curve": 1.0,
       "drought": null,
       "fires": [],
       "forecast": {

@@ -133,7 +133,7 @@ fn stress_curve_follows_the_documented_formula() {
 fn no_hazards_before_onset() {
     let p = params();
     let mut sim = fresh_sim();
-    set_remaining(&mut sim.state, &p, 0.6);
+    set_remaining(&mut sim.state, &p, p.weather.onset + 0.05);
     let mut rng = Rng::new(3, 1);
     let (a, _, _) = evolve(&mut sim.state, &p, &mut rng, 600);
     assert_eq!(a, 0);
@@ -199,7 +199,7 @@ fn ignition_frequency_matches_the_formula_and_rises_with_stress() {
 fn spread_frequency_matches_spread_p() {
     let p = params();
     let mut s = fresh_sim().state;
-    set_remaining(&mut s, &p, 0.5); // stress exactly zero: no ignition noise, spread still runs
+    set_remaining(&mut s, &p, p.weather.onset); // stress exactly zero: no ignition noise, spread still runs
     let t = inner_forest_tile(&s);
     s.weather.fires.push(Fire {
         tile: t,
@@ -786,7 +786,7 @@ fn force_stress_override_sets_stress_and_brings_weather_at_once() {
     assert!(p.validate().is_err(), "force_stress must be in [0, 1]");
 }
 
-/// Visibility: in a no-action game the player sees weather soon after onset (50% remaining) and
+/// Visibility: in a no-action game the player sees weather soon after onset (`weather.onset`, 75% remaining) and
 /// keeps seeing it. Measured over seeds 1..=20 until the budget is exhausted.
 #[test]
 fn a_no_action_game_shows_weather_within_three_turns_of_onset_in_nine_seeds_in_ten() {
@@ -794,13 +794,14 @@ fn a_no_action_game_shows_weather_within_three_turns_of_onset_in_nine_seeds_in_t
     for seed in 1..=20u64 {
         let mut sim = new_sim(seed);
         let b0 = sim.params.nature.budget_b0;
+        let sim_onset = sim.params.weather.onset;
         let (mut onset, mut first, mut n, mut over) = (None, None, 0u32, false);
         let turns = sim.params.run.turns;
         sim_engine::run(&mut sim, turns, &Plan::default(), |s, o| {
             if over {
                 return;
             }
-            if onset.is_none() && s.state.nature.cumulative.0 >= 0.5 * b0 {
+            if onset.is_none() && s.state.nature.cumulative.0 >= (1.0 - sim_onset) * b0 {
                 onset = Some(s.state.tick);
             }
             for e in &o.events {
@@ -826,7 +827,7 @@ fn a_no_action_game_shows_weather_within_three_turns_of_onset_in_nine_seeds_in_t
         "weather visible within 3 turns of onset in {seen} of 20 seeds"
     );
     assert!(
-        (5.0..=14.0).contains(&mean),
+        (8.0..=22.0).contains(&mean),
         "events per no-action game {mean}: steady, not a flood"
     );
 }
@@ -855,6 +856,7 @@ fn tally_with(script: &Plan, seed: u64, weather_off: bool) -> Tally {
     }
     let mut sim = sim_engine::init(p, seed).unwrap();
     let b0 = sim.params.nature.budget_b0;
+    let onset = sim.params.weather.onset;
     let mut t = Tally {
         farm_low: 1.0,
         ..Tally::default()
@@ -865,7 +867,7 @@ fn tally_with(script: &Plan, seed: u64, weather_off: bool) -> Tally {
         if done {
             return;
         }
-        if half.is_none() && s.state.nature.cumulative.0 >= 0.5 * b0 {
+        if half.is_none() && s.state.nature.cumulative.0 >= (1.0 - onset) * b0 {
             half = Some(s.state.tick);
             t.half_turn = s.state.tick as f64 / 3.0;
         }

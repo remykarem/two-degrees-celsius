@@ -64,10 +64,13 @@ export function stressGauge(snap: Snapshot | null): StressGauge | null {
   if (!snap || !w) return null;
   const s = w.stress;
   const word = s <= 0 ? 'Calm' : s < 0.25 ? 'Rising' : s < 0.6 ? 'High' : 'Severe';
+  // The wire carries the curve since contract v1.3; an older package falls back to the constants above.
+  const onset = typeof w.onset === 'number' ? w.onset : WEATHER_UI.onset;
+  const full = typeof w.full === 'number' ? w.full : WEATHER_UI.full;
   const text = s <= 0
-    ? `No climate stress yet: erratic weather begins when ${Math.round(WEATHER_UI.onset * 100)}% of the carbon budget is left.`
-    : `Weather is more erratic and fires and droughts are likelier. Full stress at ${Math.round(WEATHER_UI.full * 100)}% budget left.`;
-  return { stress: s, percent: Math.round(s * 100), remaining: snap.indicators.budgetShare, onset: WEATHER_UI.onset, full: WEATHER_UI.full, word, text };
+    ? `No climate stress yet: erratic weather begins when ${Math.round(onset * 100)}% of the carbon budget is left.`
+    : `Weather is more erratic and fires and droughts are likelier. Full stress at ${Math.round(full * 100)}% budget left.`;
+  return { stress: s, percent: Math.round(s * 100), remaining: snap.indicators.budgetShare, onset, full, word, text };
 }
 
 export interface ForecastView {

@@ -165,7 +165,7 @@ describe.skipIf(!v12)('real fixtures against contract v1.2 (weather)', () => {
   const snap = v12 ? load<Snapshot>('snapshot-turn1.json') : (null as never);
   const turn = v12 ? load<TurnResult>('turn-result.json') : (null as never);
   it('has the weather block, health fields, tile state and history fields', () => {
-    expect(conforms(snap.weather, { stress: 'number', drought: 'nullable', fires: 'array', forecast: 'object' }, 'weather')).toEqual([]);
+    expect(conforms(snap.weather, { stress: 'number', onset: 'number?', full: 'number?', curve: 'number?', drought: 'nullable', fires: 'array', forecast: 'object' }, 'weather')).toEqual([]);
     expect(conforms(snap.weather.forecast, { fireRisk: 'string', droughtRisk: 'string' }, 'weather.forecast')).toEqual([]);
     for (const k of ['forestHealth', 'commonsHealth', 'farmHealth'] as const) expect(typeof snap.nature[k]).toBe('number');
     for (const t of snap.map.tiles) if (t.kind === 'forest') expect(['standing', 'burning', 'regrowing']).toContain(t.state);

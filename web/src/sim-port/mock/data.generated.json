@@ -291,8 +291,8 @@
     "unemployment": 0.09999999999999998
   },
   "weather": {
-    "onset": 0.5,
-    "full": 0.3,
+    "onset": 0.75,
+    "full": 0.1,
     "curve": 1,
     "coverageRadius": 3,
     "smokeRadius": 2,

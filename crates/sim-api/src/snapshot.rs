@@ -250,6 +250,12 @@ pub struct ForecastView {
 #[serde(rename_all = "camelCase")]
 pub struct WeatherView {
     pub stress: f64,
+    /// Contract v1.3 (additive): the stress curve from `content/params.json` `weather`, so the UI
+    /// need not hard-code it. Stress is 0 while the budget share left is above `onset`, 1 at or
+    /// below `full`, and rises along `curve` in between.
+    pub onset: f64,
+    pub full: f64,
+    pub curve: f64,
     pub drought: Option<DroughtView>,
     pub fires: Vec<FireView>,
     pub forecast: ForecastView,
@@ -463,6 +469,9 @@ fn weather_view(sim: &Sim) -> WeatherView {
     WeatherView {
         // The metric, so the number always agrees with `climate_stress` in the history.
         stress: s.indicators.climate_stress,
+        onset: sim.params.weather.onset,
+        full: sim.params.weather.full,
+        curve: sim.params.weather.curve,
         drought: s.weather.drought.map(|d| DroughtView {
             severity: d.severity,
             months_left: d.months_left,

@@ -53,7 +53,7 @@ describe('mock weather: the stress curve (documented, not invented)', () => {
 describe('mock weather: no hazards before onset, determinism', () => {
   it('never starts a fire or a drought at stress 0, over many months and seeds', () => {
     for (let seed = 1; seed <= 12; seed++) {
-      const s = stateAt(seed, 0.7);
+      const s = stateAt(seed, 0.8);
       expect(months(s, 120)).toEqual([]);
       expect(tiles(s, 'standing')).toBe(GEN.map.forest.length);
     }
@@ -175,7 +175,7 @@ describe('mock weather: adaptation (fire station, resilience spending)', () => {
   it('forecast rises with stress and is high during a drought', () => {
     const lvl = { low: 0, medium: 1, high: 2 };
     const f = (share: number) => forecastOf(stateAt(1, share));
-    expect(f(0.6)).toEqual({ fireRisk: 'low', droughtRisk: 'low' });
+    expect(f(0.8)).toEqual({ fireRisk: 'low', droughtRisk: 'low' });
     expect(lvl[f(0.1).droughtRisk]).toBeGreaterThanOrEqual(lvl[f(0.3).droughtRisk]);
     expect(lvl[f(0.1).fireRisk]).toBeGreaterThanOrEqual(lvl[f(0.3).fireRisk]);
     const s = stateAt(1, 0.3);

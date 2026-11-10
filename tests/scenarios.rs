@@ -1397,10 +1397,12 @@ fn baseline_a_no_action_runs_the_budget_out_by_turn_30() {
 
 /// Baseline B (sensible play) in the 40-turn, 900 t game. HONEST RESULT, not a win. By carbon
 /// alone B has a margin: emissions fall with lags (a carbon price takes 2 turns, a plant 4), the
-/// budget is never exhausted and about 18 to 20% of it is left at turn 40 (it would need more than
-/// about 800 t). But the town collapses first: climate damage to farm output
+/// budget is never exhausted and about 18 to 20% of it is left when the game stops (it would need
+/// more than about 800 t). But the town collapses first: climate damage to farm output
 /// (`production.climate_damage` x (cumulative / b0)^2) is about 15% by turn 28, the farm fails,
-/// unemployment jumps to 70% and the bank fails (`BankFailureCascade`, turns 26 to 30). With
+/// unemployment jumps to 70% and the bank fails (`BankFailureCascade`; turn 30 with the weather
+/// off, turns 22 to 26 with the Horizon weather, which stresses the farm from 25% of the budget
+/// used). With
 /// `climate_damage` = 0 the same script survives all 40 turns with 13% left. B survives only with
 /// a budget of about 1,500 t or more, which lets A survive too. Not forced by tuning behaviour;
 /// see docs/tuning-log.md ("Horizon") and docs/known-issues.md. When the model is rebalanced so B
@@ -1426,9 +1428,12 @@ fn baseline_b_sensible_play_keeps_budget_margin_but_the_town_collapses_before_tu
         "B keeps a positive carbon margin at the end: {left}"
     );
     assert!(
-        a.iter()
-            .all(|r| matches!(r.outcome, Outcome::BudgetExhausted)),
-        "A fails by the budget"
+        a.iter().all(|r| !matches!(r.outcome, Outcome::Survived)),
+        "A always fails"
+    );
+    assert!(
+        share(&a, |r| matches!(r.outcome, Outcome::BudgetExhausted)) >= 0.9,
+        "A fails by the budget (in a rare seed a bank failure at the same time)"
     );
     // Known problem (docs/known-issues.md): the economy fails before turn 40.
     assert!(

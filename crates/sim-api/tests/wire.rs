@@ -784,6 +784,11 @@ fn weather_block_health_fields_and_tile_state_match_the_contract() {
     let j = serde_json::to_value(api.snapshot()).unwrap();
     let w = &j["weather"];
     assert_eq!(w["stress"], 0.0);
+    // Contract v1.3: the stress curve is on the wire (content/params.json `weather`).
+    assert_eq!(
+        (w["onset"].as_f64(), w["full"].as_f64(), w["curve"].as_f64()),
+        (Some(0.75), Some(0.1), Some(1.0))
+    );
     assert!(w["drought"].is_null() && w["fires"].as_array().unwrap().is_empty());
     assert_eq!(
         w["forecast"],

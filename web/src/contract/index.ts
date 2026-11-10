@@ -219,6 +219,10 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 export interface Weather {
   /** 0..1. */
   stress: number;
+  /** Contract v1.3 (additive, optional: absent in an older package). The stress curve: 0 while the budget share left is above `onset`, 1 at or below `full`, rising along `curve`. */
+  onset?: number;
+  full?: number;
+  curve?: number;
   drought: null | { severity: number; monthsLeft: number };
   fires: { tile: TileRef; monthsLeft: number }[];
   forecast: { fireRisk: RiskLevel; droughtRisk: RiskLevel };
