@@ -158,7 +158,10 @@ fn a_new_game_starts_with_calm_weather_even_though_the_warm_up_emits() {
 
 #[test]
 fn ignition_frequency_matches_the_formula_and_rises_with_stress() {
-    let p = params();
+    let mut p = params();
+    // A drought that starts in the same tick raises dryness and so ignition; with the higher
+    // drought odds of the Horizon pass that skews this pure-formula check, so switch it off here.
+    p.weather.drought_base = 0.0;
     let mut base = fresh_sim().state;
     let mut rate = |remaining: f64, seed: u64| {
         set_remaining(&mut base, &p, remaining);
@@ -177,8 +180,8 @@ fn ignition_frequency_matches_the_formula_and_rises_with_stress() {
         }
         (hits as f64 / n as f64, expect)
     };
-    let (low_obs, low_exp) = rate(0.3, 11);
-    let (high_obs, high_exp) = rate(0.1, 11);
+    let (low_obs, low_exp) = rate(0.4, 11);
+    let (high_obs, high_exp) = rate(0.3, 11);
     for (obs, exp) in [(low_obs, low_exp), (high_obs, high_exp)] {
         assert!(exp > 0.0);
         assert!(
@@ -663,7 +666,7 @@ fn invariants_hold_over_full_runs_with_weather_and_every_system_check_passes() {
     ] {
         let mut sim = new_sim(seed);
         let mut fire_ticks = 0;
-        sim_engine::run(&mut sim, 160, &script, |s, _| {
+        sim_engine::run(&mut sim, 40, &script, |s, _| {
             check_weather_invariants(s);
             if !s.state.weather.fires.is_empty() {
                 fire_ticks += 1;
@@ -755,6 +758,79 @@ fn same_seed_same_weather_different_seeds_diverge() {
     );
 }
 
+// ---------- developer override and visibility (Horizon pass) ----------
+
+#[test]
+fn force_stress_override_sets_stress_and_brings_weather_at_once() {
+    assert!(params().weather.force_stress.is_none(), "off by default");
+    let mut p = params();
+    p.weather.force_stress = Some(0.7);
+    p.run.warmup_ticks = 0;
+    let mut sim = sim_engine::init(p.clone(), 5).unwrap();
+    assert_eq!(
+        sim_metrics::climate_stress(sim.state.nature.cumulative, &p),
+        0.7
+    );
+    let mut events = 0;
+    sim_engine::run(&mut sim, 6, &Plan::default(), |_, o| {
+        events += o
+            .events
+            .iter()
+            .filter(|e| matches!(e, Event::FireStarted { .. } | Event::DroughtStarted { .. }))
+            .count();
+    })
+    .unwrap();
+    assert_eq!(sim.state.indicators.climate_stress, 0.7);
+    assert!(events > 0, "forced stress 0.7 shows weather within 6 turns");
+    p.weather.force_stress = Some(1.5);
+    assert!(p.validate().is_err(), "force_stress must be in [0, 1]");
+}
+
+/// Visibility: in a no-action game the player sees weather soon after onset (50% remaining) and
+/// keeps seeing it. Measured over seeds 1..=20 until the budget is exhausted.
+#[test]
+fn a_no_action_game_shows_weather_within_three_turns_of_onset_in_nine_seeds_in_ten() {
+    let (mut seen, mut totals) = (0, vec![]);
+    for seed in 1..=20u64 {
+        let mut sim = new_sim(seed);
+        let b0 = sim.params.nature.budget_b0;
+        let (mut onset, mut first, mut n, mut over) = (None, None, 0u32, false);
+        let turns = sim.params.run.turns;
+        sim_engine::run(&mut sim, turns, &Plan::default(), |s, o| {
+            if over {
+                return;
+            }
+            if onset.is_none() && s.state.nature.cumulative.0 >= 0.5 * b0 {
+                onset = Some(s.state.tick);
+            }
+            for e in &o.events {
+                if matches!(e, Event::FireStarted { .. } | Event::DroughtStarted { .. }) {
+                    n += 1;
+                    first.get_or_insert(s.state.tick);
+                }
+            }
+            over = s.state.nature.cumulative.0 >= b0;
+        })
+        .unwrap();
+        if let (Some(o), Some(f)) = (onset, first) {
+            if f <= o + 9 {
+                seen += 1;
+            }
+        }
+        totals.push(n);
+    }
+    let mean = totals.iter().sum::<u32>() as f64 / 20.0;
+    println!("events seen within 3 turns of onset: {seen} of 20; events per game {totals:?} (mean {mean:.1})");
+    assert!(
+        seen >= 18,
+        "weather visible within 3 turns of onset in {seen} of 20 seeds"
+    );
+    assert!(
+        (5.0..=14.0).contains(&mean),
+        "events per no-action game {mean}: steady, not a flood"
+    );
+}
+
 // ---------- baselines with weather: numbers for docs/tuning-log.md ----------
 
 #[derive(Default, Debug)]
@@ -785,7 +861,7 @@ fn tally_with(script: &Plan, seed: u64, weather_off: bool) -> Tally {
     };
     let mut done = false;
     let mut half = None;
-    sim_engine::run(&mut sim, 160, script, |s, o| {
+    sim_engine::run(&mut sim, 40, script, |s, o| {
         if done {
             return;
         }

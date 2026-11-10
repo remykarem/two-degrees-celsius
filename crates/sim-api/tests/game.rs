@@ -369,7 +369,7 @@ fn run_to_the_end(seed: u64, plan: Plan) -> (u32, Snapshot) {
                 break;
             }
         }
-        assert!(played <= 160);
+        assert!(played <= 40);
     }
     (played, api.snapshot())
 }
@@ -386,15 +386,15 @@ fn full_runs_through_the_api_never_panic_and_record_history() {
         eprintln!("{name}: played {played} turns, outcome {:?}", s.game_over);
         assert_eq!(s.history.len(), played as usize, "{name}");
         let go = s.game_over.expect("the loop only ends at game over");
-        if played == 160 {
-            assert_eq!(go.turn, 161, "{name}");
+        if played == 40 {
+            assert_eq!(go.turn, 41, "{name}");
             assert_eq!(
                 go.outcome,
                 GameOutcome::Plain(PlainOutcome::Survived),
                 "{name}"
             );
         } else {
-            assert!(played < 160);
+            assert!(played < 40);
             assert_eq!(go.turn, played, "{name}: history stops at the halting turn");
         }
         for h in &s.history {

@@ -17,7 +17,7 @@ struct Args {
     /// Random seed.
     #[arg(long, default_value_t = 42)]
     seed: u64,
-    /// Number of turns (default: from params.json, 160).
+    /// Number of turns (default: from params.json, 40).
     #[arg(long)]
     turns: Option<u32>,
     /// JSON turn plan: the player's commands per turn number.

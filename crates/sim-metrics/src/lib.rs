@@ -127,6 +127,9 @@ pub fn temperature(cumulative: Tonnes, p: &Params) -> f64 {
 /// falls to `onset` of `budget_b0`, 1 at `full`, rising along `curve` in between.
 pub fn climate_stress(cumulative: Tonnes, p: &Params) -> f64 {
     let w = &p.weather;
+    if let Some(f) = w.force_stress {
+        return f.clamp(0.0, 1.0);
+    }
     let remaining = 1.0 - cumulative.0 / p.nature.budget_b0;
     let x = ((w.onset - remaining) / (w.onset - w.full)).clamp(0.0, 1.0);
     libm::pow(x, w.curve)

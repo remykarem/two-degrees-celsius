@@ -147,7 +147,7 @@ fn bad_content_is_rejected() {
     let bad = PARAMS.replace("\"forest_max\": 2000.0", "\"forest_max\": -1.0");
     assert_ne!(bad, PARAMS);
     assert!(load(&bad, TOWN).is_err());
-    let unknown = PARAMS.replace("\"turns\": 160,", "\"turns\": 160, \"bogus\": 1,");
+    let unknown = PARAMS.replace("\"turns\": 40,", "\"turns\": 40, \"bogus\": 1,");
     assert!(load(&unknown, TOWN).is_err());
 }
 
@@ -240,7 +240,7 @@ fn invariants_hold_over_full_runs_for_several_seeds() {
         let turns = sim.params.run.turns;
         sim_engine::run(&mut sim, turns, &Plan::default(), |_, _| {})
             .unwrap_or_else(|e| panic!("seed {seed}: {e}"));
-        assert_eq!(sim.state.tick, 480);
+        assert_eq!(sim.state.tick, turns * sim.params.run.ticks_per_turn);
         let s = &sim.state;
         assert_eq!(s.bank.equity, s.bank.loans - s.bank.deposits);
         assert_eq!(s.bank.deposits, s.total_deposits());
@@ -254,8 +254,8 @@ fn same_seed_gives_identical_state() {
     let mut a = new_sim(7);
     let mut b = new_sim(7);
     let sc = Plan::from_json(SCENARIO_REGULATED).unwrap();
-    sim_engine::run(&mut a, 160, &sc, |_, _| {}).unwrap();
-    sim_engine::run(&mut b, 160, &sc, |_, _| {}).unwrap();
+    sim_engine::run(&mut a, 40, &sc, |_, _| {}).unwrap();
+    sim_engine::run(&mut b, 40, &sc, |_, _| {}).unwrap();
     assert_eq!(
         serde_json::to_string(&a.state).unwrap(),
         serde_json::to_string(&b.state).unwrap()
@@ -1310,7 +1310,8 @@ fn play(script: &Plan, seed: u64) -> Run {
     let mut half = None;
     let mut legit_min = 1.0f64;
     let mut legit_pre = 1.0f64;
-    sim_engine::run(&mut sim, 160, script, |s, _| {
+    let turns = sim.params.run.turns;
+    sim_engine::run(&mut sim, turns, script, |s, _| {
         legit_min = legit_min.min(s.state.gov.legitimacy.0);
         if exhausted.is_none() {
             legit_pre = legit_pre.min(s.state.gov.legitimacy.0);
@@ -1348,12 +1349,12 @@ fn median(mut v: Vec<f64>) -> f64 {
     v[v.len() / 2]
 }
 
-/// Baseline A: no action. The budget is the Paris-2030 horizon (`nature.budget_b0` = 600 t, start
-/// year 2026): half is gone around turn 9 and all of it around turn 18 to 19 (end of 2030), in
-/// every seed. The loss is the budget, not an early collapse: legitimacy and wellbeing are still
+/// Baseline A: no action. Horizon: a 40-turn game (10 years, 2026 to 2036) and a 900 t budget
+/// (`nature.budget_b0`): half is gone around turn 14 and all of it around turn 27.5, in every
+/// seed. The loss is the budget, not an early collapse: legitimacy and wellbeing are still
 /// middling when it ends. The start is as unequal as the design asks.
 #[test]
-fn baseline_a_no_action_runs_the_paris_budget_out_by_turn_20() {
+fn baseline_a_no_action_runs_the_budget_out_by_turn_30() {
     let rs = runs(&Plan::default());
     let turns: Vec<f64> = rs
         .iter()
@@ -1378,60 +1379,68 @@ fn baseline_a_no_action_runs_the_paris_budget_out_by_turn_20() {
     assert!(
         share(&rs, |r| r
             .exhausted_tick
-            .is_some_and(|t| (48..=60).contains(&t)))
-            >= 0.8,
-        "exhausted between turns 16 and 20"
+            .is_some_and(|t| (78..=90).contains(&t)))
+            >= 0.9,
+        "exhausted between turns 26 and 30"
     );
     let m = median(turns);
-    assert!((17.0..=20.0).contains(&m), "median exhaustion turn {m}");
+    assert!((26.0..=30.0).contains(&m), "median exhaustion turn {m}");
     let h = median(halves);
-    assert!((8.0..=10.0).contains(&h), "median half-budget turn {h}");
-    // With a budget this small the climate-damage and legitimacy terms bite early; they must not
-    // make A an early collapse (the budget, not the town, ends it).
+    assert!((13.0..=15.0).contains(&h), "median half-budget turn {h}");
+    // The climate-damage and legitimacy terms must not make A an early collapse (the budget,
+    // not the town, ends it).
     assert!(
         share(&rs, |r| r.legitimacy_min_before_exhaustion > 0.3) >= 0.8,
         "legitimacy stays above 0.3 in A until the budget ends the game"
     );
 }
 
-/// Baseline B (sensible play) in the 4-year horizon. The same script that used to win 160 turns
-/// cannot win now: emissions respond with lags (a carbon price takes 2 turns, a plant 4), so
-/// they fall from about 10 t to about 3 t a month only around turn 25, and the 600 t budget is gone
-/// by then. What sensible play does buy is time and a better town: the budget lasts clearly
-/// longer than under A, and emissions are far lower at the end. Not forced to win by tuning
-/// behaviour; see docs/tuning-log.md for the options that keep the game winnable.
+/// Baseline B (sensible play) in the 40-turn, 900 t game. HONEST RESULT, not a win. By carbon
+/// alone B has a margin: emissions fall with lags (a carbon price takes 2 turns, a plant 4), the
+/// budget is never exhausted and about 18 to 20% of it is left at turn 40 (it would need more than
+/// about 800 t). But the town collapses first: climate damage to farm output
+/// (`production.climate_damage` x (cumulative / b0)^2) is about 15% by turn 28, the farm fails,
+/// unemployment jumps to 70% and the bank fails (`BankFailureCascade`, turns 26 to 30). With
+/// `climate_damage` = 0 the same script survives all 40 turns with 13% left. B survives only with
+/// a budget of about 1,500 t or more, which lets A survive too. Not forced by tuning behaviour;
+/// see docs/tuning-log.md ("Horizon") and docs/known-issues.md. When the model is rebalanced so B
+/// wins, flip the collapse assertion.
 #[test]
-fn baseline_b_sensible_play_buys_time_but_cannot_save_the_4_year_budget() {
+fn baseline_b_sensible_play_keeps_budget_margin_but_the_town_collapses_before_turn_40() {
     let rs = runs(&Plan::from_json(SCENARIO_B).unwrap());
     let a = runs(&Plan::default());
-    let exh: Vec<f64> = rs
-        .iter()
-        .filter_map(|r| r.exhausted_tick)
-        .map(|t| t as f64 / 3.0)
-        .collect();
     println!(
-        "B: survived {:.0}%, exhausted turns {exh:?}, median budget left {:.2}, median legitimacy min {:.2}",
+        "B: survived {:.0}%, outcomes {:?}, median budget left {:.2}, median legitimacy min {:.2}",
         100.0 * share(&rs, |r| matches!(r.outcome, Outcome::Survived)),
+        rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
         median(rs.iter().map(|r| r.budget_left_share).collect()),
         median(rs.iter().map(|r| r.legitimacy_min).collect())
     );
     assert!(
-        share(&rs, |r| r.exhausted_tick.is_some()) >= 0.9,
-        "the budget runs out in nearly every seed even with sensible play"
+        share(&rs, |r| r.exhausted_tick.is_none()) >= 0.9,
+        "B never exhausts the budget inside 40 turns"
     );
-    let a_med = median(
-        a.iter()
-            .filter_map(|r| r.exhausted_tick)
-            .map(|t| t as f64 / 3.0)
-            .collect(),
+    let left = median(rs.iter().map(|r| r.budget_left_share).collect());
+    assert!(
+        (0.05..=0.35).contains(&left),
+        "B keeps a positive carbon margin at the end: {left}"
     );
     assert!(
-        median(exh) >= a_med + 4.0,
-        "sensible play must buy at least 4 turns over doing nothing"
+        a.iter()
+            .all(|r| matches!(r.outcome, Outcome::BudgetExhausted)),
+        "A fails by the budget"
+    );
+    // Known problem (docs/known-issues.md): the economy fails before turn 40.
+    assert!(
+        share(&rs, |r| matches!(
+            r.outcome,
+            Outcome::Collapse(CollapseReason::BankFailureCascade)
+        )) >= 0.9,
+        "B ends in a bank-failure cascade (known issue, not a win)"
     );
 }
 
-/// Baseline C: neglect and extraction fails inside the 4-year budget (tick 60) in most seeds, and
+/// Baseline C: neglect and extraction fails inside the budget horizon (by tick 84, turn 28) in most seeds, and
 /// burns the budget no more slowly than doing nothing.
 #[test]
 fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
@@ -1440,7 +1449,7 @@ fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
         "C: loss ticks {:?}",
         rs.iter().map(|r| r.loss_tick).collect::<Vec<_>>()
     );
-    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 60)) >= 0.7);
+    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 84)) >= 0.7);
     let a = runs(&Plan::default());
     let a_exh = median(
         a.iter()
@@ -1457,7 +1466,8 @@ fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
     assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 3.0);
 }
 
-/// Baseline D: one tool (a carbon tax) is not enough; it also fails inside the horizon.
+/// Baseline D: one tool (a carbon tax) is not enough; it also fails inside the horizon (budget
+/// exhausted at turn 28.6).
 #[test]
 fn baseline_d_carbon_tax_alone_fails_in_most_seeds() {
     let rs = runs(&Plan::from_json(SCENARIO_D).unwrap());
@@ -1492,8 +1502,8 @@ fn regulated_scenario_emits_less_than_market() {
     let (mut m, mut r) = (vec![], vec![]);
     for seed in 1..=4 {
         let (mut a, mut b) = (new_sim(seed), new_sim(seed));
-        sim_engine::run(&mut a, 160, &Plan::default(), |_, _| {}).unwrap();
-        sim_engine::run(&mut b, 160, &reg, |_, _| {}).unwrap();
+        sim_engine::run(&mut a, 40, &Plan::default(), |_, _| {}).unwrap();
+        sim_engine::run(&mut b, 40, &reg, |_, _| {}).unwrap();
         m.push(a.state.nature.cumulative.0);
         r.push(b.state.nature.cumulative.0);
     }
@@ -1511,8 +1521,8 @@ fn coop_scenario_has_lower_inequality_than_market() {
     let (mut m, mut c) = (vec![], vec![]);
     for seed in 1..=4 {
         let (mut a, mut b) = (new_sim(seed), new_sim(seed));
-        sim_engine::run(&mut a, 160, &Plan::default(), |_, _| {}).unwrap();
-        sim_engine::run(&mut b, 160, &coop, |_, _| {}).unwrap();
+        sim_engine::run(&mut a, 40, &Plan::default(), |_, _| {}).unwrap();
+        sim_engine::run(&mut b, 40, &coop, |_, _| {}).unwrap();
         m.push(a.state.indicators.gini.0);
         c.push(b.state.indicators.gini.0);
     }
@@ -1532,7 +1542,7 @@ fn golden_snapshot_seed_42() {
     let mut out = String::new();
     out.push_str(series::CSV_HEADER);
     out.push('\n');
-    sim_engine::run(&mut sim, 160, &Plan::default(), |s, o| {
+    sim_engine::run(&mut sim, 40, &Plan::default(), |s, o| {
         if s.state.tick % 24 == 0 {
             out.push_str(&series::csv_row(s, &o.trace));
             out.push('\n');

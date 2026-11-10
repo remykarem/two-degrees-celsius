@@ -323,7 +323,7 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
     }
     assert_eq!(
         j["game"],
-        serde_json::json!({"startYear":2026,"firstTurn":1,"lastTurn":160,"turnsPerYear":4})
+        serde_json::json!({"startYear":2026,"firstTurn":1,"lastTurn":40,"turnsPerYear":4})
     );
     assert_eq!(j["gameOver"], serde_json::Value::Null);
     assert_eq!(j["history"].as_array().unwrap().len(), 1);

@@ -303,6 +303,10 @@ pub struct WeatherParams {
     pub full: f64,
     /// Exponent of the stress curve.
     pub curve: f64,
+    /// Development override: when set (0..1) the climate stress is this value from the first
+    /// tick, whatever the carbon budget. `null` (the default) means normal play.
+    #[serde(default)]
+    pub force_stress: Option<f64>,
     /// Monthly drought odds are `drought_base x (1 + drought_stress_gain x s)`.
     pub drought_base: f64,
     pub drought_stress_gain: f64,
@@ -815,6 +819,13 @@ impl Params {
             }
         }
         let w = &self.weather;
+        if let Some(f) = w.force_stress {
+            if !(0.0..=1.0).contains(&f) {
+                errs.push(format!(
+                    "weather.force_stress must be null or in [0, 1] (got {f})"
+                ));
+            }
+        }
         if !(w.onset > w.full && w.full >= 0.0 && w.onset <= 1.0) {
             errs.push("weather: need 0 <= full < onset <= 1".into());
         }
