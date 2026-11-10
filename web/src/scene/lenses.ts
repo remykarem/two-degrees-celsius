@@ -4,6 +4,8 @@ import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
 import type { EntityDesc } from './entities';
 import type { PersonStand } from './people';
+import { tileFireRisk, weatherLook } from '../store/scene-weather';
+import { fireLensGround, rampFire, weatherGround, FIRE_RAMP } from './weatherLook';
 import { CLASS_COLOR, CLASS_LABEL, GROUND, hex, mix, PATH } from './palette';
 
 /** Map lenses as pure colour functions: snapshot in, hex colours out. No Three.js. */
@@ -77,7 +79,8 @@ export function emitterWeights(ctx: LensCtx): { x: number; z: number; w: number 
 export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
   const ex = extremes(ctx.snapshot);
   const out = new Map<string, number>();
-  const w = emitterWeights(ctx);
+  const w = lens === 'emissions' ? emitterWeights(ctx) : [];
+  const look = weatherLook(ctx.snapshot);
   for (const d of ctx.descs) {
     let c = d.tint;
     const h = d.household;
@@ -98,6 +101,11 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
     } else if (lens === 'commute') {
       const m = d.commuteMinutes;
       c = h ? (m && m.length ? ramp(RAMP.commute, m[0]! / ex.maxCommute) : dim(d.tint)) : dim(d.tint);
+    } else if (lens === 'fire') {
+      if (d.forestState === 'standing') c = rampFire(tileFireRisk(look, d.ref.tile));
+      else if (d.ref.kind === 'fire_station') c = 0xb9d3e8;
+      else if (d.forestState) c = d.tint;
+      else c = dim(d.tint);
     } else if (lens === 'flows') {
       if (h) c = ramp(RAMP.flows, 0.5 + 0.5 * Math.tanh(netMoney(h) / Math.max(1, h.income.spending)));
       else if (d.firm?.active) c = ramp(RAMP.flows, 0.5 + 0.5 * Math.tanh(d.firm.profit / Math.max(1, Math.abs(d.firm.revenue))));
@@ -113,8 +121,10 @@ export function tileTints(lens: Lens, ctx: LensCtx): number[] {
   const n = ctx.layout.gridSize;
   const out: number[] = [];
   const em = lens === 'emissions' ? emitterWeights(ctx) : [];
+  const look = weatherLook(ctx.snapshot);
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const base = ctx.roads.has(tileKey({ x, y })) ? PATH : GROUND[(x + y) % 2]!;
+    const plain = ctx.roads.has(tileKey({ x, y })) ? PATH : GROUND[(x + y) % 2]!;
+    const base = lens === 'fire' ? fireLensGround(look, x, y, plain) : weatherGround(look, x, y, plain);
     if (lens !== 'emissions') { out.push(base); continue; }
     const [cx, cz] = centreOf({ x, y }, n);
     let heat = 0;
@@ -183,6 +193,13 @@ export function legendFor(lens: Lens, ctx: LensCtx): LensLegend {
         lowLabel: 'Net outflow', highLabel: 'Net inflow',
         meaning: 'Buildings are shaded by whether households or firms ended the quarter with more or less money coming in than going out. Gold tokens show wages, rent and purchases moving.',
         notes: ['Orange and blue are used so the lens works for colour-blind players; arrows of tokens show direction.'] };
+    case 'fire': {
+      const fc = ctx.snapshot ? ctx.snapshot.weather?.forecast : undefined;
+      return { lens, label: 'Fire and drought risk', scale: 'gradient', stops: grad(FIRE_RAMP, ['low', '', '', 'burning or very high']),
+        lowLabel: 'Low risk', highLabel: 'High risk',
+        meaning: `Forest tiles are coloured by how likely they are to catch fire: the forecast${fc ? ` (fire risk ${fc.fireRisk}, drought risk ${fc.droughtRisk})` : ''}, how much dry forest is around, and whether a fire station covers them. Under a drought the ground turns straw-coloured; blue-grey ground is covered by a fire station.`,
+        notes: ['Burning tiles are the darkest red; regrowing tiles are low risk.', 'A fire station halves the risk of the forest within its cover.'] };
+    }
     default:
       return { lens: 'none', label: 'No lens', scale: 'none', stops: [], meaning: 'The town as it is. Home colours hint at class; use a lens for detail.', notes: [] };
   }

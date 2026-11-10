@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { GRID_SIZE, layoutOf, selectionTile, tileKey, type Game, type GameState, type Tile } from '../store';
+import { GRID_SIZE, layoutOf, selectionTile, tileAt, tileKey, type Game, type GameState, type Tile } from '../store';
+import { weatherLook, type WeatherLook } from '../store/scene-weather';
 import { sceneBus, type SceneBus } from '../store/scene-bus';
 import { liveClock } from '../store/scene-live';
 import { personHover } from '../store/scene-people';
@@ -17,6 +18,8 @@ import { roadGeometry } from './roads';
 import { buildModel, makeTintMaterial, setTint, type BuiltModel } from './geometry';
 import { entityTints, legendFor, personTints, tileTints, type LensCtx } from './lenses';
 import { FxLayer } from './fx';
+import { WeatherLayer } from './weather';
+import { droughtLook } from './weatherLook';
 import { MODELS } from './models';
 import { pathTiles } from './paths';
 import { ASPHALT, GROUND, HOVER_BAD, HOVER_OK, mix, SELECT } from './palette';
@@ -110,7 +113,10 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   const layer = new EntityLayer();
   const fx = new FxLayer();
   const people = new PeopleLayer();
-  scene.add(layer.group, fx.group, people.group);
+  const weather = new WeatherLayer();
+  scene.add(layer.group, fx.group, people.group, weather.group);
+  const haze = new THREE.Fog(0xffffff, 1000, 2000);
+  let look: WeatherLook = weatherLook(null);
 
   // Roads: one merged mesh for built roads, one translucent mesh for queued and planned ones, one ghost for the hovered tile.
   const roadMat = own(makeTintMaterial(0xffffff));
@@ -187,6 +193,13 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     stands = s.snapshot ? planStands(layout, s.snapshot) : [];
     people.setStands(stands, s.snapshot ? campTiles(layout, s.snapshot) : [], size);
     if (reducedMotion()) layer.finishPops();
+    look = weatherLook(s.snapshot);
+    weather.setLook(look, stands, size);
+    // Drought: ground tint (paintTiles), haze, warmer and dimmer sun; all scaled by severity. No drought leaves the scene exactly as before.
+    const dl = droughtLook(look.drought);
+    if (dl.fog) { haze.color.setHex(dl.fog.color); haze.near = dl.fog.near; haze.far = dl.fog.far; scene.fog = haze; } else scene.fog = null;
+    sun.color.setHex(dl.sun);
+    sun.intensity = dl.sunIntensity;
     ambient = s.snapshot ? planEmitters(emissionsFromSnapshot(s.snapshot), ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
     flowLoop = s.snapshot && s.lastResult && s.lastResult.months.length ? planFlowLoop(s.lastResult.months, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot)) : [];
   }
@@ -250,6 +263,11 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const selPerson = s.selection?.kind === 'person' ? s.snapshot?.people.find((p) => p.id === (s.selection as { id: number }).id) ?? null : null;
     selectedPerson = selPerson?.id ?? null;
     bus.selection.set(selTile || selPerson ? { tile: selTile ?? stands.find((q) => q.id === selectedPerson)?.tile ?? { x: 0, y: 0 }, entity: ent?.ref ?? null, facts: selPerson ? personFacts(selPerson) : ent ? factsFor(ent) : [] } : null);
+
+    // Fire station coverage ring: the hovered or selected station, or the hovered tile while placing one.
+    const stationAt = (t: Tile | null) => (t && tileAt(s.snapshot, t)?.kind === 'fire_station' ? t : null);
+    const placing = s.buildKind === 'fire_station' && s.hover && !game.tileError(s.hover) ? s.hover : null;
+    weather.setCover(stationAt(s.hover) ?? stationAt(selTile) ?? placing, size);
 
     const showHover = !!s.hover && s.phase !== 'playback';
     hoverLine.visible = hoverFill.visible = showHover;
@@ -448,7 +466,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   let lastPaint = 0;
   let lastPublish = 0;
   let lastCam = '';
-  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances + people.instances, entities: layer.count });
+  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances + people.instances + weather.instances, entities: layer.count });
 
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
@@ -465,9 +483,10 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const looping = s.lens === 'flows' && flowLoop.length > 0 && !playing;
     if (contextLost) return;
     const animating = moving || popping || playing || dirty;
-    const ambientNeeded = ambient.length > 0 || layer.hasSpinners || looping;
+    const ambientNeeded = ambient.length > 0 || layer.hasSpinners || looping || (weather.active && !reducedMotion());
     if (!animating && !(ambientNeeded && now - lastPaint > 40)) return;
     fx.update(plan, monthT, sec, ambient, looping ? flowLoop : [], (sec / 3) % 1, s.lens === 'emissions');
+    weather.update(sec, !reducedMotion());
     people.update(sec, commutes, playing ? monthT : 0, selectedPerson, hoverPerson, reducedMotion() || !playing);
     renderer.render(scene, rig.camera);
     lastPaint = now;
@@ -514,6 +533,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       el.removeEventListener('webglcontextrestored', onRestored);
       layer.dispose();
       fx.dispose();
+      weather.dispose();
+      scene.fog = null;
       people.dispose();
       island.dispose();
       for (const m of [roadMesh, roadPending, roadGhost]) m.geometry.dispose();

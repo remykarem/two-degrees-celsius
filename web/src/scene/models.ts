@@ -85,6 +85,15 @@ export const MODELS = {
   forest_0: model([...treeParts(-0.22, -0.2, 1.1), ...treeParts(0.22, -0.1, 0.9), ...treeParts(-0.05, 0.25, 1.2), ...treeParts(0.3, 0.3, 0.8)]),
   forest_1: model([...treeParts(0.2, -0.22, 1), ...treeParts(-0.25, 0.05, 1.2), ...treeParts(0.1, 0.2, 0.85), ...treeParts(-0.15, -0.3, 0.8)]),
   forest_2: model([...treeParts(-0.1, -0.25, 1.15), ...treeParts(0.28, 0.0, 1), ...treeParts(-0.28, 0.2, 0.9), ...treeParts(0.05, 0.28, 0.8)]),
+  // Weather (Town v4): a burning and a burnt (regrowing) forest tile. Fixed colours (no lens tint), so a fire always reads as a fire.
+  forest_burning: model([
+    box(0, 0, 0, 0.92, 0.03, 0.92, 0x2e2420), ...[[-0.22, -0.2, 1.1], [0.22, -0.1, 0.9], [-0.05, 0.25, 1.2], [0.3, 0.3, 0.8]].flatMap(([x, z, k]) => [
+      cyl(x!, 0, z!, 0.07 * k!, 0.2 * k!, 0x2b2320), cone(x!, 0.14 * k!, z!, 0.3 * k!, 0.32 * k!, 0x3a2f2a), cone(x!, 0.32 * k!, z!, 0.18 * k!, 0.2 * k!, 0xc2541f)]),
+  ]),
+  forest_regrowing: model([
+    box(0, 0, 0, 0.92, 0.03, 0.92, 0x5b4a3b), box(-0.25, 0.03, -0.22, 0.07, 0.1, 0.07, 0x2b2320), box(0.26, 0.03, 0.2, 0.08, 0.13, 0.08, 0x2b2320), box(0.2, 0.03, -0.3, 0.06, 0.08, 0.06, 0x2b2320),
+    ...[[-0.05, 0.05], [0.28, -0.1], [-0.28, 0.25], [0.05, 0.3]].flatMap(([x, z]) => [cyl(x!, 0.03, z!, 0.025, 0.1, WOOD), cone(x!, 0.1, z!, 0.14, 0.16, 0x8cc46f)]),
+  ]),
   commons_open: model([
     box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), box(-0.2, 0.04, 0.1, 0.2, 0.12, 0.12, 0xf2f0e8), box(0.2, 0.04, -0.15, 0.18, 0.11, 0.11, 0xf2f0e8),
     ball(-0.3, 0.1, 0.1, 0.1, DARK), ...treeParts(0.28, 0.28, 0.7),
@@ -121,6 +130,14 @@ export const MODELS = {
     ...[-0.3, -0.05].flatMap((x) => [0.12, 0.34].map((z) => P('box', x, 0.1, z, 0.22, 0.03, 0.18, PANEL, { rz: -0.5 }))),
     ...[-0.3, -0.05].flatMap((x) => [0.12, 0.34].map((z) => box(x, 0.03, z, 0.03, 0.08, 0.03, METAL))),
   ], { at: [0.22, 0.77, -0.15], parts: [0, 1, 2].map((i) => P('box', 0, 0, 0, 0.05, 0.38, 0.03, 0xf2f0e8, { rz: (i * 2 * Math.PI) / 3 })) }),
+
+  // Fire station (Town v4): a garage with two red doors, a hose tower and a beacon.
+  fire_station: model([
+    box(-0.06, 0, 0.06, 0.7, 0.36, 0.5, 0xeae3d6, true), box(-0.06, 0.36, 0.06, 0.74, 0.05, 0.54, 0x7a2a22), box(-0.06, 0.2, 0.32, 0.7, 0.05, 0.02, 0xd1432f),
+    box(-0.22, 0, 0.32, 0.22, 0.2, 0.02, 0xd1432f), box(0.08, 0, 0.32, 0.22, 0.2, 0.02, 0xd1432f), box(-0.22, 0.04, 0.33, 0.18, 0.02, 0.01, 0xf3e8d4), box(0.08, 0.04, 0.33, 0.18, 0.02, 0.01, 0xf3e8d4),
+    box(0.3, 0, -0.14, 0.16, 0.72, 0.16, 0xeae3d6, true), pyr(0.3, 0.72, -0.14, 0.26, 0.2, 0xd1432f), ball(0.3, 0.96, -0.14, 0.09, 0xe8b100),
+    box(0.3, 0.5, -0.05, 0.06, 0.06, 0.01, 0xd1432f), box(0.3, 0.3, -0.05, 0.1, 0.1, 0.01, 0x7fb0c9),
+  ]),
 
   // Shop (services): a market stall with a striped awning, crates and a sign; not the goods model.
   firm_shop: model([

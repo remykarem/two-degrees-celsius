@@ -1,9 +1,11 @@
-import type { ClassKey, FirmView, HouseholdView, PlantView, Snapshot } from '../contract';
+import type { ClassKey, ForestState, FirmView, HouseholdView, PlantView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Tile } from '../store';
 import type { EntityRef } from '../store/scene-bus';
 import { tileKey, worldOf } from './coords';
 import type { ModelId } from './models';
 import { homeTint, mix, WALL } from './palette';
+import { forestStateOf } from '../store/weather';
+import { forestModelFor } from './weatherLook';
 
 export type EntityState = 'normal' | 'pending' | 'draft';
 
@@ -25,16 +27,18 @@ export interface EntityDesc {
   commuteMinutes?: number[];
   /** 0..1 forest or commons stock where relevant. */
   stock?: number;
+  /** Forest tiles: standing, burning or regrowing (contract v1.2). */
+  forestState?: ForestState;
 }
 
 const KIND_TINT: Record<string, number> = {
   firm: 0xd5d8de, bank: WALL, government: WALL, forest: 0x7fb871, commons: 0xb4d891,
-  public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc, road: 0xd8d2c6,
+  public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc, road: 0xd8d2c6, fire_station: 0xeae3d6,
 };
 
-type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road';
-const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant', road: 'road_site' };
-const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road' };
+type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road' | 'fire_station';
+const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant', road: 'road_site', fire_station: 'fire_station' };
+const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road', fire_station: 'Fire station' };
 
 export const infraModel = (k: Building): ModelId => INFRA_MODEL[k];
 
@@ -73,9 +77,11 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
       }
       case 'bank': out.push({ ...base, ref: ref(), model: 'bank', tint: KIND_TINT.bank! }); break;
       case 'government': out.push({ ...base, ref: ref(), model: 'government', tint: KIND_TINT.government! }); break;
-      case 'forest':
-        out.push({ ...base, ref: ref(), model: `forest_${(sc.x * 7 + sc.y * 3) % 3}` as ModelId, tint: KIND_TINT.forest!, stock: snap?.nature.forest });
+      case 'forest': {
+        const st = forestStateOf(snap, sc);
+        out.push({ ...base, ref: ref(st === 'burning' ? 'Burning forest' : st === 'regrowing' ? 'Burnt forest (regrowing)' : 'Forest'), model: forestModelFor(st, sc.x, sc.y), tint: KIND_TINT.forest!, stock: snap?.nature.forest, ...(st ? { forestState: st } : {}) });
         break;
+      }
       case 'commons': {
         const nat = snap?.nature;
         const model: ModelId = !nat ? 'commons_open' : nat.commons < 0.12 ? 'commons_collapsed' : (`commons_${nat.commonsAccess === 'enclosed' ? 'enclosed' : nat.commonsAccess}` as ModelId);
@@ -130,6 +136,7 @@ export function factsFor(d: EntityDesc): { label: string; value: string }[] {
   if (fm) f.push({ label: 'Sector', value: fm.sector }, { label: 'Status', value: fm.active ? 'trading' : 'closed' }, ...(fm.active ? [{ label: 'Workers', value: String(fm.workers) }, { label: 'Emissions', value: `${num(fm.emissions)} t/month` }] : []));
   const pl = d.plant;
   if (pl) f.push({ label: 'Emissions', value: `${num(pl.emissionsMonthly)} t/month` }, { label: 'Output', value: num(pl.output) });
+  if (d.forestState) f.push({ label: 'Tile', value: d.forestState === 'burning' ? 'burning' : d.forestState === 'regrowing' ? 'regrowing after a fire' : 'standing' });
   if (d.stock !== undefined) f.push({ label: d.ref.kind === 'forest' ? 'Forest stock' : 'Commons stock', value: pct(d.stock) });
   return f;
 }
