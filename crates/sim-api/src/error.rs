@@ -13,6 +13,7 @@ pub mod code {
     pub const VIOLATION: &str = "violation";
     pub const SCHEMA_MISMATCH: &str = "schema_mismatch";
     pub const PARAMS_MISMATCH: &str = "params_mismatch";
+    pub const TURN_STATE: &str = "turn_state";
     pub const BAD_STATE: &str = "bad_state";
 }
 

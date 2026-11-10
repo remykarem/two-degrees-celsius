@@ -28,7 +28,7 @@ pub use history::HistoryPoint;
 pub use keys::{BlockReason, InfraKind, LeverKey, SystemKey};
 pub use meta::{ActionInfo, LeverInfo};
 pub use snapshot::Snapshot;
-pub use turn::{CommandPreview, MonthFrame, TurnResult};
+pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 
 /// Version of the wire format and of saved games. Bump when either changes shape.
 pub const SCHEMA_VERSION: u32 = sim_types::SCHEMA_VERSION;

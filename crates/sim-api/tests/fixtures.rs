@@ -8,7 +8,7 @@ fn committed_fixtures_are_current_and_deterministic() {
     let first = sim_api::fixtures::generate().unwrap();
     let second = sim_api::fixtures::generate().unwrap();
     assert_eq!(first, second, "fixtures differ between two runs");
-    assert_eq!(first.len(), 5);
+    assert_eq!(first.len(), 7);
     for (name, body) in first {
         let committed = std::fs::read_to_string(dir.join(&name))
             .unwrap_or_else(|e| panic!("{name}: {e} (run the fixtures example)"));

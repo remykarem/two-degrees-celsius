@@ -10,7 +10,8 @@ use crate::meta::{ActionInfo, LeverInfo, Meta, Rejection};
 use crate::persist;
 use crate::snapshot::{self, Snapshot};
 use crate::turn::{
-    CancelResult, CommandPreview, MonthFrame, PendingItem, PolicyGap, RejectedCommand, TurnResult,
+    CancelResult, CommandPreview, MonthFrame, MonthResult, PendingItem, PolicyGap, RejectedCommand,
+    TurnResult, TurnStart,
 };
 use sim_engine::Sim;
 use sim_params::{ContentJson, Params};
@@ -22,6 +23,8 @@ pub struct Api {
     sim: Sim,
     meta: Meta,
     history: Vec<HistoryPoint>,
+    /// What the open turn has produced so far (`None` at a turn boundary).
+    live: Option<Live>,
 }
 
 /// Key of a command in `params.turn.levers`.
@@ -40,6 +43,23 @@ pub fn parse_commands(json: &str) -> ApiResult<Vec<Command>> {
     serde_json::from_str(json)
         .map_err(|e| ApiError::new(code::BAD_REQUEST, format!("bad command list: {e}")))
 }
+
+/// A turn opened by `begin_turn`: what the months have produced so far.
+#[derive(Clone, Debug)]
+struct Live {
+    turn: u32,
+    accepted: Vec<PendingItem>,
+    rejected: Vec<RejectedCommand>,
+    activated: Vec<PendingItem>,
+    pc_before: f64,
+    /// Events raised before the first tick; they join month 0.
+    pre: Vec<SimEvent>,
+    months: Vec<MonthFrame>,
+    trace: Vec<st::TraceRecord>,
+}
+
+/// Everything a failed call must put back.
+struct Backup(st::State, sim_rng::Rng, st::Cents, sim_engine::TurnPhase);
 
 /// Commands split into the ones the engine sees and the ones the wire layer rejects.
 struct Split {
@@ -66,6 +86,7 @@ impl Api {
             sim,
             meta,
             history: Vec::new(),
+            live: None,
         })
     }
 
@@ -75,6 +96,7 @@ impl Api {
             .map_err(|e| ApiError::new(code::INIT_FAILED, e))?;
         self.sim = sim;
         self.history.clear();
+        self.live = None;
         Ok(self.snapshot())
     }
 
@@ -111,6 +133,55 @@ impl Api {
             }
         }
         s
+    }
+
+    fn backup(&self) -> Backup {
+        Backup(
+            self.sim.state.clone(),
+            self.sim.rng.clone(),
+            self.sim.clamped_total,
+            self.sim.turn_phase,
+        )
+    }
+
+    fn restore(&mut self, b: Backup) {
+        (
+            self.sim.state,
+            self.sim.rng,
+            self.sim.clamped_total,
+            self.sim.turn_phase,
+        ) = (b.0, b.1, b.2, b.3);
+    }
+
+    fn turn_state(what: &str) -> ApiError {
+        ApiError::new(code::TURN_STATE, what)
+    }
+
+    /// Rejections as the wire reports them: the engine's plus the wire layer's, by index.
+    fn wire_rejected(
+        out: &st::TurnOutput,
+        split: &Split,
+        cmds: &[Command],
+    ) -> Vec<RejectedCommand> {
+        let mut rejected: Vec<RejectedCommand> = out
+            .rejected
+            .iter()
+            .map(|r| {
+                let i = split.index[r.index];
+                RejectedCommand {
+                    index: i,
+                    command: cmds[i],
+                    reason: BlockReason::from_sim(r.reason),
+                }
+            })
+            .collect();
+        rejected.extend(split.invalid.iter().map(|(i, r)| RejectedCommand {
+            index: *i,
+            command: cmds[*i],
+            reason: r.reason,
+        }));
+        rejected.sort_by_key(|r| r.index);
+        rejected
     }
 
     /// Tiles where `kind` can be built now (empty, not scenery, nothing queued there), in
@@ -179,12 +250,11 @@ impl Api {
     /// On any failure the game is left exactly as it was.
     pub fn submit_turn(&mut self, cmds: &[Command]) -> ApiResult<TurnResult> {
         self.ensure_running()?;
+        if self.sim.turn_phase.open {
+            return Err(Self::turn_state("a turn is open: call finishTurn first"));
+        }
         let split = self.split(cmds);
-        let backup = (
-            self.sim.state.clone(),
-            self.sim.rng.clone(),
-            self.sim.clamped_total,
-        );
+        let backup = self.backup();
         let mut ticks: Vec<TickCapture> = Vec::new();
         let run = sim_engine::submit_turn_with(&mut self.sim, &split.cmds, |sim, out| {
             ticks.push(frames::capture(sim, out));
@@ -192,12 +262,12 @@ impl Api {
         let out = match run {
             Ok(o) => o,
             Err(v) => {
-                (self.sim.state, self.sim.rng, self.sim.clamped_total) = backup;
+                self.restore(backup);
                 return Err(ApiError::new(code::VIOLATION, v.to_string()));
             }
         };
         if ticks.len() != 3 {
-            (self.sim.state, self.sim.rng, self.sim.clamped_total) = backup;
+            self.restore(backup);
             return Err(ApiError::new(
                 code::UNSUPPORTED_PARAMS,
                 "a turn must have exactly 3 ticks",
@@ -231,24 +301,7 @@ impl Api {
             })
             .collect();
 
-        let mut rejected: Vec<RejectedCommand> = out
-            .rejected
-            .iter()
-            .map(|r| {
-                let i = split.index[r.index];
-                RejectedCommand {
-                    index: i,
-                    command: cmds[i],
-                    reason: BlockReason::from_sim(r.reason),
-                }
-            })
-            .collect();
-        rejected.extend(split.invalid.iter().map(|(i, r)| RejectedCommand {
-            index: *i,
-            command: cmds[*i],
-            reason: r.reason,
-        }));
-        rejected.sort_by_key(|r| r.index);
+        let rejected = Self::wire_rejected(&out, &split, cmds);
 
         self.history
             .push(history::point(&self.sim.state, &self.sim.params, out.turn));
@@ -278,6 +331,144 @@ impl Api {
         })
     }
 
+    /// Pressure mode, step 1: queue the affordable commands and activate what is due.
+    /// Opens a turn; on failure the game is left exactly as it was.
+    pub fn begin_turn(&mut self, cmds: &[Command]) -> ApiResult<TurnStart> {
+        self.ensure_running()?;
+        if self.sim.turn_phase.open {
+            return Err(Self::turn_state("a turn is already open"));
+        }
+        if self.sim.params.run.ticks_per_turn != 3 {
+            return Err(ApiError::new(
+                code::UNSUPPORTED_PARAMS,
+                "a turn must have exactly 3 ticks",
+            ));
+        }
+        let split = self.split(cmds);
+        let backup = self.backup();
+        let out = match sim_engine::begin_turn(&mut self.sim, &split.cmds) {
+            Ok(o) => o,
+            Err(v) => {
+                self.restore(backup);
+                return Err(ApiError::new(code::VIOLATION, v.to_string()));
+            }
+        };
+        let mut pre: Vec<SimEvent> = split
+            .invalid
+            .iter()
+            .map(|(_, r)| SimEvent::new(SimEventKind::PolicyBlocked { reason: r.reason }))
+            .collect();
+        pre.extend(out.events.iter().map(SimEvent::from_sim));
+        let live = Live {
+            turn: out.turn,
+            accepted: out.accepted.iter().map(PendingItem::from_sim).collect(),
+            rejected: Self::wire_rejected(&out, &split, cmds),
+            activated: out.activated.iter().map(PendingItem::from_sim).collect(),
+            pc_before: out.pc_before,
+            pre,
+            months: Vec::new(),
+            trace: Vec::new(),
+        };
+        let start = TurnStart {
+            turn: live.turn,
+            accepted: live.accepted.clone(),
+            rejected: live.rejected.clone(),
+            activated: live.activated.clone(),
+            pc_before: live.pc_before,
+            snapshot: self.snapshot(),
+        };
+        self.live = Some(live);
+        Ok(start)
+    }
+
+    /// Pressure mode, step 2 (three times): run one monthly tick of the open turn.
+    /// A turn that ends the game still completes its remaining months and `finish_turn`.
+    pub fn advance_month(&mut self) -> ApiResult<MonthResult> {
+        let ph = self.sim.turn_phase;
+        if !ph.open || ph.months_done >= 3 || self.live.is_none() {
+            return Err(Self::turn_state(
+                "advanceMonth needs an open turn with months left",
+            ));
+        }
+        let backup = self.backup();
+        let t = match sim_engine::advance_month(&mut self.sim) {
+            Ok(t) => t,
+            Err(v) => {
+                self.restore(backup);
+                return Err(ApiError::new(code::VIOLATION, v.to_string()));
+            }
+        };
+        let cap = frames::capture(&self.sim, &t);
+        let month = ph.months_done as u8;
+        let snapshot = self.snapshot();
+        let Some(live) = self.live.as_mut() else {
+            self.restore(backup);
+            return Err(Self::turn_state("no open turn"));
+        };
+        let mut events = if month == 0 {
+            std::mem::take(&mut live.pre)
+        } else {
+            Vec::new()
+        };
+        events.extend(cap.events);
+        let frame = MonthFrame {
+            month,
+            events,
+            flows: cap.flows,
+        };
+        live.months.push(frame.clone());
+        live.trace.extend(t.trace);
+        Ok(MonthResult {
+            month,
+            frame,
+            snapshot,
+        })
+    }
+
+    /// Pressure mode, step 3: policy gaps, PC regeneration, next turn. Returns the same
+    /// `TurnResult` as `submit_turn`.
+    pub fn finish_turn(&mut self) -> ApiResult<TurnResult> {
+        let ph = self.sim.turn_phase;
+        if !ph.open || ph.months_done != 3 || self.live.is_none() {
+            return Err(Self::turn_state(
+                "finishTurn needs an open turn with all 3 months done",
+            ));
+        }
+        let fin = match sim_engine::finish_turn(&mut self.sim) {
+            Ok(f) => f,
+            Err(v) => return Err(ApiError::new(code::VIOLATION, v.to_string())),
+        };
+        let Some(live) = self.live.take() else {
+            return Err(Self::turn_state("no open turn"));
+        };
+        self.history
+            .push(history::point(&self.sim.state, &self.sim.params, live.turn));
+        Ok(TurnResult {
+            turn: live.turn,
+            accepted: live.accepted,
+            rejected: live.rejected,
+            activated: live.activated,
+            pc_before: live.pc_before,
+            pc_after: fin.pc_after,
+            months: live.months,
+            policy_gaps: fin
+                .policy_gaps
+                .iter()
+                .map(|g| PolicyGap {
+                    lever: LeverKey::from_lever(g.lever),
+                    nominal: g.nominal,
+                    effective: g.effective,
+                })
+                .collect(),
+            trace: live
+                .trace
+                .iter()
+                .map(|t| TraceRecord::from_sim(t, &self.sim.state.plants))
+                .collect(),
+            snapshot: self.snapshot(),
+        })
+    }
+
     /// Cancel a pending command; refunds its political capital share (never money).
     pub fn cancel_pending(&mut self, id: u32) -> ApiResult<CancelResult> {
         self.ensure_running()?;
@@ -290,7 +481,13 @@ impl Api {
     }
 
     /// Opaque save blob (state, RNG position, params hash, history).
+    /// Only at a turn boundary (no turn open); otherwise `turn_state`.
     pub fn export_state(&self) -> ApiResult<String> {
+        if self.sim.turn_phase.open {
+            return Err(Self::turn_state(
+                "exportState is only legal at a turn boundary",
+            ));
+        }
         persist::export(&self.sim, &self.history)
     }
 
@@ -309,6 +506,9 @@ impl Api {
         self.sim.initial_population = imp.initial_population;
         self.sim.clamped_total = imp.clamped_total;
         self.history = imp.history;
+        // A save is always a turn boundary: drop any open turn.
+        self.sim.turn_phase = sim_engine::TurnPhase::default();
+        self.live = None;
         Ok(self.snapshot())
     }
 }

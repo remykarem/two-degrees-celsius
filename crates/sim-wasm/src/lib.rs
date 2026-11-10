@@ -119,6 +119,24 @@ impl WasmSim {
         }))
     }
 
+    /// `Result<TurnStart>` for a JSON array of commands (Pressure mode, contract v1.1).
+    pub fn begin_turn(&mut self, commands_json: &str) -> String {
+        wrap(self.get_mut().and_then(|a| {
+            let cmds = parse_commands(commands_json)?;
+            a.begin_turn(&cmds)
+        }))
+    }
+
+    /// `Result<MonthResult>`: one monthly tick of the open turn.
+    pub fn advance_month(&mut self) -> String {
+        wrap(self.get_mut().and_then(|a| a.advance_month()))
+    }
+
+    /// `Result<TurnResult>`: closes the open turn after its three months.
+    pub fn finish_turn(&mut self) -> String {
+        wrap(self.get_mut().and_then(|a| a.finish_turn()))
+    }
+
     /// `Result<{x,y}[]>`: tiles where `kind` (`public_housing`, `fossil_plant`,
     /// `renewable_plant` or `road`) can be placed now.
     pub fn valid_tiles(&self, kind: &str) -> String {

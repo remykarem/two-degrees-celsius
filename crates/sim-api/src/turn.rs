@@ -131,6 +131,27 @@ pub struct TurnResult {
     pub snapshot: Snapshot,
 }
 
+/// Result of `beginTurn` (contract v1.1).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnStart {
+    pub turn: u32,
+    pub accepted: Vec<PendingItem>,
+    pub rejected: Vec<RejectedCommand>,
+    pub activated: Vec<PendingItem>,
+    pub pc_before: f64,
+    pub snapshot: Snapshot,
+}
+
+/// Result of `advanceMonth` (contract v1.1).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonthResult {
+    pub month: u8,
+    pub frame: MonthFrame,
+    pub snapshot: Snapshot,
+}
+
 /// Result of `cancel_pending`.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

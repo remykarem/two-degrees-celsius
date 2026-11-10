@@ -2398,6 +2398,10 @@
     "turn": 2,
     "tick": 3,
     "gameOver": null,
+    "turnPhase": {
+      "open": false,
+      "monthsDone": 0
+    },
     "pc": {
       "current": 50.69677528404908,
       "cap": 100.0,

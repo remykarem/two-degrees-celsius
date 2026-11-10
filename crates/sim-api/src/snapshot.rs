@@ -332,6 +332,14 @@ pub struct EnergyView {
     pub grid_intensity: f64,
 }
 
+/// Progress inside the current turn (contract v1.1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnPhaseView {
+    pub open: bool,
+    pub months_done: u32,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
@@ -340,6 +348,7 @@ pub struct Snapshot {
     pub turn: u32,
     pub tick: u32,
     pub game_over: Option<GameOver>,
+    pub turn_phase: TurnPhaseView,
     pub pc: PcView,
     pub system: SystemView,
     pub map: MapView,
@@ -659,6 +668,10 @@ pub fn build(sim: &Sim, history: &[HistoryPoint], meta: &Meta) -> Snapshot {
         turn: s.turn,
         tick: s.tick,
         game_over: game_over(sim),
+        turn_phase: TurnPhaseView {
+            open: sim.turn_phase.open,
+            months_done: sim.turn_phase.months_done,
+        },
         pc: PcView {
             current: s.political_capital,
             cap: tp.pc_cap,

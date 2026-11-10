@@ -118,3 +118,91 @@ fn valid_tiles_helper_returns_tiles_or_an_error() {
     assert!(sim.valid_tiles("castle").contains("bad_request"));
     assert!(sim.valid_tiles("").contains("bad_request"));
 }
+
+/// The same plan played with `beginTurn` / `advanceMonth` x3 / `finishTurn`. Each reply is
+/// hashed; `tests/golden/seed7-live.json` records them (the web test replays it in wasm).
+/// The `finishTurn` reply must hash exactly like the `submitTurn` reply of `seed7.json`.
+fn run_live(plan: &Value) -> Value {
+    let mut sim = WasmSim::new();
+    sim.init(plan["seed"].as_f64().unwrap(), None);
+    let mut turns = Vec::new();
+    let mut midturn_export = Value::Null;
+    for (i, cmds) in plan["turns"].as_array().unwrap().iter().enumerate() {
+        let turn = i as u64 + 1;
+        if let Some(id) = plan["cancelBeforeTurn"][turn.to_string()].as_u64() {
+            sim.cancel_pending(id as u32);
+        }
+        let begin = sim.begin_turn(&cmds.to_string());
+        if turn == 1 {
+            // Saving inside a turn is refused.
+            let e: Value = serde_json::from_str(&sim.export_state()).unwrap();
+            midturn_export = e["error"]["code"].clone();
+        }
+        let months: Vec<String> = (0..3).map(|_| fnv(&sim.advance_month())).collect();
+        let finish = sim.finish_turn();
+        turns.push(json!({
+            "turn": turn,
+            "begin": fnv(&begin),
+            "months": months,
+            "finish": fnv(&finish),
+        }));
+        if turn == plan["exportAfterTurn"].as_u64().unwrap() {
+            let blob = sim.export_state();
+            let v: Value = serde_json::from_str(&blob).unwrap();
+            sim.import_state(v["value"].as_str().unwrap());
+        }
+    }
+    json!({
+        "midTurnExportError": midturn_export,
+        "turns": turns,
+        "finalSnapshot": fnv(&sim.snapshot()),
+    })
+}
+
+#[test]
+fn live_turn_golden_matches_and_finish_equals_submit() {
+    let plan: Value =
+        serde_json::from_str(&std::fs::read_to_string(dir().join("plan.json")).unwrap()).unwrap();
+    let got = run_live(&plan);
+    assert_eq!(got["midTurnExportError"], "turn_state");
+    // finishTurn replies hash like submitTurn replies, and the final snapshot is the same.
+    let whole: Value =
+        serde_json::from_str(&std::fs::read_to_string(dir().join("seed7.json")).unwrap()).unwrap();
+    for (l, w) in got["turns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(whole["turns"].as_array().unwrap())
+    {
+        assert_eq!(l["finish"], w["fnv"], "turn {}", l["turn"]);
+    }
+    assert_eq!(got["finalSnapshot"], whole["finalSnapshot"]);
+    let path = dir().join("seed7-live.json");
+    let mut text = serde_json::to_string_pretty(&got).unwrap();
+    text.push('\n');
+    if std::env::var("UPDATE_GOLDEN").is_ok() {
+        std::fs::write(&path, &text).unwrap();
+    }
+    let want = std::fs::read_to_string(&path).expect("run with UPDATE_GOLDEN=1 to create it");
+    assert!(
+        want == text,
+        "live golden mismatch: UPDATE_GOLDEN=1 if intended"
+    );
+}
+
+#[test]
+fn live_turn_state_errors_through_the_wasm_strings() {
+    let mut sim = WasmSim::new();
+    assert!(sim.begin_turn("[]").contains("bad_request")); // not started
+    sim.init(7.0, None);
+    assert!(sim.advance_month().contains("turn_state"));
+    assert!(sim.finish_turn().contains("turn_state"));
+    assert!(sim.begin_turn("nonsense").contains("bad_request"));
+    assert!(sim.begin_turn("[]").contains(r#""ok":true"#));
+    assert!(sim.begin_turn("[]").contains("turn_state"));
+    assert!(sim.submit_turn("[]").contains("turn_state"));
+    assert!(sim.export_state().contains("turn_state"));
+    assert!(sim
+        .snapshot()
+        .contains(r#""turnPhase":{"open":true,"monthsDone":0}"#));
+}

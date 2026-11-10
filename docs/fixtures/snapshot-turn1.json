@@ -9,6 +9,10 @@
   "turn": 1,
   "tick": 0,
   "gameOver": null,
+  "turnPhase": {
+    "open": false,
+    "monthsDone": 0
+  },
   "pc": {
     "current": 60.0,
     "cap": 100.0,

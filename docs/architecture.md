@@ -44,8 +44,8 @@ Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the
 | sim-types | `State` (people, households, homes, firms, bank, gov, nature, map, plants, pending, policy, effective policy), `Command`, `Event`, `TraceRecord`, `Delta`/`Deltas`, `SCHEMA_VERSION` (2), `MAX_FIRMS` (4) |
 | sim-params | `Params` (run, turn, labour, production, space, energy, goods, income, credit, invest, nature, government, class, lobby, wellbeing, metrics, initial town, 3 systems). Content is passed in as JSON text; no file I/O |
 | sim-model | One module per system; `TICK_ORDER`; `space.rs` (map, commute routes); `util.rs` |
-| sim-engine | `init` (builds the town, runs 48 warm-up ticks, then `reset_clock`), `step`, `submit_turn_with`, `turn.rs` (validate, preview, queue, activate_due, cancel, regenerate), `apply.rs`, `commands.rs`, `plan.rs` |
-| sim-api | `Api::{init, reset, snapshot, levers, actions, preview, valid_tiles, submit_turn, cancel_pending, export_state, import_state}`; `keys.rs` (closed enums), `meta.rs` (levers/actions from `content/levers.json` + params), `events.rs` (importance), `frames.rs`, `history.rs`, `persist.rs`, `fixtures.rs` |
+| sim-engine | `init` (builds the town, runs 48 warm-up ticks, then `reset_clock`), `step`, `begin_turn` / `advance_month` / `finish_turn`, `submit_turn_with`, `turn.rs` (validate, preview, queue, activate_due, cancel, regenerate), `apply.rs`, `commands.rs`, `plan.rs` |
+| sim-api | `Api::{init, reset, snapshot, levers, actions, preview, valid_tiles, submit_turn, begin_turn, advance_month, finish_turn, cancel_pending, export_state, import_state}`; `keys.rs` (closed enums), `meta.rs` (levers/actions from `content/levers.json` + params), `events.rs` (importance), `frames.rs`, `history.rs`, `persist.rs`, `fixtures.rs` |
 | sim-wasm | `WasmSim` mirrors `Api` with JSON strings. Replies are `{"ok":true,"value":..}` or `{"ok":false,"error":{"code","message"}}`. Panic hook; panics abort in wasm, so `sim-api` validates input instead |
 
 ## 3. Turn flow (`Api::submit_turn` -> `sim_engine::submit_turn_with`)
@@ -61,6 +61,8 @@ Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the
 8. **Regenerate PC**: `pc += pc_base x legitimacy`, capped at `pc_cap` (60 start, 100 cap, 8 base). `turn += 1`.
 9. **History**: the api appends one `HistoryPoint` per played turn (kept in `Api`, saved in the blob, not in `State`).
 10. **Result**: `TurnResult { accepted, rejected, activated, pcBefore, pcAfter, months[3], policyGaps, trace, snapshot }`.
+
+**Live turn (Town v3, contract section 12).** `submit_turn_with` is `begin_turn` (steps 4-5) + `advance_month` x3 (step 6) + `finish_turn` (steps 7-8) in `sim-engine`; progress is `Sim::turn_phase` (`TurnPhase { open, months_done }`, outside `State` and saves). `Api::{begin_turn, advance_month, finish_turn}` run the same steps one call at a time, keeping the accumulating frames, events and trace in a private `Live` struct, and `finish_turn` returns the same `TurnResult` as `submit_turn` (step 9-10). Out-of-order calls return `turn_state` and change nothing; `submit_turn` and `export_state` are refused while a turn is open; `import_state` and `reset` close it. The split path is tested equal to `submit_turn` in `crates/sim-api/tests/turn_split.rs`.
 
 Money for builds: PC is charged at queueing; build **money** is paid when the build activates and the next government tick (S8) pays it out (`gov.pending_build`). Cancelling a pending item refunds 50% of its PC and no money (none was charged). Capacity/tiles appear on activation: the lead time is the whole delay.
 

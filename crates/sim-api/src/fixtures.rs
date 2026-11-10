@@ -56,9 +56,15 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
     let actions = pretty(&api.actions())?;
     let tiles = pretty(&valid_tiles_sample(&api))?;
     let turn = api.submit_turn(&fixture_commands())?;
+    // Contract v1.1: the same first turn, played live on a second game.
+    let mut live = Api::init(FIXTURE_SEED)?;
+    let turn_start = live.begin_turn(&fixture_commands())?;
+    let month_result = live.advance_month()?;
     Ok(vec![
         ("snapshot-turn1.json".to_string(), snapshot),
         ("turn-result.json".to_string(), pretty(&turn)?),
+        ("turn-start.json".to_string(), pretty(&turn_start)?),
+        ("month-result.json".to_string(), pretty(&month_result)?),
         ("levers.json".to_string(), levers),
         ("actions.json".to_string(), actions),
         ("tiles.json".to_string(), tiles),
