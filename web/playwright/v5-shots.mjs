@@ -43,6 +43,7 @@ await shot('1c-finance-flow');
 await page.evaluate(() => window.__game.select({ kind: 'household', id: 1 }));
 await page.waitForTimeout(300);
 await shot('2-household-inspector');
+if (!(await page.getByRole('button', { name: /Open full ledger/ }).count())) { console.log('NOTE no ledger on this sim (package built before contract v1.4)'); await shot('2c-no-ledger'); await page.evaluate(() => window.__game.select(null)); await page.getByRole('tab', { name: 'Ecology' }).click(); await page.waitForTimeout(300); await shot('6-energy'); console.log(errors.length ? errors.join('\n') : 'no console errors'); await browser.close(); process.exit(0); }
 await page.getByRole('button', { name: /Open full ledger/ }).click();
 await page.waitForTimeout(300);
 await shot('2b-household-ledger');

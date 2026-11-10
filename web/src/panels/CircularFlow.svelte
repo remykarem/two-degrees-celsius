@@ -6,7 +6,7 @@
   let { finance }: { finance: FinanceView } = $props();
   const flow = $derived(circularFlow(finance));
   // Four nodes on a diamond. Edges between the same pair are drawn as two offset arrows (one each way).
-  const NODE = { households: { x: 135, y: 22 }, firms: { x: 135, y: 150 }, government: { x: 38, y: 86 }, bank: { x: 236, y: 86 } } as const;
+  const NODE = { households: { x: 135, y: 22 }, firms: { x: 135, y: 150 }, government: { x: 40, y: 86 }, bank: { x: 230, y: 86 } } as const;
   const NAME = { households: 'Households', firms: 'Firms', government: 'Government', bank: 'Bank' } as const;
   const max = $derived(Math.max(1, ...flow.edges.map((e) => e.amount)));
   function geo(e: (typeof flow.edges)[number]) {

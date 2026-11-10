@@ -151,6 +151,9 @@ Real example: `PeoplePanel.svelte` (commit `7ae59a0`).
 4. Tests: logic in `web/tests/panels-logic.test.ts` / `panels-v2.test.ts`; components in `panels-components.test.ts`. Keyboard/a11y: check with `web/playwright/panels-a11y.mjs` (manual).
 5. New store action needed? Add it to `store/game.ts` (+ `Game` interface) and test in `web/tests/game.test.ts`. New cross-component state belongs in the store, never in a module-level variable shared by scene and panels.
 
+## 12b. Add a ledger link (Town v5)
+A figure that comes from a ledger links to it with `game.openLedger(account, kind?)` (and `game.select(...)` so the inspector follows). For a Finance row set `ledger: { account, kind }` in `panels/finance.ts`; for a metric add it to `METRIC_LEDGER` in `panels/metrics.ts`; for an event add a case to `eventLedger` in `panels/results.ts`. The viewer itself (`LedgerTable.svelte`) needs no change; its logic is in `panels/ledger.ts` and tested in `web/tests/ledger-viewer.test.ts`. Shot script: `node playwright/v5-shots.mjs <outDir> [url] [WxH]`.
+
 ## 13. Try Pressure mode (Town v3)
 1. `npm run dev` in `web/`, open `http://localhost:5173/?mode=pressure` (add `&pace=0.02` to make a quarter about 2 s; `pace` is real seconds per game day, default 0.143 = about 13 s per quarter). A plain visit shows the New game screen with Relaxed preselected; `?seed=` or `?mode=` links start straight away.
 2. Other overrides: `timeout=submit|discard|skip`, `budget=<seconds of pause>`, `pause=0`. Defaults live in `web/src/store/clock-config.json`.

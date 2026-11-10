@@ -5,7 +5,7 @@ import { ok } from './helpers';
 import { MAX_SHOPPING_TRIPS, planCommutes, planShopping, planStands, planTrips, poseAt } from '../src/scene/people';
 
 const sim = createSimPort();
-const snap = ok(sim.init(7));
+ok(sim.init(7));
 const result = ok(sim.submitTurn([]));
 const layout = layoutOf(result.snapshot);
 const stands = planStands(layout, result.snapshot);

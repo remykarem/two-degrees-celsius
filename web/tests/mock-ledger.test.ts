@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { AccountRef, LedgerPage } from '../src/contract';
+import type { AccountRef } from '../src/contract';
 import { createMockSim } from '../src/sim-port/mock';
 import type { SimPort } from '../src/sim-port/port';
+import { reconciles } from './helpers';
 
 const ok = <T>(r: { ok: true; value: T } | { ok: false; error: { message: string } }): T => { if (!r.ok) throw new Error(r.error.message); return r.value; };
 
-/** The reconciliation rule, written independently of the mock: opening + entries + roll-ups = closing. The real sim's pages must pass the same rule. */
-export function reconciles(p: LedgerPage): boolean {
-  const k = (a: AccountRef) => JSON.stringify(a);
-  const me = k(p.account);
-  const direct = p.entries.reduce((a, e) => a + (k(e.to) === me ? e.amount : -e.amount), 0);
-  const rolled = p.summary.reduce((a, r) => a + r.inflow - r.outflow, 0);
-  return Math.abs(p.openingBalance + direct + rolled - p.closingBalance) < 0.01;
-}
 const accounts = (sim: SimPort): AccountRef[] => {
   const s = ok(sim.init(1));
   return [...s.households.map((h) => ({ kind: 'household' as const, id: h.id })), ...s.firms.map((f) => ({ kind: 'firm' as const, id: f.id })), { kind: 'government' }, { kind: 'bank' }];
