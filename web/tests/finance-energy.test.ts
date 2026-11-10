@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createMockSim } from '../src/sim-port/mock';
-import { upgradeSnapshot } from '../src/sim-port/wasm/upgrade';
 import { capitalGauge, circularFlow, financeEmpty, financeSections, fmtFin } from '../src/panels/finance';
 import { energyBalance, energyText, intensityText, plantAt, plantRows, UNIT_HELP, unitLabel } from '../src/panels/energy';
 import { METRIC_LEDGER } from '../src/panels/metrics';
@@ -34,7 +33,7 @@ describe('finance derivations', () => {
   });
   it('quarter is null (n/a) when the wire has no trailing-quarter figures', () => {
     const noQ = structuredClone(played);
-    delete noQ.finance.quarter;
+    delete (noQ.finance as Partial<typeof noQ.finance>).quarter;
     expect(row(noQ, 'government', 'rev-wageTax').quarter).toBeNull();
     expect(circularFlow(noQ.finance).approx).toBe(true);
     expect(circularFlow(played.finance).approx).toBe(false);
@@ -127,21 +126,5 @@ describe('energy formatting and the unit label', () => {
     expect(fossilShareOf({ supply: [] })).toBe(0);
     expect(fossilShareOf({ supply: [{ tile: { x: 0, y: 0 }, kind: 'fossil', capacity: 5 }, { tile: { x: 1, y: 0 }, kind: 'renewable', capacity: 5 }] })).toBe(0.5);
     expect(fossilShareOf(null)).toBe(0);
-  });
-});
-
-describe('older wasm package: the upgrade fills the v1.4 shapes', () => {
-  it('rewrites the legacy energy and adds finance from the household and firm views', () => {
-    const legacy = structuredClone(start) as unknown as Record<string, unknown>;
-    legacy.energy = { fossilCap: 10, renewableCap: 5, fossilShare: 0.67, demand: 9, supply: 15, delivered: 9, served: 0.9, gridIntensity: 0.5 };
-    delete legacy.finance;
-    const up = upgradeSnapshot(legacy as unknown as Snapshot);
-    expect(up.energy.unit).toBe('MWh');
-    expect(up.energy.served).toBe(0.9);
-    expect(up.energy.renewableShare).toBeCloseTo(1 / 3, 6);
-    expect(up.energy.demand.total).toBe(9);
-    expect(up.finance.households.income.wages).toBeGreaterThan(0);
-    expect(financeSections(up)).toHaveLength(6);
-    expect(upgradeSnapshot(structuredClone(played)).energy).toEqual(played.energy); // a v1.4 package passes through
   });
 });

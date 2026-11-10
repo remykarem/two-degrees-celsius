@@ -1,6 +1,5 @@
 import type { AccountRef, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
-import { upgradeResult } from './upgrade';
 
 /**
  * The real Rust simulation, through the wasm package built by `npm run build:wasm` (crates/sim-wasm).
@@ -21,7 +20,7 @@ export interface WasmSimInstance {
   begin_turn?(commandsJson: string): string;
   advance_month?(): string;
   finish_turn?(): string;
-  /** Contract v1.4 ledger exports (names assumed; see docs/web-notes-v5.md). Missing in a package built before v1.4. */
+  /** Contract v1.4 ledger exports. Missing in a package built before v1.4 (the loader refuses such a package; this stays defensive for tests that pass a partial module). */
   ledger?(accountJson: string, queryJson: string): string;
   person_ledger?(person: number): string;
   cancel_pending(id: number): string;
@@ -43,7 +42,7 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
   /** Calls into wasm. A panic (the module traps and stays dead) comes back as an error result, never an exception. */
   const call = <T>(f: () => string): Result<T> => {
     try {
-      return upgradeResult(JSON.parse(f()) as Result<T>);
+      return JSON.parse(f()) as Result<T>;
     } catch (e) {
       let detail = '';
       try { detail = mod.last_panic(); } catch { /* the module is gone */ }
@@ -102,11 +101,11 @@ export async function loadWasmPort(): Promise<SimPort> {
   const mod = await load();
   await mod.default({ module_or_path: await wasmUrl() });
   const port = createWasmPort(mod);
-  // A package built before contract v1.0 (schemaVersion 1) must not drive this UI: refuse, and the caller falls back to the mock.
-  // Contract v1.2 (weather) is schemaVersion 3, contract v1.4 (ledger in the saved blob) is 4. Both are accepted: a version 3 package has no ledger (the UI says so) and its energy and finance are derived by upgrade.ts.
+  // A package built before contract v1.4 (schemaVersion 4: ledger in the saved blob, new `energy` and `finance` shapes) must not drive this UI: refuse, and the caller falls back to the mock.
   const probe = port.init(1);
-  if (!probe.ok || ![3, 4].includes(probe.value.schemaVersion) || !probe.value.map) {
-    throw new Error('the wasm package speaks an older contract (schemaVersion is not 3 or 4); rebuild it with npm run build:wasm');
+  const e = probe.ok ? (probe.value.energy as unknown as { supply?: unknown } | undefined) : undefined;
+  if (!probe.ok || probe.value.schemaVersion !== 4 || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
+    throw new Error('the wasm package is older than contract v1.4 (Town v5: expected schemaVersion 4, a ledger and the new energy and finance blocks); rebuild it with npm run build:wasm');
   }
   return port;
 }

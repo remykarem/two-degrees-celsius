@@ -92,7 +92,7 @@ export function initialState(seed: number): MockState {
     cash: t.govCash, debt: t.govDebt, netLobby: MOCK.extra.startingNetLobby!, forest: t.forest / t.forestMax, commons: t.commons / t.commonsMax,
     bank: { equity: t.bank.equity, loans: t.bank.loans, failed: false },
     cumulativeTonnes: 0, lastMonthlyEmissions: baseEmissions(), lastPlantEmissions: GEN.build.start.fossilPlant * MOCK.extra.plantEmissionPerFossil!, prices: 1, wage: GEN.firms[0]!.wage,
-    firmActive: GEN.firms.map((f) => f.active), ledger: { opening: {}, balance: {}, detail: [], summary: {}, months: [], personEvents: [], lastTurn: 0 }, history: [], gameOver: null,
+    firmActive: GEN.firms.map((f) => f.active), ledger: { opening: {}, openingDebt: {}, balance: {}, debt: {}, detail: [], summary: {}, months: [], personEvents: [], lastTurn: 0 }, history: [], gameOver: null,
   };
   s.ledger = initialLedger(s);
   return s;

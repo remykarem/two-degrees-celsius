@@ -13,6 +13,7 @@ import { generateStory } from '../src/panels/story';
 import { planEntities } from '../src/scene/entities';
 import { ctxFromSnapshot, planFlowLoop, planFrame } from '../src/scene/flows';
 import { forecastView, healthMeters, layoutOf, weatherLook } from '../src/store';
+import { reconciles } from './helpers';
 
 // Real JSON written by the Rust wire layer (crates/sim-api) into docs/fixtures/. These tests check it against the TypeScript types
 // (key sets are tied to the interfaces with `satisfies Record<keyof T, ...>`, so adding a field to a type breaks this file until it is listed)
@@ -85,8 +86,8 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     ];
     expect(bad).toEqual([]);
   });
-  it('is schemaVersion 3 or 4 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
-    expect([3, 4]).toContain(snap.schemaVersion);
+  it('is schemaVersion 4 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
+    expect(snap.schemaVersion).toBe(4);
     expect(snap.map).toMatchObject({ width: 12, height: 12 });
     expect(snap.map.tiles).toHaveLength(144);
     snap.map.tiles.forEach((t, i) => expect([t.x, t.y]).toEqual([i % 12, Math.floor(i / 12)]));
@@ -182,10 +183,7 @@ describe.skipIf(!v12)('real fixtures against contract v1.2 (weather)', () => {
   });
 });
 
-// Contract v1.4 (finance, energy, ledgers). Written by the Rust wire layer; skipped (and said so) until the four files exist.
-const v14Files = ['ledger-household.json', 'ledger-government.json', 'finance.json', 'energy.json'];
-const v14 = present && v14Files.every((f) => existsSync(resolve(dir, f)));
-if (present && !v14) console.warn(`TODO: docs/fixtures/ lacks ${v14Files.filter((f) => !existsSync(resolve(dir, f))).join(', ')} (contract v1.4), so the v1.4 fixture checks are skipped.`);
+// Contract v1.4 (finance, energy, ledgers). Written by the Rust wire layer (cargo test regenerates docs/fixtures/); these tests always run.
 /** The fixture may be the bare value or a Result or a { key: value } wrapper: unwrap all three. */
 const unwrap = <T>(raw: unknown, key?: string): T => {
   let v = raw as Record<string, unknown>;
@@ -193,24 +191,25 @@ const unwrap = <T>(raw: unknown, key?: string): T => {
   if (key && v && typeof v === 'object' && key in v && !('quarter' in v)) v = v[key] as Record<string, unknown>;
   return v as T;
 };
-describe.skipIf(!v14)('real fixtures against contract v1.4 (finance, energy, ledgers)', () => {
-  const hh = v14 ? unwrap<LedgerPage>(load('ledger-household.json')) : (null as never);
-  const gov = v14 ? unwrap<LedgerPage>(load('ledger-government.json')) : (null as never);
-  const fin = v14 ? unwrap<FinanceView>(load('finance.json'), 'finance') : (null as never);
-  const en = v14 ? unwrap<EnergyView>(load('energy.json'), 'energy') : (null as never);
-  const PAGE = { account: 'object', openingBalance: 'number', entries: 'array', summary: 'array', closingBalance: 'number', reconciles: 'boolean', detailFromTurn: 'number' } satisfies Shape<LedgerPage>;
-  const ENTRY = { turn: 'number', month: 'number', tick: 'number', from: 'object', to: 'object', amount: 'number', kind: 'string', detail: 'string?', memo: 'string', balanceAfter: 'number' } satisfies Shape<LedgerEntry>;
+describe('real fixtures against contract v1.4 (finance, energy, ledgers)', () => {
+  const hh = unwrap<LedgerPage>(load('ledger-household.json'));
+  const gov = unwrap<LedgerPage>(load('ledger-government.json'));
+  const fin = unwrap<FinanceView>(load('finance.json'), 'finance');
+  const en = unwrap<EnergyView>(load('energy.json'), 'energy');
+  const PAGE = { account: 'object', openingBalance: 'number', openingDebt: 'number', entries: 'array', summary: 'array', closingBalance: 'number', closingDebt: 'number', reconciles: 'boolean', detailFromTurn: 'number' } satisfies Shape<LedgerPage>;
+  const ENTRY = { turn: 'number', month: 'number', tick: 'number', from: 'object', to: 'object', amount: 'number', kind: 'string', detail: 'string?', memo: 'string', balanceAfter: 'number', debtAfter: 'number' } satisfies Shape<LedgerEntry>;
   it('ledger pages have the keys the types declare and reconcile by the viewer rule', () => {
     for (const [name, page] of [['household', hh], ['government', gov]] as const) {
       expect(conforms(page, PAGE, name)).toEqual([]);
       page.entries.forEach((e, i) => expect(conforms(e, ENTRY, `${name}.entries[${i}]`)).toEqual([]));
       expect(page.reconciles).toBe(true);
       expect(reconcile(page).ok).toBe(true);
+      expect(reconciles(page)).toBe(true); // the independent rule of tests/helpers.ts
       expect(() => ledgerRows(page, null)).not.toThrow();
     }
   });
   it('finance and energy have the declared sections', () => {
-    expect(conforms(fin as unknown as Record<string, unknown>, { government: 'object', bank: 'object', households: 'object', firms: 'object', money: 'object', priceIndex: 'number', wageShare: 'number', profitShare: 'number', quarter: 'object?' }, 'finance')).toEqual([]);
+    expect(conforms(fin as unknown as Record<string, unknown>, { government: 'object', bank: 'object', households: 'object', firms: 'object', money: 'object', priceIndex: 'number', wageShare: 'number', profitShare: 'number', quarter: 'object' }, 'finance')).toEqual([]);
     expect(typeof fin.bank.capitalRatioLimit).toBe('number');
     expect(conforms(en as unknown as Record<string, unknown>, { unit: 'string', supply: 'array', demand: 'object', served: 'number', intensity: 'number', renewableShare: 'number', emissionsByPlant: 'array' }, 'energy')).toEqual([]);
     expect(() => plantRows(en)).not.toThrow();

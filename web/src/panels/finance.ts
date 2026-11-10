@@ -81,7 +81,7 @@ export function financeSections(snap: Snapshot): FinSection[] {
       { id: 'hh-nw', label: 'Net worth', month: hh.netWorth, quarter: null, fmt: 'money', stock: true },
     ] },
     { id: 'firms', title: 'Firms (all together)', ledgers: snap.firms.filter((x) => x.active).map((x) => ({ label: x.name, account: { kind: 'firm', id: x.id } as AccountRef })), rows: [
-      { id: 'f-rev', label: 'Revenue', month: fi.revenue, quarter: qv((x) => x.firmRevenue), fmt: 'money' },
+      { id: 'f-rev', label: 'Revenue', hint: 'Money received for purchases, from the ledger. Up to about 10% below the model\'s own firm revenue: a firm buying from itself moves no money.', month: fi.revenue, quarter: qv((x) => x.firmRevenue), fmt: 'money' },
       { id: 'f-wage', label: 'Wage bill', month: fi.wageBill, quarter: qv((x) => x.wageBill), fmt: 'money' },
       { id: 'f-profit', label: 'Profit', month: fi.profit, quarter: qv((x) => x.firmProfit), fmt: 'money' },
       { id: 'f-inv', label: 'Investment', month: fi.investment, quarter: qv((x) => x.investment), fmt: 'money' },

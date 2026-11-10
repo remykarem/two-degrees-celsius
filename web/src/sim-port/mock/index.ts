@@ -121,7 +121,7 @@ export function createMockSim(): SimPort {
         }
         const jobEvents: SimEvent[] = [];
         syncJobs(s, jobEvents);
-        for (const ev of jobEvents) if (ev.type === 'person_hired' || ev.type === 'person_fired') s.ledger.personEvents.push({ person: ev.person, event: structuredClone(ev) });
+        for (const ev of jobEvents) if (ev.type === 'person_hired' || ev.type === 'person_fired') s.ledger.personEvents.push({ person: ev.person, turn: s.turn, event: structuredClone(ev) });
         stepHouseholds(s, jobEvents);
         const flows = makeFlows(s, out.emissions);
         const events = makeEvents(s, flows, [...(m === 0 ? month0 : []), ...jobEvents]);

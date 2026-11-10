@@ -1,7 +1,7 @@
 // Snapshot contract v1.4, Town v5 (docs/snapshot-contract.md sections 11 to 14 win over sections 3-10). Types only: no logic, no imports.
 
 /** Snapshot.schemaVersion. 3 since the weather State layout (section 13); 4 since the saved wrapper blob gains the ledger (section 14). Older saves are refused. */
-export type SchemaVersion = 3 | 4;
+export type SchemaVersion = 4;
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
@@ -193,7 +193,7 @@ export interface NatureView {
 export interface HousingView { homes: number; rentPrivate: number; rentPublic: number; occupancy: number; unhousedHouseholds: number }
 /**
  * Contract v1.4 (section 14): the power grid with a unit. `unit` is the label from config (default 'MWh'; the displayed rate is per month).
- * A package built before v1.4 sent a different object under the same key (fossilCap, supply as a number, ...): the wasm wrapper rewrites it into this shape.
+ * A package built before v1.4 sent a different object under the same key (fossilCap, supply as a number, ...): the wasm loader refuses it.
  */
 export interface EnergyView {
   unit: string;
@@ -216,27 +216,33 @@ export type LedgerKind = 'wage' | 'dividend' | 'rent' | 'benefit' | 'tax' | 'pur
 export interface LedgerEntry {
   turn: number; month: 0 | 1 | 2; tick: number; from: AccountRef; to: AccountRef; amount: number;
   kind: LedgerKind; detail?: string; memo: string;
-  /** Balance of the queried account after this entry. */
+  /** Balance of the queried account after this entry (household savings, firm or government cash, bank equity). */
   balanceAfter: number;
+  /** Debt of the queried account after this entry (household, firm, government debt; bank loans). */
+  debtAfter: number;
 }
-export interface LedgerSummaryRow { turn: number; month: 0 | 1 | 2; counterparty: AccountRef; kind: LedgerKind; inflow: number; outflow: number; count: number }
+/** A rolled-up group of older entries. `net` and `debtNet` are the effect on the queried account's balance and debt (inflow and outflow are the gross sides). */
+export interface LedgerSummaryRow { turn: number; month: 0 | 1 | 2; counterparty: AccountRef; kind: LedgerKind; inflow: number; outflow: number; count: number; net: number; debtNet: number }
 export interface LedgerPage {
   account: AccountRef;
   /** At turn 0. */
   openingBalance: number;
+  openingDebt: number;
   /** The detail window (the last `ledger.detail_turns` turns). */
   entries: LedgerEntry[];
   /** Rolled-up older periods. */
   summary: LedgerSummaryRow[];
   closingBalance: number;
-  /** True iff opening + all entries and roll-ups = closing. */
+  closingDebt: number;
+  /** True iff opening + roll-ups + entries = closing, for both balance and debt. */
   reconciles: boolean;
   detailFromTurn: number;
 }
-export interface PersonLedger { person: number; household: number; earnings: LedgerEntry[]; events: SimEvent[] }
+/** `eventTurns[i]` is the turn of `events[i]`; `summary` has the earnings older than the detail window (monthly, per firm). */
+export interface PersonLedger { person: number; household: number; earnings: LedgerEntry[]; summary: LedgerSummaryRow[]; events: SimEvent[]; eventTurns: number[] }
 export interface LedgerQuery { fromTurn?: number; toTurn?: number; kind?: LedgerKind }
 
-/** Contract v1.4: finance aggregates. Flows are for the latest month; `quarter` (optional, see docs/web-notes-v5.md "Contract issues") holds the trailing-quarter totals of the same flows. */
+/** Contract v1.4: finance aggregates. Flows are for the latest month; `quarter` holds the trailing-quarter totals of the same flows. */
 export interface FinanceFlows {
   govRevenue: Record<'wageTax' | 'profitTax' | 'capitalTax' | 'wealthTax' | 'carbon' | 'other', number>;
   govSpending: Record<'benefits' | 'ubi' | 'publicSpending' | 'jobGuarantee' | 'upkeep' | 'subsidy' | 'interest' | 'builds' | 'other', number>;
@@ -247,14 +253,14 @@ export interface FinanceFlows {
 export interface FinanceView {
   government: {
     revenue: FinanceFlows['govRevenue']; spending: FinanceFlows['govSpending'];
-    balance: number; debt: number; debtToGdp: number; legitimacy: number; basis: 'month';
+    balance: number; cash: number; debt: number; debtToGdp: number; legitimacy: number; basis: 'month';
   };
   bank: { equity: number; loans: number; deposits: number; capitalRatio: number; capitalRatioLimit: number; headroom: number; defaultRate: number; interestIncome: number };
   households: { income: FinanceFlows['householdIncome']; taxes: number; rentPaid: number; loanPayments: number; spending: number; savingRate: number; debt: number; netWorth: number };
   firms: { revenue: number; wageBill: number; profit: number; investment: number; debt: number; cash: number };
   money: { supply: number; createdThisTurn: number; destroyedThisTurn: number };
   priceIndex: number; wageShare: number; profitShare: number;
-  quarter?: FinanceFlows;
+  quarter: FinanceFlows;
 }
 
 export interface HistoryPoint {

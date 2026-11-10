@@ -2,7 +2,7 @@
   import type { AccountRef } from '../contract';
   import type { Game } from '../store';
   import { capitalGauge, financeEmpty, financeSections, fmtFin } from './finance';
-  import { accountLabel } from './ledger';
+  import { accountLabel, FIRM_REVENUE_NOTE } from './ledger';
   import CircularFlow from './CircularFlow.svelte';
   import Sparkline from './Sparkline.svelte';
 
@@ -23,7 +23,7 @@
       <button type="button" onclick={() => open({ kind: 'government' })}>Government ledger</button>
       <button type="button" onclick={() => open({ kind: 'bank' })}>Bank ledger</button>
     </div>
-    {#if empty}<p class="dim">No month has been played yet, so monthly flows are zero. Play a turn to fill this in.</p>{/if}
+    {#if empty}<p class="dim">No month has been played yet, so there are no monthly flows to show. Play a turn to fill this in.</p>{/if}
 
     {#each sections as sec (sec.id)}
       <section aria-labelledby="fin-{sec.id}">
@@ -41,8 +41,12 @@
             {#each sec.rows as r (r.id)}
               <tr class:tot={r.id.endsWith('-in') || r.id.endsWith('-out')}>
                 <th scope="row" title={r.hint}>{r.label}</th>
-                <td class="n">{fmtFin(r.month, r.fmt)}</td>
-                <td class="n q">{r.stock ? '' : r.quarter === null ? 'n/a' : fmtFin(r.quarter, r.fmt)}</td>
+                {#if empty && !r.stock}
+                  <td class="n dim" colspan="2" data-testid="not-played">not yet played</td>
+                {:else}
+                  <td class="n">{fmtFin(r.month, r.fmt)}</td>
+                  <td class="n q">{r.stock ? '' : r.quarter === null ? 'n/a' : fmtFin(r.quarter, r.fmt)}</td>
+                {/if}
                 <td class="x">
                   {#if r.spark && r.spark.length > 1}<Sparkline label={r.label} values={r.spark} w={34} h={16} />{/if}
                   {#if r.ledger}<button type="button" class="see" aria-label="See transactions for {r.label}" onclick={() => open(r.ledger!.account, r.ledger!.kind)} title="See transactions">ledger ›</button>{/if}
@@ -51,6 +55,7 @@
             {/each}
           </tbody>
         </table>
+        {#if sec.id === 'firms'}<p class="dim">{FIRM_REVENUE_NOTE}</p>{/if}
         {#if sec.ledgers}
           <div class="entry small" role="group" aria-label="Ledgers of each {sec.id === 'households' ? 'household' : 'firm'}">
             {#each sec.ledgers as l (l.label)}<button type="button" onclick={() => open(l.account)} title="See transactions: {accountLabel(snap, l.account)}">{l.label}</button>{/each}

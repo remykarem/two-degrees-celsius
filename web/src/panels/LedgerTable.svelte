@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AccountRef, LedgerKind, LedgerPage } from '../contract';
   import type { Game } from '../store';
-  import { accountKey, accountLabel, accountSelection, counterpartiesIn, exact, KIND_LABEL, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, rowTotals, sameAccount, signedExact, turnsIn, type LedgerFilter } from './ledger';
+  import { accountKey, accountLabel, accountSelection, counterpartiesIn, debtChangeText, exact, externalHint, FIRM_REVENUE_NOTE, KIND_LABEL, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, positionNames, rowTotals, sameAccount, signedExact, turnsIn, type LedgerFilter } from './ledger';
 
   let { game, account, kind = undefined, onselect }: { game: Game; account: AccountRef; kind?: LedgerKind; onselect: (a: AccountRef) => void } = $props();
   // svelte-ignore state_referenced_locally
@@ -28,6 +28,8 @@
   const cps = $derived(page ? counterpartiesIn(page) : []);
   const turns = $derived(page ? turnsIn(page) : []);
   const cpKey = $derived(filter.counterparty ? accountKey(filter.counterparty) : '');
+  const names = $derived(positionNames(account));
+  const showDebt = $derived(!!page && (page.openingDebt > 0 || page.closingDebt > 0 || page.entries.some((e) => e.debtAfter > 0)));
   const label = (a: AccountRef) => accountLabel(snap, a);
   const filtered = $derived(filter.kind !== 'all' || filter.fromTurn !== null || filter.toTurn !== null || filter.counterparty !== null);
 
@@ -54,13 +56,17 @@
 {:else if page && rec}
   <div class="top">
     <div class="who"><b>{label(account)}</b><span class="dim">&nbsp;ledger. Money in is green (+), money out is red (-).</span></div>
-    <div class="badge" class:good={rec.ok} class:bad={!rec.ok} role="status" data-testid="reconciliation" title="Opening balance + every entry (detail and rolled-up) = closing balance">
+    <div class="badge" class:good={rec.ok} class:bad={!rec.ok} role="status" data-testid="reconciliation" title="Balance and debt: opening + every entry (detail and rolled-up) = closing, and every row's running position follows from the one before">
       <span aria-hidden="true">{rec.ok ? '✓' : '✗'}</span> {rec.ok ? 'Reconciled' : 'DOES NOT RECONCILE'}
     </div>
   </div>
   <p class="sum" data-testid="reconciliation-sum">
-    Opening {exact(rec.opening)} {rec.entries >= 0 ? '+' : '-'} entries {exact(Math.abs(rec.entries))} {rec.rolled >= 0 ? '+' : '-'} older periods {exact(Math.abs(rec.rolled))} = <b>{exact(rec.opening + rec.entries + rec.rolled)}</b>; closing balance <b>{exact(rec.closing)}</b>{#if !rec.ok} (difference {exact(rec.diff)}){/if}.
+    {names.balance}: opening {exact(rec.opening)} {rec.entries >= 0 ? '+' : '-'} entries {exact(Math.abs(rec.entries))} {rec.rolled >= 0 ? '+' : '-'} older periods {exact(Math.abs(rec.rolled))} = <b>{exact(rec.opening + rec.entries + rec.rolled)}</b>; closing <b>{exact(rec.closing)}</b>{#if Math.abs(rec.diff) >= 0.01} (difference {exact(rec.diff)}){/if}.
+    {#if showDebt}<br />{names.debt}: opening {exact(rec.openingDebt)} {rec.debtEntries >= 0 ? '+' : '-'} entries {exact(Math.abs(rec.debtEntries))} {rec.debtRolled >= 0 ? '+' : '-'} older periods {exact(Math.abs(rec.debtRolled))} = <b>{exact(rec.openingDebt + rec.debtEntries + rec.debtRolled)}</b>; closing <b>{exact(rec.closingDebt)}</b>{#if Math.abs(rec.debtDiff) >= 0.01} (difference {exact(rec.debtDiff)}){/if}.{/if}
+    {#if rec.brokenEntries}<br />{rec.brokenEntries} entries do not add up to their running position.{/if}
   </p>
+  {#if account.kind === 'firm'}<p class="dim">{FIRM_REVENUE_NOTE}</p>{/if}
+  {#if account.kind === 'bank'}<p class="dim">The bank's balance is its equity. When it lends, the money is created (no cash leaves the bank, its loans outstanding rise); when a loan is repaid the money is destroyed.</p>{/if}
 
   <form class="filters" aria-label="Filter transactions" onsubmit={(e) => e.preventDefault()}>
     <label>Kind
@@ -78,21 +84,22 @@
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
   <div class="scroll" role="region" aria-label="Transactions table" tabindex="0" onkeydown={onKey}>
     <table>
-      <thead><tr><th scope="col">Date</th><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">Detail</th><th scope="col">Memo</th><th scope="col" class="n">Amount</th><th scope="col" class="n">Balance</th></tr></thead>
+      <thead><tr><th scope="col">Date</th><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">Detail</th><th scope="col">Memo</th><th scope="col" class="n">Amount</th><th scope="col" class="n">{names.balance}</th>{#if showDebt}<th scope="col" class="n">Debt change</th><th scope="col" class="n">{names.debt}</th>{/if}</tr></thead>
       <tbody>
         {#each slice.items as r (r.key)}
           <tr>
             <td class="date" title="Turn {r.turn}, month {r.month + 1}">{r.date}</td>
-            <td>{#if r.selectable}<button type="button" class="lnk" onclick={() => onselect(r.counterparty)} aria-label="Open {r.counterpartyLabel}">{r.counterpartyLabel}</button>{:else}<span class="ext" title="An account outside the town (no ledger)">{r.counterpartyLabel}</span>{/if}</td>
+            <td>{#if r.selectable}<button type="button" class="lnk" onclick={() => onselect(r.counterparty)} aria-label="Open {r.counterpartyLabel}">{r.counterpartyLabel}</button>{:else}<span class="ext" title={externalHint(r.counterparty)}>{r.counterpartyLabel}</span>{/if}</td>
             <td>{r.kindLabel}</td><td class="dim">{r.detail}</td><td class="memo">{r.memo}</td>
             <td class="n amt" class:pos={r.amount >= 0} class:neg={r.amount < 0}>{r.amountText}</td><td class="n">{r.balanceText}</td>
+            {#if showDebt}<td class="n amt" class:pos={r.debtDelta < 0} class:neg={r.debtDelta > 0}>{r.debtText}</td><td class="n">{exact(r.debtAfter)}</td>{/if}
           </tr>
         {:else}
-          <tr><td colspan="7" class="empty">{page.entries.length ? 'No transactions match these filters.' : 'No transactions yet. They appear once a month has been played.'}</td></tr>
+          <tr><td colspan={showDebt ? 9 : 7} class="empty">{page.entries.length ? 'No transactions match these filters.' : 'No transactions yet. They appear once a month has been played.'}</td></tr>
         {/each}
       </tbody>
       {#if rows.length}
-        <tfoot><tr><td colspan="5">Total of the {rows.length} shown ({totals.count} entries): in {exact(totals.inflow)}, out {exact(totals.outflow)}</td><td class="n amt" class:pos={totals.net >= 0} class:neg={totals.net < 0}>{signedExact(totals.net)}</td><td></td></tr></tfoot>
+        <tfoot><tr><td colspan="5">Total of the {rows.length} shown ({totals.count} entries): in {exact(totals.inflow)}, out {exact(totals.outflow)}</td><td class="n amt" class:pos={totals.net >= 0} class:neg={totals.net < 0}>{signedExact(totals.net)}</td><td></td>{#if showDebt}<td></td><td></td>{/if}</tr></tfoot>
       {/if}
     </table>
   </div>
@@ -109,17 +116,17 @@
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div class="scroll short" role="region" aria-label="Rolled-up older periods" tabindex="0">
       <table data-testid="rollup">
-        <thead><tr><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">Turns</th><th scope="col" class="n">Entries</th><th scope="col" class="n">In</th><th scope="col" class="n">Out</th><th scope="col" class="n">Net</th></tr></thead>
+        <thead><tr><th scope="col">Counterparty</th><th scope="col">Kind</th><th scope="col">Turns</th><th scope="col" class="n">Entries</th><th scope="col" class="n">In</th><th scope="col" class="n">Out</th><th scope="col" class="n">Net</th>{#if showDebt}<th scope="col" class="n">Debt change</th>{/if}</tr></thead>
         <tbody>
           {#each groups as g (accountKey(g.counterparty) + g.kind)}
             <tr>
-              <td>{#if accountSelection(g.counterparty) && !sameAccount(g.counterparty, account)}<button type="button" class="lnk" onclick={() => onselect(g.counterparty)}>{g.counterpartyLabel}</button>{:else}{g.counterpartyLabel}{/if}</td>
+              <td>{#if accountSelection(g.counterparty) && !sameAccount(g.counterparty, account)}<button type="button" class="lnk" onclick={() => onselect(g.counterparty)}>{g.counterpartyLabel}</button>{:else}<span title={externalHint(g.counterparty)}>{g.counterpartyLabel}</span>{/if}</td>
               <td>{g.kindLabel}</td><td class="dim">{g.fromTurn === g.toTurn ? g.fromTurn : `${g.fromTurn} to ${g.toTurn}`}</td><td class="n">{g.count}</td>
-              <td class="n">{exact(g.inflow)}</td><td class="n">{exact(g.outflow)}</td><td class="n amt" class:pos={g.net >= 0} class:neg={g.net < 0}>{signedExact(g.net)}</td>
+              <td class="n">{exact(g.inflow)}</td><td class="n">{exact(g.outflow)}</td><td class="n amt" class:pos={g.net >= 0} class:neg={g.net < 0}>{signedExact(g.net)}</td>{#if showDebt}<td class="n amt" class:pos={g.debtNet < 0} class:neg={g.debtNet > 0}>{debtChangeText(g.debtNet)}</td>{/if}
             </tr>
           {/each}
         </tbody>
-        <tfoot><tr><td colspan="3">Total of older periods</td><td class="n">{gtot.count}</td><td class="n">{exact(gtot.inflow)}</td><td class="n">{exact(gtot.outflow)}</td><td class="n amt" class:pos={gtot.net >= 0} class:neg={gtot.net < 0}>{signedExact(gtot.net)}</td></tr></tfoot>
+        <tfoot><tr><td colspan="3">Total of older periods</td><td class="n">{gtot.count}</td><td class="n">{exact(gtot.inflow)}</td><td class="n">{exact(gtot.outflow)}</td><td class="n amt" class:pos={gtot.net >= 0} class:neg={gtot.net < 0}>{signedExact(gtot.net)}</td>{#if showDebt}<td class="n amt" class:pos={gtot.debtNet < 0} class:neg={gtot.debtNet > 0}>{debtChangeText(gtot.debtNet)}</td>{/if}</tr></tfoot>
       </table>
     </div>
   {:else}

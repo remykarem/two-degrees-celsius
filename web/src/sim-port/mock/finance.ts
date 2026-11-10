@@ -9,7 +9,7 @@ import type { MockState } from './state';
 export function financeView(s: MockState, households: HouseholdView[], ind: { moneyInCirculation: number; priceIndex: number; wageShare: number; profitShare: number }, bank: { deposits: number; defaultRate: number }, debtToGdp: number): FinanceView {
   const L = s.ledger;
   const m = L.months[L.months.length - 1];
-  const quarter = L.months.length ? sumFlows(L.months) : undefined;
+  const quarter = sumFlows(L.months);
   const flows = m ?? sumFlows([]);
   const income = flows.householdIncome;
   const totalIn = income.wages + income.dividends + income.rent + income.interest + income.benefits;
@@ -20,7 +20,7 @@ export function financeView(s: MockState, households: HouseholdView[], ind: { mo
   const govIn = Object.values(flows.govRevenue).reduce((a, b) => a + b, 0);
   const govOut = Object.values(flows.govSpending).reduce((a, b) => a + b, 0);
   return {
-    government: { revenue: flows.govRevenue, spending: flows.govSpending, balance: govIn - govOut, debt: s.debt, debtToGdp, legitimacy: s.legitimacy, basis: 'month' },
+    government: { revenue: flows.govRevenue, spending: flows.govSpending, balance: govIn - govOut, cash: L.balance.gov ?? 0, debt: s.debt, debtToGdp, legitimacy: s.legitimacy, basis: 'month' },
     bank: { equity: s.bank.equity, loans: s.bank.loans, deposits: bank.deposits, capitalRatio: ratio, capitalRatioLimit: limit, headroom: limit > 0 ? Math.max(0, s.bank.equity / limit - s.bank.loans) : 0, defaultRate: bank.defaultRate, interestIncome: flows.bankInterestIncome },
     households: {
       income, taxes: flows.householdTaxes, rentPaid: flows.rentPaid, loanPayments: flows.loanPayments, spending: flows.householdSpending,
@@ -30,7 +30,7 @@ export function financeView(s: MockState, households: HouseholdView[], ind: { mo
     firms: { revenue: flows.firmRevenue, wageBill: flows.wageBill, profit: flows.firmProfit, investment: flows.investment, debt: GEN.firms.reduce((a, f) => a + (s.firmActive[f.id] ? f.debt : 0), 0), cash: firmsCash },
     money: { supply: ind.moneyInCirculation, createdThisTurn: moved.created, destroyedThisTurn: moved.destroyed },
     priceIndex: ind.priceIndex, wageShare: ind.wageShare, profitShare: ind.profitShare,
-    ...(quarter ? { quarter } : {}),
+    quarter,
   };
 }
 

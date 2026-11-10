@@ -11,20 +11,20 @@ const FIRM: AccountRef = { kind: 'firm', id: 0 };
 const GOV: AccountRef = { kind: 'government' };
 const BANK: AccountRef = { kind: 'bank' };
 const e = (turn: number, month: 0 | 1 | 2, from: AccountRef, to: AccountRef, amount: number, kind: LedgerEntry['kind'], balanceAfter: number, detail = ''): LedgerEntry =>
-  ({ turn, month, tick: turn * 3 + month, from, to, amount, kind, memo: `${kind} ${amount}`, balanceAfter, ...(detail ? { detail } : {}) });
+  ({ turn, month, tick: turn * 3 + month, from, to, amount, kind, memo: `${kind} ${amount}`, balanceAfter, debtAfter: 0, ...(detail ? { detail } : {}) });
 
 /** opening 100; +50 wage, -20 tax, -10 purchase; rolled-up older: +200 wages, -60 purchase. Closing = 100 + 20 + 140 = 260. */
 const page: LedgerPage = {
-  account: HH, openingBalance: 100, closingBalance: 260, reconciles: true, detailFromTurn: 9,
+  account: HH, openingBalance: 100, openingDebt: 0, closingBalance: 260, closingDebt: 0, reconciles: true, detailFromTurn: 9,
   entries: [
     e(9, 0, FIRM, HH, 50, 'wage', 290, 'Adult 1'),
     e(9, 1, HH, GOV, 20, 'tax', 270, 'income tax'),
     e(9, 2, HH, FIRM, 10, 'purchase', 260, 'goods'),
   ],
   summary: [
-    { turn: 2, month: 0, counterparty: FIRM, kind: 'wage', inflow: 120, outflow: 0, count: 1 },
-    { turn: 3, month: 1, counterparty: FIRM, kind: 'wage', inflow: 80, outflow: 0, count: 1 },
-    { turn: 3, month: 1, counterparty: FIRM, kind: 'purchase', inflow: 0, outflow: 60, count: 2 },
+    { turn: 2, month: 0, counterparty: FIRM, kind: 'wage', inflow: 120, outflow: 0, count: 1, net: 120, debtNet: 0 },
+    { turn: 3, month: 1, counterparty: FIRM, kind: 'wage', inflow: 80, outflow: 0, count: 1, net: 80, debtNet: 0 },
+    { turn: 3, month: 1, counterparty: FIRM, kind: 'purchase', inflow: 0, outflow: 60, count: 2, net: -60, debtNet: 0 },
   ],
 };
 const snap = ok(createMockSim().init(1));
@@ -112,7 +112,7 @@ describe('ledger viewer: roll-up display', () => {
     expect(wage).toMatchObject({ inflow: 200, outflow: 0, net: 200, count: 2, fromTurn: 2, toTurn: 3 });
     const buy = g.find((x) => x.kind === 'purchase')!;
     expect(buy).toMatchObject({ inflow: 0, outflow: 60, net: -60, count: 2 });
-    expect(rollupTotals(g)).toEqual({ inflow: 200, outflow: 60, net: 140, count: 4 });
+    expect(rollupTotals(g)).toEqual({ inflow: 200, outflow: 60, net: 140, debtNet: 0, count: 4 });
   });
   it('is sorted biggest movement first and honours the filters', () => {
     expect(rollupGroups(page, null)[0]!.kind).toBe('wage');
