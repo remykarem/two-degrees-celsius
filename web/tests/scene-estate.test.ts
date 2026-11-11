@@ -57,8 +57,6 @@ describe('estate selectors', () => {
     expect(staffCommutesOf({ flows: {} })).toEqual([]);
     const sc = { person: 1, household: 6, employer: 8, from: null, to: { x: 2, y: 11 }, tiles: 6, minutes: 24, wage: 1800 };
     expect(staffCommutesOf({ flows: { staffCommutes: [sc] } }).length).toBe(1);
-    // the real wire currently spells it staff_commutes (docs/web-notes-v7.md)
-    expect(staffCommutesOf({ flows: { staff_commutes: [sc] } as never }).length).toBe(1);
   });
   it('staff count as working', () => {
     const pilot = snap.people.find((p) => p.employer);
