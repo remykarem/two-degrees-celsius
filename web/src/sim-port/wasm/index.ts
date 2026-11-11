@@ -115,8 +115,8 @@ export async function loadWasmPort(): Promise<SimPort> {
   // A package built before contract v1.4 (schemaVersion 4: ledger in the saved blob, new `energy` and `finance` shapes) must not drive this UI: refuse, and the caller falls back to the mock.
   const probe = port.init(1);
   const e = probe.ok ? (probe.value.energy as unknown as { supply?: unknown } | undefined) : undefined;
-  if (!probe.ok || probe.value.schemaVersion !== 5 || !probe.value.breakdowns || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
-    throw new Error('the wasm package is older than contract v1.6 (Town v5.2: expected schemaVersion 5 with breakdowns, policies and industry); rebuild it with npm run build:wasm');
+  if (!probe.ok || probe.value.schemaVersion !== 6 || !probe.value.breakdowns || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
+    throw new Error('the wasm package does not match contract v2.0 (expected schemaVersion 6, with breakdowns, policies and industry); rebuild it with npm run build:wasm');
   }
   return port;
 }

@@ -3277,7 +3277,7 @@
           "share": 0.0
         },
         "reconciles": true,
-        "note": "Gross emissions = firms (direct) + households (direct) + private jet flights + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.",
+        "note": "Gross emissions = firms (direct) + homes (direct: heating and transport) + private jet flights + power plants. Electricity used by firms and homes is counted once, at the plants that burn the fuel, so it is not added again to firms or homes. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.",
         "monthLines": [],
         "turnNumber": 1,
         "turnMonths": 0
