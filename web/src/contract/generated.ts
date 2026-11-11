@@ -95,6 +95,14 @@ emissionSources: Array<EmissionSourceDef>,
  */
 incomeSources: Array<IncomeSourceDef>, 
 /**
+ * Contract v2.2: the lines of a net worth statement (labels, asset or liability, "how?" anchors).
+ */
+netWorthLines: Array<NetWorthLineDef>, 
+/**
+ * Contract v2.2: the holder groups of the town's net worth.
+ */
+netWorthHolders: Array<NetWorthHolderDef>, 
+/**
  * Contract v2.1: the entity registry (`content/entities.json`).
  */
 entities: Array<EntityKind>, };
@@ -319,7 +327,11 @@ export type GameOutcome = PlainOutcome | { collapse: CollapseReason, };
 
 export type GameOver = { turn: number, outcome: GameOutcome, };
 
-export type GiniBreakdown = { lorenz: Array<LorenzPoint>, byHousehold: Array<HouseholdWealth>, id: string, title: string, formula: string, inputs: Array<BreakdownInput>, result: Value, parts?: Array<Part>, sumsToResult?: boolean, };
+export type GiniBreakdown = { lorenz: Array<LorenzPoint>, byHousehold: Array<HouseholdWealth>, 
+/**
+ * Contract v2.2: the town's net worth by holder, reconciled to the headline.
+ */
+town: TownNetWorth, id: string, title: string, formula: string, inputs: Array<BreakdownInput>, result: Value, parts?: Array<Part>, sumsToResult?: boolean, };
 
 export type GovRevenue = { wageTax: number, profitTax: number, capitalTax: number, wealthTax: number, carbon: number, other: number, };
 
@@ -409,7 +421,15 @@ export type HouseholdWealth = { household: number, people: number, netWorth: num
  * equity, firm equity). The ids are `net_cash`, `homes`, `jet`, `bank`, `firms`; labels
  * come from `content/ui.json` `text.estate.wealth_part_*`. Zero parts are omitted.
  */
-parts: Array<WealthPartView>, };
+parts: Array<WealthPartView>, 
+/**
+ * Contract v2.2: the statement, assets minus liabilities, line by line.
+ */
+statement: NetWorthStatement, 
+/**
+ * Contract v2.2: the holder group (`households`, `firm_owners`, `bank`, `estate`).
+ */
+holder: string, };
 
 export type HousingView = { homes: number, rentPrivate: number, rentPublic: number, occupancy: number, unhousedHouseholds: number, };
 
@@ -573,6 +593,38 @@ commonsStock: number, commonsAccess: CommonsAccessKey, cumulativeTonnes: number,
  * Contract v1.2: 0..=1. Forest and commons shares, and the farm's resource-health factor.
  */
 forestHealth: number, commonsHealth: number, farmHealth: number, };
+
+export type NetWorthCategory = "asset" | "liability";
+
+export type NetWorthHolder = { id: string, label: string, note: string, inHeadline: boolean, households: number, people: number, assets: number, liabilities: number, netWorth: number, howId?: string, };
+
+export type NetWorthHolderDef = { id: string, label: string, 
+/**
+ * One sentence on who is in the group.
+ */
+note: string, 
+/**
+ * False for a memo row that is not part of household net worth (the government).
+ */
+inHeadline: boolean, howId?: string, };
+
+export type NetWorthLine = { id: string, label: string, category: NetWorthCategory, value: number, perPerson: number, 
+/**
+ * How many homes or firms the line stands for, where that applies.
+ */
+count?: number, howId?: string, };
+
+export type NetWorthLineDef = { id: string, label: string, category: NetWorthCategory, 
+/**
+ * The explorer anchor behind this line's "how?" (a `usedBy` entry of an assumptions topic).
+ */
+howId?: string, };
+
+export type NetWorthStatement = { lines: Array<NetWorthLine>, assets: number, liabilities: number, netWorth: number, people: number, 
+/**
+ * The household figure the Gini uses (`household_wealth`); the lines add up to it.
+ */
+headline: number, reconciles: boolean, };
 
 export type OwnerEdge = "none" | "household" | "public" | "state" | "workers" | "bank" | "varies";
 
@@ -832,6 +884,16 @@ state?: ForestTileState,
  * month, from the model's ignition and spread rules (`sim_model::weather::tile_fire_risk`).
  */
 fireRisk?: number, };
+
+export type TownNetWorth = { holders: Array<NetWorthHolder>, 
+/**
+ * Sum of the households' net worth (the denominator of the Gini).
+ */
+headline: number, 
+/**
+ * Sum of the holders marked `inHeadline`.
+ */
+holdersTotal: number, reconciles: boolean, };
 
 export type TraceRecord = { "type": "emissions", source: EmissionSourceKind, id?: number, tile?: Tile, tonnes: number, } | { "type": "income", household: number, kind: IncomeKindKey, amount: number, } | { "type": "policy_gap", lever: LeverKey, nominal: number, effective: number, netLobby: number, };
 

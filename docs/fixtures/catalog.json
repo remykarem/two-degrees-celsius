@@ -279,6 +279,29 @@
       "energy_unit_help": "{unit}: energy per month, in megawatt-hours. The unit is a label from the game's settings; the numbers are the model's own.",
       "gst_reason": "Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line."
     },
+    "networth": {
+      "assets": "Assets",
+      "count_firm": "1 firm",
+      "count_firms": "{count} firms",
+      "count_home": "1 home",
+      "count_homes": "{count} homes",
+      "holder_counts": "{households} of {all_households} households, {people} of {all_people} people",
+      "holder_none": "no households",
+      "holders_bad": "Does not add up: the groups hold {total} but the Gini uses {headline}.",
+      "holders_ok": "Adds up: the groups hold {total}, the same {headline} the Gini uses.",
+      "household_note": "{people} people share these figures. Each person counts as an equal share of the household's net worth.",
+      "liabilities": "Liabilities",
+      "memo": "Memo",
+      "net_worth": "Net worth",
+      "per_person": "per person",
+      "person_note": "{name} is 1 of {people} people in this household. The Gini gives each person an equal share, so every line is the household's divided by {people}.",
+      "reconciles_bad": "Does not add up: the lines make {net} but the Gini uses {headline}.",
+      "reconciles_ok": "Adds up: {assets} of assets minus {liabilities} of liabilities is {net}, the net worth the Gini uses.",
+      "title": "Net worth statement",
+      "town_intro": "The town's net worth by holder. Each household is in one group: the estate first, then the bank's owner, then firm owners, then the rest.",
+      "town_title": "Who holds what",
+      "unpaid_rent_note": "Unpaid rent is not a line: the model records months of arrears, not an amount owed."
+    },
     "owner_text": {
       "bank": "The bank",
       "household": "Household",
@@ -636,6 +659,99 @@
       "id": "benefits",
       "label": "Benefits",
       "category": "transfer"
+    }
+  ],
+  "netWorthLines": [
+    {
+      "id": "savings",
+      "label": "Savings (deposits at the bank)",
+      "category": "asset",
+      "howId": "networth:savings"
+    },
+    {
+      "id": "homes",
+      "label": "Homes owned (at value)",
+      "category": "asset",
+      "howId": "networth:homes"
+    },
+    {
+      "id": "firm_capital",
+      "label": "Firms owned: machines and buildings (book value)",
+      "category": "asset",
+      "howId": "networth:firm_capital"
+    },
+    {
+      "id": "firm_cash",
+      "label": "Firms owned: cash in the till",
+      "category": "asset",
+      "howId": "networth:firm_cash"
+    },
+    {
+      "id": "firm_inventory",
+      "label": "Firms owned: unsold stock (at price)",
+      "category": "asset",
+      "howId": "networth:firm_inventory"
+    },
+    {
+      "id": "bank_equity",
+      "label": "The bank (owner's equity)",
+      "category": "asset",
+      "howId": "networth:bank_equity"
+    },
+    {
+      "id": "jet",
+      "label": "Private jet",
+      "category": "asset",
+      "howId": "networth:jet"
+    },
+    {
+      "id": "loans",
+      "label": "Loans owed by the household",
+      "category": "liability",
+      "howId": "networth:loans"
+    },
+    {
+      "id": "firm_loans",
+      "label": "Firms owned: their loans",
+      "category": "liability",
+      "howId": "networth:firm_loans"
+    }
+  ],
+  "netWorthHolders": [
+    {
+      "id": "households",
+      "label": "Other households",
+      "note": "Households that own no firm, no bank and no estate.",
+      "inHeadline": true,
+      "howId": "networth:holders"
+    },
+    {
+      "id": "firm_owners",
+      "label": "Firm owners",
+      "note": "Households that own, or (in a cooperative) share in, a firm.",
+      "inHeadline": true,
+      "howId": "networth:holders"
+    },
+    {
+      "id": "bank",
+      "label": "The bank's owner",
+      "note": "The household that owns the bank and so holds its equity.",
+      "inHeadline": true,
+      "howId": "networth:holders"
+    },
+    {
+      "id": "estate",
+      "label": "The estate",
+      "note": "The very rich household with the private jet.",
+      "inHeadline": true,
+      "howId": "networth:holders"
+    },
+    {
+      "id": "government",
+      "label": "The government (memo, not in households' net worth)",
+      "note": "Cash minus debt, plus any firms the state owns. Not counted in the Gini.",
+      "inHeadline": false,
+      "howId": "networth:holders"
     }
   ],
   "entities": [

@@ -364,6 +364,34 @@ pub fn decls() -> Vec<(&'static str, String)> {
             <crate::sources::IncomeCategory as TS>::decl(&cfg),
         ),
         ("sources", <crate::sources::IncomeSource as TS>::decl(&cfg)),
+        (
+            "networth",
+            <crate::networth::NetWorthCategory as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::NetWorthLineDef as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::NetWorthHolderDef as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::NetWorthLine as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::NetWorthStatement as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::NetWorthHolder as TS>::decl(&cfg),
+        ),
+        (
+            "networth",
+            <crate::networth::TownNetWorth as TS>::decl(&cfg),
+        ),
     ]
 }
 

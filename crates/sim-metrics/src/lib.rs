@@ -46,7 +46,7 @@ pub fn household_wealth(s: &State, p: &Params) -> Vec<f64> {
 
 /// What a household's net worth is made of, in cents as f64 (Town v7: the wire's wealth
 /// breakdown). `net_cash + homes + bank + jet + firms` equals `household_wealth` up to float
-/// rounding (a test checks it).
+/// rounding (a test checks it). Town v8 splits these further into [`WealthLines`].
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct WealthParts {
     /// Savings minus debt.
@@ -67,40 +67,141 @@ impl WealthParts {
     }
 }
 
-/// The parts of every household's net worth (same rules as [`household_wealth`]).
-pub fn household_wealth_parts(s: &State, p: &Params) -> Vec<WealthParts> {
-    let mut w = vec![WealthParts::default(); s.households.len()];
+/// A household's net worth as a statement (Town v8): every asset and every liability on its own
+/// line, in cents as f64. `assets() - liabilities()` equals [`household_wealth`] up to float
+/// rounding (a test checks it for every household). Liabilities are positive magnitudes.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct WealthLines {
+    /// Deposits (the household's savings).
+    pub savings: f64,
+    /// Homes owned, at value.
+    pub homes: f64,
+    /// Capital of the firms it owns or shares in, at book value (units x capital price).
+    pub firm_capital: f64,
+    /// Cash held by those firms.
+    pub firm_cash: f64,
+    /// Unsold stock of those firms at the firm's price.
+    pub firm_inventory: f64,
+    /// Bank equity (the bank's owner holds it).
+    pub bank_equity: f64,
+    /// The estate's jet.
+    pub jet: f64,
+    /// Loans the household owes.
+    pub loans: f64,
+    /// Loans of those firms, in proportion to the share held.
+    pub firm_loans: f64,
+    /// How many homes are owned.
+    pub homes_count: u32,
+    /// How many firms are owned or shared in.
+    pub firms_count: u32,
+}
+
+impl WealthLines {
+    pub fn assets(&self) -> f64 {
+        self.savings
+            + self.homes
+            + self.firm_capital
+            + self.firm_cash
+            + self.firm_inventory
+            + self.bank_equity
+            + self.jet
+    }
+    pub fn liabilities(&self) -> f64 {
+        self.loans + self.firm_loans
+    }
+    pub fn net_worth(&self) -> f64 {
+        self.assets() - self.liabilities()
+    }
+    fn add_firm(&mut self, f: &FirmBooks, share: f64) {
+        self.firm_capital += f.capital * share;
+        self.firm_cash += f.cash * share;
+        self.firm_inventory += f.inventory * share;
+        self.firm_loans += f.debt * share;
+        self.firms_count += 1;
+    }
+}
+
+/// An active firm's books in cents as f64: capital at book value, cash, stock at price, debt.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct FirmBooks {
+    pub capital: f64,
+    pub cash: f64,
+    pub inventory: f64,
+    pub debt: f64,
+}
+
+impl FirmBooks {
+    pub fn equity(&self) -> f64 {
+        self.capital + self.cash + self.inventory - self.debt
+    }
+}
+
+/// The books of a firm (same figures [`household_wealth`] values it by).
+pub fn firm_books(f: &sim_types::Firm, p: &Params) -> FirmBooks {
+    FirmBooks {
+        capital: f.capital.0 * (p.invest.capital_price_usd * 100.0),
+        cash: f.cash.as_f64(),
+        inventory: f.inventory.0 * f.price.as_f64(),
+        debt: f.debt.as_f64(),
+    }
+}
+
+/// The statement of every household's net worth (same rules as [`household_wealth`]).
+pub fn household_wealth_lines(s: &State, p: &Params) -> Vec<WealthLines> {
+    let mut w = vec![WealthLines::default(); s.households.len()];
     for (i, h) in s.households.iter().enumerate() {
-        w[i].net_cash = (h.savings - h.debt).as_f64();
+        w[i].savings = h.savings.as_f64();
+        w[i].loans = h.debt.as_f64();
     }
     for home in &s.homes {
         if let HomeOwner::Household(o) = home.owner {
             w[o.idx()].homes += home.value.as_f64();
+            w[o.idx()].homes_count += 1;
         }
     }
-    w[s.bank.owner.idx()].bank += s.bank.equity.as_f64();
+    w[s.bank.owner.idx()].bank_equity += s.bank.equity.as_f64();
     if let Some(e) = &s.estate {
         w[e.jet.owner.idx()].jet += e.jet.value.as_f64();
     }
-    let kp = p.invest.capital_price_usd * 100.0;
     for f in s.firms.iter().filter(|f| f.active) {
-        let equity =
-            f.capital.0 * kp + f.cash.as_f64() + f.inventory.0 * f.price.as_f64() - f.debt.as_f64();
+        let books = firm_books(f, p);
         match f.owner {
-            Owner::Household(h) => w[h.idx()].firms += equity,
-            Owner::Bank => w[s.bank.owner.idx()].firms += equity,
+            Owner::Household(h) => w[h.idx()].add_firm(&books, 1.0),
+            Owner::Bank => w[s.bank.owner.idx()].add_firm(&books, 1.0),
             Owner::State => {}
             Owner::Workers => {
                 let total = s.persons.iter().filter(|x| x.job == Some(f.id)).count() as f64;
                 if total > 0.0 {
+                    let mut seen: Vec<usize> = Vec::new();
                     for x in s.persons.iter().filter(|x| x.job == Some(f.id)) {
-                        w[x.household.idx()].firms += equity / total;
+                        let i = x.household.idx();
+                        w[i].add_firm(&books, 1.0 / total);
+                        // One firm counts once per household, however many of its members work there.
+                        if seen.contains(&i) {
+                            w[i].firms_count -= 1;
+                        } else {
+                            seen.push(i);
+                        }
                     }
                 }
             }
         }
     }
     w
+}
+
+/// The parts of every household's net worth (same rules as [`household_wealth`]).
+pub fn household_wealth_parts(s: &State, p: &Params) -> Vec<WealthParts> {
+    household_wealth_lines(s, p)
+        .iter()
+        .map(|l| WealthParts {
+            net_cash: l.savings - l.loans,
+            homes: l.homes,
+            bank: l.bank_equity,
+            jet: l.jet,
+            firms: l.firm_capital + l.firm_cash + l.firm_inventory - l.firm_loans,
+        })
+        .collect()
 }
 
 /// Gini of a list of values (wealth of each person). Zero for an empty list or a non-positive

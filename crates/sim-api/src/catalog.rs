@@ -142,6 +142,10 @@ pub struct Catalog {
     pub emission_sources: Vec<crate::sources::EmissionSourceDef>,
     /// Contract v2.0: labels and categories of the income sources (household income lists).
     pub income_sources: Vec<crate::sources::IncomeSourceDef>,
+    /// Contract v2.2: the lines of a net worth statement (labels, asset or liability, "how?" anchors).
+    pub net_worth_lines: Vec<crate::networth::NetWorthLineDef>,
+    /// Contract v2.2: the holder groups of the town's net worth.
+    pub net_worth_holders: Vec<crate::networth::NetWorthHolderDef>,
     /// Contract v2.1: the entity registry (`content/entities.json`).
     pub entities: Vec<crate::entities::EntityKind>,
 }
@@ -176,6 +180,8 @@ struct UiFile {
     system_param_labels: BTreeMap<String, ParamLabel>,
     emission_sources: Vec<crate::sources::EmissionSourceDef>,
     income_sources: Vec<crate::sources::IncomeSourceDef>,
+    net_worth_lines: Vec<crate::networth::NetWorthLineDef>,
+    net_worth_holders: Vec<crate::networth::NetWorthHolderDef>,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -185,7 +191,8 @@ fn bad(msg: String) -> ApiError {
 /// The emission and income source definitions of `content/ui.json`, validated.
 pub fn sources() -> ApiResult<crate::sources::Sources> {
     let f: UiFile = serde_json::from_str(UI).map_err(|e| bad(e.to_string()))?;
-    crate::sources::Sources::new(f.emission_sources, f.income_sources)
+    let net_worth = crate::networth::NetWorthDefs::new(f.net_worth_lines, f.net_worth_holders)?;
+    crate::sources::Sources::new(f.emission_sources, f.income_sources, net_worth)
 }
 
 /// Parse `content/ui.json` and resolve the system cards against `params`.
@@ -235,6 +242,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
             tradeoffs: c.tradeoffs,
         });
     }
+    let nw = crate::networth::NetWorthDefs::new(f.net_worth_lines, f.net_worth_holders)?;
     if !f.tags.contains_key("estate_owner") {
         return Err(bad("tags.estate_owner is missing".into()));
     }
@@ -252,6 +260,8 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         systems,
         emission_sources: f.emission_sources,
         income_sources: f.income_sources,
+        net_worth_lines: nw.lines,
+        net_worth_holders: nw.holders,
         entities: crate::entities::load()?,
     })
 }

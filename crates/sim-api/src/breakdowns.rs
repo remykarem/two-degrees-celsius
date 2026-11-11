@@ -78,6 +78,10 @@ pub struct HouseholdWealth {
     /// come from `content/ui.json` `text.estate.wealth_part_*`. Zero parts are omitted.
     #[serde(default)]
     pub parts: Vec<WealthPartView>,
+    /// Contract v2.2: the statement, assets minus liabilities, line by line.
+    pub statement: crate::networth::NetWorthStatement,
+    /// Contract v2.2: the holder group (`households`, `firm_owners`, `bank`, `estate`).
+    pub holder: String,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -95,6 +99,8 @@ pub struct GiniBreakdown {
     pub base: Breakdown,
     pub lorenz: Vec<LorenzPoint>,
     pub by_household: Vec<HouseholdWealth>,
+    /// Contract v2.2: the town's net worth by holder, reconciled to the headline.
+    pub town: crate::networth::TownNetWorth,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -431,7 +437,7 @@ fn debt(sim: &Sim) -> Breakdown {
     )
 }
 
-fn gini(sim: &Sim) -> GiniBreakdown {
+fn gini(sim: &Sim, sources: &Sources) -> GiniBreakdown {
     let s = &sim.state;
     let wealth = sim_metrics::household_wealth(s, &sim.params);
     let person = sim_metrics::person_wealth(s, &wealth);
@@ -456,15 +462,43 @@ fn gini(sim: &Sim) -> GiniBreakdown {
         }
     }
     let parts = sim_metrics::household_wealth_parts(s, &sim.params);
+    let lines = sim_metrics::household_wealth_lines(s, &sim.params);
+    let statements: Vec<_> = s
+        .households
+        .iter()
+        .zip(&lines)
+        .zip(&wealth)
+        .map(|((h, l), w)| {
+            crate::networth::statement(&sources.net_worth, l, h.members.len() as u32, *w)
+        })
+        .collect();
+    let holders: Vec<&'static str> = s
+        .households
+        .iter()
+        .zip(&lines)
+        .map(|(h, l)| crate::networth::holder_of(s, h.id, l.firms_count))
+        .collect();
+    let town = crate::networth::town(
+        &sources.net_worth,
+        s,
+        &sim.params,
+        &statements,
+        &holders,
+        total / 100.0,
+    );
     let by_household = s
         .households
         .iter()
         .zip(&wealth)
         .zip(&parts)
-        .map(|((h, w), p)| HouseholdWealth {
+        .zip(statements)
+        .zip(&holders)
+        .map(|((((h, w), p), statement), holder)| HouseholdWealth {
             household: h.id.0,
             people: h.members.len() as u32,
             net_worth: w / 100.0,
+            statement,
+            holder: (*holder).to_string(),
             parts: [
                 ("net_cash", p.net_cash),
                 ("homes", p.homes),
@@ -497,6 +531,7 @@ fn gini(sim: &Sim) -> GiniBreakdown {
         ),
         lorenz,
         by_household,
+        town,
     }
 }
 
@@ -700,7 +735,7 @@ pub fn build(sim: &Sim, f: &Finance, log: &WrapperLog, sources: &Sources) -> Bre
         wage_share: share_breakdown(sim, true),
         profit_share: share_breakdown(sim, false),
         debt_to_gdp: debt(sim),
-        gini: gini(sim),
+        gini: gini(sim, sources),
         legitimacy: legitimacy(sim, log),
         capital_ratio: capital_ratio(sim, f),
         emissions: emissions::build(sim, &log.ticks, sources),

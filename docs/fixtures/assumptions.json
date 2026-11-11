@@ -1999,5 +1999,73 @@
       "people:footprint",
       "panel:people"
     ]
+  },
+  {
+    "id": "net_worth",
+    "title": "Net worth: savings, homes, the bank, the jet and loans",
+    "group": "scoring",
+    "summary": "A household's net worth is what it owns minus what it owes, and it is the figure the Gini, the Lorenz curve, the wealth tax and the richest-household share all use. Assets are its savings (deposits at the bank), the homes it owns at their value, its equity in the bank if it owns the bank, and the estate's private jet at its stated value. The liability is the household's own loans. Each person is counted as an equal share of their household. Unpaid rent is not a line: the model records how many months a household has been behind, not an amount owed, so nothing is subtracted for it. The estate's savings are deposits, so they lower the bank's equity; the bank's owner holds that equity as an asset.",
+    "formula": "net worth = savings + homes owned + bank equity (bank owner) + jet (estate) + firm equity (see the firms topic) - loans owed",
+    "params": [],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Values are the model's own books: homes at their set value, the jet at its stated value with no depreciation. Not market prices.",
+    "leavesOut": [
+      "No pensions, human capital, cars or other possessions.",
+      "Unpaid rent and other bills owed between households are not tracked as amounts, so they are not in net worth."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs",
+      "crates/sim-api/src/networth.rs"
+    ],
+    "related": [
+      "net_worth_firms",
+      "gini",
+      "tax_wealth",
+      "private_jet"
+    ],
+    "usedBy": [
+      "networth:savings",
+      "networth:homes",
+      "networth:bank_equity",
+      "networth:jet",
+      "networth:loans",
+      "networth:holders"
+    ]
+  },
+  {
+    "id": "net_worth_firms",
+    "title": "Net worth: firms owned",
+    "group": "scoring",
+    "summary": "A household that owns a firm owns its books: machines and buildings counted at book value (units of capital times the price of a unit), the cash the firm holds, its unsold stock valued at the firm's own price, minus the loans the firm owes. In a worker cooperative the firm's books are shared equally among the households of its workers; a firm owned by the bank counts for the bank's owner, and a firm owned by the state counts for nobody's household net worth. The four firm lines of a statement add up to the firm's equity.",
+    "formula": "firm equity = capital units x capital price + cash + stock x price - loans; a household's firm lines are its share of that, line by line",
+    "params": [
+      {
+        "path": "invest.capital_price_usd",
+        "label": "Price of one unit of capital",
+        "value": 1500.0,
+        "unit": "$"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Book value, not what a buyer would pay: a firm's worth ignores its future profits.",
+    "leavesOut": [
+      "No goodwill or market value of a firm; no shares that can be sold."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs",
+      "crates/sim-api/src/networth.rs"
+    ],
+    "related": [
+      "net_worth",
+      "money_credit"
+    ],
+    "usedBy": [
+      "networth:firm_capital",
+      "networth:firm_cash",
+      "networth:firm_inventory",
+      "networth:firm_loans"
+    ]
   }
 ]

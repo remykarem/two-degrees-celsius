@@ -27,6 +27,7 @@ pub mod keys;
 pub mod ledger;
 pub mod log;
 pub mod meta;
+pub mod networth;
 pub mod persist;
 pub mod policies;
 pub mod recording;

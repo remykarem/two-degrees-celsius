@@ -348,5 +348,13 @@ fn emission_and_income_sources_come_from_content_and_validate() {
         show_when_zero: false,
     };
     let short: Vec<_> = EMISSION_IDS[1..].iter().map(|i| def(i)).collect();
-    assert!(Sources::new(short, Vec::new()).is_err());
+    assert!(Sources::new(
+        short,
+        Vec::new(),
+        sim_api::networth::NetWorthDefs {
+            lines: Vec::new(),
+            holders: Vec::new()
+        }
+    )
+    .is_err());
 }

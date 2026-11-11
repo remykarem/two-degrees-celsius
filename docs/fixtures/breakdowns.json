@@ -415,7 +415,79 @@
             "id": "firms",
             "value": 168294.06595156834
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 17418.07,
+              "perPerson": 8709.035,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "homes",
+              "label": "Homes owned (at value)",
+              "category": "asset",
+              "value": 45000.0,
+              "perPerson": 22500.0,
+              "count": 1,
+              "howId": "networth:homes"
+            },
+            {
+              "id": "firm_capital",
+              "label": "Firms owned: machines and buildings (book value)",
+              "category": "asset",
+              "value": 193311.4930422533,
+              "perPerson": 96655.74652112665,
+              "count": 1,
+              "howId": "networth:firm_capital"
+            },
+            {
+              "id": "firm_cash",
+              "label": "Firms owned: cash in the till",
+              "category": "asset",
+              "value": 9548.57,
+              "perPerson": 4774.285,
+              "count": 1,
+              "howId": "networth:firm_cash"
+            },
+            {
+              "id": "firm_inventory",
+              "label": "Firms owned: unsold stock (at price)",
+              "category": "asset",
+              "value": 8392.872909315023,
+              "perPerson": 4196.436454657512,
+              "count": 1,
+              "howId": "networth:firm_inventory"
+            },
+            {
+              "id": "bank_equity",
+              "label": "The bank (owner's equity)",
+              "category": "asset",
+              "value": 37788.68,
+              "perPerson": 18894.34,
+              "howId": "networth:bank_equity"
+            },
+            {
+              "id": "firm_loans",
+              "label": "Firms owned: their loans",
+              "category": "liability",
+              "value": 42958.87,
+              "perPerson": 21479.435,
+              "count": 1,
+              "howId": "networth:firm_loans"
+            }
+          ],
+          "assets": 311459.68595156836,
+          "liabilities": 42958.87,
+          "netWorth": 268500.81595156837,
+          "people": 2,
+          "headline": 268500.8159515683,
+          "reconciles": true
+        },
+        "holder": "bank"
       },
       {
         "household": 1,
@@ -434,7 +506,79 @@
             "id": "firms",
             "value": 31207.126687578577
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 1837.5,
+              "perPerson": 918.75,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "homes",
+              "label": "Homes owned (at value)",
+              "category": "asset",
+              "value": 225000.0,
+              "perPerson": 112500.0,
+              "count": 5,
+              "howId": "networth:homes"
+            },
+            {
+              "id": "firm_capital",
+              "label": "Firms owned: machines and buildings (book value)",
+              "category": "asset",
+              "value": 32669.17983372074,
+              "perPerson": 16334.58991686037,
+              "count": 1,
+              "howId": "networth:firm_capital"
+            },
+            {
+              "id": "firm_cash",
+              "label": "Firms owned: cash in the till",
+              "category": "asset",
+              "value": 9803.22,
+              "perPerson": 4901.61,
+              "count": 1,
+              "howId": "networth:firm_cash"
+            },
+            {
+              "id": "firm_inventory",
+              "label": "Firms owned: unsold stock (at price)",
+              "category": "asset",
+              "value": 280.24685385783783,
+              "perPerson": 140.12342692891892,
+              "count": 1,
+              "howId": "networth:firm_inventory"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 109538.64,
+              "perPerson": 54769.32,
+              "howId": "networth:loans"
+            },
+            {
+              "id": "firm_loans",
+              "label": "Firms owned: their loans",
+              "category": "liability",
+              "value": 11545.52,
+              "perPerson": 5772.76,
+              "count": 1,
+              "howId": "networth:firm_loans"
+            }
+          ],
+          "assets": 269590.1466875785,
+          "liabilities": 121084.16,
+          "netWorth": 148505.98668757852,
+          "people": 2,
+          "headline": 148505.98668757858,
+          "reconciles": true
+        },
+        "holder": "firm_owners"
       },
       {
         "household": 2,
@@ -449,7 +593,43 @@
             "id": "homes",
             "value": 45000.0
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 66107.77,
+              "perPerson": 22035.923333333336,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "homes",
+              "label": "Homes owned (at value)",
+              "category": "asset",
+              "value": 45000.0,
+              "perPerson": 15000.0,
+              "count": 1,
+              "howId": "networth:homes"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 25278.16,
+              "perPerson": 8426.053333333333,
+              "howId": "networth:loans"
+            }
+          ],
+          "assets": 111107.77,
+          "liabilities": 25278.16,
+          "netWorth": 85829.61,
+          "people": 3,
+          "headline": 85829.61,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 3,
@@ -460,7 +640,34 @@
             "id": "net_cash",
             "value": 65240.43
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 73666.49,
+              "perPerson": 24555.49666666667,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 8426.06,
+              "perPerson": 2808.6866666666665,
+              "howId": "networth:loans"
+            }
+          ],
+          "assets": 73666.49,
+          "liabilities": 8426.06,
+          "netWorth": 65240.43000000001,
+          "people": 3,
+          "headline": 65240.43,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 4,
@@ -471,7 +678,34 @@
             "id": "net_cash",
             "value": -1889.75
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 1625.45,
+              "perPerson": 541.8166666666667,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 3515.2,
+              "perPerson": 1171.7333333333333,
+              "howId": "networth:loans"
+            }
+          ],
+          "assets": 1625.45,
+          "liabilities": 3515.2,
+          "netWorth": -1889.7499999999998,
+          "people": 3,
+          "headline": -1889.75,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 5,
@@ -482,7 +716,34 @@
             "id": "net_cash",
             "value": 7555.35
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 10083.16,
+              "perPerson": 3361.0533333333333,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 2527.81,
+              "perPerson": 842.6033333333334,
+              "howId": "networth:loans"
+            }
+          ],
+          "assets": 10083.16,
+          "liabilities": 2527.81,
+          "netWorth": 7555.35,
+          "people": 3,
+          "headline": 7555.35,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 6,
@@ -493,7 +754,26 @@
             "id": "net_cash",
             "value": 7304.04
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 7304.04,
+              "perPerson": 2434.68,
+              "howId": "networth:savings"
+            }
+          ],
+          "assets": 7304.04,
+          "liabilities": -0.0,
+          "netWorth": 7304.04,
+          "people": 3,
+          "headline": 7304.04,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 7,
@@ -504,7 +784,34 @@
             "id": "net_cash",
             "value": -161.0
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 2374.42,
+              "perPerson": 1187.21,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "loans",
+              "label": "Loans owed by the household",
+              "category": "liability",
+              "value": 2535.42,
+              "perPerson": 1267.71,
+              "howId": "networth:loans"
+            }
+          ],
+          "assets": 2374.42,
+          "liabilities": 2535.42,
+          "netWorth": -161.0,
+          "people": 2,
+          "headline": -161.0,
+          "reconciles": true
+        },
+        "holder": "households"
       },
       {
         "household": 8,
@@ -527,9 +834,148 @@
             "id": "firms",
             "value": 151770.6863061349
           }
-        ]
+        ],
+        "statement": {
+          "lines": [
+            {
+              "id": "savings",
+              "label": "Savings (deposits at the bank)",
+              "category": "asset",
+              "value": 2644.19,
+              "perPerson": 2644.19,
+              "howId": "networth:savings"
+            },
+            {
+              "id": "homes",
+              "label": "Homes owned (at value)",
+              "category": "asset",
+              "value": 1200000.0,
+              "perPerson": 1200000.0,
+              "count": 1,
+              "howId": "networth:homes"
+            },
+            {
+              "id": "firm_capital",
+              "label": "Firms owned: machines and buildings (book value)",
+              "category": "asset",
+              "value": 96382.18906395748,
+              "perPerson": 96382.18906395748,
+              "count": 1,
+              "howId": "networth:firm_capital"
+            },
+            {
+              "id": "firm_cash",
+              "label": "Firms owned: cash in the till",
+              "category": "asset",
+              "value": 46848.93,
+              "perPerson": 46848.93,
+              "count": 1,
+              "howId": "networth:firm_cash"
+            },
+            {
+              "id": "firm_inventory",
+              "label": "Firms owned: unsold stock (at price)",
+              "category": "asset",
+              "value": 21664.757242177446,
+              "perPerson": 21664.757242177446,
+              "count": 1,
+              "howId": "networth:firm_inventory"
+            },
+            {
+              "id": "jet",
+              "label": "Private jet",
+              "category": "asset",
+              "value": 800000.0,
+              "perPerson": 800000.0,
+              "howId": "networth:jet"
+            },
+            {
+              "id": "firm_loans",
+              "label": "Firms owned: their loans",
+              "category": "liability",
+              "value": 13125.19,
+              "perPerson": 13125.19,
+              "count": 1,
+              "howId": "networth:firm_loans"
+            }
+          ],
+          "assets": 2167540.0663061347,
+          "liabilities": 13125.19,
+          "netWorth": 2154414.8763061347,
+          "people": 1,
+          "headline": 2154414.876306135,
+          "reconciles": true
+        },
+        "holder": "estate"
       }
-    ]
+    ],
+    "town": {
+      "holders": [
+        {
+          "id": "households",
+          "label": "Other households",
+          "note": "Households that own no firm, no bank and no estate.",
+          "inHeadline": true,
+          "households": 6,
+          "people": 17,
+          "assets": 206161.33000000005,
+          "liabilities": 42282.649999999994,
+          "netWorth": 163878.68000000005,
+          "howId": "networth:holders"
+        },
+        {
+          "id": "firm_owners",
+          "label": "Firm owners",
+          "note": "Households that own, or (in a cooperative) share in, a firm.",
+          "inHeadline": true,
+          "households": 1,
+          "people": 2,
+          "assets": 269590.1466875785,
+          "liabilities": 121084.16,
+          "netWorth": 148505.98668757852,
+          "howId": "networth:holders"
+        },
+        {
+          "id": "bank",
+          "label": "The bank's owner",
+          "note": "The household that owns the bank and so holds its equity.",
+          "inHeadline": true,
+          "households": 1,
+          "people": 2,
+          "assets": 311459.68595156836,
+          "liabilities": 42958.87,
+          "netWorth": 268500.81595156837,
+          "howId": "networth:holders"
+        },
+        {
+          "id": "estate",
+          "label": "The estate",
+          "note": "The very rich household with the private jet.",
+          "inHeadline": true,
+          "households": 1,
+          "people": 1,
+          "assets": 2167540.0663061347,
+          "liabilities": 13125.19,
+          "netWorth": 2154414.8763061347,
+          "howId": "networth:holders"
+        },
+        {
+          "id": "government",
+          "label": "The government (memo, not in households' net worth)",
+          "note": "Cash minus debt, plus any firms the state owns. Not counted in the Gini.",
+          "inHeadline": false,
+          "households": 0,
+          "people": 0,
+          "assets": 10119.79,
+          "liabilities": 77719.41,
+          "netWorth": -67599.62,
+          "howId": "networth:holders"
+        }
+      ],
+      "headline": 2735300.358945282,
+      "holdersTotal": 2735300.3589452817,
+      "reconciles": true
+    }
   },
   "legitimacy": {
     "id": "legitimacy",

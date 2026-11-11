@@ -111,6 +111,8 @@ pub struct IncomeSource {
 pub struct Sources {
     pub emission: Vec<EmissionSourceDef>,
     pub income: Vec<IncomeSourceDef>,
+    /// Town v8: the net worth statement lines and holders.
+    pub net_worth: crate::networth::NetWorthDefs,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -119,7 +121,11 @@ fn bad(msg: String) -> ApiError {
 
 impl Sources {
     /// Check the content against the closed id sets: every id once, known, parts after their parent.
-    pub fn new(emission: Vec<EmissionSourceDef>, income: Vec<IncomeSourceDef>) -> ApiResult<Self> {
+    pub fn new(
+        emission: Vec<EmissionSourceDef>,
+        income: Vec<IncomeSourceDef>,
+        net_worth: crate::networth::NetWorthDefs,
+    ) -> ApiResult<Self> {
         for id in EMISSION_IDS {
             if emission.iter().filter(|d| d.id == id).count() != 1 {
                 return Err(bad(format!("emission_sources must list {id} exactly once")));
@@ -149,7 +155,11 @@ impl Sources {
                 }
             }
         }
-        Ok(Self { emission, income })
+        Ok(Self {
+            emission,
+            income,
+            net_worth,
+        })
     }
 
     /// Totals for the sources of an emissions line (`value(id)` gives tonnes; ids are validated).
