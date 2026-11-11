@@ -134,6 +134,13 @@ impl Api {
         crate::assumptions::resolve_agents(&self.sim.params, &self.meta.energy_unit)
     }
 
+    /// The UI catalog (contract v1.8): thresholds, labels, explanatory text and the economic
+    /// system cards, from `content/ui.json` resolved against the live params. Static for a
+    /// given params file.
+    pub fn catalog(&self) -> ApiResult<crate::catalog::Catalog> {
+        crate::catalog::resolve(&self.sim.params)
+    }
+
     pub fn snapshot(&self) -> Snapshot {
         snapshot::build(
             &self.sim,
@@ -281,6 +288,30 @@ impl Api {
         }
     }
 
+    /// What a lobbied lever would be in force at today's net lobbying, for a numeric setting.
+    fn expected_effective(&self, c: &Command) -> Option<f64> {
+        use sim_types::Lever;
+        let Command::SetPolicy {
+            lever,
+            value: crate::command::PolicyValue::Number(v),
+        } = *c
+        else {
+            return None;
+        };
+        let l = match lever {
+            LeverKey::CarbonPrice => Lever::CarbonPrice,
+            LeverKey::WealthTax => Lever::WealthTax,
+            LeverKey::TaxProfit => Lever::ProfitTax,
+            LeverKey::EmissionsCap => Lever::EmissionsCap,
+            _ => return None,
+        };
+        Some(sim_model::lobbying::expected_effective(
+            l,
+            v,
+            self.sim.state.net_lobby.0,
+        ))
+    }
+
     /// Costs of `cmds` in order, as if each earlier one had been queued. Changes nothing.
     /// A command outside its lever's range (or of the wrong type) is `invalid_command`.
     pub fn preview(&self, cmds: &[Command]) -> ApiResult<Vec<CommandPreview>> {
@@ -296,6 +327,7 @@ impl Api {
                 lead_time: cost.lead_time,
                 effective_turn: cost.effective_turn,
                 opposition: cost.opposition,
+                expected_effective: self.expected_effective(&cmds[i]),
                 blocked: cost.blocked.map(BlockReason::from_sim),
                 tile_valid: cost.tile_valid,
                 tile_reason: cost.tile_reason.map(BlockReason::from_sim),
@@ -316,6 +348,7 @@ impl Api {
                 lead_time: lead,
                 effective_turn: self.sim.state.turn + lead,
                 opposition: 0.0,
+                expected_effective: None,
                 blocked: Some(rej.reason),
                 tile_valid: rej.reason != BlockReason::TileInvalid,
                 tile_reason: (rej.reason == BlockReason::TileInvalid).then_some(rej.reason),

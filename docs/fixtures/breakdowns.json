@@ -588,6 +588,11 @@
     }
   },
   "emissions": {
+    "runway": {
+      "perTurn": 32.91773346380835,
+      "runOutTurn": 28.49749155304574,
+      "runsOutBeforeEnd": true
+    },
     "month": {
       "firms": 2.5988043485249444,
       "households": 2.4000000000000004,

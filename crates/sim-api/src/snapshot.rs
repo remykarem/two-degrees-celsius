@@ -197,6 +197,10 @@ pub struct TileView {
     /// Forest tiles only (contract v1.2): standing, burning or regrowing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ForestTileState>,
+    /// Standing forest tiles only (contract v1.8): the odds that a fire reaches this tile next
+    /// month, from the model's ignition and spread rules (`sim_model::weather::tile_fire_risk`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fire_risk: Option<f64>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -257,6 +261,10 @@ pub struct WeatherView {
     pub onset: f64,
     pub full: f64,
     pub curve: f64,
+    /// Contract v1.8 (additive): how far a fire station's cover reaches, and how far smoke
+    /// spreads from a fire, in tiles (`params.weather`).
+    pub coverage_radius: u32,
+    pub smoke_radius: u32,
     pub drought: Option<DroughtView>,
     pub fires: Vec<FireView>,
     pub forecast: ForecastView,
@@ -465,6 +473,8 @@ fn weather_view(sim: &Sim) -> WeatherView {
         onset: sim.params.weather.onset,
         full: sim.params.weather.full,
         curve: sim.params.weather.curve,
+        coverage_radius: sim.params.weather.coverage_radius,
+        smoke_radius: sim.params.weather.smoke_radius,
         drought: s.weather.drought.map(|d| DroughtView {
             severity: d.severity,
             months_left: d.months_left,
@@ -485,7 +495,7 @@ fn weather_view(sim: &Sim) -> WeatherView {
     }
 }
 
-fn map_view(s: &st::State) -> MapView {
+fn map_view(s: &st::State, params: &sim_params::Params) -> MapView {
     let tiles = s
         .map
         .tiles()
@@ -505,6 +515,7 @@ fn map_view(s: &st::State) -> MapView {
                 buildable: c.kind == st::TileKind::Empty,
                 emissions_monthly,
                 state: (c.kind == st::TileKind::Forest).then(|| forest_state(s, t)),
+                fire_risk: sim_model::weather::tile_fire_risk(s, params, t),
             }
         })
         .collect();
@@ -802,7 +813,7 @@ pub fn build(
                 total: t.total,
             }),
         },
-        map: map_view(s),
+        map: map_view(s, &sim.params),
         buildings: buildings(sim),
         pending: s.pending.iter().map(PendingItem::from_sim).collect(),
         policies: crate::policies::build(sim, meta, &policy, &log.policy),

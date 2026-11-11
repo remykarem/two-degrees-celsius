@@ -7,6 +7,17 @@ use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
 
+/// The value a lobbied lever would have in force at `net_lobby`, for a nominal setting. The same
+/// formula as `run` below (`nominal x (1 - net)`; a cap is divided instead, and 0 stays "no
+/// cap"), in plain numbers (dollars, rate or tonnes) so the wire can preview it.
+pub fn expected_effective(lever: Lever, nominal: f64, net_lobby: f64) -> f64 {
+    match lever {
+        Lever::EmissionsCap if nominal > 0.0 => nominal / (1.0 - net_lobby),
+        Lever::EmissionsCap => 0.0,
+        Lever::CarbonPrice | Lever::WealthTax | Lever::ProfitTax => nominal * (1.0 - net_lobby),
+    }
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let lp = &p.lobby;

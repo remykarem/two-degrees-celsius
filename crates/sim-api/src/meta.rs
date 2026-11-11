@@ -96,6 +96,8 @@ pub struct GameCalendar {
     pub first_turn: u32,
     pub last_turn: u32,
     pub turns_per_year: u32,
+    /// Contract v1.8: monthly ticks in a turn (`params.run.ticks_per_turn`).
+    pub ticks_per_turn: u32,
 }
 
 // ---- the content file ----
@@ -336,6 +338,7 @@ impl Meta {
                 first_turn: 1,
                 last_turn: params.run.turns,
                 turns_per_year: 12 / tpt,
+                ticks_per_turn: tpt,
             },
         })
     }

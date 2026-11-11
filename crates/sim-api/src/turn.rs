@@ -40,6 +40,11 @@ pub struct CommandPreview {
     pub lead_time: u32,
     pub effective_turn: u32,
     pub opposition: f64,
+    /// Contract v1.8: for a lobbied lever (carbon price, profit tax, wealth tax, emissions cap),
+    /// the value the model would have in force at today's net lobbying (`sim_model::lobbying::
+    /// expected_effective`); absent for other commands. Lobbying can still move before it applies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_effective: Option<f64>,
     pub blocked: Option<BlockReason>,
     /// For place and remove: can the tile take the command? `true` for other commands.
     pub tile_valid: bool,

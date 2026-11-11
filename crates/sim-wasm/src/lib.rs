@@ -110,6 +110,12 @@ impl WasmSim {
         wrap(self.get().and_then(|a| a.agents()))
     }
 
+    /// `Result<Catalog>` (contract v1.8): UI bands, labels, explanatory text and the economic
+    /// system cards. Static for a given params file.
+    pub fn catalog(&self) -> String {
+        wrap(self.get().and_then(|a| a.catalog()))
+    }
+
     /// `Result<Snapshot>`.
     pub fn snapshot(&self) -> String {
         wrap(self.get().map(|a| a.snapshot()))

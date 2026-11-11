@@ -65,9 +65,38 @@ pub struct SourceLine {
     pub informational: bool,
 }
 
+/// Contract v1.8: where the budget goes at the current net rate. `per_turn` is the latest month's
+/// net emissions (never below zero) times `run.ticks_per_turn`; `run_out_turn` is the turn on
+/// which the remaining budget would be used up at that rate (`None` when nothing is emitted).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Runway {
+    pub per_turn: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_out_turn: Option<f64>,
+    /// True when the run-out turn falls on or before the turn after the last one.
+    pub runs_out_before_end: bool,
+}
+
+fn runway(sim: &Sim) -> Runway {
+    let s = &sim.state;
+    let per_turn = s.nature.net_emissions.0.max(0.0) * f64::from(sim.params.run.ticks_per_turn);
+    let last = sim.params.run.turns;
+    let now = s.turn.min(last + 1);
+    let remaining = s.indicators.remaining_budget.0;
+    let run_out_turn = (per_turn > 0.0).then(|| f64::from(now) + remaining / per_turn);
+    Runway {
+        per_turn,
+        run_out_turn,
+        runs_out_before_end: run_out_turn.is_some_and(|t| t <= f64::from(last + 1)),
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmissionsBreakdown {
+    /// Additive (contract v1.8).
+    pub runway: Runway,
     pub month: EmissionsLine,
     pub turn: EmissionsLine,
     pub cumulative: Cumulative,
@@ -118,6 +147,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
     };
     let Some(last) = ticks.last() else {
         return EmissionsBreakdown {
+            runway: runway(sim),
             month: EmissionsLine::default(),
             turn: EmissionsLine::default(),
             cumulative,
@@ -196,6 +226,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
         (last.gross_state - month.gross_total).abs() <= tolerance(month.gross_total);
     let reconciles = line_reconciles(&month) && line_reconciles(&turn) && gross_state_ok;
     EmissionsBreakdown {
+        runway: runway(sim),
         month,
         turn,
         cumulative,

@@ -9,6 +9,7 @@
 pub mod api;
 pub mod assumptions;
 pub mod breakdowns;
+pub mod catalog;
 pub mod command;
 pub mod content;
 pub mod emissions;

@@ -1,0 +1,448 @@
+{
+  "bands": {
+    "crisis": {
+      "legitimacyBelow": 0.2,
+      "budgetBelow": 0.15
+    },
+    "health": [
+      {
+        "min": 0.6,
+        "id": "healthy",
+        "word": "Healthy"
+      },
+      {
+        "min": 0.35,
+        "id": "strained",
+        "word": "Strained"
+      },
+      {
+        "min": 0.15,
+        "id": "poor",
+        "word": "Poor"
+      },
+      {
+        "min": 0.0,
+        "id": "failing",
+        "word": "Failing"
+      }
+    ],
+    "stressWords": {
+      "bands": [
+        {
+          "below": 0.25,
+          "word": "Rising"
+        },
+        {
+          "below": 0.6,
+          "word": "High"
+        }
+      ],
+      "top": "Severe"
+    },
+    "severityWords": {
+      "bands": [
+        {
+          "below": 0.35,
+          "word": "mild"
+        },
+        {
+          "below": 0.65,
+          "word": "moderate"
+        }
+      ],
+      "top": "severe"
+    },
+    "communityCap": 0.5,
+    "capitalTightFactor": 1.25,
+    "budgetMeter": {
+      "low": 0.25,
+      "high": 0.5
+    }
+  },
+  "lever_groups": [
+    {
+      "label": "Taxes",
+      "blurb": "Who pays, and how much the state collects."
+    },
+    {
+      "label": "Money and credit",
+      "blurb": "The price of credit and the safety of the bank."
+    },
+    {
+      "label": "Labour and welfare",
+      "blurb": "Wages, benefits and jobs."
+    },
+    {
+      "label": "Climate and energy",
+      "blurb": "Pricing and capping emissions, subsidising green investment, and getting ready for fires and droughts."
+    },
+    {
+      "label": "Nature and commons",
+      "blurb": "Sharing the land and how much may be harvested."
+    },
+    {
+      "label": "Government spending",
+      "blurb": "What the state spends."
+    },
+    {
+      "label": "Politics",
+      "blurb": "The rules on political money."
+    }
+  ],
+  "text": {
+    "metric_hint": {
+      "gdp": "Total output, adjusted for prices",
+      "gpi": "Genuine progress: output adjusted for social and environmental costs",
+      "unemployment": "Share of the labour force without a job",
+      "avg_income": "Total household income per person per month, children and retired people included",
+      "median_income": "The middle person: half the town earns more, half less. Compare with the average to see skew",
+      "debt": "Government debt relative to a year of output",
+      "wage_share": "Share of income paid as wages",
+      "emissions": "Net emissions in the latest month: sources minus the forest sink. Open \"how?\" for the turn total, the accumulated total and the sources.",
+      "budget": "Share of the carbon budget not yet used",
+      "temperature": "Degrees C above the starting level",
+      "forest": "Forest stock, as a share of its maximum",
+      "commons": "Health of the shared land",
+      "forest_health": "How much of the forest is still standing and healthy. Fires burn it down; burnt tiles regrow slowly.",
+      "commons_health": "Health of the shared land. Droughts and over-harvesting wear it down.",
+      "farm_health": "How well the farm can produce. It follows forest and commons health and drops in a drought.",
+      "climate_stress": "Rises as the carbon budget runs down. The more stress, the likelier and fiercer fires and droughts become.",
+      "gini": "0 is perfectly equal, 1 is one person has everything",
+      "top_wealth_share": "Share of all household net worth held by the single richest household",
+      "wellbeing": "Average wellbeing, 0 to 1",
+      "legitimacy": "Public trust in government; at zero the town collapses"
+    },
+    "finance_label": {
+      "revenue.wageTax": "Income tax",
+      "revenue.profitTax": "Profit tax",
+      "revenue.capitalTax": "Capital tax",
+      "revenue.wealthTax": "Wealth tax",
+      "revenue.carbon": "Carbon revenue",
+      "revenue.other": "Other revenue",
+      "spending.benefits": "Benefits",
+      "spending.ubi": "Basic income",
+      "spending.publicSpending": "Public purchases",
+      "spending.jobGuarantee": "Job guarantee",
+      "spending.upkeep": "Road and plant upkeep",
+      "spending.subsidy": "Subsidies",
+      "spending.interest": "Debt interest",
+      "spending.builds": "Building",
+      "spending.other": "Other spending",
+      "income.wages": "Wages",
+      "income.dividends": "Dividends",
+      "income.rent": "Rent received",
+      "income.interest": "Interest",
+      "income.benefits": "Benefits"
+    },
+    "finance_hint": {
+      "revenue.wageTax": "Income tax: charged on the wages households earn (the lever key is still tax_wage).",
+      "revenue.profitTax": "Profit tax: charged on a firm's profit each month, before dividends are paid out to its owners.",
+      "revenue.capitalTax": "Capital tax: charged on income from owning things (dividends, rent, interest) that households receive.",
+      "bank-cr": "Equity over loans. Must stay above the limit, or lending stops.",
+      "bank-head": "How much more the bank can lend before it hits the capital limit.",
+      "hh-save": "Share of income left after tax, rent, loan payments and spending.",
+      "f-rev": "Money received for purchases, from the ledger. Up to about 10% below the model's own firm revenue: a firm buying from itself moves no money.",
+      "m-created": "New loans create money.",
+      "m-destroyed": "Repaid loans destroy money.",
+      "p-median": "Per person, per month.",
+      "p-avg": "Per person, per month."
+    },
+    "capital_gauge": {
+      "breach": "Below the limit: the bank cannot lend.",
+      "tight": "Close to the limit.",
+      "ok": "Comfortably above the limit."
+    },
+    "ledger_kind": {
+      "wage": "Wage",
+      "dividend": "Dividend",
+      "rent": "Rent",
+      "benefit": "Benefit",
+      "tax": "Tax",
+      "purchase": "Purchase",
+      "lobby": "Lobbying",
+      "interest": "Interest",
+      "loan_new": "New loan",
+      "loan_repay": "Loan repayment",
+      "loan_writeoff": "Loan write-off",
+      "build": "Building",
+      "upkeep": "Upkeep",
+      "subsidy": "Subsidy",
+      "bailout": "Bailout",
+      "wealth_consumption": "Wealth spent",
+      "neutral": "Other"
+    },
+    "infra_label": {
+      "public_housing": "Public housing",
+      "fossil_plant": "Fossil plant",
+      "renewable_plant": "Renewable plant",
+      "road": "Road",
+      "fire_station": "Fire station"
+    },
+    "class_label": {
+      "capitalist": "Capitalist",
+      "rentier": "Rentier (landlord)",
+      "manager": "Manager",
+      "worker": "Worker",
+      "dependent": "Dependent"
+    },
+    "class_short": {
+      "capitalist": "Capitalist",
+      "rentier": "Rentier",
+      "manager": "Manager",
+      "worker": "Worker",
+      "dependent": "Dependent"
+    },
+    "owner_text": {
+      "household": "Household",
+      "workers": "Its workers",
+      "state": "The state",
+      "bank": "The bank"
+    },
+    "owner_word": {
+      "household": "Household",
+      "workers": "Workers",
+      "state": "State",
+      "bank": "Bank"
+    },
+    "misc": {
+      "gst_reason": "Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line.",
+      "energy_unit_help": "{unit}: energy per month, in megawatt-hours. The unit is a label from the game's settings; the numbers are the model's own."
+    },
+    "inspect": {
+      "fire_station_covers": "forest within about {radius} tiles",
+      "fire_station_effect": "fires there burn shorter and spread less",
+      "planned_queued": "Cancel it from the pending list to get half the political capital back.",
+      "planned_draft": "Cancel it from the plan tray.",
+      "empty": "Pick a building or a road in the build palette to place one here.",
+      "road": "A commute over a road tile takes less time than over open ground.",
+      "firm_inactive": "No firm has been founded here yet. Firms open when households move up in class.",
+      "commons": "Change access and harvest in the policy drawer.",
+      "building": "Removal is queued like any move and costs political capital.",
+      "forest_burning": "Burning forest stops absorbing carbon. A fire station nearby shortens fires and slows their spread.",
+      "forest_regrowing": "Burnt tiles regrow slowly and then stand again.",
+      "forest_standing": "Forests are fixed scenery in this version.",
+      "palette_fire_station": "Covers forest within about {radius} tiles: shorter, slower fires.",
+      "palette_fire_station_help": "Click free ground, ideally next to the forest. Forest within about {radius} tiles burns for a shorter time and spreads less; a ring on the map shows the cover. Esc to stop."
+    },
+    "crisis": {
+      "bank_failed_title": "The bank has failed",
+      "bank_failed_detail": "Its equity ran out. Savers may lose part of their deposits unless the government bails it out (a bailout also costs legitimacy).",
+      "commons_collapsed_title": "The commons collapsed",
+      "commons_collapsed_detail": "The shared land is exhausted. Farm output is likely to suffer.",
+      "collapse_title": "The town has collapsed",
+      "budget_exhausted_title": "The carbon budget is exhausted",
+      "budget_exhausted_detail": "Further emissions are overshoot.",
+      "policy_blocked_title": "A policy was blocked",
+      "fire_detail": "Burning forest stops absorbing carbon, so emissions rise, and smoke harms wellbeing nearby. Fires burn out after a few months.",
+      "drought_detail": "The commons and the farm suffer and food prices may rise.",
+      "low_legitimacy_title": "Collapse warning: legitimacy is very low",
+      "low_legitimacy_detail": "At zero the town collapses.",
+      "low_budget_title": "Collapse warning: carbon budget nearly spent"
+    },
+    "weather": {
+      "health_forest": "Share of the forest still standing. Fires burn it and the carbon sink shrinks with it.",
+      "health_commons": "Health of the shared land. Droughts and over-harvesting wear it down.",
+      "health_farm": "How well the farm can produce: it follows forest and commons health, and falls in a drought.",
+      "stress_calm": "Calm",
+      "stress_none": "No climate stress yet: erratic weather begins when {onset} of the carbon budget is left.",
+      "stress_active": "Weather is more erratic and fires and droughts are likelier. Full stress at {full} budget left.",
+      "forecast_none": "No climate stress yet, so no fires or droughts are expected.",
+      "forecast_quiet": "Nothing unusual is expected this quarter.",
+      "forecast_adapt": "A fire station near the forest and resilience spending both lower the risk.",
+      "headline_fire_high": "Elevated fire risk",
+      "headline_drought_high": "Dry spell likely",
+      "headline_fire_medium": "Fire risk is building",
+      "headline_drought_medium": "A dry spell is possible",
+      "headline_calm": "Weather calm",
+      "lens_title": "Fire and drought risk",
+      "lens_note": "Per-tile chance that a fire starts there this month, from the simulation. The colours are scaled to the riskiest tile."
+    },
+    "story": {
+      "stress_never": "Climate stress never began: the town kept more than {onset} of its carbon budget, so there were no fires or droughts.",
+      "budget_onset": "The carbon budget fell to {onset} left, where climate stress starts, by {when}",
+      "budget_full": "and to {full} left, where stress is at its fullest, by {when}",
+      "budget_never": "The carbon budget never fell low enough to start climate stress ({used} used at the end)."
+    },
+    "lobby": {
+      "note": "You set {set}; lobbying is expected to leave about {expected} in force (this opposes the change)."
+    }
+  },
+  "system_cards": [
+    {
+      "key": "market",
+      "tagline": "Owners keep the profits; wages follow the labour market.",
+      "facts": [
+        {
+          "label": "Dividends go to",
+          "value": "Owners"
+        },
+        {
+          "label": "Wages",
+          "value": "Set by the market (a reserve army of unemployed holds them down)"
+        },
+        {
+          "label": "Credit",
+          "value": "Normal terms"
+        },
+        {
+          "label": "Commons default",
+          "value": "Open access or enclosed"
+        }
+      ],
+      "params": [
+        "market.invest_hurdle",
+        "market.lambda_max",
+        "market.payout_ratio",
+        "market.credit_spread_add",
+        "market.min_wage_multiplier",
+        "market.green_subsidy_floor"
+      ],
+      "resistance": "Not described in the design doc.",
+      "resistance_placeholder": true,
+      "tradeoffs": [
+        {
+          "label": "Strength",
+          "value": "Fast growth driven by profit and investment (the growth loop in the design doc)."
+        },
+        {
+          "label": "Cost",
+          "value": "Growth also drives emissions up, and wealth can capture policy through lobbying."
+        }
+      ]
+    },
+    {
+      "key": "regulated",
+      "tagline": "Owners still profit, but wages have a higher floor and lobbying is capped.",
+      "facts": [
+        {
+          "label": "Dividends go to",
+          "value": "Owners"
+        },
+        {
+          "label": "Wages",
+          "value": "Market wages with a higher floor"
+        },
+        {
+          "label": "Credit",
+          "value": "Normal terms"
+        },
+        {
+          "label": "Commons default",
+          "value": "A community cap is allowed"
+        },
+        {
+          "label": "Unlocks",
+          "value": "A campaign-spending cap and community management of the commons"
+        }
+      ],
+      "params": [
+        "regulated.invest_hurdle",
+        "regulated.lambda_max",
+        "regulated.payout_ratio",
+        "regulated.credit_spread_add",
+        "regulated.min_wage_multiplier",
+        "regulated.green_subsidy_floor",
+        "regulated.transition_months",
+        "regulated.transition_output_penalty"
+      ],
+      "resistance": "Capitalists resist the change.",
+      "resistance_placeholder": false,
+      "tradeoffs": [
+        {
+          "label": "Strength",
+          "value": "Unlocks the campaign-spending cap and community management of the commons, and lowers the ceiling on lobbying. The emissions cap works in every system."
+        },
+        {
+          "label": "Cost",
+          "value": "A long transition with some output lost while it lasts."
+        },
+        {
+          "label": "Trade-off",
+          "value": "Lower GDP growth than market capitalism, in return for a better chance of staying inside the carbon budget (a design target, not a promise)."
+        }
+      ]
+    },
+    {
+      "key": "coop",
+      "tagline": "Employees share the surplus and own the firms.",
+      "facts": [
+        {
+          "label": "Dividends go to",
+          "value": "Employees"
+        },
+        {
+          "label": "Wages",
+          "value": "A share of surplus, with a floor"
+        },
+        {
+          "label": "Credit",
+          "value": "Banks distrust co-ops: a spread is added"
+        },
+        {
+          "label": "Commons default",
+          "value": "Managed by the community"
+        }
+      ],
+      "params": [
+        "coop.invest_hurdle",
+        "coop.lambda_max",
+        "coop.payout_ratio",
+        "coop.credit_spread_add",
+        "coop.min_wage_multiplier",
+        "coop.green_subsidy_floor",
+        "coop.transition_months",
+        "coop.transition_output_penalty"
+      ],
+      "resistance": "High resistance. The doc does not say from whom; expect owners and lenders.",
+      "resistance_placeholder": true,
+      "tradeoffs": [
+        {
+          "label": "Strength",
+          "value": "Profits go to workers, which pulls inequality down, and lobbying power is lowest."
+        },
+        {
+          "label": "Cost",
+          "value": "A long transition with some output lost while it lasts; workers need training."
+        },
+        {
+          "label": "Trade-off",
+          "value": "Slower growth, and not a free pass on emissions."
+        }
+      ]
+    }
+  ],
+  "system_param_labels": {
+    "invest_hurdle": {
+      "label": "Investment hurdle (expected return)",
+      "unit": "fraction"
+    },
+    "lambda_max": {
+      "label": "Lobbying power cap",
+      "unit": "fraction"
+    },
+    "payout_ratio": {
+      "label": "Share of profit paid out",
+      "unit": "fraction"
+    },
+    "credit_spread_add": {
+      "label": "Credit spread added",
+      "unit": "fraction"
+    },
+    "min_wage_multiplier": {
+      "label": "Wage floor multiplier",
+      "unit": "x"
+    },
+    "green_subsidy_floor": {
+      "label": "Green subsidy floor",
+      "unit": "fraction"
+    },
+    "transition_months": {
+      "label": "Transition length",
+      "unit": "months"
+    },
+    "transition_output_penalty": {
+      "label": "Output lost during the transition",
+      "unit": "fraction"
+    }
+  }
+}

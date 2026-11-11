@@ -63,7 +63,8 @@
       "startYear": 2026,
       "firstTurn": 1,
       "lastTurn": 40,
-      "turnsPerYear": 4
+      "turnsPerYear": 4,
+      "ticksPerTurn": 3
     },
     "turn": 1,
     "tick": 0,
@@ -90,35 +91,40 @@
           "y": 0,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 0,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 2,
           "y": 0,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 3,
           "y": 0,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 4,
           "y": 0,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 5,
@@ -167,14 +173,16 @@
           "y": 1,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 1,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 2,
@@ -241,14 +249,16 @@
           "y": 2,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 2,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 2,
@@ -319,14 +329,16 @@
           "y": 3,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 3,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 2,
@@ -394,7 +406,8 @@
           "y": 4,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
@@ -471,7 +484,8 @@
           "y": 5,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
@@ -544,7 +558,8 @@
           "y": 6,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
@@ -618,7 +633,8 @@
           "y": 7,
           "kind": "forest",
           "buildable": false,
-          "state": "standing"
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
@@ -1925,6 +1941,8 @@
       "onset": 0.75,
       "full": 0.1,
       "curve": 1.0,
+      "coverageRadius": 3,
+      "smokeRadius": 2,
       "drought": null,
       "fires": [],
       "forecast": {
@@ -2645,6 +2663,11 @@
         }
       },
       "emissions": {
+        "runway": {
+          "perTurn": 30.308801755747844,
+          "runOutTurn": 30.694344476330926,
+          "runsOutBeforeEnd": true
+        },
         "month": {
           "firms": 0.0,
           "households": 0.0,

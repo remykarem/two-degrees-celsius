@@ -92,6 +92,32 @@ pub fn ignition_p(s: &State, p: &Params, w: &Weather, stress: f64) -> f64 {
         .clamp(0.0, 1.0)
 }
 
+/// Odds that a fire reaches the standing forest tile `t` next month: the monthly ignition odds
+/// shared over the standing tiles (ignition picks one uniformly), combined with the spread odds
+/// from each burning orthogonal neighbour. `None` for a tile that is not standing forest. It
+/// reads the state only and draws nothing; it ignores fires that burn out first, so it is the
+/// odds as they stand now, not a prediction.
+pub fn tile_fire_risk(s: &State, p: &Params, t: Tile) -> Option<f64> {
+    let w = &s.weather;
+    if s.map.kind_at(t) != Some(TileKind::Forest) || !is_standing(w, t) {
+        return None;
+    }
+    let stress = climate_stress(s.nature.cumulative, p);
+    let standing = forest_tiles(&s.map)
+        .into_iter()
+        .filter(|f| is_standing(w, *f))
+        .count() as f64;
+    let ignite = ignition_p(s, p, w, stress) / standing.max(1.0);
+    let spread = spread_p(s, p, w, t);
+    let mut stays = 1.0 - ignite;
+    for f in &w.fires {
+        if f.tile.x.abs_diff(t.x) + f.tile.y.abs_diff(t.y) == 1 {
+            stays *= 1.0 - spread;
+        }
+    }
+    Some((1.0 - stays).clamp(0.0, 1.0))
+}
+
 /// Monthly odds that a drought starts, at climate stress `stress`.
 pub fn drought_p(p: &Params, stress: f64) -> f64 {
     if stress <= 0.0 {
