@@ -1644,6 +1644,11 @@
           "unit": "share"
         },
         {
+          "path": "government.bank_cascade_unemployment",
+          "label": "Unemployment that, with a failed bank, collapses the town",
+          "unit": "share"
+        },
+        {
           "path": "nature.budget_b0",
           "label": "Carbon budget for the run",
           "unit": "t CO2"

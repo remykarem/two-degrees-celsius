@@ -392,6 +392,7 @@
     "legit_bailout": 0.05,
     "legit_debt": 0.008,
     "collapse_unemployment": 0.35,
+    "bank_cascade_unemployment": 0.2,
     "road_upkeep_usd": 10.0,
     "road_cost_usd": 2500.0
   },

@@ -235,7 +235,9 @@ fn check_outcome(sim: &mut Sim, events: &mut Vec<Event>) {
         events.push(Event::Collapse {
             reason: CollapseReason::MassUnemployment,
         });
-    } else if s.bank.failed && s.indicators.unemployment_smooth.0 > 0.2 {
+    } else if s.bank.failed
+        && s.indicators.unemployment_smooth.0 > sim.params.government.bank_cascade_unemployment
+    {
         s.outcome = Some((tick, Outcome::Collapse(CollapseReason::BankFailureCascade)));
         events.push(Event::Collapse {
             reason: CollapseReason::BankFailureCascade,

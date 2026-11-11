@@ -392,6 +392,8 @@ pub struct GovParams {
     pub legit_bailout: f64,
     pub legit_debt: f64,
     pub collapse_unemployment: f64,
+    /// A failed bank brings the town down when (smoothed) unemployment is also above this.
+    pub bank_cascade_unemployment: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
