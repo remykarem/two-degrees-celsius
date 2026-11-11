@@ -406,3 +406,23 @@ interface SimPort { agents(): Result<AgentsCatalog> }
 - `randomness` lists every RNG draw in `sim-model`. A Rust test (`randomness_table_matches_the_draw_sites_in_the_model`) counts `r.chance(`, `r.next_f64(` and `r.below(` in the source and fails when the table and the code disagree (the `drought_size` entry counts as two draws).
 - Param paths may start with `systems.<market|regulated|coop>.` (the economic-system files); the mock resolves them from `content/systems/`.
 - Fixture: `docs/fixtures/agents.json`. The mock's catalogue is generated from `content/` by `npm run sync-mock` and adds one line to `deterministic` saying it does not run the rules.
+
+## 18. Contract v1.8: the UI catalog and thin-renderer fields (additive; no `SCHEMA_VERSION` bump, no state change)
+
+Design: `docs/town-v6.md`. The web renders; rules, thresholds and explanatory text live in `content/` and arrive here. All changes are additive, so older readers keep working.
+
+```ts
+interface GameCalendar { /* ... */ ticksPerTurn: number }                          // params run.ticks_per_turn (3)
+interface Weather { /* ... */ coverageRadius: number; smokeRadius: number }       // params weather.coverage_radius (3), smoke_radius (2), in tiles
+interface Tile { /* ... */ fireRisk?: number }                                     // standing forest tiles: odds a fire reaches this tile next month
+interface CommandPreview { /* ... */ expectedEffective?: number }                 // carbon_price, tax_profit, wealth_tax, emissions_cap: value in force at today's net lobbying
+interface Runway { perTurn: number; runOutTurn?: number; runsOutBeforeEnd: boolean }
+interface Breakdowns { emissions: { runway: Runway; /* ... */ } }
+interface SimPort { catalog(): Result<Catalog> }                                   // wasm WasmSim.catalog
+```
+- `Catalog { bands, leverGroups, text, systems }` comes from `content/ui.json`, resolved against the live params (`crates/sim-api/src/catalog.rs`). `bands`: crisis thresholds (`legitimacyBelow`, `budgetBelow`), health bands (`min`, `id`, `word`), stress and severity word bands, `communityCap`, `capitalTightFactor`, `budgetMeter`. `leverGroups`: the order and blurb of the groups that `LeverInfo.group` names. `text`: authored sentences and labels by group and key, with `{name}` placeholders the web fills. `systems`: one card per economic system, with numbers read from `params.systems.*` (transition months, output penalty, `lambda_max`, hurdle, payout, spread, wage floor, green-subsidy floor).
+- `Tile.fireRisk` is `sim_model::weather::tile_fire_risk`: the monthly ignition odds shared over the standing tiles (ignition picks one uniformly), combined with the spread odds from each burning orthogonal neighbour. It reads state only and draws no random numbers; it ignores fires that burn out first.
+- `CommandPreview.expectedEffective` is `sim_model::lobbying::expected_effective` (`nominal x (1 - net_lobby)`; a cap is divided, and 0 stays "no cap"). A Rust test checks it against the policy gap the lobbying system records. The web states no lobbying claim without it.
+- `breakdowns.emissions.runway`: `perTurn` is the latest month's net emissions (not below zero) times `ticksPerTurn`; `runOutTurn` is the turn on which the remaining budget would be used up at that rate.
+- Params: `government.bank_cascade_unemployment` (0.2) replaces a literal in the engine's `check_outcome`. The params hash changes, so older saves are refused (`params_mismatch`). The state hash is unchanged.
+- Fixture: `docs/fixtures/catalog.json`. The mock serves that real reply (`npm run sync-mock` copies it) and builds its lever table from `content/levers.json`.

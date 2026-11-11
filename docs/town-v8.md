@@ -1,6 +1,6 @@
-# Town v6 design: daily ticks (draft, deferred)
+# Town v8 design: daily ticks (draft, deferred)
 
-Status: **DRAFT, DEFERRED, nothing implemented.** Renumbered from v5 when the user chose to make v5 an information release (`docs/town-v5.md`) first. Start only after v5 and a playtest. Numbers are placeholders. **[DECIDED]** = from the user; **[PROPOSED]** = my choices.
+Status: **DRAFT, DEFERRED, nothing implemented.** Renumbered from v5 to v6, then to v8 (v6 became the DRY/thin-renderer cleanup, `docs/town-v6.md`), when the user chose to make v5 an information release (`docs/town-v5.md`) first. Start only after v5 and a playtest. Numbers are placeholders. **[DECIDED]** = from the user; **[PROPOSED]** = my choices.
 
 ## 1. Goal [DECIDED]
 All the displayed numbers should change continuously with the game clock instead of jumping once a month or a quarter. The user chose a **truly finer simulation** (not just visual smoothing): **daily ticks**, by dividing the monthly deltas proportionately.

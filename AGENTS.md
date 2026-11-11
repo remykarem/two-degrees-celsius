@@ -24,7 +24,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `crates/sim-api` | Wire layer: contract JSON shapes, validation, frames, history, save/load, fixtures | engine and below. No model logic, no I/O |
 | `crates/sim-wasm` | wasm-bindgen shell over `sim_api::Api` (`WasmSim`). `unsafe_code = "deny"` (macro output) | sim-api, sim-params |
 | `crates/sim-cli` | Headless runner (`sim`) and `examples/debug.rs` | engine, params, metrics, types |
-| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (UI metadata), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
+| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `ui.json` (UI bands, authored UI text, system cards; Town v6), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
 | `tests/` | `scenarios.rs` (engine suite, run as a test of sim-engine), `golden/` (wasm golden), `snapshots/` (insta) | n/a |
 | `docs/` | Design docs, contract, notes, generated `fixtures/`. Index: `docs/README.md` | n/a |
 | `web/` | Browser app (Vite, Svelte 5, Three.js, Vitest). See below | n/a |
@@ -69,6 +69,7 @@ Enforced by ESLint (`web/eslint.config.js`, `no-restricted-imports` plus a local
 5. The store is the only meeting point of scene, panels and sim-port. `app/` wires them together.
 6. Dynamic `import()` needs a literal path and obeys the same boundaries.
 7. The mock's numbers come from `content/` via `npm run sync-mock`; never hand-edit `data.generated.json`.
+8. The web is a thin renderer (Town v6, `docs/town-v6.md`): no simulation rules, thresholds, model text or copies of `content/` numbers in `web/src`. Read them from the wire (the snapshot, or `catalog()` from `content/ui.json`; recipe in `docs/how-to.md` section 17). The web keeps layout, formatting, animation, chart scaling, onboarding copy and the wording of wire ids.
 
 ## Commands (all verified on this checkout)
 
@@ -87,7 +88,7 @@ Web (in `web/`; needs Node 22+ and `npm install` once):
 
 ```
 npm run dev                # http://localhost:5173 ; ?sim=mock|wasm picks the sim, ?seed=42
-npm test                   # vitest (22 files, 289 tests at last count)
+npm test                   # vitest (40 files, 502 tests incl. 12 skipped at last count)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)

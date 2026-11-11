@@ -133,3 +133,14 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 | L-13 | The legitimacy breakdown shows the terms the model applied in the latest month (recorded from the tick). Before the first month the terms are what month 1 would apply, not part of the sum. System-change resistance appears in `parts`, not in `terms` (the contract lists five term ids) | open | breakdowns.rs |
 | L-14 | The wrapper log adds one record per tick to the save blob (about 120 by turn 40); its size was not measured | open | log.rs |
 
+
+## Town v6 (thin renderer)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| V6-1 | The wire has no `hired` or `fired` events (cohort-era); `contract`, `formatEvent`, `results.ts` and the scene still handle them. Dead on the real wire | open | `web/tests/thin-renderer.test.ts` |
+| V6-2 | The mock's breakdowns, policies and industry lack some optional detail the real wire has (`parts`, `sumsToResult`, `monthLines`, tax-row notes, `cancelRefund`, `active`, `upkeepEachMonthly`). The parity test lists them (`KNOWN_MOCK_GAPS`) so a new difference fails | open | `web/tests/thin-renderer.test.ts` |
+| V6-3 | Text that is still in the web: onboarding and coach copy (allowed), event and block-reason sentences (wording of wire ids, allowed), the row labels and section titles of the Finance tab other than flows, `panels/backing.ts` and `panels/explain.ts` unit words, `why.ts` kind labels, the scene's class-marker legend. Model facts among them are candidates for `content/ui.json` | open | own finding |
+| V6-4 | `Tile.fireRisk` ignores fires that burn out before the next ignition roll, so right after a fire it slightly overstates spread risk. It is the odds as they stand, not a prediction | open (documented) | `crates/sim-model/src/weather.rs` |
+| V6-5 | The mock's per-tile `fireRisk` and weather dynamics are invented (labelled in `mock-only.json`); only the numbers in `content/params.json` `weather` are real | open | `web/src/sim-port/mock/weather.ts` |
+| V6-6 | Any params change invalidates saves (`params_mismatch`); the new `government.bank_cascade_unemployment` did so once | by design | architecture.md section 7 |

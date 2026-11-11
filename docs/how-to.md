@@ -187,3 +187,15 @@ A figure that comes from a ledger links to it with `game.openLedger(account, kin
 2. Update the matching entry in the `agents` section of `content/assumptions.json`: `kinds[].rule`/`decides`/`observes`/`params`, or a `randomness[]` entry (distribution `bernoulli`, `uniform` or `uniform_index`; `params` are dotted paths into `params.json`, or `systems.<name>.` for the system files).
 3. A new `r.chance(`/`r.next_f64(`/`r.below(` call fails `randomness_table_matches_the_draw_sites_in_the_model` until the table lists it. Add the entry (and, for a draw that is really two, adjust the test's count rule).
 4. `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, then the usual tests. State hashes must be unchanged unless the rule itself changed.
+
+## 17. Add or change text, a threshold or a band shown in the UI (Town v6)
+
+The web is a thin renderer: it must not hold model facts, explanatory text or thresholds. Where it goes:
+1. Authored text (a hint, a note, a label of a wire id, a crisis sentence): `content/ui.json` `text.<group>.<key>`. Use `{name}` for a number the web fills in, never a literal number. In the web call `text('group', 'key')` (`web/src/store/catalog.ts`); `tests/thin-renderer.test.ts` fails when a key the code names is missing.
+2. A threshold or a word band (crisis levels, health bands, stress and severity words, the community cap, the capital "tight" factor): `content/ui.json` `bands`; read it with `bands()`.
+3. A number the model owns (a radius, a rate, a count of ticks): `content/params.json`, then put it on the wire (a field of the snapshot, see "Change the contract") instead of copying it into the web.
+4. A derived figure (a risk, an expected effective value, a runway): compute it in `sim-model` or `sim-api`, serve it, and let the web only scale or format it.
+5. Economic-system card text: `content/ui.json` `system_cards` (prose) and `system_param_labels`; the numbers are read from `params.systems.*` by `crates/sim-api/src/catalog.rs`.
+6. Then: `cargo run -p sim-api --example fixtures` (refreshes `docs/fixtures/catalog.json`), `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, tests.
+
+What stays in the web: layout, formatting, animation, chart scaling, onboarding/coach copy and the wording of wire ids (event sentences, block-reason text).

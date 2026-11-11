@@ -11,15 +11,17 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | The rules of each system and sign tests | `docs/causal-model.md` section 10 (Town v2), then sections 7 and 8 (turn layer, demand side); sections 0-3 are cohort-era |
 | What the code deliberately does differently from the design | `docs/deviations.md`, the "Town v2" table (T1-T23) |
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
-| The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11, then `docs/sim-api-notes.md` "Town v2" |
+| The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11 and 18 (v1.8), then `docs/sim-api-notes.md` "Town v2" |
+| Where UI text, thresholds and bands live | `docs/town-v6.md`, `content/ui.json`, `docs/how-to.md` section 17 |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
-| How the pieces fit, turn flow, tick order, save schema | `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
+| How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
+| `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
 | `docs/town-v4.md` | DRAFT (weather: fires and drought). Not implemented; planned after v3 | Planning the weather work |
 | `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress (section 10: the 'How it works' explorer is queued as v5.1) | Working on finance/ledger/energy |
 | `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
-| `docs/town-v6.md` | DRAFT, DEFERRED (daily ticks; was v5) | Planning the time-step refactor |
+| `docs/town-v6.md` | APPROVED (DRY cleanup: the web is a thin renderer; model text, thresholds and UI bands move to `content/` and the wire; contract v1.8) | Changing where text or thresholds live |
+| `docs/town-v8.md` | DRAFT, DEFERRED (daily ticks; was v5, then v6) | Planning the time-step refactor |
 | `docs/town-v7.md` | DRAFT (GST/VAT and state ownership). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
-| `docs/architecture.md` |
 | How to make a change | `docs/how-to.md` |
 | Vocabulary | `docs/glossary.md` |
 | Open problems and debt | `docs/known-issues.md` |
@@ -49,6 +51,9 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/web-notes-v2.md` | Foundation notes. Its "Left rough" list is mostly fixed by scene2/panels2; its "Contract issues" list is still valid | Store/contract changes for v2 |
 | `docs/web-notes-scene2.md` | CURRENT (scene notes) | Working in `web/src/scene` |
 | `docs/web-notes-panels2.md` | CURRENT (panels notes) | Working in `web/src/panels` |
+| `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
+| `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
+| `docs/town-v8.md` | DRAFT, DEFERRED (daily ticks; was v5, then v6) | Planning the time-step refactor |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |
 | `docs/how-to.md` | CURRENT | Making a change |
 | `docs/glossary.md` | CURRENT | Any unfamiliar term |

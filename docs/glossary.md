@@ -73,3 +73,6 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Economic system (Market, Regulated, Coop)** | The town-wide rule set the player can switch (`content/systems/*.json`). Not a kind of firm |
 | **Randomness table** | Every RNG draw in the model (drought, fire, home damage, enclosure, startup) with its distribution and parameter. A test checks it against the source. Everything else is deterministic |
 | **Decision tag** | One line in the person inspector: the class of their household and how such households decide, with a link to the Agents tab |
+| **UI catalog (`catalog()`, contract v1.8)** | `content/ui.json` resolved against the live params: UI bands (crisis, health, word bands), lever group order and blurbs, authored text by group and key, and the economic-system cards. The web renders it and keeps no thresholds or model text of its own (`docs/town-v6.md`) |
+| **Thin renderer** | The rule for `web/`: layout, formatting, animation, chart scaling, onboarding copy and the wording of wire ids stay in the web; simulation rules, assumptions, model descriptions, thresholds and explanatory text come over the wire |
+| **Tile fire risk** | `Tile.fireRisk` on standing forest tiles: the model's monthly odds that a fire reaches the tile. The "Fire and drought risk" lens colours tiles by it, scaled to the riskiest tile |
