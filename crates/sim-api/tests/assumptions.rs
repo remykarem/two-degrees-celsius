@@ -340,3 +340,70 @@ fn wire_shape_is_camel_case_with_snake_case_enums() {
     assert!(j["group"].as_str().unwrap().contains('_') || !j["group"].as_str().unwrap().is_empty());
     assert!(j["examples"][0]["result"]["unit"].is_string());
 }
+
+// ---- the agents catalog (contract v1.7) ----
+
+fn agents() -> assumptions::AgentsCatalog {
+    Api::init(1).unwrap().agents().unwrap()
+}
+
+#[test]
+fn agents_catalog_resolves_and_covers_every_kind() {
+    let a = agents();
+    let ids: Vec<&str> = a.kinds.iter().map(|k| k.id.as_str()).collect();
+    for want in [
+        "households",
+        "firms",
+        "bank",
+        "government",
+        "lobbyists",
+        "nature",
+        "weather",
+    ] {
+        assert!(ids.contains(&want), "missing kind {want}");
+    }
+    for k in &a.kinds {
+        assert!(!k.decides.is_empty() && !k.observes.is_empty() && !k.rule.is_empty());
+    }
+    let classes: Vec<&str> = a.kinds[0].variants.iter().map(|v| v.id.as_str()).collect();
+    assert_eq!(
+        classes,
+        ["capitalist", "rentier", "manager", "worker", "dependent"]
+    );
+    assert!(!a.deterministic.is_empty());
+}
+
+/// Every random draw in the model is in the table: the count of draw sites in the source equals
+/// the draws the catalog documents (the drought size entry covers two uniform draws), and each
+/// entry names a real file.
+#[test]
+fn randomness_table_matches_the_draw_sites_in_the_model() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut sites = 0;
+    for f in std::fs::read_dir(root.join("crates/sim-model/src")).unwrap() {
+        let src = std::fs::read_to_string(f.unwrap().path()).unwrap();
+        for line in src.lines().filter(|l| !l.trim_start().starts_with("//")) {
+            for pat in ["r.chance(", "r.next_f64(", "r.below("] {
+                sites += line.matches(pat).count();
+            }
+        }
+    }
+    let a = agents();
+    let documented: usize = a
+        .randomness
+        .iter()
+        .map(|d| if d.id == "drought_size" { 2 } else { 1 })
+        .sum();
+    assert_eq!(
+        sites, documented,
+        "a draw was added or removed: update the table"
+    );
+    for d in &a.randomness {
+        assert!(root.join(&d.code).exists(), "{}: {}", d.id, d.code);
+        assert!(
+            d.when.len() > 5 && d.probability.len() > 5,
+            "{} is thin",
+            d.id
+        );
+    }
+}

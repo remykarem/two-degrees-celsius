@@ -1,0 +1,630 @@
+{
+  "kinds": [
+    {
+      "id": "households",
+      "title": "Households and people",
+      "actor": "agent",
+      "summary": "Eight households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
+      "decides": [
+        "How much to spend on food, goods and services this month",
+        "Which firm in each sector gets that spending",
+        "Whether to found a firm in the dormant slot (a Worker or Manager household with enough savings)",
+        "Capital-owning households: how much to give lobbying"
+      ],
+      "observes": [
+        "Its savings and last disposable income",
+        "Every shop's price and stock",
+        "The interest rate, firms' profit and unmet demand (for founding a firm)"
+      ],
+      "rule": "food = min(need x food price, savings); discretionary = min(propensity x max(0, disposable - food need) + wealth spending, savings - food); services = services share x discretionary; goods = the rest. Shop weight = stock x (average price / price) ^ elasticity, where the average price is weighted by stock",
+      "params": [
+        {
+          "path": "goods.food_need_units_pc",
+          "label": "Food need per person",
+          "value": 25.0,
+          "unit": "units per month"
+        },
+        {
+          "path": "goods.price_elasticity",
+          "label": "Price elasticity of shop choice",
+          "value": 2.0,
+          "unit": "exponent"
+        },
+        {
+          "path": "goods.services_share",
+          "label": "Share of discretionary spending on services",
+          "value": 0.45,
+          "unit": "share"
+        },
+        {
+          "path": "goods.wealth_consumption_rate",
+          "label": "Capitalists and Rentiers: spending out of wealth",
+          "value": 0.005,
+          "unit": "share of net wealth per month"
+        },
+        {
+          "path": "goods.propensity.worker",
+          "label": "Spending propensity, Worker",
+          "value": 1.0,
+          "unit": "share"
+        },
+        {
+          "path": "goods.propensity.capitalist",
+          "label": "Spending propensity, Capitalist",
+          "value": 0.45,
+          "unit": "share"
+        }
+      ],
+      "variants": [
+        {
+          "id": "capitalist",
+          "label": "Capitalist",
+          "decision": "Owns firms or the bank and lives mostly on profit; spends only part of income and funds lobbying.",
+          "rule": "owns assets and capital share of recent income above the threshold, rent not the main part"
+        },
+        {
+          "id": "rentier",
+          "label": "Rentier",
+          "decision": "Lives mostly on rent from homes it lets; spends part of income and funds lobbying.",
+          "rule": "as Capitalist, but rent received is above the rentier share of capital income"
+        },
+        {
+          "id": "manager",
+          "label": "Manager",
+          "decision": "Skilled and well paid; spends most of income and is the person who receives lobbying money.",
+          "rule": "employed, top skill above the skill threshold and pay above the skilled wage ratio times the base wage"
+        },
+        {
+          "id": "worker",
+          "label": "Worker",
+          "decision": "Lives on wages; spends nearly all income, buying food first.",
+          "rule": "employed and not Manager"
+        },
+        {
+          "id": "dependent",
+          "label": "Dependent",
+          "decision": "No one in the household has a job; lives on benefits and savings, food first.",
+          "rule": "no employed member, and not a Capitalist or Rentier"
+        }
+      ],
+      "classParams": [
+        {
+          "path": "class.capital_share_threshold",
+          "label": "Capital share of income that makes a Capitalist or Rentier",
+          "value": 0.5,
+          "unit": "share"
+        },
+        {
+          "path": "class.rentier_share_threshold",
+          "label": "Rent share of capital income that makes a Rentier",
+          "value": 0.5,
+          "unit": "share"
+        },
+        {
+          "path": "class.skill_threshold",
+          "label": "Skill threshold for a Manager",
+          "value": 0.7,
+          "unit": "skill, 0 to 1"
+        },
+        {
+          "path": "class.skilled_wage_ratio",
+          "label": "Pay needed for a Manager, against the base wage",
+          "value": 1.5,
+          "unit": "ratio"
+        }
+      ],
+      "code": [
+        "crates/sim-model/src/goods.rs",
+        "crates/sim-model/src/class.rs",
+        "crates/sim-model/src/labour.rs"
+      ]
+    },
+    {
+      "id": "firms",
+      "title": "Firms",
+      "actor": "agent",
+      "summary": "Factory, Farm and Shop, plus one dormant slot a household can start. Each firm decides how many workers it wants, what to pay and what to charge. (Market, Regulated and Coop are not kinds of firm: they are the town-wide economic system the player picks, which changes ownership and payout rules.)",
+      "decides": [
+        "How many workers to have: hire up to a monthly cap, fire after a sustained surplus",
+        "The base wage, adjusted each month",
+        "The price it charges",
+        "How much to invest and borrow"
+      ],
+      "observes": [
+        "Expected sales (a smoothed average of past demand)",
+        "Its inventory and how much cover it wants",
+        "The town's smoothed unemployment rate",
+        "Its unit cost (wages plus carbon cost per unit)"
+      ],
+      "rule": "target workers = ceil(labour needed - hire slack), where needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory); wage step = trend + wage_k x (u_ref - unemployment), capped; price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
+      "params": [
+        {
+          "path": "labour.inventory_cover",
+          "label": "Inventory cover wanted",
+          "value": 0.5,
+          "unit": "months of expected sales"
+        },
+        {
+          "path": "labour.inventory_adjust",
+          "label": "Share of the inventory gap closed per month",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "labour.hire_slack",
+          "label": "Hiring slack",
+          "value": 0.1,
+          "unit": "people"
+        },
+        {
+          "path": "labour.fire_after_months",
+          "label": "Months of surplus before firing",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "labour.wage_k",
+          "label": "Wage response to unemployment",
+          "value": 0.1,
+          "unit": "per unit of gap"
+        },
+        {
+          "path": "labour.u_ref",
+          "label": "Reference unemployment rate",
+          "value": 0.09,
+          "unit": "rate"
+        },
+        {
+          "path": "labour.wage_cap",
+          "label": "Largest wage change in a month",
+          "value": 0.01,
+          "unit": "share"
+        },
+        {
+          "path": "goods.price_adjust",
+          "label": "Share of the price gap closed per month",
+          "value": 0.05,
+          "unit": "share"
+        },
+        {
+          "path": "labour.expected_smoothing",
+          "label": "Weight of this month's demand in expected sales",
+          "value": 0.3,
+          "unit": "share"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/labour.rs",
+        "crates/sim-model/src/goods.rs",
+        "crates/sim-model/src/production.rs",
+        "crates/sim-model/src/investment.rs"
+      ]
+    },
+    {
+      "id": "bank",
+      "title": "Bank",
+      "actor": "agent",
+      "summary": "One bank that lends to firms against its equity, takes deposits and pays a dividend from excess capital. It follows a rule; it does not weigh individual borrowers.",
+      "decides": [
+        "The interest rate each firm pays",
+        "How much a firm may borrow (a leverage cap and the bank's capital ratio)",
+        "How much of excess capital to pay out"
+      ],
+      "observes": [
+        "The base rate set by the player",
+        "Each firm's debt against its assets (leverage)",
+        "Its own equity and loans"
+      ],
+      "rule": "firm loan rate = base rate + base spread + leverage spread x leverage + system spread; leverage = debt / (capital value + cash); borrowing limited to max leverage x assets",
+      "params": [
+        {
+          "path": "credit.spread_base",
+          "label": "Base spread over the policy rate",
+          "value": 0.005,
+          "unit": "per year"
+        },
+        {
+          "path": "credit.spread_leverage",
+          "label": "Extra spread per unit of leverage",
+          "value": 0.02,
+          "unit": "per year"
+        },
+        {
+          "path": "credit.max_firm_leverage",
+          "label": "Largest debt against assets",
+          "value": 0.6,
+          "unit": "ratio"
+        },
+        {
+          "path": "credit.bank_payout",
+          "label": "Share of excess capital paid out",
+          "value": 0.5,
+          "unit": "share"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/credit.rs"
+      ]
+    },
+    {
+      "id": "government",
+      "title": "Government",
+      "actor": "agent",
+      "summary": "The government collects taxes, pays benefits and spending and borrows for deficits, all at the levels the player sets. Its own rule is legitimacy: a score that drifts with wellbeing, unemployment, inequality and debt.",
+      "decides": [
+        "Nothing on its own about policy: levers are the player's",
+        "How much to borrow or repay to keep a cash target",
+        "How much of its spending it can actually fund"
+      ],
+      "observes": [
+        "Wellbeing, smoothed unemployment, the Gini coefficient and debt against GDP",
+        "Whether the bank was bailed out this month"
+      ],
+      "rule": "legitimacy change = wellbeing weight x (wellbeing - 0.5) - unemployment weight x max(0, unemployment - threshold) - inequality weight x max(0, Gini - threshold) - debt weight x max(0, debt/GDP - 1) - bailout penalty",
+      "params": [
+        {
+          "path": "government.legit_wellbeing",
+          "label": "Wellbeing weight",
+          "value": 0.01,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_unemployment",
+          "label": "Unemployment weight",
+          "value": 0.02,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_unemployment_threshold",
+          "label": "Unemployment threshold",
+          "value": 0.1,
+          "unit": "rate"
+        },
+        {
+          "path": "government.legit_gini",
+          "label": "Inequality weight",
+          "value": 0.012,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_gini_threshold",
+          "label": "Gini threshold",
+          "value": 0.45,
+          "unit": "0 to 1"
+        },
+        {
+          "path": "government.legit_debt",
+          "label": "Debt weight",
+          "value": 0.008,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_bailout",
+          "label": "Bailout penalty",
+          "value": 0.05,
+          "unit": "points"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/government.rs"
+      ]
+    },
+    {
+      "id": "lobbyists",
+      "title": "Lobbyists",
+      "actor": "agent",
+      "summary": "Not a separate body: Capitalist and Rentier households give a share of their capital income to the wealthiest Manager household, which acts as the lobbyist. Together with union density this erodes the policies the player sets. The player sees the nominal lever and the effective one.",
+      "decides": [
+        "How much each capital-owning household gives (a share of capital income, up to its savings and the campaign cap)"
+      ],
+      "observes": [
+        "Capital income and savings",
+        "GDP, wage share and unemployment (for union strength)"
+      ],
+      "rule": "capital pull = lobby k x spend / monthly GDP, capped at the system's maximum; labour pull = union density x wage share x labour weight; net = clamp(capital - labour, 0, max); effective lever = nominal x (1 - net)",
+      "params": [
+        {
+          "path": "lobby.spend_rate",
+          "label": "Share of capital income given",
+          "value": 0.02,
+          "unit": "share"
+        },
+        {
+          "path": "lobby.k",
+          "label": "Influence per unit of spending against GDP",
+          "value": 120.0,
+          "unit": "ratio"
+        },
+        {
+          "path": "lobby.max_net",
+          "label": "Largest net erosion of a lever",
+          "value": 0.95,
+          "unit": "share"
+        },
+        {
+          "path": "systems.market.lambda_max",
+          "label": "Capital pull cap, Market system",
+          "value": 0.6,
+          "unit": "share"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/lobbying.rs"
+      ]
+    },
+    {
+      "id": "nature",
+      "title": "Nature",
+      "actor": "non_agent",
+      "summary": "Forest and commons are not agents: they follow fixed rules for growth, harvest and decay. The one chance event is an owner fencing off an open commons.",
+      "decides": [
+        "Nothing: it responds to emissions, harvest and fire"
+      ],
+      "observes": [
+        "Cumulative emissions, forest stock, commons use and access rule"
+      ],
+      "rule": "see the Forest and commons topic for growth and the sink; enclosure is a monthly chance while the commons are open",
+      "params": [
+        {
+          "path": "systems.market.enclosure_prob",
+          "label": "Monthly chance of enclosure, Market system",
+          "value": 0.002,
+          "unit": "probability per month"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/nature.rs"
+      ]
+    },
+    {
+      "id": "weather",
+      "title": "Weather",
+      "actor": "non_agent",
+      "summary": "Droughts and fires are not decisions. Their odds rise with climate stress, which rises as the carbon budget runs down. They are the main place where the random seed matters.",
+      "decides": [
+        "Nothing: odds follow climate stress, dryness and fire stations"
+      ],
+      "observes": [
+        "Climate stress, forest tiles, drought severity, fire station coverage"
+      ],
+      "rule": "drought chance = base x (1 + gain x stress); ignition chance = base x (1 + gain x stress) x dryness x standing share x (1 - resilience cut); spread chance = spread base x (1 + drought gain x severity) x (1 - station cut)",
+      "params": [
+        {
+          "path": "weather.drought_base",
+          "label": "Base monthly drought chance",
+          "value": 0.12,
+          "unit": "probability per month"
+        },
+        {
+          "path": "weather.fire_base",
+          "label": "Base monthly ignition chance",
+          "value": 0.09,
+          "unit": "probability per month"
+        },
+        {
+          "path": "weather.spread_p",
+          "label": "Base spread chance per neighbouring forest tile",
+          "value": 0.1,
+          "unit": "probability per month"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/weather.rs"
+      ]
+    }
+  ],
+  "randomness": [
+    {
+      "id": "drought_onset",
+      "event": "A drought starts",
+      "system": "weather",
+      "distribution": "bernoulli",
+      "probability": "drought base x (1 + stress gain x climate stress), clamped to 0 to 1",
+      "when": "each month with no drought running and climate stress above zero",
+      "params": [
+        {
+          "path": "weather.drought_base",
+          "label": "Base chance",
+          "value": 0.12,
+          "unit": "probability per month"
+        },
+        {
+          "path": "weather.drought_stress_gain",
+          "label": "Stress gain",
+          "value": 1.0,
+          "unit": "ratio"
+        }
+      ],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "drought_size",
+      "event": "How severe and how long a drought is",
+      "system": "weather",
+      "distribution": "uniform",
+      "probability": "two uniform draws on 0..1: severity = min(1, sev_min + u x (span base + span stress x stress)); months = dur_min + floor(u x (span base + span stress x stress))",
+      "when": "only when a drought starts",
+      "params": [
+        {
+          "path": "weather.sev_min",
+          "label": "Minimum severity",
+          "value": 0.2,
+          "unit": "0 to 1"
+        },
+        {
+          "path": "weather.sev_span_base",
+          "label": "Severity range",
+          "value": 0.2,
+          "unit": "0 to 1"
+        },
+        {
+          "path": "weather.dur_min",
+          "label": "Minimum months",
+          "value": 2.0,
+          "unit": "months"
+        },
+        {
+          "path": "weather.dur_span_base",
+          "label": "Duration range",
+          "value": 1.5,
+          "unit": "months"
+        }
+      ],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "fire_spread",
+      "event": "A fire spreads to a neighbouring forest tile",
+      "system": "weather",
+      "distribution": "bernoulli",
+      "probability": "spread chance x (1 + drought gain x severity) x (1 - station cut if covered)",
+      "when": "each month, once for each standing forest tile next to a burning tile",
+      "params": [
+        {
+          "path": "weather.spread_p",
+          "label": "Base spread chance",
+          "value": 0.1,
+          "unit": "probability per month"
+        },
+        {
+          "path": "weather.spread_drought",
+          "label": "Drought gain",
+          "value": 1.0,
+          "unit": "ratio"
+        },
+        {
+          "path": "weather.station_spread_cut",
+          "label": "Cut inside a fire station's reach",
+          "value": 0.6,
+          "unit": "share"
+        }
+      ],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "fire_ignition",
+      "event": "A new fire starts",
+      "system": "weather",
+      "distribution": "bernoulli",
+      "probability": "fire base x (1 + stress gain x stress) x dryness x standing forest share x (1 - resilience cut)",
+      "when": "each month with climate stress above zero and some forest standing",
+      "params": [
+        {
+          "path": "weather.fire_base",
+          "label": "Base chance",
+          "value": 0.09,
+          "unit": "probability per month"
+        },
+        {
+          "path": "weather.fire_stress_gain",
+          "label": "Stress gain",
+          "value": 1.0,
+          "unit": "ratio"
+        }
+      ],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "fire_tile",
+      "event": "Which forest tile ignites",
+      "system": "weather",
+      "distribution": "uniform_index",
+      "probability": "one uniform pick among the standing forest tiles",
+      "when": "only when a new fire starts",
+      "params": [],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "home_damage",
+      "event": "A home next to a fire is damaged",
+      "system": "weather",
+      "distribution": "bernoulli",
+      "probability": "a fixed chance per home within one tile of a fire",
+      "when": "each month for each such home; the draw happens only when the chance is above zero, and in the shipped content it is zero (off)",
+      "params": [
+        {
+          "path": "weather.home_damage_prob",
+          "label": "Chance of damage",
+          "value": 0.0,
+          "unit": "probability per month"
+        }
+      ],
+      "code": "crates/sim-model/src/weather.rs"
+    },
+    {
+      "id": "enclosure",
+      "event": "An owner fences off an open commons",
+      "system": "nature",
+      "distribution": "bernoulli",
+      "probability": "the economic system's enclosure chance; the richest Capitalist or Rentier household becomes the owner",
+      "when": "each month while the commons are open and the chance is above zero (Market only in the shipped content)",
+      "params": [
+        {
+          "path": "systems.market.enclosure_prob",
+          "label": "Chance, Market system",
+          "value": 0.002,
+          "unit": "probability per month"
+        },
+        {
+          "path": "systems.regulated.enclosure_prob",
+          "label": "Chance, Regulated system",
+          "value": 0.0,
+          "unit": "probability per month"
+        },
+        {
+          "path": "systems.coop.enclosure_prob",
+          "label": "Chance, Coop system",
+          "value": 0.0,
+          "unit": "probability per month"
+        }
+      ],
+      "code": "crates/sim-model/src/nature.rs"
+    },
+    {
+      "id": "startup",
+      "event": "A household founds a firm in the dormant slot",
+      "system": "class",
+      "distribution": "bernoulli",
+      "probability": "mobility rate x max(0, sector return - base rate), clamped to 0..1",
+      "when": "each month when a household has the savings and a dormant slot sits in a sector with enough unmet demand; one draw whatever the odds",
+      "params": [
+        {
+          "path": "class.mobility_rate",
+          "label": "Mobility rate",
+          "value": 0.03,
+          "unit": "per unit of excess return"
+        },
+        {
+          "path": "class.startup_min_excess_demand",
+          "label": "Unmet demand needed in the sector",
+          "value": 0.2,
+          "unit": "ratio"
+        },
+        {
+          "path": "class.startup_cost_usd",
+          "label": "Start-up cost",
+          "value": 30000.0,
+          "unit": "$"
+        }
+      ],
+      "code": "crates/sim-model/src/class.rs"
+    }
+  ],
+  "deterministic": [
+    "Everything else is deterministic: spending, shop choice, hiring, wages, prices, credit, taxes, lobbying and legitimacy use no random draws.",
+    "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off and whether a household founds a firm; it does not change the starting town.",
+    "The starting differences between households (income, savings, skill, who owns what) are written in content/initial_town.json, not drawn."
+  ]
+}

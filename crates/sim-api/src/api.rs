@@ -128,6 +128,12 @@ impl Api {
         crate::assumptions::resolve(&self.sim.params, &self.meta.energy_unit)
     }
 
+    /// The agents catalog (contract v1.7): kinds, decision rules with live parameters, and the
+    /// randomness table. Static for a given params file.
+    pub fn agents(&self) -> ApiResult<crate::assumptions::AgentsCatalog> {
+        crate::assumptions::resolve_agents(&self.sim.params, &self.meta.energy_unit)
+    }
+
     pub fn snapshot(&self) -> Snapshot {
         snapshot::build(
             &self.sim,

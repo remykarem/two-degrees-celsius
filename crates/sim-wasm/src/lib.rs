@@ -104,6 +104,12 @@ impl WasmSim {
         wrap(self.get().and_then(|a| a.assumptions()))
     }
 
+    /// `Result<AgentsCatalog>` (contract v1.7): agent kinds, their decision rules with live
+    /// parameters, and the table of every random draw. Static for a given params file.
+    pub fn agents(&self) -> String {
+        wrap(self.get().and_then(|a| a.agents()))
+    }
+
     /// `Result<Snapshot>`.
     pub fn snapshot(&self) -> String {
         wrap(self.get().map(|a| a.snapshot()))

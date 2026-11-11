@@ -77,12 +77,190 @@ pub struct TopicDef {
 #[serde(deny_unknown_fields)]
 struct CatalogFile {
     topics: Vec<TopicDef>,
+    agents: AgentsDef,
+}
+
+// ---- the agents section (contract v1.7) ----
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Actor {
+    Agent,
+    NonAgent,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Distribution {
+    Bernoulli,
+    Uniform,
+    UniformIndex,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct KindDef {
+    pub id: String,
+    pub title: String,
+    pub actor: Actor,
+    pub summary: String,
+    pub decides: Vec<String>,
+    pub observes: Vec<String>,
+    pub rule: String,
+    pub params: Vec<ParamRef>,
+    #[serde(default)]
+    pub variants: Vec<AgentVariant>,
+    #[serde(default)]
+    pub class_params: Vec<ParamRef>,
+    pub code: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DrawDef {
+    pub id: String,
+    pub event: String,
+    pub system: String,
+    pub distribution: Distribution,
+    pub probability: String,
+    pub when: String,
+    pub params: Vec<ParamRef>,
+    pub code: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AgentsDef {
+    pub kinds: Vec<KindDef>,
+    pub randomness: Vec<DrawDef>,
+    pub deterministic: Vec<String>,
+}
+
+/// A household class: the derived label, a one-line account of how such households decide, and
+/// the rule that makes the label.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AgentVariant {
+    /// The wire class key (`capitalist`, `rentier`, `manager`, `worker`, `dependent`).
+    pub id: String,
+    pub label: String,
+    pub decision: String,
+    pub rule: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentKindInfo {
+    pub id: String,
+    pub title: String,
+    pub actor: Actor,
+    pub summary: String,
+    pub decides: Vec<String>,
+    pub observes: Vec<String>,
+    pub rule: String,
+    pub params: Vec<AssumptionParam>,
+    pub variants: Vec<AgentVariant>,
+    pub class_params: Vec<AssumptionParam>,
+    pub code: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RandomDraw {
+    pub id: String,
+    pub event: String,
+    pub system: String,
+    pub distribution: Distribution,
+    pub probability: String,
+    pub when: String,
+    pub params: Vec<AssumptionParam>,
+    pub code: String,
+}
+
+/// The agents catalog (contract v1.7): who decides what, how, and where chance enters.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AgentsCatalog {
+    pub kinds: Vec<AgentKindInfo>,
+    pub randomness: Vec<RandomDraw>,
+    pub deterministic: Vec<String>,
+}
+
+fn load_file() -> ApiResult<CatalogFile> {
+    serde_json::from_str::<CatalogFile>(CATALOG)
+        .map_err(|e| ApiError::new(code::BAD_METADATA, format!("content/assumptions.json: {e}")))
+}
+
+fn resolve_refs(
+    pj: &serde_json::Value,
+    refs: &[ParamRef],
+    energy_unit: &str,
+    who: &str,
+) -> ApiResult<Vec<AssumptionParam>> {
+    refs.iter()
+        .map(|r| {
+            let value = param_value(pj, &r.path).ok_or_else(|| {
+                ApiError::new(
+                    code::BAD_METADATA,
+                    format!("agents '{who}': no parameter {}", r.path),
+                )
+            })?;
+            Ok(AssumptionParam {
+                path: r.path.clone(),
+                label: r.label.clone(),
+                value,
+                unit: r.unit.replace("{energy}", energy_unit),
+            })
+        })
+        .collect()
+}
+
+/// Resolve the agents section against the live params.
+pub fn resolve_agents(params: &Params, energy_unit: &str) -> ApiResult<AgentsCatalog> {
+    let a = load_file()?.agents;
+    let pj = serde_json::to_value(params)
+        .map_err(|e| ApiError::new(code::BAD_METADATA, format!("params: {e}")))?;
+    let kinds = a
+        .kinds
+        .iter()
+        .map(|k| {
+            Ok(AgentKindInfo {
+                id: k.id.clone(),
+                title: k.title.clone(),
+                actor: k.actor,
+                summary: k.summary.clone(),
+                decides: k.decides.clone(),
+                observes: k.observes.clone(),
+                rule: k.rule.clone(),
+                params: resolve_refs(&pj, &k.params, energy_unit, &k.id)?,
+                variants: k.variants.clone(),
+                class_params: resolve_refs(&pj, &k.class_params, energy_unit, &k.id)?,
+                code: k.code.clone(),
+            })
+        })
+        .collect::<ApiResult<Vec<_>>>()?;
+    let randomness = a
+        .randomness
+        .iter()
+        .map(|r| {
+            Ok(RandomDraw {
+                id: r.id.clone(),
+                event: r.event.clone(),
+                system: r.system.clone(),
+                distribution: r.distribution,
+                probability: r.probability.clone(),
+                when: r.when.clone(),
+                params: resolve_refs(&pj, &r.params, energy_unit, &r.id)?,
+                code: r.code.clone(),
+            })
+        })
+        .collect::<ApiResult<Vec<_>>>()?;
+    Ok(AgentsCatalog {
+        kinds,
+        randomness,
+        deterministic: a.deterministic,
+    })
 }
 
 pub fn load() -> ApiResult<Vec<TopicDef>> {
-    serde_json::from_str::<CatalogFile>(CATALOG)
-        .map(|f| f.topics)
-        .map_err(|e| ApiError::new(code::BAD_METADATA, format!("content/assumptions.json: {e}")))
+    load_file().map(|f| f.topics)
 }
 
 // ---- the wire ----

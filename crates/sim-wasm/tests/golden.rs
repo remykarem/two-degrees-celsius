@@ -85,6 +85,7 @@ fn run(plan: &Value) -> Value {
         "actions": fnv(&sim.actions()),
         // Contract v1.5: the raw `assumptions()` reply.
         "assumptions": fnv(&sim.assumptions()),
+        "agents": fnv(&sim.agents()),
     });
     let mut turns = Vec::new();
     let mut ledgers = serde_json::Map::new();
