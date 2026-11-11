@@ -8,7 +8,7 @@
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const ind = $derived($gs.snapshot?.industry ?? null);
-  const firms = $derived(ind ? firmLines(ind) : []);
+  const firms = $derived(ind ? firmLines(ind, $gs.snapshot?.households ?? []) : []);
   const infra = $derived(ind ? infraLines(ind) : []);
   const selected = $derived($gs.selection);
 </script>

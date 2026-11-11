@@ -3,6 +3,7 @@ import { quarterLabel } from '../store/config';
 import { fill, text } from '../store/catalog';
 import { emissionsBars } from './why';
 import { money, pct } from './format';
+import { topHouseholdLine } from './estate';
 
 export interface Story {
   outcome: 'win' | 'lose';
@@ -77,6 +78,12 @@ export function townFacts(snap: Snapshot, last: TurnResult | null): string[] {
     if (fin(a.topHouseholdWealthShare) && fin(z.topHouseholdWealthShare)) {
       out.push(`The richest household held ${pct(a.topHouseholdWealthShare)} of the town's wealth at the start and ${pct(z.topHouseholdWealthShare)} at the end.`);
     }
+  }
+  if (snap.estate && h.length) {
+    const top = topHouseholdLine(snap);
+    if (top) out.push(top);
+    if (snap.estate.flightsTotal > 0) out.push(fill(text('estate', 'flights_line'), { flights: snap.estate.flightsTotal, tonnes: Math.round(snap.estate.tonnesTotal * 10) / 10, town_tonnes: Math.round(snap.breakdowns?.emissions.cumulative.tonnes ?? snap.nature.cumulativeTonnes) }));
+    if (snap.estate.pilot?.status === 'let_go') out.push(text('estate', 'pilot_let_go_event'));
   }
   if (!h.length) return out;
   const unhoused = snap.housing.unhousedHouseholds;

@@ -76,6 +76,10 @@ function rawSections(snap: Snapshot): FinSection[] {
   const income: FinRow[] = INCOME_KEYS.map((k) => ({
     id: `inc-${k}`, label: label('income', k), month: hh.income[k], quarter: q ? q.householdIncome[k] : null, fmt: 'money',
   }));
+  // Contract v1.9: the part of `wages` that a household paid to its staff (the estate's pilot). It is inside the wages row, so it is a memo row, not added to a total.
+  if (hh.income.domesticWages !== undefined) {
+    income.splice(1, 0, { id: 'inc-domesticWages', label: `of which ${text('estate', 'domestic_wages_row').toLowerCase()}`, month: hh.income.domesticWages, quarter: q?.householdIncome.domesticWages ?? null, fmt: 'money', ledger: { account: { kind: 'household', id: snap.estate?.household ?? 0 }, kind: 'wage' } });
+  }
   const qv = (get: (x: FinanceFlows) => number): number | null => (q ? get(q) : null);
   return [
     { id: 'government', title: 'Government', rows: [

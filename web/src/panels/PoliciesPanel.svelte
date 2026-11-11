@@ -3,6 +3,8 @@
   import { byGroup, draftLines, EVENT_WORD, pendingLines, policyLines, timelineLines } from './policies';
   import HowButton from './HowButton.svelte';
   import { setUi } from './ui';
+  import { wealthTaxShortText } from './estate';
+  import { text } from '../store/catalog';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -17,6 +19,8 @@
   const timeline = $derived(board ? timelineLines(board, $gs.levers) : []);
   const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !snap?.gameOver);
   const GROUP_LABEL: Record<string, string> = { taxes: 'Taxes', money: 'Money and credit', labour: 'Labour and welfare', nature: 'Nature and carbon', spending: 'Government spending', other: 'Other' };
+  const short = $derived(snap ? wealthTaxShortText(snap) : null);
+  const taxNote = $derived(snap?.estate ? text('estate', 'wealth_tax_note') : null);
   let showAll = $state(false);
   const initialRows = $derived(lines.filter((l) => l.changedFromInitial || showAll));
   function lever(key: string) { game.select(null); setUi({ drawerOpen: canEdit, focusLever: canEdit ? (key as never) : null }); }
@@ -25,6 +29,8 @@
 {#if board}
   <div class="pol" data-testid="policies-panel">
     <p class="intro">What is in force now, what you started with at turn 0, and what is on its way. Open a policy in the drawer to change it.</p>
+
+    {#if short}<p class="warnl" role="status" data-testid="wealth-tax-short">{short}</p>{/if}
 
     <section aria-labelledby="pol-pend"><h3 id="pol-pend">Pending changes ({pending.length})</h3>
       {#if pending.length}
@@ -52,7 +58,8 @@
                   <th scope="row"><button type="button" class="lnk" onclick={() => lever(l.lever)} title="Open this policy in the drawer">{l.label}</button> <HowButton anchor={l.lever} label={l.label} />
                     <span class="sub">last change: {l.lastChange}{#if l.pending}; pending {l.pending.text} from turn {l.pending.turn}{/if}</span>
                     {#if l.draft}<span class="sub">draft in your plan: {l.draft}</span>{/if}
-                    {#if l.weakened}<span class="sub warn">{l.weakened}</span>{/if}</th>
+                    {#if l.weakened}<span class="sub warn">{l.weakened}</span>{/if}
+                    {#if l.lever === 'wealth_tax' && taxNote}<span class="sub" class:warn={!!short}>{short ?? taxNote}</span>{/if}</th>
                   <td class="n">{l.initial}</td><td class="n">{l.active}</td><td class="n">{l.effective ?? l.active}</td>
                 </tr>
               {/each}
@@ -75,6 +82,7 @@
   h4 { margin: 6px 0 2px; font-size: 11px; text-transform: uppercase; color: var(--text-dim); } .chk { font-size: 11px; font-weight: 400; text-transform: none; margin-left: 6px; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; } thead th { font-size: 10px; text-align: left; color: var(--text-dim); text-transform: uppercase; } th.n { text-align: right; }
   thead th:first-child { width: 54%; } th[scope='row'] { text-align: left; font-weight: 400; } .n { text-align: right; font-family: var(--font-mono); overflow-wrap: anywhere; vertical-align: top; } tr { border-top: 1px dotted var(--border); }
+  .warnl { margin: 0; font-size: 12px; color: var(--warn); font-weight: 600; border-left: 3px solid var(--warn); padding-left: 6px; }
   .sub { display: block; font-size: 10.5px; color: var(--text-dim); } .sub.warn { color: var(--warn); }
   .lnk { white-space: nowrap; border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0; font: inherit; text-align: left; }
   .pend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; } .pend li { display: flex; justify-content: space-between; gap: 6px; align-items: center; }

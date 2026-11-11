@@ -42,6 +42,10 @@ export function deriveCrises(snap: Snapshot | null, last: TurnResult | null): Cr
       add({ id: `policy_blocked:${e.reason}`, severity: 'warning', title: text('crisis', 'policy_blocked_title'), detail: REASON_TEXT[e.reason] ?? e.reason });
     }
   }
+  // Town v7: the estate could not pay its pilot, so the jet is grounded (wording in content/ui.json text.estate).
+  if (snap.estate?.pilot?.status === 'let_go' || events.some((e) => e.type === 'pilot_let_go')) {
+    add({ id: 'pilot_let_go', severity: 'warning', title: text('estate', 'pilot_let_go_event'), detail: text('estate', 'grounded_note') });
+  }
   // Weather (Town v4): calm wording, never blocking. Active fires and an active drought each get one banner.
   const w = weatherOf(snap);
   if (w && w.fires.length) {

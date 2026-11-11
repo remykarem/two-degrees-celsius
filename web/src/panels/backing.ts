@@ -1,5 +1,6 @@
 import type { Snapshot } from '../contract';
 import { compact, money, pct, tonnes } from './format';
+import { topHouseholdLine } from './estate';
 
 /**
  * "No bare percentages": every percent figure is shown with the numbers behind it. These helpers produce the backing text from values the wire gives
@@ -52,6 +53,8 @@ export function legitimacyBacking(s: Snapshot): string {
 }
 
 export function richestBacking(s: Snapshot): string {
+  const line = topHouseholdLine(s);
+  if (line) return line;
   const top = s.households.reduce((a, h) => Math.max(a, h.netWorth), 0);
   return `${money(top)} of ${money(s.finance.households.netWorth)} net worth`;
 }

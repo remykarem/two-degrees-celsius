@@ -2,6 +2,7 @@ import type { ClassKey, HouseholdView, PersonView, Snapshot } from '../contract'
 import type { Selection } from '../store';
 import { money } from './format';
 import { classShort } from '../store/catalog';
+import { employerLine } from './estate';
 
 export type HouseholdSortKey = 'id' | 'netWorth' | 'income';
 
@@ -47,6 +48,7 @@ const AGE = { child: 'child', adult: 'adult', retired: 'retired' } as const;
 
 /** One line about a person: their job, or what they do instead. */
 export function personDetail(p: PersonView, snap: Snapshot): string {
+  if (p.employer) return employerLine(p)!;
   if (p.job) return `works at ${snap.firms.find((f) => f.id === p.job!.firm)?.name ?? `firm ${p.job.firm}`}`;
   if (p.ageBand !== 'adult') return AGE[p.ageBand];
   return p.inLabourForce ? 'looking for work' : 'not in the labour force';
@@ -88,6 +90,6 @@ export function selectionAnnouncement(snap: Snapshot | null, sel: Selection | nu
 /** Unemployed and labour force counts from the people (the sim's own counts when present). */
 export function unemploymentCount(snap: Snapshot): { unemployed: number; labourForce: number } {
   const lf = snap.people.filter((p) => p.inLabourForce).length;
-  const un = snap.people.filter((p) => p.inLabourForce && !p.job).length;
+  const un = snap.people.filter((p) => p.inLabourForce && !p.job && !p.employer).length;
   return lf > 0 ? { unemployed: un, labourForce: lf } : { unemployed: Math.round(snap.indicators.unemployment * snap.indicators.labourForce), labourForce: Math.round(snap.indicators.labourForce) };
 }

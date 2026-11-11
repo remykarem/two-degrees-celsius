@@ -6,6 +6,7 @@ import { classLabel, fill, infraLabel, ownerText, ownerWord, text } from '../sto
 import { energyText, plantAt, plantRows, unitHelp } from './energy';
 import { debtBacking, forestTiles, legitimacyBacking, pctWith, stockOf } from './backing';
 import { compact, money, tonnes, turnsUntil } from './format';
+import { doesNotWorkText, employerLine, estateOwnerSections, isEstatePerson, pilotSections } from './estate';
 
 export interface Row { label: string; value: string; hint?: string }
 export interface Section { heading: string; rows: Row[] }
@@ -67,21 +68,23 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
   const h = s.households.find((x) => x.id === p.household);
   const firmName = p.job ? s.firms.find((f) => f.id === p.job!.firm)?.name ?? `Firm ${p.job.firm}` : null;
   const home = h?.home != null ? s.homes.find((x) => x.id === h.home) : undefined;
-  const jobText = firmName ?? (p.ageBand === 'child' ? 'child, not working' : p.ageBand === 'retired' ? 'retired' : p.inLabourForce ? 'looking for work' : 'not in the labour force');
+  const estateOwner = isEstatePerson(s, p) && !p.employer;
+  const jobText = firmName ?? employerLine(p) ?? (estateOwner ? doesNotWorkText() : p.ageBand === 'child' ? 'child, not working' : p.ageBand === 'retired' ? 'retired' : p.inLabourForce ? 'looking for work' : 'not in the labour force');
   return {
-    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${AGE_LABEL[p.ageBand]}${h ? `. ${classLabel(h.class)} household` : ''}`,
+    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${h?.tag ? `${h.tag}. ` : ''}${AGE_LABEL[p.ageBand]}${h ? `. ${classLabel(h.class)} household` : ''}${h?.wealthBand ? `. ${h.wealthBand.label}` : ''}`,
     ...(h ? { household: { label: h.label, detail: `${h.members.length} people`, selection: { kind: 'household' as const, id: h.id } } } : {}),
     sections: [
       { heading: 'Work', rows: [
-        { label: 'Job', value: jobText }, { label: 'Wage', value: p.job ? `${money(p.wage)}/month` : 'none' },
+        { label: 'Job', value: jobText }, { label: 'Wage', value: p.job || p.employer ? `${money(p.wage)}/month` : 'none' },
         { label: 'Skill', value: `${p.skill.toFixed(2)} (0 to 1)` }, ...(p.jobGuarantee ? [{ label: 'Job guarantee', value: 'yes' }] : [])] },
-      { heading: 'Commute', rows: p.job ? [
-        { label: 'Distance', value: `${compact(p.commuteTiles)} ${p.commuteTiles === 1 ? 'tile' : 'tiles'}` }, { label: 'Time', value: `${Math.round(p.commuteMinutes)} minutes each way` }]
+      { heading: 'Commute', rows: p.job || p.employer ? [
+        { label: 'Distance', value: `${compact(p.commuteTiles)} ${p.commuteTiles === 1 ? 'tile' : 'tiles'}` }, { label: 'Time', value: `${Math.round(p.commuteMinutes)} minutes each way` }, ...(p.employer ? [{ label: 'To', value: 'the estate hangar' }] : [])]
         : [{ label: 'Commute', value: 'none (no job)' }] },
       { heading: 'Life', rows: [
         { label: 'Wellbeing', value: p.wellbeing.toFixed(2), hint: '0 to 1' },
         { label: 'Home', value: h?.home != null ? `home ${h.home}${home ? (home.owner === 'public' ? ' (public)' : ' (private)') : ''}` : 'UNHOUSED' },
         ...(home ? [{ label: 'Rent', value: `${money(home.rent)}/month` }] : [])] },
+      ...(estateOwner ? estateOwnerSections(s) : []), ...pilotSections(s, p),
     ],
   };
 }
@@ -102,7 +105,7 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
   const owns = s.homes.filter((x) => x.owner === h.id && x.household !== h.id);
   const ownerText = theHome ? (theHome.owner === 'public' ? 'public housing' : theHome.owner === h.id ? 'this household' : s.households.find((x) => x.id === theHome.owner)?.label ?? 'a landlord') : 'none';
   return {
-    kind: 'household', title: h.label, subtitle: `${classLabel(h.class)} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
+    kind: 'household', title: h.label, subtitle: `${h.tag ? `${h.tag}. ` : ''}${h.wealthBand ? `${h.wealthBand.label}. ` : ''}${classLabel(h.class)} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
     members: members.map((p) => ({ label: p.label, detail: p.job ? `works${p.wage > 0 ? `, ${money(p.wage)}/month` : ''}` : AGE_LABEL[p.ageBand].toLowerCase(), selection: { kind: 'person' as const, id: p.id } })),
     sections: [
       { heading: 'Home', rows: [
@@ -118,6 +121,7 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
         { label: 'Tax paid', value: money(inc.taxPaid) }, { label: 'Rent paid', value: money(inc.rentPaid) },
         { label: 'Loan payments', value: money(inc.loanPayments) }, { label: 'Spending', value: money(inc.spending) }] },
       { heading: 'Life and politics', rows: [{ label: 'Wellbeing', value: h.wellbeing.toFixed(2) }, { label: 'Political power', value: h.politicalPower.toFixed(2) }] },
+      ...(s.estate?.household === h.id ? estateOwnerSections(s) : []),
     ],
   };
 }

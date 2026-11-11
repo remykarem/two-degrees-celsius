@@ -7,6 +7,7 @@
   import Sparkline from './Sparkline.svelte';
   import HowButton from './HowButton.svelte';
   import { money } from './format';
+  import { estateCard } from './estate';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -14,6 +15,7 @@
   const snap = $derived($gs.snapshot);
   const sections = $derived(snap ? financeSections(snap) : []);
   const empty = $derived(snap ? financeEmpty(snap.finance) : true);
+  const estate = $derived(snap ? estateCard(snap) : null);
   const gauge = $derived(snap ? capitalGauge(snap.finance.bank) : null);
   const open = (a: AccountRef, kind?: Parameters<Game['openLedger']>[1]) => { const sel = a.kind === 'government' ? { kind: 'government' as const } : a.kind === 'bank' ? { kind: 'bank' as const } : a.kind === 'household' ? { kind: 'household' as const, id: a.id } : a.kind === 'firm' ? { kind: 'firm' as const, id: a.id } : null; if (sel) game.select(sel); game.openLedger(a, kind); };
 </script>
@@ -66,6 +68,17 @@
       </section>
     {/each}
 
+    {#if estate}
+      <section aria-labelledby="fin-estate" data-testid="finance-estate"><h3 id="fin-estate">{estate.title} ({estate.tag}): money in and out</h3>
+        <table>
+          <thead><tr><th scope="col"><span class="sr-only">Figure</span></th><th scope="col" class="n">Month</th><th scope="col" class="n">Last {estate.moneyMonths} {estate.moneyMonths === 1 ? 'month' : 'months'}</th><th scope="col"><span class="sr-only">Ledger</span></th></tr></thead>
+          <tbody>{#each estate.money as r (r.label)}<tr><th scope="row">{r.label}</th><td class="n">{r.month}</td><td class="n q">{r.last12}</td><td class="x"></td></tr>{/each}</tbody>
+        </table>
+        {#if estate.shortfall}<p class="warnl" role="status">{estate.shortfall}</p>{/if}
+        <div class="entry small"><button type="button" onclick={() => open({ kind: 'household', id: snap.estate!.household })}>Estate ledger</button></div>
+      </section>
+    {/if}
+
     <section aria-labelledby="fin-flow"><h3 id="fin-flow">Circular flow, last quarter</h3><CircularFlow finance={snap.finance} ticksPerTurn={snap.game.ticksPerTurn} /></section>
   </div>
 {/if}
@@ -100,6 +113,7 @@
   .lim { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text); }
   .gl { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
   .gt { font-size: 11px; }
+  .warnl { margin: 3px 0 0; font-size: 12px; color: var(--warn); font-weight: 600; }
   .bk { display: block; font-size: 10px; color: var(--text-dim); }
   .breach .gt { color: var(--bad); font-weight: 700; } .tight .gt { color: var(--warn); }
 </style>
