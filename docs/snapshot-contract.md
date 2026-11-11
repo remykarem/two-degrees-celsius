@@ -481,3 +481,29 @@ interface Catalog { /* ... */ emissionSources: EmissionSourceDef[]; incomeSource
 - Vocabulary (display only): the households emission source reads "Homes (heating, transport)", the income source "Rent received".
 - Also in this version: the TypeScript contract is **generated** from the Rust wire types (`web/src/contract/generated.ts`, ts-rs behind the `ts` feature of `sim-api`, see `docs/how-to.md` "Regenerate the TS contract"). `web/src/contract/index.ts` is now a thin file of aliases and the few non-wire types. Shape changes of the generator: dropped types and renamed ones are listed in `docs/known-issues.md` (PC-2). Dead wire in the web removed: the aggregate `hired` and `fired` events (never sent by the real wire).
 - Fixtures, wasm goldens, `catalog.json` and the mock data were re-blessed (intended). The mock's `schemaVersion` is 6; the wasm loader refuses a package that does not say 6.
+
+## 21. Contract v2.1: the entity registry (Platform cleanup phase 2; ADDITIVE, `SCHEMA_VERSION` stays 6)
+
+Design: `docs/taxonomy.md` section 5.5 (registry v0) and section 7 steps 3 and 4. One new field, `Catalog.entities`, from `content/entities.json`; the state hash is unchanged. `Catalog.text.infra_label` (content/ui.json) is removed: infra labels are the entity labels.
+
+```ts
+interface EntityKind {
+  id: string;                         // unique: person, estate_owner, pilot, household, estate_household, firm, bank, government, home, estate_house, public_housing,
+                                      //   estate_grounds, runway, hangar, jet, road, fossil_plant, renewable_plant, fire_station, forest, commons, empty
+  kind: 'actor' | 'facility' | 'stock'; category: 'people'|'firms'|'finance'|'government'|'housing'|'energy'|'transport'|'safety'|'estate'|'nature';
+  label: string; plural: string;
+  roles: Role[];                      // located owned emitter sink payer payee employer income_source energy_producer energy_consumer hazard_exposed hazard_mitigator buildable lever_target labelled
+  tileKinds: TileKindKey[];           // map tile kinds it stands on; each wire tile kind belongs to exactly one entity
+  footprint: [number, number][];      // tiles of one instance relative to its anchor; non-empty iff `located`
+  infraKind?: InfraKindKey;           // set iff `buildable`; each InfraKind belongs to exactly one entity
+  variantOf?: string; group?: string; // the pilot is a variant of person; fossil and renewable plants share group power_plant (attributes.fuel)
+  owner: 'none'|'household'|'public'|'state'|'workers'|'bank'|'varies';
+  attributes: Record<string, string>;
+  sceneModel: Record<string, string[]>; // model ids by variant key (default required); several ids are alternatives picked by tile position
+  labels: Record<string, string>;     // wording by state: burning, title_burning, closed ({name}), vacant, occupied
+  inspector: InspectorSection[];      // the sections the inspector shows, in order (closed set; the web has one builder per id)
+}
+```
+- Validation at load (`crates/sim-api/src/entities.rs`, tests `crates/sim-api/tests/entities.rs`): unique ids; closed enums for kind, category, role, owner and section; `labelled` on every entity; `located` iff a footprint; `buildable` iff an `infraKind`; every wire `TileKind` and `InfraKind` claimed exactly once; `variantOf` names another entity; an `emissions` section needs the `emitter` role; a `sceneModel` has a `default`. Footprints agree with the initial map (a test counts tiles). Unknown fields are refused.
+- Scene model ids are web names; `web/tests/entities.test.ts` checks every id exists in `scene/models.ts`. An id the build does not know draws a plain block (`facility_generic`), so a facility added only in content still shows.
+- Not in this version: `Purpose` categories (taxonomy step 5) and hazards as entries.

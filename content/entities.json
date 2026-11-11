@@ -670,7 +670,9 @@
       },
       "labels": {
         "burning": "Burning forest",
-        "regrowing": "Burnt forest (regrowing)"
+      "title_burning": "Forest fire",
+        "regrowing": "Burnt forest (regrowing)",
+      "title_regrowing": "Burnt forest, regrowing"
       },
       "inspector": [
         "forest"

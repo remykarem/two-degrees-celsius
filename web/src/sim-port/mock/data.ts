@@ -84,7 +84,7 @@ export type PolicyValue = number | boolean | string;
 export interface LeverData extends LeverInfo { default: PolicyValue; effect: Effect }
 
 export const INFRA_KINDS: InfraKind[] = ['public_housing', 'fossil_plant', 'renewable_plant', 'road', 'fire_station'];
-export const INFRA_LABEL = GEN.catalog.text.infra_label as Record<InfraKind, string>;
+export const INFRA_LABEL = Object.fromEntries(GEN.catalog.entities.filter((e: { infraKind?: string }) => e.infraKind).map((e: { infraKind?: string; label: string }) => [e.infraKind, e.label])) as Record<InfraKind, string>;
 const cost = (key: string): CostModel & { leadTime: number } => {
   const c = GEN.turnCosts[key];
   if (!c) throw new Error(`content/params.json turn.levers has no entry for ${key}; run npm run sync-mock`);

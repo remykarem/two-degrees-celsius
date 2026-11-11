@@ -1028,13 +1028,6 @@
         "spending.ubi": "Basic income",
         "spending.upkeep": "Road and plant upkeep"
       },
-      "infra_label": {
-        "fire_station": "Fire station",
-        "fossil_plant": "Fossil plant",
-        "public_housing": "Public housing",
-        "renewable_plant": "Renewable plant",
-        "road": "Road"
-      },
       "inspect": {
         "building": "Removal is queued like any move and costs political capital.",
         "commons": "Change access and harvest in the policy drawer.",
@@ -2136,7 +2129,9 @@
         },
         "labels": {
           "burning": "Burning forest",
-          "regrowing": "Burnt forest (regrowing)"
+          "regrowing": "Burnt forest (regrowing)",
+          "title_burning": "Forest fire",
+          "title_regrowing": "Burnt forest, regrowing"
         },
         "inspector": [
           "forest"

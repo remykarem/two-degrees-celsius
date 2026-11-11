@@ -25,4 +25,5 @@ export { liveClock, type LiveClockFeed } from './scene-live';
 export type { LiveSlice } from './types';
 export { fossilShareOf } from './scene-energy';
 export { uiLabel, relabelLevers } from './labels';
-export { catalog, setCatalog, hasCatalog, bands, text, fill, wordOf, infraLabel, classLabel, classShort, kindLabel, ownerText, ownerWord } from './catalog';
+export { catalog, setCatalog, hasCatalog, bands, text, fill, wordOf, classLabel, classShort, kindLabel, ownerText, ownerWord } from './catalog';
+export { entities, entityKind, entityOfTile, entityOfInfra, hasRole, tileHasRole, entityLabel, entityPlural, stateLabel, infraLabel, infraPlural, sceneModelIds, sectionsOf } from './entities';

@@ -151,6 +151,8 @@ export const MODELS = {
     box(0.3, 0, -0.22, 0.16, 0.14, 0.16, WOOD), box(0.1, 0, -0.26, 0.14, 0.1, 0.14, WOOD),
     box(-0.3, 0.3, -0.22, 0.02, 0.4, 0.02, DARK), box(-0.3, 0.6, -0.22, 0.26, 0.14, 0.03, GOLD),
   ]),
+  /** Fallback for an entity whose registry scene model id this build does not know (a new facility added only in content). */
+  facility_generic: model([box(0, 0, 0, 0.6, 0.3, 0.6, WALL, true), box(0, 0.3, 0, 0.3, 0.2, 0.3, ROOF_DARK)]),
   // A tent for a household without a home, pitched on a free tile near the town hall.
   tent: model([
     P('pyr', 0, 0, 0, 0.5, 0.36, 0.5, 0xe9a23b, { }), box(0, 0, 0.18, 0.1, 0.16, 0.02, DARK), box(0.2, 0, -0.2, 0.02, 0.3, 0.02, WOOD), box(0.26, 0.24, -0.2, 0.12, 0.06, 0.01, 0xd1432f),

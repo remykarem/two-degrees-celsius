@@ -7,7 +7,8 @@ import type { CameraAngle, Lens } from './types';
  * Channel between the 3D scene and the panels. The scene writes, panels read (and send camera requests).
  * No DOM, no Three.js, no Svelte: every field is plain data. Readables follow the Svelte store contract.
  */
-export type EntityKind = SceneryKind | InfraKind;
+/** A scene entity's kind: a scenery kind, or the tile kind of a buildable facility (the registry may add kinds without a code change). */
+export type EntityKind = SceneryKind | InfraKind | (string & {});
 export interface EntityRef {
   kind: EntityKind;
   /** Home id for homes, firm id for firms, else null. */

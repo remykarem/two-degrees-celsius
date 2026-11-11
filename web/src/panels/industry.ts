@@ -1,10 +1,10 @@
 import { ownerWord } from '../store/catalog';
+import { infraPlural } from '../store/entities';
 import type { HouseholdView, Industry, IndustryFirm, InfraKind } from '../contract';
 import { compact, money, tonnes } from './format';
 
 /** Pure derivations for the Industry tab (contract v1.6). */
 export const SECTOR_WORD = { goods: 'Goods', food: 'Food', services: 'Services' } as const;
-export const INFRA_WORD: Record<InfraKind, string> = { road: 'Roads', public_housing: 'Public housing', fossil_plant: 'Fossil power plants', renewable_plant: 'Renewable power plants', fire_station: 'Fire stations' };
 
 /** A household owner is named by its label and tag ("Estate owner") when the snapshot's households are given, else by id. */
 export function ownershipText(f: IndustryFirm, households: HouseholdView[] = []): string {
@@ -28,7 +28,7 @@ export function firmLines(ind: Industry, households: HouseholdView[] = []): Firm
 }
 export interface InfraLine { kind: InfraKind; label: string; count: number; cost: string; upkeep: string; upkeepTotal: string }
 export const infraLines = (ind: Industry): InfraLine[] => ind.infrastructure.map((i) => ({
-  kind: i.kind, label: INFRA_WORD[i.kind], count: i.count, cost: money(i.buildCost), upkeep: `${money(i.upkeepMonthly)}/month each`, upkeepTotal: `${money(i.upkeepMonthly * i.count)}/month`,
+  kind: i.kind, label: infraPlural(i.kind), count: i.count, cost: money(i.buildCost), upkeep: `${money(i.upkeepMonthly)}/month each`, upkeepTotal: `${money(i.upkeepMonthly * i.count)}/month`,
 }));
 /** True when every firm has no state share (the note says so for the current systems). */
 export const noStateOwnership = (ind: Industry): boolean => ind.firms.every((f) => f.stateShare === 0);

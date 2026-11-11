@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GRID_SIZE, layoutOf, selectionTile, tileAt, tileKey, type Game, type GameState, type Tile } from '../store';
+import { GRID_SIZE, layoutOf, selectionTile, tileAt, tileHasRole, tileKey, type Game, type GameState, type Tile } from '../store';
 import { weatherLook, type WeatherLook } from '../store/scene-weather';
 import { sceneBus, type SceneBus } from '../store/scene-bus';
 import { liveClock } from '../store/scene-live';
@@ -283,7 +283,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     bus.selection.set(selTile || selPerson ? { tile: selTile ?? stands.find((q) => q.id === selectedPerson)?.tile ?? { x: 0, y: 0 }, entity: ent?.ref ?? null, facts: selPerson ? personFacts(selPerson) : ent ? factsFor(ent) : [] } : null);
 
     // Fire station coverage ring: the hovered or selected station, or the hovered tile while placing one.
-    const stationAt = (t: Tile | null) => (t && tileAt(s.snapshot, t)?.kind === 'fire_station' ? t : null);
+    const stationAt = (t: Tile | null) => (t && tileHasRole(tileAt(s.snapshot, t)?.kind ?? 'empty', 'hazard_mitigator') ? t : null);
     const placing = s.buildKind === 'fire_station' && s.hover && !game.tileError(s.hover) ? s.hover : null;
     weather.setCover(stationAt(s.hover) ?? stationAt(selTile) ?? placing, size, look.coverageRadius);
 

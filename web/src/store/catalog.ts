@@ -22,7 +22,6 @@ export const fill = (s: string, vars: Record<string, string | number>): string =
 export const wordOf = (w: WordBands, v: number): string => w.bands.find((b) => v < b.below)?.word ?? w.top;
 
 /** Labels of wire ids (content/ui.json `text.*_label` groups). */
-export const infraLabel = (k: string): string => text('infra_label', k);
 export const classLabel = (k: string): string => text('class_label', k);
 export const classShort = (k: string): string => text('class_short', k);
 export const kindLabel = (k: string): string => text('ledger_kind', k);

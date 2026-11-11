@@ -166,13 +166,6 @@
       "wealth_consumption": "Wealth spent",
       "neutral": "Other"
     },
-    "infra_label": {
-      "public_housing": "Public housing",
-      "fossil_plant": "Fossil plant",
-      "renewable_plant": "Renewable plant",
-      "road": "Road",
-      "fire_station": "Fire station"
-    },
     "class_label": {
       "capitalist": "Capitalist",
       "rentier": "Rentier (landlord)",

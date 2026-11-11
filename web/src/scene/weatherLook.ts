@@ -4,6 +4,7 @@ import type { WeatherLook } from '../store/scene-weather';
 import { tileFireRisk, isCovered } from '../store/scene-weather';
 import type { ModelId } from './models';
 import { mix } from './palette';
+import { modelFor } from './entityModel';
 
 /** Pure weather looks (no Three.js): which mesh a forest tile gets, how dry the ground looks, colours for the fire and drought lens. */
 
@@ -16,9 +17,7 @@ export const FIRE_RAMP = [0xcfe8b8, 0xf2d27a, 0xe58a3a, 0xb3261e] as const;
 
 /** Forest tile state to mesh. `standing` keeps the three varied tree models. */
 export function forestModelFor(state: ForestState | null | undefined, x: number, y: number): ModelId {
-  if (state === 'burning') return 'forest_burning';
-  if (state === 'regrowing') return 'forest_regrowing';
-  return `forest_${(x * 7 + y * 3) % 3}` as ModelId;
+  return modelFor('forest', state ?? 'standing', x, y);
 }
 
 export interface DroughtLook {

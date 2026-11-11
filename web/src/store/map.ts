@@ -1,4 +1,6 @@
-import type { BlockReason, InfraKind, Snapshot, Tile as MapTile, TileRef } from '../contract';
+import { entityLabel, entityOfTile, hasRole, stateLabel } from './entities';
+import { fill } from './catalog';
+import type { BlockReason, Snapshot, Tile as MapTile, TileRef } from '../contract';
 
 /** A map position. (The contract's own `Tile` is the full snapshot tile; this is just x and y.) */
 export type Tile = TileRef;
@@ -21,7 +23,8 @@ export type Selection =
 export type SceneryKind = 'home' | 'firm' | 'bank' | 'government' | 'forest' | 'commons';
 export interface Scenery { kind: SceneryKind; ref?: number; x: number; y: number; label: string }
 /** A finished building the player can place or remove (roads are in `roads`). */
-export interface Placed { kind: Exclude<InfraKind, 'road'>; x: number; y: number; ref?: number }
+/** `kind` is a wire tile kind; every buildable entity of the registry (except roads, which are in `roads`) is placed. */
+export interface Placed { kind: string; x: number; y: number; ref?: number }
 
 /**
  * A DERIVED view of `snapshot.map.tiles` in the shape the scene draws from. Nothing here is stored or saved: the simulation owns the
@@ -52,17 +55,21 @@ export function layoutOf(snap: Snapshot | null): MapLayout {
       case 'home': {
         const home = snap.homes.find((h) => h.id === t.ref);
         const hh = home?.household != null ? snap.households.find((h) => h.id === home.household) : undefined;
-        out.scenery.push({ kind: 'home', ...(t.ref !== undefined ? { ref: t.ref } : {}), ...at, label: hh ? `${hh.label} home` : 'Vacant home' });
+        out.scenery.push({ kind: 'home', ...(t.ref !== undefined ? { ref: t.ref } : {}), ...at, label: hh ? fill(stateLabel('home', 'occupied') ?? '{name}', { name: hh.label }) : stateLabel('home', 'vacant') ?? entityLabel('home') });
         break;
       }
-      case 'firm': out.scenery.push({ kind: 'firm', ...(t.ref !== undefined ? { ref: t.ref } : {}), ...at, label: snap.firms.find((f) => f.id === t.ref)?.name ?? 'Firm' }); break;
-      case 'bank': out.scenery.push({ kind: 'bank', ...at, label: 'Bank' }); break;
-      case 'town_hall': out.scenery.push({ kind: 'government', ...at, label: 'Town hall' }); break;
-      case 'forest': out.scenery.push({ kind: 'forest', ...at, label: 'Forest' }); break;
-      case 'commons': out.scenery.push({ kind: 'commons', ...at, label: 'Commons' }); break;
-      case 'public_housing': case 'fossil_plant': case 'renewable_plant': case 'fire_station': out.placed.push({ kind: t.kind, ...at, ...(t.ref !== undefined ? { ref: t.ref } : {}) }); break;
+      case 'firm': out.scenery.push({ kind: 'firm', ...(t.ref !== undefined ? { ref: t.ref } : {}), ...at, label: snap.firms.find((f) => f.id === t.ref)?.name ?? entityLabel('firm') }); break;
+      case 'bank': out.scenery.push({ kind: 'bank', ...at, label: entityLabel('bank') }); break;
+      case 'town_hall': out.scenery.push({ kind: 'government', ...at, label: entityLabel('government') }); break;
+      case 'forest': out.scenery.push({ kind: 'forest', ...at, label: entityLabel('forest') }); break;
+      case 'commons': out.scenery.push({ kind: 'commons', ...at, label: entityLabel('commons') }); break;
       case 'road': out.roads.push(at); break;
       case 'empty': break;
+      default: {
+        // Any other buildable facility of the registry (including one added only in content) is drawn and inspected generically.
+        const kind: string = t.kind;
+        if (hasRole(entityOfTile(kind), 'buildable')) out.placed.push({ kind, ...at, ...(t.ref !== undefined ? { ref: t.ref } : {}) });
+      }
     }
   }
   for (const p of snap.pending) {

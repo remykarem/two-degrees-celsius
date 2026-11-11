@@ -1,5 +1,5 @@
 import type { ClassKey, ForestState, FirmView, HouseholdView, PlantView, Snapshot } from '../contract';
-import { text, type DraftItem, type MapLayout, type Tile } from '../store';
+import { entityLabel, entityOfInfra, entityOfTile, infraLabel, stateLabel, fill, type DraftItem, type MapLayout, type Tile } from '../store';
 import type { EntityRef } from '../store/scene-bus';
 import { tileKey, worldOf } from './coords';
 import type { ModelId } from './models';
@@ -7,7 +7,7 @@ import { homeTint, mix, WALL } from './palette';
 import { forestStateOf } from '../store/weather';
 import { hasWork } from '../store/scene-estate';
 import { ESTATE_STONE } from './estateModels';
-import { forestModelFor } from './weatherLook';
+import { modelFor } from './entityModel';
 
 export type EntityState = 'normal' | 'pending' | 'draft';
 
@@ -38,11 +38,11 @@ const KIND_TINT: Record<string, number> = {
   public_housing: mix(0xf2c14e, WALL, 0.5), fossil_plant: 0xa4a4a8, renewable_plant: 0xcfe3cc, road: 0xd8d2c6, fire_station: 0xeae3d6,
 };
 
-type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road' | 'fire_station';
-const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant', road: 'road_site', fire_station: 'fire_station' };
-const INFRA_LABEL = (k: Building): string => text('infra_label', k);
-
-export const infraModel = (k: Building): ModelId => INFRA_MODEL[k];
+const DEFAULT_TINT = 0xd5d8de;
+const tintOf = (kind: string): number => KIND_TINT[kind] ?? DEFAULT_TINT;
+/** Scene model of a buildable kind (an `InfraKind`) or of any tile kind the registry knows. */
+export const infraModel = (k: string): ModelId => { const e = entityOfInfra(k as never) ?? entityOfTile(k); return modelFor(e?.id ?? k, undefined, 0, 0); };
+const INFRA_LABEL = (k: string): string => infraLabel(k);
 
 /** Turns until a queued item takes effect: it fires at the start of the submit of turn `effectiveTurn`, so effectiveTurn == turn is "next turn". */
 export function turnsLeft(effectiveTurn: number, turn: number): number {
@@ -68,26 +68,27 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
         const cls: ClassKey = hh?.class ?? 'worker';
         const mins = snap && hh ? snap.people.filter((q) => q.household === hh.id && hasWork(q)).map((q) => q.commuteMinutes).sort((a, b) => b - a) : undefined;
         const estate = !!hh && snap?.estate?.household === hh.id;
-        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: estate ? 'home_estate' : (`home_${cls}` as ModelId), tint: estate ? ESTATE_STONE : homeTint(cls), household: hh, commuteMinutes: mins });
+        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: estate ? modelFor('estate_house', undefined, sc.x, sc.y) : modelFor('home', cls, sc.x, sc.y), tint: estate ? ESTATE_STONE : homeTint(cls), household: hh, commuteMinutes: mins });
         break;
       }
       case 'firm': {
         const f = snap?.firms.find((x) => x.id === sc.ref);
-        const model: ModelId = !f || !f.active ? 'firm_vacant' : f.sector === 'food' ? 'firm_food' : f.sector === 'services' ? 'firm_shop' : 'firm_goods';
-        const label = f && f.active ? f.name : f ? `${f.name} (closed)` : sc.label;
+        const model = modelFor('firm', !f || !f.active ? 'vacant' : f.sector, sc.x, sc.y);
+        const closed = stateLabel('firm', 'closed');
+        const label = f && f.active ? f.name : f ? (closed ? fill(closed, { name: f.name }) : f.name) : sc.label;
         out.push({ ...base, ref: ref(label), model, tint: KIND_TINT.firm!, firm: f });
         break;
       }
-      case 'bank': out.push({ ...base, ref: ref(), model: 'bank', tint: KIND_TINT.bank! }); break;
-      case 'government': out.push({ ...base, ref: ref(), model: 'government', tint: KIND_TINT.government! }); break;
+      case 'bank': out.push({ ...base, ref: ref(), model: modelFor('bank', undefined, sc.x, sc.y), tint: KIND_TINT.bank! }); break;
+      case 'government': out.push({ ...base, ref: ref(), model: modelFor('government', undefined, sc.x, sc.y), tint: KIND_TINT.government! }); break;
       case 'forest': {
         const st = forestStateOf(snap, sc);
-        out.push({ ...base, ref: ref(st === 'burning' ? 'Burning forest' : st === 'regrowing' ? 'Burnt forest (regrowing)' : 'Forest'), model: forestModelFor(st, sc.x, sc.y), tint: KIND_TINT.forest!, stock: snap?.nature.forest, ...(st ? { forestState: st } : {}) });
+        out.push({ ...base, ref: ref((st && stateLabel('forest', st)) || entityLabel('forest')), model: modelFor('forest', st ?? 'standing', sc.x, sc.y), tint: KIND_TINT.forest!, stock: snap?.nature.forest, ...(st ? { forestState: st } : {}) });
         break;
       }
       case 'commons': {
         const nat = snap?.nature;
-        const model: ModelId = !nat ? 'commons_open' : nat.commons < 0.12 ? 'commons_collapsed' : (`commons_${nat.commonsAccess === 'enclosed' ? 'enclosed' : nat.commonsAccess}` as ModelId);
+        const model = modelFor('commons', !nat ? 'open' : nat.commons < 0.12 ? 'collapsed' : nat.commonsAccess, sc.x, sc.y);
         out.push({ ...base, ref: ref(), model, tint: KIND_TINT.commons!, stock: nat?.commons });
         break;
       }
@@ -96,7 +97,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
 
   for (const p of layout.placed) {
     out.push({
-      key: `p:${tileKey(p)}`, ...at(p), plant: snap?.plants.find((q) => q.tile.x === p.x && q.tile.y === p.y), state: 'normal', turnsLeft: 0, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
+      key: `p:${tileKey(p)}`, ...at(p), plant: snap?.plants.find((q) => q.tile.x === p.x && q.tile.y === p.y), state: 'normal', turnsLeft: 0, model: infraModel(p.kind), tint: tintOf(p.kind),
       ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL(p.kind) },
     });
   }
@@ -105,7 +106,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     if (q.command.type !== 'place' || !tile) continue;
     const tl = turnsLeft(q.effectiveTurn, turn);
     out.push({
-      key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: INFRA_MODEL[q.command.kind], tint: KIND_TINT[q.command.kind]!,
+      key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: infraModel(q.command.kind), tint: tintOf(q.command.kind),
       ref: { kind: q.command.kind, id: null, tile: { x: tile.x, y: tile.y }, label: INFRA_LABEL(q.command.kind), pendingTurns: tl },
     });
   }
@@ -114,7 +115,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     const c = d.command;
     if (c.type !== 'place') continue;
     out.push({
-      key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
+      key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: infraModel(c.kind), tint: tintOf(c.kind),
       ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL(c.kind)} (planned)`, pendingTurns: d.preview.leadTime },
     });
   }
@@ -140,6 +141,6 @@ export function factsFor(d: EntityDesc): { label: string; value: string }[] {
   const pl = d.plant;
   if (pl) f.push({ label: 'Emissions', value: `${num(pl.emissionsMonthly)} t/month` }, { label: 'Output', value: num(pl.output) });
   if (d.forestState) f.push({ label: 'Tile', value: d.forestState === 'burning' ? 'burning' : d.forestState === 'regrowing' ? 'regrowing after a fire' : 'standing' });
-  if (d.stock !== undefined) f.push({ label: d.ref.kind === 'forest' ? 'Forest stock' : 'Commons stock', value: pct(d.stock) });
+  if (d.stock !== undefined) f.push({ label: `${entityLabel(d.ref.kind)} stock`, value: pct(d.stock) });
   return f;
 }

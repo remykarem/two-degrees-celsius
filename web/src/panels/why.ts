@@ -2,6 +2,7 @@ import type { LeverInfo, Snapshot, TraceRecord } from '../contract';
 import { formatLever, lobbyingDiffers, money, pct, tonnes } from './format';
 import type { WhyKind } from './metrics';
 import { emissionSourceLabel, incomeSourceLabel } from '../store/catalog';
+import { entityLabel } from '../store/entities';
 
 export interface Bar { label: string; value: number; text: string; sub?: string; /** Second bar in the same row (lobbying: the effective value). */ pair?: number; tone?: 'plain' | 'sink' | 'muted' }
 export interface BarGroup { heading: string; bars: Bar[]; /** Paired reference value (lobbying: what you set). */ pairLabel?: [string, string] }
@@ -11,7 +12,7 @@ export interface WhyData { kind: WhyKind; title: string; blurb: string; groups: 
 export function plantLabel(t: { id?: number; tile?: { x: number; y: number } }, snap: Snapshot | null): string {
   const plant = snap?.plants?.find((p) => (t.id !== undefined && p.id === t.id) || (t.tile && p.tile.x === t.tile.x && p.tile.y === t.tile.y));
   const tile = plant?.tile ?? t.tile;
-  const kind = plant ? (plant.kind === 'fossil' ? 'Fossil plant' : 'Renewable plant') : 'Power plant';
+  const kind = plant ? entityLabel(`${plant.kind}_plant`) : 'Power plant';
   return tile ? `${kind} at (${tile.x},${tile.y})` : kind;
 }
 

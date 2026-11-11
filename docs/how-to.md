@@ -229,3 +229,17 @@ What stays in the web: layout, formatting, animation, chart scaling, onboarding/
 4. `content/ui.json`: one entry in `emission_sources` (`id`, `label`, `category`, `showWhenZero`) or `income_sources` (`id`, `label`, `category`, `partOf`, `views`). Load-time validation refuses a missing or unknown id.
 5. Regenerate: `npm run gen:contract`, fixtures, golden, `npm run sync-mock`. Tests: `crates/sim-api/tests/transparency.rs` (sources sum to gross), `web/tests/sources.test.ts`. The web needs no change: panels iterate the list and read labels from it.
 6. The mock builds its lists from the catalog fixture (`web/src/sim-port/mock/sources.ts`); add the id to its field maps only if the mock should produce it.
+
+## 21. Add a new entity kind (entity registry, contract v2.1)
+
+`content/entities.json` is the one list of kinds of actor, facility and stock (labels, roles, tiles, scene models, inspector sections). Panels, the scene and the build palette read it through `web/src/store/entities.ts`; nothing in `web/src` names a kind to label it.
+
+1. **An entity that needs no new simulation rule** (a new facility variant, a labelled kind): add one object to `content/entities.json` (fields: docs/snapshot-contract.md section 21). Fixtures and the golden hash change (`catalog.json`): `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`. The inspector, the scene plan, the Industry list and labels pick it up with **no web change** (`web/tests/entities.test.ts` proves it with a made-up landfill). Re-run `cargo test -p sim-api --test entities`.
+2. **An entity on the map** also needs a Rust tile kind: `TileKind` (`sim-types/src/enums.rs`), `TileKindKey` and `from_sim` (`sim-api/src/keys.rs`), `ALL_TILE_KINDS` in `sim-api/src/entities.rs`; if the player builds it, an `InfraKind` / `InfraKindKey` and its params cost and lead time. The registry test fails until every tile kind and infra kind is claimed once.
+3. **If it emits**: an emission id (`docs/how-to.md` section 20) and the `emitter` role plus the `emissions` inspector section.
+4. **If it needs a rule** (the landfill's methane, a new decision): the system in `sim-model`, numbers in `content/params.json`, assumptions entry; that part stays bespoke.
+5. **A new look**: add a model to `web/src/scene/models.ts` and name it in `sceneModel`. Until then it draws as a plain block.
+6. **A new kind of inspector section**: add the id to `InspectorSection` (Rust) and one builder to `SECTIONS` in `web/src/panels/inspect.ts` (TypeScript checks the table is complete). Existing sections need no code.
+7. Regenerate: `npm run gen:contract` if a wire type changed, fixtures, golden, `npm run build:wasm`.
+
+File count, landfill example (a buildable emitter on the map with a rule): `enums.rs`, `keys.rs`, `entities.rs` (tile list), `industry.rs` (infra key), the model system, `params.json`, `entities.json`, `ui.json` (emission source label), plus generated files. The web needs 0 files (1 optional mesh). A scenery-only entity with no rule is 1 content file plus the Rust tile kind lists. Before the registry the taxonomy counted about 15 files in 3 languages.

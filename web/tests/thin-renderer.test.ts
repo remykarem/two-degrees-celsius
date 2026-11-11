@@ -34,7 +34,7 @@ describe('catalog text', () => {
     const t = cat.text;
     expect(Object.keys(t.ledger_kind!).sort()).toEqual(['bailout', 'benefit', 'build', 'dividend', 'interest', 'loan_new', 'loan_repay', 'loan_writeoff', 'lobby', 'neutral', 'purchase', 'rent', 'subsidy', 'tax', 'upkeep', 'wage', 'wealth_consumption']);
     expect(Object.keys(t.class_label!).sort()).toEqual(['capitalist', 'dependent', 'manager', 'rentier', 'worker']);
-    expect(Object.keys(t.infra_label!).sort()).toEqual(['fire_station', 'fossil_plant', 'public_housing', 'renewable_plant', 'road']);
+    expect(cat.entities.filter((e) => e.infraKind).map((e) => e.infraKind).sort()).toEqual(['fire_station', 'fossil_plant', 'public_housing', 'renewable_plant', 'road']);
     expect(Object.keys(t.owner_text!).sort()).toEqual(['bank', 'household', 'state', 'workers']);
   });
   it('every authored finance label and hint names a row the finance tab has', () => {

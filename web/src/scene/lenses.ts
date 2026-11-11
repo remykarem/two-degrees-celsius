@@ -1,6 +1,6 @@
 import type { ClassKey, HouseholdView, Snapshot } from '../contract';
 import { incomeTotal } from '../store/sources';
-import { fossilShareOf, text, type Lens, type MapLayout } from '../store';
+import { fossilShareOf, text, tileAt, tileHasRole, type Lens, type MapLayout } from '../store';
 import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
 import type { EntityDesc } from './entities';
@@ -73,7 +73,10 @@ export function emitterWeights(ctx: LensCtx): { x: number; z: number; w: number 
   for (const d of ctx.descs) {
     if (d.state === 'draft') continue;
     if (d.firm?.active) out.push({ x: d.x, z: d.z, w: d.firm.emissions / ex.maxEmission });
-    else if (d.ref.kind === 'fossil_plant' && d.state === 'normal') out.push({ x: d.x, z: d.z, w: d.plant ? d.plant.emissionsMonthly / ex.maxEmission : 0.35 + 0.65 * (ctx.snapshot ? fossilShareOf(ctx.snapshot.energy) : 0.5) });
+    else if (tileHasRole(d.ref.kind, 'emitter') && d.state === 'normal') {
+      const tonnes = d.plant?.emissionsMonthly ?? tileAt(ctx.snapshot, d.ref.tile)?.emissionsMonthly;
+      out.push({ x: d.x, z: d.z, w: tonnes !== undefined ? tonnes / ex.maxEmission : 0.35 + 0.65 * (ctx.snapshot ? fossilShareOf(ctx.snapshot.energy) : 0.5) });
+    }
   }
   // Town v7: the jet's tonnes show as a heat weight on the runway (the same scale as firms and plants, with a floor so a flight is visible).
   const av = aviationOfSnapshot(ctx.snapshot);
@@ -97,10 +100,10 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
     const h = d.household;
     if (lens === 'none') {
       // Forest and commons show their stock: lush green when healthy, dry straw when depleted.
-      if (d.stock !== undefined) c = d.ref.kind === 'forest' ? mix(0xc9a85a, 0x6fb061, clamp01((d.stock - 0.15) / 0.7)) : mix(0xc9b27a, 0xb4d891, clamp01(d.stock / 0.6));
+      if (d.stock !== undefined) c = tileHasRole(d.ref.kind, 'sink') ? mix(0xc9a85a, 0x6fb061, clamp01((d.stock - 0.15) / 0.7)) : mix(0xc9b27a, 0xb4d891, clamp01(d.stock / 0.6));
     } else if (lens === 'emissions') {
       const estateHome = !!h && ctx.snapshot?.estate?.household === h.id;
-      const e = estateHome ? (h?.footprintTonnes ?? 0) / Math.max(1e-9, ...(ctx.snapshot?.households.map((q) => q.footprintTonnes) ?? [0])) : d.firm?.active ? d.firm.emissions / ex.maxEmission : d.ref.kind === 'fossil_plant' ? w.find((q) => q.x === d.x && q.z === d.z)?.w : d.ref.kind === 'renewable_plant' ? 0 : undefined;
+      const e = estateHome ? (h?.footprintTonnes ?? 0) / Math.max(1e-9, ...(ctx.snapshot?.households.map((q) => q.footprintTonnes) ?? [0])) : d.firm?.active ? d.firm.emissions / ex.maxEmission : tileHasRole(d.ref.kind, 'emitter') ? w.find((q) => q.x === d.x && q.z === d.z)?.w : tileHasRole(d.ref.kind, 'energy_producer') ? 0 : undefined;
       c = e === undefined ? dim(d.tint) : ramp(RAMP.emissions, e);
     } else if (lens === 'class') {
       c = h ? CLASS_COLOR[h.class] : dim(d.tint);
@@ -115,7 +118,7 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
       c = h ? (m && m.length ? ramp(RAMP.commute, m[0]! / ex.maxCommute) : dim(d.tint)) : dim(d.tint);
     } else if (lens === 'fire') {
       if (d.forestState === 'standing') c = rampFire(tileFireRisk(look, d.ref.tile));
-      else if (d.ref.kind === 'fire_station') c = 0xb9d3e8;
+      else if (tileHasRole(d.ref.kind, 'hazard_mitigator')) c = 0xb9d3e8;
       else if (d.forestState) c = d.tint;
       else c = dim(d.tint);
     } else if (lens === 'flows') {
