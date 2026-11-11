@@ -2,6 +2,8 @@
   import type { Game } from '../store';
   import { energyBalance, energyText, intensityText, plantRows, UNIT_HELP, unitLabel } from './energy';
   import { pct, tonnes } from './format';
+  import { pctWith } from './backing';
+  import HowButton from './HowButton.svelte';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -14,16 +16,16 @@
 
 {#if e && bal}
   <section class="energy" aria-labelledby="energy-h" data-testid="energy-panel">
-    <h3 id="energy-h">Power grid <button type="button" class="unit" title={UNIT_HELP(e)} aria-label="Unit: {unitLabel(e)}. {UNIT_HELP(e)}">unit: {unitLabel(e)} (?)</button></h3>
+    <h3 id="energy-h">Power grid <HowButton anchor="energy" label="the power grid" /> <button type="button" class="unit" title={UNIT_HELP(e)} aria-label="Unit: {unitLabel(e)}. {UNIT_HELP(e)}">unit: {unitLabel(e)} (?)</button></h3>
     {#if bal.warning}<p class="warn" role="alert">{bal.warning}</p>{/if}
     <dl class="kv">
       <dt>Capacity</dt><dd>{energyText(bal.capacity, e)}</dd>
       <dt>Demand</dt><dd>{energyText(bal.demand, e)}</dd>
       <dt>Served share</dt><dd class:bad={bal.rationed}>{bal.servedText}</dd>
-      <dt>Renewable share</dt><dd>{pct(e.renewableShare)}</dd>
+      <dt>Renewable share</dt><dd>{pctWith(e.renewableShare, `${plants.filter((p) => p.kind === 'renewable').length} of ${plants.length} plants`)}</dd>
       <dt>Grid intensity</dt><dd>{intensityText(e)}</dd>
     </dl>
-    <div class="split" role="img" aria-label="Demand split: firms {pct(bal.firmsShare)}, households {pct(bal.householdsShare)}">
+    <div class="split" role="img" aria-label="Demand split: firms {energyText(e.demand.firms, e)}, households {energyText(e.demand.households, e)}">
       <span class="f" style:width="{bal.firmsShare * 100}%"></span><span class="h" style:width="{bal.householdsShare * 100}%"></span>
     </div>
     <div class="splitl"><span><i class="f"></i>Firms {energyText(e.demand.firms, e)}</span><span><i class="h"></i>Households {energyText(e.demand.households, e)}</span></div>

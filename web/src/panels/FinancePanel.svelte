@@ -5,6 +5,8 @@
   import { accountLabel, FIRM_REVENUE_NOTE } from './ledger';
   import CircularFlow from './CircularFlow.svelte';
   import Sparkline from './Sparkline.svelte';
+  import HowButton from './HowButton.svelte';
+  import { money } from './format';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -31,7 +33,7 @@
         {#if sec.id === 'bank' && gauge}
           <div class="gauge {gauge.status}" role="meter" aria-label="Capital ratio against its limit" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(gauge.at * 100)} aria-valuetext="Capital ratio {fmtFin(snap.finance.bank.capitalRatio, 'pct')}, limit {fmtFin(snap.finance.bank.capitalRatioLimit, 'pct')}. {gauge.text}" data-testid="capital-gauge">
             <div class="track"><div class="fill" style:width="{gauge.at * 100}%"></div><div class="lim" style:left="{gauge.limitAt * 100}%" title="Limit"></div></div>
-            <div class="gl"><span>Capital ratio {fmtFin(snap.finance.bank.capitalRatio, 'pct')}</span><span>limit {fmtFin(snap.finance.bank.capitalRatioLimit, 'pct')}</span></div>
+            <div class="gl"><span>Capital ratio {fmtFin(snap.finance.bank.capitalRatio, 'pct')} (equity {money(snap.finance.bank.equity)} / loans {money(snap.finance.bank.loans)})</span><span>limit {fmtFin(snap.finance.bank.capitalRatioLimit, 'pct')}, headroom {money(snap.finance.bank.headroom)}</span></div>
             <div class="gt">{gauge.text}</div>
           </div>
         {/if}
@@ -40,7 +42,7 @@
           <tbody>
             {#each sec.rows as r (r.id)}
               <tr class:tot={r.id.endsWith('-in') || r.id.endsWith('-out')}>
-                <th scope="row" title={r.hint}>{r.label}</th>
+                <th scope="row" title={r.hint}>{r.label}{#if r.how} <HowButton breakdown={r.how} anchor={r.id} label={r.label} />{/if}{#if r.backing}<span class="bk">{r.backing}</span>{/if}</th>
                 {#if empty && !r.stock}
                   <td class="n dim" colspan="2" data-testid="not-played">not yet played</td>
                 {:else}
@@ -98,5 +100,6 @@
   .lim { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text); }
   .gl { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
   .gt { font-size: 11px; }
+  .bk { display: block; font-size: 10px; color: var(--text-dim); }
   .breach .gt { color: var(--bad); font-weight: 700; } .tight .gt { color: var(--warn); }
 </style>

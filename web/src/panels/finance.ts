@@ -1,5 +1,7 @@
 import type { AccountRef, FinanceFlows, FinanceView, HistoryPoint, LedgerKind, Snapshot } from '../contract';
 import { money, pct } from './format';
+import { capitalBacking, debtBacking, legitimacyBacking, shareBacking } from './backing';
+import type { BreakdownKey } from './metrics';
 
 /** Pure derivations for the Finance tab (docs/town-v5.md section 3). Figures are dollars. Monthly = the latest tick; quarter = the trailing quarter. */
 
@@ -14,6 +16,10 @@ export interface FinRow {
   ledger?: { account: AccountRef; kind?: LedgerKind };
   /** A stock (balance sheet figure), not a flow: no quarter column. */
   stock?: boolean;
+  /** The numbers behind a percent figure (no bare percentages). */
+  backing?: string;
+  /** The wire breakdown this row opens with "how?". */
+  how?: BreakdownKey;
 }
 export interface FinSection { id: 'government' | 'bank' | 'households' | 'firms' | 'money' | 'prices'; title: string; rows: FinRow[]; ledgers?: { label: string; account: AccountRef }[] }
 
@@ -24,7 +30,7 @@ const BANK: AccountRef = { kind: 'bank' };
 const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
 const hist = (h: HistoryPoint[], f: (p: HistoryPoint) => number | undefined): number[] => h.map(f).filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
-export const REVENUE_LABEL: Record<keyof FinanceFlows['govRevenue'], string> = { wageTax: 'Wage tax', profitTax: 'Profit tax', capitalTax: 'Capital tax', wealthTax: 'Wealth tax', carbon: 'Carbon revenue', other: 'Other revenue' };
+export const REVENUE_LABEL: Record<keyof FinanceFlows['govRevenue'], string> = { wageTax: 'Income tax', profitTax: 'Profit tax', capitalTax: 'Capital tax', wealthTax: 'Wealth tax', carbon: 'Carbon revenue', other: 'Other revenue' };
 export const SPENDING_LABEL: Record<keyof FinanceFlows['govSpending'], string> = {
   benefits: 'Benefits', ubi: 'Basic income', publicSpending: 'Public purchases', jobGuarantee: 'Job guarantee', upkeep: 'Road and plant upkeep', subsidy: 'Subsidies', interest: 'Debt interest', builds: 'Building', other: 'Other spending',
 };
@@ -35,7 +41,31 @@ const SPENDING_KIND: Partial<Record<keyof FinanceFlows['govSpending'], LedgerKin
 /** Rows with a zero month AND quarter are dropped from flow lists to keep the tab short, except for the first entries of a section (kept so the player sees what exists). */
 const nonZero = (r: FinRow) => r.stock || Math.abs(r.month) > 1e-9 || Math.abs(r.quarter ?? 0) > 1e-9;
 
+const TAX_HINT: Partial<Record<keyof FinanceFlows['govRevenue'], string>> = {
+  wageTax: 'Income tax: charged on the wages households earn (the lever key is still tax_wage).',
+  profitTax: 'Profit tax: charged on a firm\'s profit each month, before dividends are paid out to its owners.',
+  capitalTax: 'Capital tax: charged on income from owning things (dividends, rent, interest) that households receive.',
+};
+const HOW: Record<string, BreakdownKey> = { 'gov-dgdp': 'debtToGdp', 'gov-leg': 'legitimacy', 'bank-cr': 'capitalRatio', 'p-wage': 'wageShare', 'p-profit': 'profitShare', 'rev-wageTax': 'taxes', 'rev-profitTax': 'taxes', 'rev-capitalTax': 'taxes', 'rev-wealthTax': 'taxes', 'rev-carbon': 'taxes' };
+
+/** Adds the "how?" link and the backing numbers of percent rows. */
+function decorate(snap: Snapshot, secs: FinSection[]): FinSection[] {
+  const hh = snap.finance.households;
+  const incomeTotal = hh.income.wages + hh.income.dividends + hh.income.rent + hh.income.interest + hh.income.benefits;
+  const backing: Record<string, string> = {
+    'gov-dgdp': debtBacking(snap), 'gov-leg': legitimacyBacking(snap), 'bank-cr': capitalBacking(snap), 'p-wage': shareBacking(snap, 'wage'), 'p-profit': shareBacking(snap, 'profit'),
+    'bank-def': `on ${money(snap.finance.bank.loans)} of loans`, 'hh-save': `income ${money(incomeTotal)}, spending ${money(hh.spending)} a month`,
+  };
+  return secs.map((sec) => ({ ...sec, rows: sec.rows.map((r) => {
+    const tax = r.id.startsWith('rev-') ? TAX_HINT[r.id.slice(4) as keyof FinanceFlows['govRevenue']] : undefined;
+    return { ...r, ...(tax ? { hint: tax } : {}), ...(backing[r.id] ? { backing: backing[r.id]! } : {}), ...(HOW[r.id] ? { how: HOW[r.id]! } : {}) };
+  }) }));
+}
+
 export function financeSections(snap: Snapshot): FinSection[] {
+  return decorate(snap, rawSections(snap));
+}
+function rawSections(snap: Snapshot): FinSection[] {
   const f: FinanceView = snap.finance;
   const q = f.quarter ?? null;
   const h = snap.history;

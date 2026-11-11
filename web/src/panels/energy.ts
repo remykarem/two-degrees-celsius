@@ -1,5 +1,6 @@
 import type { EnergyView, Snapshot } from '../contract';
 import { compact, pct } from './format';
+import { pctWith } from './backing';
 
 /** Pure derivations for the energy panel (docs/town-v5.md section 5). */
 
@@ -29,8 +30,8 @@ export function energyBalance(e: EnergyView): EnergyBalance {
   const capacity = e.supply.reduce((a, p) => a + p.capacity, 0);
   const rationed = e.served < 0.999;
   return {
-    capacity, demand: e.demand.total, served: e.served, servedText: pct(e.served), rationed,
-    warning: rationed ? `Demand is above capacity: only ${pct(e.served)} of it is served. Firms and households are being rationed. Build a plant.` : null,
+    capacity, demand: e.demand.total, served: e.served, servedText: pctWith(e.served, `supply ${energyText(capacity, e)}, demand ${energyText(e.demand.total, e)}`), rationed,
+    warning: rationed ? `Demand is above capacity: only ${pct(e.served)} of it is served (supply ${energyText(capacity, e)} against demand ${energyText(e.demand.total, e)}). Firms and households are being rationed. Build a plant.` : null,
     firmsShare: e.demand.total > 0 ? e.demand.firms / e.demand.total : 0, householdsShare: e.demand.total > 0 ? e.demand.households / e.demand.total : 0,
   };
 }

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { stressGauge, type Game } from '../store';
+  import { budgetOf } from './backing';
+  import HowButton from './HowButton.svelte';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -12,7 +14,7 @@
 {#if g}
   <section class="gauge" aria-label="Climate stress" data-testid="stress-gauge">
     <div class="head">
-      <h3>Climate stress</h3>
+      <h3>Climate stress <HowButton anchor="stress" label="climate stress" /></h3>
       <span class="val"><b>{g.percent}%</b> {g.word}</span>
     </div>
     <svg viewBox="0 0 270 44" width="100%" height="44" role="meter" aria-label="Climate stress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={g.percent} aria-valuetext="{g.percent}%, {g.word}">
@@ -29,7 +31,7 @@
       <path d="M {x(g.remaining)} 7 l -5 -6 h 10 z" fill="var(--text)" />
       <line x1={x(g.remaining)} x2={x(g.remaining)} y1="7" y2="22" stroke="var(--text)" stroke-width="2" />
     </svg>
-    <p class="text">{g.text} The marker shows the carbon budget left now ({Math.round(g.remaining * 100)}%).</p>
+    <p class="text">{g.text} The marker shows the carbon budget left now ({Math.round(g.remaining * 100)}%: {budgetOf($gs.snapshot!)}).</p>
   </section>
 {/if}
 
