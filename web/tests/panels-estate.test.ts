@@ -96,7 +96,7 @@ describe('inspector, people and counts', () => {
     const mock = ok(createSimPort().init(1));
     const farm = mock.industry!.firms.find((f) => f.ownership.some((o) => o.household === mock.estate!.household))!;
     expect(farm).toBeTruthy();
-    expect(ownershipText(farm, mock.households)).toContain('(Estate owner)');
+    expect(ownershipText(farm, mock.households)).toMatch(/Estate owner 0?\.\d+/);
     expect(html(IndustryPanel, { game: createGame(createSimPort()) })).toBeDefined();
   });
 });

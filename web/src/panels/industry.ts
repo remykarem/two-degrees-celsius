@@ -10,7 +10,7 @@ export const INFRA_WORD: Record<InfraKind, string> = { road: 'Roads', public_hou
 export function ownershipText(f: IndustryFirm, households: HouseholdView[] = []): string {
   return f.ownership.map((o) => {
     const h = o.household !== undefined ? households.find((x) => x.id === o.household) : undefined;
-    const who = h ? `${h.label}${h.tag ? ` (${h.tag})` : ''}` : `${ownerWord(o.owner)}${o.household !== undefined ? ` ${o.household}` : ''}`;
+    const who = h ? `${h.label}${h.tag && h.tag !== h.label ? ` (${h.tag})` : ''}` : `${ownerWord(o.owner)}${o.household !== undefined ? ` ${o.household}` : ''}`;
     return `${who} ${o.share.toFixed(2)}`;
   }).join(', ');
 }
