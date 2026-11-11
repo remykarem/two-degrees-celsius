@@ -3,8 +3,8 @@ import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
 const out = process.argv[2];
-const sim = process.argv[3] ?? 'mock';
-const url = `http://localhost:5180/?seed=42${sim === 'mock' ? '&sim=mock' : ''}`;
+const sim = process.argv[3] ?? 'real';
+const url = `http://localhost:5180/?seed=42${sim === 'replay' ? '&sim=replay' : ''}`;
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

@@ -1,4 +1,5 @@
 import type { AccountRef, ActionInfo, LedgerKind, Command, CommandPreview, InfraKind, LeverInfo, MonthFrame, RejectedCommand, Snapshot, TurnResult } from '../contract';
+import type { DemoInfo } from '../sim-port/port';
 import type { GameMode } from './clock';
 import type { Selection, Tile } from './map';
 import type { Phase } from './phase';
@@ -38,6 +39,8 @@ export interface LiveSlice {
 }
 
 export interface GameState {
+  /** Set when the port replays a recorded run (the recorded demo): policies, building, saving and ledgers are off. Null for the real simulation. */
+  demo: DemoInfo | null;
   mode: GameMode;
   /** False when the sim port lacks the v1.1 live-turn calls: Pressure mode is then unavailable. */
   liveAvailable: boolean;

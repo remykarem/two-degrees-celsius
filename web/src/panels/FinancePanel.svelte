@@ -22,7 +22,7 @@
 
 {#if snap}
   <div class="fin" data-testid="finance-panel">
-    <p class="intro">Dollars. <b>Month</b> is the latest month; <b>Quarter</b> is the last three months added up. Click "ledger ›" (see transactions) to trace a figure to the ledger it comes from.{#if snap.mock} <span class="mockn">Mock sim: invented numbers, consistent ledger.</span>{/if}</p>
+    <p class="intro">Dollars. <b>Month</b> is the latest month; <b>Quarter</b> is the last three months added up. Click "ledger ›" (see transactions) to trace a figure to the ledger it comes from.{#if $gs.demo} <span class="mockn">{$gs.demo.label}: figures from a real run; the ledger links are off.</span>{/if}</p>
     <div class="entry" role="group" aria-label="Open a ledger">
       <button type="button" onclick={() => open({ kind: 'government' })}>Government ledger</button>
       <button type="button" onclick={() => open({ kind: 'bank' })}>Bank ledger</button>

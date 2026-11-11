@@ -4,7 +4,7 @@ import { mkdirSync } from 'node:fs';
 const out = process.argv[2], base = process.argv[3] ?? 'http://localhost:5181/';
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-for (const sim of ['wasm', 'mock']) for (const [w, h] of [[1440, 900], [1024, 768]]) {
+for (const sim of ['wasm', 'real']) for (const [w, h] of [[1440, 900], [1024, 768]]) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
   await ctx.addInitScript(() => localStorage.setItem('panels.coach.done', '1'));
   const page = await ctx.newPage();

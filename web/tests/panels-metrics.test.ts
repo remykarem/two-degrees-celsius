@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { METRICS, historyChange, metricById, runway, runwayText, toneOf } from '../src/panels/metrics';
 import { createGame } from '../src/store';
 

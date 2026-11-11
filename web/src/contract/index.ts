@@ -34,8 +34,7 @@ import type {
 
 export * from './generated';
 
-/** The mock sets `mock: true` (the UI shows a badge). The real wire never sends it; goes away with the mock. */
-export type Snapshot = GSnapshot & { mock?: boolean };
+export type Snapshot = GSnapshot;
 
 export type SchemaVersion = number;
 /** A lever's value as displayed (the policy board, drafts): `PolicyScalar`. A command carries `CommandValue`. */
@@ -62,7 +61,7 @@ export type UiBands = Bands;
 export type AssumptionGroup = Group;
 export type { ClassKey, InfraKindKey, SimEventKind };
 
-/** A month's flows as the planners accept them: any list may be missing (the real wire omits `staffCommutes` when empty; tests and the mock may omit more). */
+/** A month's flows as the planners accept them: any list may be missing (the real wire omits `staffCommutes` when empty; tests may omit more). */
 export type FrameInput = { month: 0 | 1 | 2; flows: Partial<GMonthFlows>; events?: GSimEvent[] };
 
 export type SimEventType = GSimEvent['type'];

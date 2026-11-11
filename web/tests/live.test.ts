@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '../src/contract';
-import { createSimPort, type SimPort } from '../src/sim-port';
+import type { SimPort } from '../src/sim-port/port';
+import { createSimPort } from './port';
 import { createGame, createLive, DEFAULT_CONFIG, parseSave, type ClockConfig } from '../src/store';
 
 function rig(over: Partial<ClockConfig> = {}, port: SimPort = createSimPort()) {
@@ -15,7 +16,7 @@ function rig(over: Partial<ClockConfig> = {}, port: SimPort = createSimPort()) {
 }
 const carbon = (value: number): Command => ({ type: 'set_policy', lever: 'carbon_price', value });
 
-describe('Pressure game loop on the mock', () => {
+describe('Pressure game loop on the real simulation', () => {
   it('starts a quarter with beginTurn + month 1, then plays months and finishes the quarter at the boundary', () => {
     const { game, live, advance, spq } = rig();
     live.start();

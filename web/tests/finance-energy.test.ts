@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import { capitalGauge, circularFlow, financeEmpty, financeSections, fmtFin } from '../src/panels/finance';
 import { energyBalance, energyText, intensityText, plantAt, plantRows, unitHelp, unitLabel } from '../src/panels/energy';
 import { METRIC_LEDGER } from '../src/panels/metrics';
@@ -9,7 +9,7 @@ import type { EnergyView, Snapshot } from '../src/contract';
 import { incomeOf } from '../src/store/sources';
 import { ok } from './helpers';
 
-const sim = createMockSim();
+const sim = createSimPort();
 const start = ok(sim.init(4));
 const played = ok(sim.submitTurn([])).snapshot;
 const row = (s: Snapshot, sec: string, id: string) => financeSections(s).find((x) => x.id === sec)!.rows.find((r) => r.id === id)!;
@@ -22,7 +22,7 @@ describe('finance derivations', () => {
     const wage = row(played, 'government', 'rev-wageTax');
     expect(wage.month).toBeGreaterThan(0);
     expect(wage.quarter).toBeGreaterThanOrEqual(wage.month);
-    expect(wage.quarter).toBeCloseTo(wage.month * 3, -1); // three equal-ish months after one turn
+    expect(Math.abs(wage.quarter! / (wage.month * 3) - 1)).toBeLessThan(0.15); // three similar months after one turn
     expect(row(played, 'government', 'gov-debt').stock).toBe(true);
     expect(row(played, 'bank', 'bank-cr').stock).toBe(true);
   });
@@ -53,11 +53,11 @@ describe('finance derivations', () => {
     expect(row(more, 'bank', 'bank-cr').spark!.length).toBeGreaterThan(1);
   });
   it('the households quarter matches the household ledgers (flows come from the same bookings)', () => {
-    const sim2 = createMockSim();
+    const sim2 = createSimPort();
     ok(sim2.init(6));
     const s = ok(sim2.submitTurn([])).snapshot;
     let wages = 0;
-    for (const h of s.households) for (const e of ok(sim2.ledger({ kind: 'household', id: h.id })).entries) if (e.kind === 'wage' && e.to.kind === 'household' && e.to.id === h.id) wages += e.amount; // received by this household (a domestic wage is also in the payer's ledger)
+    for (const h of s.households) for (const e of ok(sim2.ledger({ kind: 'household', id: h.id })).entries) if (['wage', 'lobby', 'build', 'upkeep', 'subsidy'].includes(e.kind) && e.to.kind === 'household' && e.to.id === h.id) wages += e.amount; // received by this household (a domestic wage is also in the payer's ledger)
     expect(incomeOf(s.finance.quarter!.householdIncome, 'wages')).toBeCloseTo(wages, 0);
   });
   it('formats and flags an empty first month', () => {

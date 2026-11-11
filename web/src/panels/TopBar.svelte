@@ -15,7 +15,7 @@
 
 <header>
   {#if snap}
-    <div class="item"><strong>{quarterLabel(shownTurn(snap), snap.game)}</strong> <span class="dim">Turn {shownTurn(snap)}/{snap.game.lastTurn}</span>{#if snap.mock}<span class="mock" title="The numbers on screen come from a web-side mock, not the real simulation. Rules and costs are copied from the real content files, but GDP, unemployment, wage share, profit share, money and the other economy figures are invented toy dynamics.">Mock data</span>{:else}<span class="real" title="The numbers on screen come from the real Rust simulation, running in your browser as WebAssembly.">Real simulation</span>{/if}</div>
+    <div class="item"><strong>{quarterLabel(shownTurn(snap), snap.game)}</strong> <span class="dim">Turn {shownTurn(snap)}/{snap.game.lastTurn}</span>{#if $gs.demo}<span class="mock" title={$gs.demo.note} data-testid="demo-badge">{$gs.demo.label}</span>{:else}<span class="real" title="The numbers on screen come from the real Rust simulation, running in your browser as WebAssembly.">Real simulation</span>{/if}</div>
     <div class="item" data-coach="pc" title="Political capital: spent to change policy, regenerates with legitimacy">
       <label for="pc"><span class="long">Political capital</span><span class="short">PC</span></label>
       <meter id="pc" min="0" max={snap.pc.cap} value={snap.pc.current}></meter>

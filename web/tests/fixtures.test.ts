@@ -40,7 +40,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
   return bad;
 }
 
-const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
+const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
   bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?', estate: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',

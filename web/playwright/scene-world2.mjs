@@ -1,14 +1,14 @@
-// Usage: node playwright/scene-world2.mjs <outDir> <mock|real>. Builds a road network and a renewable plant over 5 turns, then shoots rotations, lenses, zoom. Dev server on 5180.
+// Usage: node playwright/scene-world2.mjs <outDir> <replay|real>. Builds a road network and a renewable plant over 5 turns, then shoots rotations, lenses, zoom. Dev server on 5180.
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-const out = process.argv[2], sim = process.argv[3] ?? 'mock';
+const out = process.argv[2], sim = process.argv[3] ?? 'real';
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
-await page.goto(`http://localhost:5180/?seed=42${sim === 'mock' ? '&sim=mock' : ''}`);
+await page.goto(`http://localhost:5180/?seed=42${sim === 'replay' ? '&sim=replay' : ''}`);
 await page.waitForSelector('canvas');
 await page.waitForTimeout(1500);
 for (const name of ['Skip guide', 'Dismiss']) { const b = page.getByRole('button', { name }); if (await b.count()) await b.first().click().catch(() => {}); }

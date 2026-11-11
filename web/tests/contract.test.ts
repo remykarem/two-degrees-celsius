@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { Command, LeverKey, Result, Snapshot, TurnResult } from '../src/contract';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { ok } from './helpers';
 
 // Checked by `npm run typecheck` (tsc/svelte-check include tests/).

@@ -3,6 +3,8 @@
   import { Button } from '../ui-kit';
 
   let { game }: { game: Game } = $props();
+  // svelte-ignore state_referenced_locally
+  const gs = game.state;
   let input: HTMLInputElement;
   let message = $state('');
   let bad = $state(false);
@@ -40,8 +42,8 @@
 </script>
 
 <span class="sl">
-  <Button onclick={save} title="Download this game as a file">Save</Button>
-  <Button onclick={() => input.click()} title="Load a game from a saved file">Load</Button>
+  <Button onclick={save} disabled={!!$gs.demo} title={$gs.demo ? 'A recorded demo cannot be saved' : 'Download this game as a file'}>Save</Button>
+  <Button onclick={() => input.click()} disabled={!!$gs.demo} title={$gs.demo ? 'A recorded demo cannot load a save' : 'Load a game from a saved file'}>Load</Button>
   <input bind:this={input} type="file" accept="application/json,.json" class="hide" aria-label="Choose a saved game file" onchange={load} tabindex="-1" />
   <span class="msg" class:bad role="status">{message}</span>
 </span>

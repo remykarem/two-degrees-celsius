@@ -5,11 +5,10 @@ import type { SimEvent, Snapshot } from '../src/contract';
 import { forecastView, healthMeters, weatherLook } from '../src/store';
 import { deriveCrises } from '../src/panels/crisis';
 import { formatEvent } from '../src/panels/format';
-import { createMockSim } from '../src/sim-port/mock';
 import { createWasmPort, type WasmModuleLike } from '../src/sim-port/wasm';
 import { ok } from './helpers';
 
-// The REAL simulation (wasm) against the web's weather code, and mock/real parity of the weather shapes. Skipped when the package is not built.
+// The REAL simulation (wasm) against the web's weather code, . Skipped when the package is not built.
 const pkg = resolve(__dirname, '..', 'src', 'sim-port', 'wasm', 'pkg');
 const present = existsSync(resolve(pkg, 'sim_wasm_bg.wasm'));
 
@@ -18,7 +17,6 @@ async function realPort() {
   mod.initSync({ module: readFileSync(resolve(pkg, 'sim_wasm_bg.wasm')) });
   return createWasmPort(mod);
 }
-const keys = (o: object) => Object.keys(o).sort();
 
 describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
   it('speaks schemaVersion 3 and carries the weather block, health fields and forest tile states', async () => {
@@ -31,20 +29,6 @@ describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
     expect(forest.length).toBeGreaterThan(0);
     expect(forest.every((t) => t.state === 'standing')).toBe(true);
     expect(snap.map.tiles.filter((t) => t.kind !== 'forest').every((t) => t.state === undefined)).toBe(true);
-  });
-  it('mock and real agree on the shape of the weather block, health fields and history', async () => {
-    const rp = await realPort(), mp = createMockSim();
-    const real = ok(rp.init(7)), mock = ok(mp.init(7));
-    expect(keys(mock.weather)).toEqual(keys(real.weather));
-    expect(keys(mock.weather.forecast)).toEqual(keys(real.weather.forecast));
-    expect(keys(mock.nature).filter((k) => /Health$/.test(k))).toEqual(keys(real.nature).filter((k) => /Health$/.test(k)));
-    expect(mock.schemaVersion).toBeGreaterThanOrEqual(real.schemaVersion); // the mock is v1.4 (4); a package built before v1.4 is 3
-    expect(mp.levers().map((l) => l.key).sort()).toEqual(rp.levers().map((l) => l.key).sort());
-    expect(rp.actions().map((a) => a.key).sort()).toEqual(mp.actions().map((a) => a.key).sort());
-    const rl = rp.levers().find((l) => l.key === 'resilience_spending')!, ml = mp.levers().find((l) => l.key === 'resilience_spending')!;
-    expect(ml).toMatchObject({ unit: rl.unit, min: rl.min, max: rl.max, step: rl.step, arrows: rl.arrows, label: rl.label });
-    expect(ml.costModel).toEqual(rl.costModel);
-    expect(mp.actions().find((a) => a.key === 'place:fire_station')!.costModel).toEqual(rp.actions().find((a) => a.key === 'place:fire_station')!.costModel);
   });
   it('lists the fire station and resilience spending; a fire station previews like any build', async () => {
     const port = await realPort();
@@ -95,13 +79,5 @@ describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
     const r = port.importState(JSON.stringify(blob));
     expect(r.ok).toBe(false);
     if (!r.ok) { expect(r.error.code).toBe('schema_mismatch'); expect(r.error.message.length).toBeGreaterThan(10); }
-    // and the mock refuses an old save the same way (code), with its own words
-    const m = createMockSim();
-    ok(m.init(1));
-    const mb = JSON.parse(ok(m.exportState())) as Record<string, unknown>;
-    mb.schemaVersion = 2; delete mb.weatherRng; delete mb.drought;
-    const mr = m.importState(JSON.stringify(mb));
-    expect(mr.ok).toBe(false);
-    if (!mr.ok) expect(mr.error.code).toBe('schema_mismatch');
   });
 });

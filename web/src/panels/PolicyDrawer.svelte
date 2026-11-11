@@ -11,7 +11,7 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !$gs.snapshot?.gameOver);
+  const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !$gs.snapshot?.gameOver && !$gs.demo);
   const planLocked = $derived(!!$gs.live?.locked);
   const snap = $derived($gs.snapshot);
   const groups = $derived(groupLevers($gs.levers));

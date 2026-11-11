@@ -9,10 +9,10 @@ import { generateStory, weatherFacts } from '../src/panels/story';
 import { eventLines, rankEvents } from '../src/panels/results';
 import { builtCount, resolveTile } from '../src/panels/inspect';
 import { fireLabel, fireSelection, forecastView, healthLevel, healthMeters, layoutOf, nearestLandmark, stressGauge, weatherOf } from '../src/store';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import { ok } from './helpers';
 
-const base = (): Snapshot => ok(createMockSim().init(2));
+const base = (): Snapshot => ok(createSimPort().init(2));
 type Edit = { fires?: { x: number; y: number; left?: number }[]; drought?: { severity: number; monthsLeft: number } | null; stress?: number; fireRisk?: 'low' | 'medium' | 'high'; droughtRisk?: 'low' | 'medium' | 'high'; regrowing?: { x: number; y: number }[]; budgetShare?: number };
 /** A copy of the mock snapshot with a chosen weather. */
 function withWeather(e: Edit): Snapshot {
@@ -140,14 +140,14 @@ describe('crisis banner derivation', () => {
 
 describe('metrics, why-bars and the end story', () => {
   it('has forest, commons and farm health and climate stress with sparklines from history', () => {
-    const snap = ok(createMockSim().init(1));
+    const snap = ok(createSimPort().init(1));
     for (const id of ['forest_health', 'commons_health', 'farm_health', 'climate_stress']) {
       const m = METRICS.find((x) => x.id === id)!;
       expect(m.tab).toBe('Ecology');
       expect(Number.isFinite(m.value(snap))).toBe(true);
       expect(m.series).not.toBeNull();
     }
-    const sim = createMockSim();
+    const sim = createSimPort();
     ok(sim.init(1));
     const r1 = ok(sim.submitTurn([])), r2 = ok(sim.submitTurn([]));
     const h = r2.snapshot.history;
@@ -175,13 +175,13 @@ describe('metrics, why-bars and the end story', () => {
     expect(whyData('emissions', trace, base(), []).groups[0]!.bars.map((b) => b.label)).toContain('Sink lost to fire');
   });
   it('the policy drawer has resilience spending in the climate and energy group', () => {
-    const sim = createMockSim();
+    const sim = createSimPort();
     ok(sim.init(1));
     const g = groupLevers(sim.levers());
     expect(g.find((x) => x.group.label === 'Climate and energy')!.levers.map((l) => l.key)).toContain('resilience_spending');
     expect(g.map((x) => x.group.id)).not.toContain('other');
   });
-  const full = (() => { const sim = createMockSim(); ok(sim.init(1)); return ok(sim.submitTurn([])).snapshot.history[0]!; })();
+  const full = (() => { const sim = createSimPort(); ok(sim.init(1)); return ok(sim.submitTurn([])).snapshot.history[0]!; })();
   const hist = (rows: [number, number, number, number, number][]): Snapshot['history'] => rows.map(([turn, climateStress, forestHealth, commonsHealth, farmHealth]) => ({ ...full, turn, climateStress, forestHealth, commonsHealth, farmHealth }));
   it('story mentions the fires and droughts that mattered (templates, numbers from history)', () => {
     const snap = structuredClone(base());

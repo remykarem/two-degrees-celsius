@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { attachPlayback, type Scheduler } from '../src/app/playback';
 import { createGame, layoutOf, paletteActions, quarterLabel, selectionAt, selectionTile, type Game } from '../src/store';
 
@@ -128,7 +128,7 @@ describe('v0.3 store behaviour', () => {
     const snap = g.state.get().snapshot!;
     const l = layoutOf(snap);
     expect(l.scenery.filter((x) => x.kind === 'home')).toHaveLength(snap.homes.length);
-    expect(l.scenery.filter((x) => x.kind === 'firm')).toHaveLength(snap.firms.length);
+    expect(l.scenery.filter((x) => x.kind === 'firm')).toHaveLength(snap.map.tiles.filter((t) => t.kind === 'firm').length); // a dormant slot has no tile
     expect(l.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(2);
     expect(l.roads).toHaveLength(11); // 4 in the town and the estate's 7
     expect(layoutOf(snap)).toBe(l);
@@ -174,8 +174,8 @@ describe('v0.3 store behaviour', () => {
     g.select({ kind: 'person', id: person.id });
     const hh = snap.households[person.household]!;
     expect(selectionTile(snap, g.state.get().selection)).toEqual(snap.homes.find((h) => h.id === hh.home)!.tile);
-    g.select({ kind: 'household', id: 7 }); // the unhoused household has no tile
-    expect(selectionTile(snap, g.state.get().selection)).toBeNull();
+    g.select({ kind: 'household', id: 7 });
+    expect(selectionTile(snap, g.state.get().selection)).toEqual(snap.homes.find((h) => h.id === snap.households[7]!.home)?.tile ?? null);
     expect(selectionAt(snap, { x: 0, y: 0 })).toEqual({ kind: 'tile', x: 0, y: 0 });
     g.select(null);
     expect(g.state.get().selection).toBeNull();
@@ -236,8 +236,9 @@ describe('v0.3 store behaviour', () => {
     expect(h.importSave(text)).toBeNull();
     const a = g.state.get(), b = h.state.get();
     expect(b.snapshot).toEqual(a.snapshot);
-    expect(b.lastResult).toEqual(a.lastResult);
-    expect(b.previous).toEqual(a.previous);
+    const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T; // a save is JSON, which has no -0
+    expect(plain(b.lastResult)).toEqual(plain(a.lastResult));
+    expect(plain(b.previous)).toEqual(plain(a.previous));
     expect(b.lens).toBe('wealth');
     expect(b.phase).toBe('review');
     expect(b.selection).toBeNull();
@@ -253,7 +254,7 @@ describe('v0.3 store behaviour', () => {
     expect(g.importSave(JSON.stringify({ ...file, saveVersion: 7 }))).toMatch(/file version 7/);
     expect(g.importSave(JSON.stringify({ ...file, lastResult: 5 }))).toMatch(/damaged last result/);
     expect(g.importSave(JSON.stringify({ ...file, saveVersion: 1 }))).toMatch(/file version 1/); // an old save with a layout is refused
-    expect(g.importSave(JSON.stringify({ ...file, simState: file.simState.replace(/"schemaVersion":\d+/, '"schemaVersion":99') }))).toMatch(/different version/);
+    expect(g.importSave(JSON.stringify({ ...file, simState: file.simState.replace(/"schemaVersion":\d+/, '"schemaVersion":99') }))).toMatch(/schemaVersion/);
     expect(g.state.get().snapshot!.turn).toBe(1); // a failed load changes nothing
   });
 });

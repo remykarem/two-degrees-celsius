@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { LENSES, layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { planEntities } from '../src/scene/entities';

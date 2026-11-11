@@ -3,7 +3,7 @@ import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
 const out = process.argv[2];
-const url = process.argv[3] ?? 'http://localhost:5186/?seed=42&sim=mock';
+const url = process.argv[3] ?? 'http://localhost:5186/?seed=42&sim=replay';
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const errors = [];

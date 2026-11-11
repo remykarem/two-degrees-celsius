@@ -2,14 +2,14 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ActionInfo, BlockReason, Catalog, CommandPreview, LeverInfo, SimEvent, Snapshot } from '../src/contract';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import { createWasmPort, type WasmModuleLike } from '../src/sim-port/wasm';
 import { actionModel, estimatePc } from '../src/panels/costs';
 import { REASON_TEXT } from '../src/panels/format';
 import { ok } from './helpers';
 
 // Town v6 (docs/town-v6.md): the web is a thin renderer. These tests keep it so: every catalog key the code names exists, every wire id the web words has words,
-// the mock has the same shapes, labels and lever table as the real wire (docs/fixtures), and the cost fallback agrees with the simulation.
+// the wasm build serves the same replies as the checked-in fixtures (docs/fixtures), and the cost fallback agrees with the simulation.
 
 const repo = resolve(__dirname, '..', '..');
 const fixture = <T>(name: string): T => JSON.parse(readFileSync(resolve(repo, 'docs', 'fixtures', name), 'utf8')) as T;
@@ -70,56 +70,18 @@ describe('wire ids the web words (the web owns this wording, so every id must ha
   });
 });
 
-/** The set of keys of a value, nested; arrays use their first element. Optional fields appear on the real side only when a fixture has them. */
-function shape(v: unknown, path = ''): string[] {
-  if (Array.isArray(v)) return v.length ? shape(v[0], `${path}[]`) : [];
-  if (v && typeof v === 'object') return Object.entries(v).flatMap(([k, x]) => [`${path}.${k}`, ...shape(x, `${path}.${k}`)]);
-  return [];
-}
+const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
-/** Optional detail the mock's transparency data (breakdowns, policies, industry) does not carry. Listed, so a NEW difference fails the test; see docs/known-issues.md. */
-const KNOWN_MOCK_GAPS = [
-  '.breakdowns.wageShare.parts', '.breakdowns.wageShare.sumsToResult', '.breakdowns.wageShare.inputs[].source', '.breakdowns.profitShare.parts', '.breakdowns.profitShare.sumsToResult',
-  '.breakdowns.debtToGdp.inputs[].source', '.breakdowns.legitimacy.inputs[].source', '.breakdowns.emissions.monthLines', '.breakdowns.emissions.turnNumber', '.breakdowns.emissions.turnMonths',
-  '.breakdowns.taxes[]', '.policies.cancelRefund', '.industry.firms[].active', '.industry.infrastructure[].upkeepEachMonthly',
-];
-
-describe('mock parity with the real wire (docs/fixtures)', () => {
-  it('levers(): same keys, labels, groups, units, ranges, arrows and availability as content/levers.json', () => {
-    const real = fixture<LeverInfo[]>('levers.json');
-    const mock = createMockSim().levers();
-    expect(mock.map((l) => l.key)).toEqual(real.map((l) => l.key));
-    for (const r of real) {
-      const m = mock.find((l) => l.key === r.key)!;
-      const pick = (l: LeverInfo) => ({ label: l.label, group: l.group, unit: l.unit, min: l.min, max: l.max, step: l.step, lobbied: l.lobbied, arrows: l.arrows, availableIn: l.availableIn, options: l.options, optionAvailableIn: l.optionAvailableIn, zeroMeansNone: l.zeroMeansNone });
-      expect(pick(m), r.key).toEqual(pick(r));
-      expect(Object.keys(m).sort(), r.key).toEqual(Object.keys(r).sort());
-      expect(m.baseCostPc).toBe(r.baseCostPc); expect(m.leadTime).toBe(r.leadTime); expect(m.costModel).toEqual(r.costModel);
-    }
+// The checked-in fixtures (docs/fixtures) are what the Rust side produced; the wasm build must produce the same replies.
+describe('the real simulation matches docs/fixtures', () => {
+  it('levers(), actions() and catalog() equal the fixtures', () => {
+    const sim = createSimPort(1);
+    expect(plain(sim.levers())).toEqual(fixture<LeverInfo[]>('levers.json'));
+    expect(plain(sim.actions())).toEqual(fixture<ActionInfo[]>('actions.json'));
+    expect(plain(ok(sim.catalog()))).toEqual(fixture<Catalog>('catalog.json'));
   });
-  it('actions(): same keys, labels, costs and availability', () => {
-    const real = fixture<ActionInfo[]>('actions.json');
-    const mock = createMockSim().actions();
-    expect(mock.map((a) => a.key)).toEqual(real.map((a) => a.key));
-    for (const r of real) expect(mock.find((a) => a.key === r.key), r.key).toEqual(r);
-  });
-  it('catalog(): the mock serves the real reply', () => {
-    expect(ok(createMockSim().catalog())).toEqual(fixture<Catalog>('catalog.json'));
-  });
-  it('snapshot: the mock has every key the real snapshot has (and none the wire lacks, bar its mock flag)', () => {
-    const real = fixture<Snapshot>('snapshot-turn1.json');
-    const mock = ok(createMockSim().init(1));
-    const r = new Set(shape(real)), m = new Set(shape(mock));
-    // fields that exist only when something happened (an event, a nullable record) and so may be absent from either side in one sample
-    const sample = /\.(gameOver|turnPhase|history\[\]\.\w+|weather\.(drought|fires)\b.*|pending\b.*|tiles\[\]\.(ref|emissionsMonthly|state|fireRisk)|map\.tiles\[\]\.(ref|emissionsMonthly|state|fireRisk))$/;
-    const onlyReal = [...r].filter((k) => !m.has(k) && !sample.test(k) && !KNOWN_MOCK_GAPS.some((g) => k.startsWith(g)));
-    const onlyMock = [...m].filter((k) => !r.has(k) && k !== '.mock' && !sample.test(k) && !KNOWN_MOCK_GAPS.some((g) => k.startsWith(g)));
-    expect({ onlyReal, onlyMock }).toEqual({ onlyReal: [], onlyMock: [] });
-  });
-  it('finance and energy views have the same key sets', () => {
-    const real = fixture<Snapshot>('snapshot-turn1.json');
-    const mock = ok(createMockSim().submitTurn([])).snapshot;
-    for (const k of ['finance', 'energy'] as const) expect(new Set(shape(mock[k])), k).toEqual(new Set(shape(real[k])));
+  it('init(1) equals snapshot-turn1.json', () => {
+    expect(plain(ok(createSimPort(1).init(1)))).toEqual(plain(fixture<Snapshot>('snapshot-turn1.json'))); // -0 is not JSON
   });
 });
 

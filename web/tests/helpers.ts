@@ -20,7 +20,7 @@ function effectOn(e: LedgerPage['entries'][number], me: string): [number, number
   }
 }
 /**
- * The reconciliation rule, written independently of the viewer and the mock, for balance AND debt: opening + roll-up `net`/`debtNet` + each entry's effect = closing,
+ * The reconciliation rule, written independently of the viewer and the simulation, for balance AND debt: opening + roll-up `net`/`debtNet` + each entry's effect = closing,
  * and every entry's balanceAfter/debtAfter is the running position. The real sim's pages must pass the same rule.
  */
 export function reconciles(p: LedgerPage): boolean {

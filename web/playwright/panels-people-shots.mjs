@@ -21,7 +21,7 @@ async function open(w, h, tag, sim) {
 }
 const play = (page, n) => page.evaluate((n) => { const g = window.__game; for (let i = 0; i < n; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); } }, n);
 
-for (const sim of ['mock', 'wasm']) {
+for (const sim of ['real', 'wasm']) {
   for (const [w, h] of [[1440, 900], [1024, 768]]) {
     const tag = `${sim}-${w}`;
     const { page, shot } = await open(w, h, tag, sim);

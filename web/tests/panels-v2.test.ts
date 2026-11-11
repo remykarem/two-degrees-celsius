@@ -7,7 +7,7 @@ import { METRICS, metricById } from '../src/panels/metrics';
 import { householdRows, peopleGroups, selectedHouseholdId, selectionAnnouncement, unemploymentCount } from '../src/panels/people';
 import { generateStory, townFacts } from '../src/panels/story';
 import { emissionsBars } from '../src/panels/why';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { createGame, layoutOf } from '../src/store';
 
 function played(turns: number) {

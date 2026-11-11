@@ -17,7 +17,7 @@
   const groups = $derived(byGroup(lines));
   const pending = $derived(pendingLines(lines));
   const timeline = $derived(board ? timelineLines(board, $gs.levers) : []);
-  const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !snap?.gameOver);
+  const canEdit = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !snap?.gameOver && !$gs.demo);
   const GROUP_LABEL: Record<string, string> = { taxes: 'Taxes', money: 'Money and credit', labour: 'Labour and welfare', nature: 'Nature and carbon', spending: 'Government spending', other: 'Other' };
   const short = $derived(snap ? wealthTaxShortText(snap) : null);
   const taxNote = $derived(snap?.estate ? text('estate', 'wealth_tax_note') : null);
@@ -28,6 +28,7 @@
 
 {#if board}
   <div class="pol" data-testid="policies-panel">
+    {#if $gs.demo}<p class="warnl" role="status" data-testid="demo-note">{$gs.demo.note}</p>{/if}
     <p class="intro">What is in force now, what you started with at turn 0, and what is on its way. Open a policy in the drawer to change it.</p>
 
     {#if short}<p class="warnl" role="status" data-testid="wealth-tax-short">{short}</p>{/if}
@@ -35,7 +36,7 @@
     <section aria-labelledby="pol-pend"><h3 id="pol-pend">Pending changes ({pending.length})</h3>
       {#if pending.length}
         <ul class="pend">{#each pending as p (p.lever)}<li><span><b>{p.label}</b>: {p.active} to {p.pending!.text}, takes effect turn {p.pending!.turn}</span>
-          <button type="button" onclick={() => game.cancelPending(p.pending!.id)} aria-label="Cancel the pending change to {p.label}">Cancel</button></li>{/each}</ul>
+          {#if !$gs.demo}<button type="button" onclick={() => game.cancelPending(p.pending!.id)} aria-label="Cancel the pending change to {p.label}">Cancel</button>{/if}</li>{/each}</ul>
       {:else}<p class="dim">Nothing queued.</p>{/if}
     </section>
 

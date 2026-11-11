@@ -45,7 +45,7 @@ const draftPc = await page.evaluate(() => window.__game.state.get().draft[0]?.pr
 check('drafted carbon price 0 -> 50 costs 8 PC (real: 8 x 50/50)', draftPc === 8, String(draftPc));
 const text = await page.locator('aside, section').allInnerTexts();
 check('lever rows show a cost estimate, not "Base N PC"', !text.join('\n').match(/Base \d+ PC/) && text.join('\n').includes('PC for a small change'));
-check('mock data badge visible', await page.getByText('Mock data').isVisible());
+check('recorded demo badge visible', await page.getByText('Recorded demo').isVisible());
 
 // 3. crisis dismiss: low legitimacy warning via a save edit, then dismiss and screenshot IMMEDIATELY
 const base = await page.evaluate(() => window.__game.exportSave());

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AccountRef, LedgerEntry, LedgerPage, Snapshot } from '../src/contract';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import {
   accountLabel, accountSelection, counterpartiesIn, earningsRows, entryEffect, externalHint, turnSpan, exact, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, rowTotals, selectionAccount, signedExact, turnsIn,
 } from '../src/panels/ledger';
@@ -27,7 +27,7 @@ const page: LedgerPage = {
     { turn: 3, month: 1, counterparty: FIRM, kind: 'purchase', inflow: 0, outflow: 60, count: 2, net: -60, debtNet: 0 },
   ],
 };
-const snap = ok(createMockSim().init(1));
+const snap = ok(createSimPort().init(1));
 
 describe('ledger viewer: rows, filters, running balance', () => {
   it('shows entries newest first, signed from the open account, with the running balance of the entry', () => {
@@ -152,7 +152,7 @@ describe('selection and person views', () => {
     if (dormant) expect(selectionAccount(s, { kind: 'firm', id: dormant.id })).toBeNull();
   });
   it('a persons earnings are wages credited to the household, newest first', () => {
-    const sim = createMockSim();
+    const sim = createSimPort();
     ok(sim.init(2));
     ok(sim.submitTurn([]));
     const s = ok(sim.submitTurn([])).snapshot;
@@ -165,9 +165,9 @@ describe('selection and person views', () => {
   });
 });
 
-describe('the mock passes the same reconciliation rule as the viewer', () => {
+describe('the real simulation passes the same reconciliation rule as the viewer', () => {
   it('after 10 turns every account page reconciles by the viewer, the independent rule and the sims flag', () => {
-    const sim = createMockSim();
+    const sim = createSimPort();
     const s0 = ok(sim.init(9));
     for (let t = 0; t < 10; t++) ok(sim.submitTurn([]));
     const accts: AccountRef[] = [...s0.households.map((h) => ({ kind: 'household' as const, id: h.id })), ...s0.firms.map((f) => ({ kind: 'firm' as const, id: f.id })), GOV, BANK];

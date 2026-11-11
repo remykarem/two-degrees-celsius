@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FrameInput, MonthFrame } from '../src/contract';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { allocate, CAPS, commuteFraction, ctxFromSnapshot, emissionsFromSnapshot, planEmitters, planFlowLoop, planFrame, pointAt, smokeCounts, smokeParticle, trackProgress } from '../src/scene/flows';

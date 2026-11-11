@@ -2,7 +2,7 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { createGame, createLive, DEFAULT_CONFIG } from '../src/store';
 import { ClockStrip, LockButton, PlanTray, QuarterCard, StartScreen, TopBar } from '../src/panels';
 import { setUi } from '../src/panels/ui';

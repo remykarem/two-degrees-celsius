@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '../src/contract';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { ok } from './helpers';
 
 const plans: Command[][] = [
@@ -28,7 +28,7 @@ function runSubmit(seed: number, plan: (i: number) => Command[], turns: number) 
   return { out, state: ok(sim.exportState()) };
 }
 
-describe('mock live turn (contract v1.1)', () => {
+describe('live turn on the real simulation (contract v1.1)', () => {
   it('begin + 3 x advance + finish equals submitTurn: result, frames and final state', () => {
     for (const seed of [1, 7, 42]) {
       const plan = (i: number) => plans[i % plans.length]!;

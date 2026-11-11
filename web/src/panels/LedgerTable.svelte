@@ -53,7 +53,7 @@
 </script>
 
 {#if !res.ok}
-  <p class="err" role="alert">{res.error.code === 'unsupported' ? 'This simulation package has no transaction ledger yet. Rebuild it (npm run build:wasm) or use the mock.' : res.error.message}</p>
+  <p class="err" role="alert">{res.error.code === 'unsupported' ? 'This simulation package has no transaction ledger yet. Rebuild it (npm run build:wasm).' : res.error.message}</p>
 {:else if page && rec}
   <div class="top">
     <div class="who"><b>{label(account)}</b><span class="dim">&nbsp;ledger. Money in is green (+), money out is red (-).</span></div>

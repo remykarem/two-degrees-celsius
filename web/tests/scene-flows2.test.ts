@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FrameInput } from '../src/contract';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { centreOf } from '../src/scene/coords';

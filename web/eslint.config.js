@@ -10,8 +10,10 @@ const forbid = (...patterns) => ({
 
 const SVELTE = ['svelte', 'svelte/*', '**/*.svelte'];
 const THREE = ['three', 'three/*'];
-const MOCK = '**/sim-port/mock';
-const MOCK_DEEP = '**/sim-port/mock/*';
+const REPLAY = '**/sim-port/replay';
+const REPLAY_DEEP = '**/sim-port/replay/*';
+const WASM = '**/sim-port/wasm';
+const WASM_DEEP = '**/sim-port/wasm/*';
 
 // import() is not covered by no-restricted-imports, so the same boundaries are enforced for dynamic imports by this small local rule.
 const dynamicImport = {
@@ -45,7 +47,7 @@ export default tseslint.config(
 
   { plugins: { boundary } },
   // Dynamic import() may not cross the boundaries either.
-  { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'], rules: dyn(P(['sim-port/mock']), 'Only sim-port may import sim-port/mock') },
+  { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'], rules: dyn(P(['sim-port/replay', 'sim-port/wasm']), 'Only sim-port may import sim-port/replay or sim-port/wasm') },
   { files: ['src/contract/**'], rules: dyn('^(?!\\./generated$).*', 'contract must not import anything (index.ts may re-export ./generated)') },
   { files: ['src/scene/**'], rules: dyn(`${P(['panels', 'ui-kit', 'app', 'sim-port', 'svelte'])}|\\.svelte$`, 'scene is Three.js only: no Svelte, panels, ui-kit, app or sim-port') },
   { files: ['src/panels/**'], rules: dyn(P(['three', 'scene', 'app', 'sim-port']), 'panels are Svelte only: no Three.js, scene, app or sim-port') },
@@ -54,9 +56,9 @@ export default tseslint.config(
   { files: ['src/sim-port/**'], rules: dyn(P([...NOT_SVELTE_THREE, 'scene', 'panels', 'store', 'app', 'ui-kit']), 'sim-port depends only on contract') },
 
   // Boundary rules (docs/ui-design.md "Rules"). Enforced by tests/boundaries.test.ts.
-  // Nothing outside sim-port may import the mock. Applied first; per-folder blocks below add to it.
+  // Nothing outside sim-port may import the replay port or the wasm wrapper. Applied first; per-folder blocks below add to it.
   { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'],
-    rules: forbid([[MOCK, MOCK_DEEP], 'Only sim-port may import sim-port/mock']) },
+    rules: forbid([[REPLAY, REPLAY_DEEP, WASM, WASM_DEEP], 'Only sim-port may import sim-port/replay or sim-port/wasm (use selectSimPort from sim-port)']) },
   { files: ['src/contract/**'], ignores: ['src/contract/index.ts'],
     rules: forbid([['*', '../*', './*', '**'], 'contract must not import anything: types only, no dependencies']) },
   // index.ts re-exports the generated file and may import nothing else.
@@ -83,7 +85,7 @@ export default tseslint.config(
   { files: ['src/sim-port/**'],
     rules: forbid([[...THREE, ...SVELTE, '**/scene', '**/scene/*', '**/panels', '**/panels/*', '**/store', '**/store/*', '**/app', '**/app/*', '**/ui-kit', '**/ui-kit/*'],
       'sim-port depends only on contract']) },
-  { files: ['src/sim-port/mock/**'],
+  { files: ['src/sim-port/replay/**'],
     rules: forbid([[...THREE, ...SVELTE, '**/scene', '**/scene/*', '**/panels', '**/panels/*', '**/store', '**/store/*', '**/app', '**/app/*', '**/ui-kit', '**/ui-kit/*', '../index', '../../sim-port/index'],
-      'mock depends only on contract and sim-port/port (no factory, no UI)']) },
+      'replay depends only on contract and sim-port/port (no factory, no UI)']) },
 );

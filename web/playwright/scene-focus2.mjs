@@ -1,16 +1,16 @@
-// Usage: node playwright/scene-focus2.mjs <outDir> <mock|real>. Close-ups: idle people, mid-commute, smoke, camp, pending road, keyboard cursor.
+// Usage: node playwright/scene-focus2.mjs <outDir> <replay|real>. Close-ups: idle people, mid-commute, smoke, camp, pending road, keyboard cursor.
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
 const out = process.argv[2];
-const sim = process.argv[3] ?? 'mock';
+const sim = process.argv[3] ?? 'real';
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
-await page.goto(`http://localhost:5180/?seed=42${sim === 'mock' ? '&sim=mock' : ''}`);
+await page.goto(`http://localhost:5180/?seed=42${sim === 'replay' ? '&sim=replay' : ''}`);
 await page.waitForSelector('canvas');
 await page.waitForTimeout(1500);
 for (const name of ['Skip guide', 'Dismiss']) { const b = page.getByRole('button', { name }); if (await b.count()) await b.first().click().catch(() => {}); }

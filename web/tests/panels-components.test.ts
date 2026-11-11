@@ -2,7 +2,9 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
+import { createReplayPort } from '../src/sim-port/replay';
+import { RECORDING } from '../src/sim-port/replay/recording.generated';
 import { createGame, type Game } from '../src/store';
 import { BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, MetricsPanel, PendingList, PlanTray, PolicyDrawer, ResultsScreen, TopBar } from '../src/panels';
 import BarChart from '../src/panels/BarChart.svelte';
@@ -46,7 +48,7 @@ describe('component smoke (server render)', () => {
     expect(p).toContain('Manager A');
     expect(p).toContain('Commute');
     g.select({ kind: 'household', id: 7 });
-    expect(html(Inspector, { game: g })).toMatch(/unhoused/i);
+    expect(html(Inspector, { game: g })).toContain('Destitute household');
   });
   it('results screen only renders in the results phase', () => {
     const g = game();
@@ -100,9 +102,12 @@ describe('v0.3 component behaviour', () => {
     const ok = html(PolicyRow, { lever, nominal: 'open', effective: null, disabled: null, system: 'regulated', draftValue: undefined, preview: undefined, onset: () => {}, onreset: () => {} });
     expect(ok).not.toContain('Needs Regulated capitalism');
   });
-  it('the top bar flags mock data and shows the same turn as the end screen at game over', () => {
+  it('the top bar says Real simulation, the recorded demo says so, and the same turn shows as on the end screen at game over', () => {
     const g = game();
-    expect(html(TopBar, { game: g })).toContain('Mock data');
+    expect(html(TopBar, { game: g })).toContain('Real simulation');
+    const demo = createGame(createReplayPort(RECORDING));
+    demo.newGame(7);
+    expect(html(TopBar, { game: demo })).toContain('Recorded demo');
     for (let i = 0; i < 200 && g.state.get().phase !== 'ended'; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); }
     const turn = g.state.get().snapshot!.gameOver!.turn;
     expect(html(TopBar, { game: g })).toContain(`Turn ${turn}/40`);

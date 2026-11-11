@@ -8,10 +8,10 @@ import { GROUND } from '../src/scene/palette';
 import { planFire, planHaze, WEATHER_CAPS } from '../src/scene/weather';
 import { BURNT_GROUND, COVER_GROUND, DRY_GROUND, droughtLook, EMBER_GROUND, FIRE_RAMP, fireLensGround, forestModelFor, rampFire, weatherGround } from '../src/scene/weatherLook';
 import { layoutOf, LENSES, parseSave, tileFireRisk, weatherLook, isCovered, nearFire } from '../src/store';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import { ok } from './helpers';
 
-const base = (): Snapshot => ok(createMockSim().init(2));
+const base = (): Snapshot => ok(createSimPort().init(2));
 const forests = (s: Snapshot) => s.map.tiles.filter((t) => t.kind === 'forest');
 /** A copy of the mock snapshot with chosen forest tile states, a drought and fire stations. */
 function scene(opts: { burning?: number[]; regrowing?: number[]; drought?: number; stations?: { x: number; y: number }[]; fireRisk?: 'low' | 'medium' | 'high'; stress?: number } = {}): Snapshot {

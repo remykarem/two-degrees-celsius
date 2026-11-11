@@ -1,6 +1,20 @@
 import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
 
 /**
+ * Set by a port that replays a recorded run instead of running the simulation (platform cleanup phase 2). The UI badges the game as a
+ * recorded demo and disables what cannot change the outcome (policies, building, saving, ledgers, previews).
+ */
+export interface DemoInfo {
+  /** The badge text. */
+  label: string;
+  /** What the player is looking at and why the controls are off (the badge tooltip and the notes beside disabled controls). */
+  note: string;
+  seed: number;
+  /** The last turn number that can be played: the recording ends after it. */
+  lastTurn: number;
+}
+
+/**
  * The UI's only window onto the simulation (contract v1.0, docs/snapshot-contract.md sections 10.7 and 11). Every fallible call returns a Result:
  * a Rust Violation becomes { ok: false }, never a thrown exception.
  */
@@ -21,6 +35,8 @@ export interface SimPort {
   finishTurn(): Result<TurnResult>;
   /** False when the implementation lacks the v1.1 calls (an older wasm package): Pressure mode is then unavailable. Absent means true. */
   readonly liveTurn?: boolean;
+  /** Present only on the replay port: this is a recorded run, not the simulation. */
+  readonly demo?: DemoInfo;
   cancelPending(id: number): Result<{ refundPc: number; snapshot: Snapshot }>;
   /** Contract v1.4 (section 14): the transaction ledger of one account. Legal at any time. A package without it returns { ok: false, code: 'unsupported' }. */
   ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;

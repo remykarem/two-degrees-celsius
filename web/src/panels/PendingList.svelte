@@ -6,7 +6,7 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const canCancel = $derived($gs.phase === 'review' || $gs.phase === 'plan');
+  const canCancel = $derived(($gs.phase === 'review' || $gs.phase === 'plan') && !$gs.demo); // a recorded demo cannot cancel anything
   const snap = $derived($gs.snapshot);
 </script>
 

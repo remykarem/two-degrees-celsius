@@ -93,7 +93,7 @@ export function createGame(port: SimPort): Game {
   const liveAvailable = port.liveTurn !== false;
   const freshLive = (): LiveSlice => ({ open: false, monthsDone: 0, frame: null, frameSeq: 0, locked: false, summary: null, report: null, notice: null });
   const store = writable<GameState>({
-    mode: 'relaxed', liveAvailable, live: null, savedClock: null,
+    demo: port.demo ?? null, mode: 'relaxed', liveAvailable, live: null, savedClock: null,
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
     playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
     buildKind: null, validTiles: null, lens: 'none', camera: 0, error: cat.ok ? null : { ...cat.error, where: 'new_game' }, dismissedCrises: {},
@@ -153,13 +153,13 @@ export function createGame(port: SimPort): Game {
     },
 
     draftCommand(c) {
-      if (locked()) return;
+      if (locked() || get().demo) return;
       if (get().phase === 'review') fire('startPlan');
       if (get().phase !== 'plan') return;
       patch(previewsFor(withCommand(get().draft, c, nextDraftId++)));
     },
     removeDraft(id) {
-      if (locked()) return;
+      if (locked() || get().demo) return;
       patch(previewsFor(withoutItem(get().draft, id)));
     },
     clearDraft() { if (!locked()) patch({ draft: [] }); },
@@ -222,7 +222,7 @@ export function createGame(port: SimPort): Game {
       patch({ hover: t });
     },
     setBuildKind(k) {
-      if (k && locked()) return;
+      if (k && (locked() || get().demo)) return;
       if (k && get().phase === 'review') fire('startPlan');
       if (k && get().phase !== 'plan') return;
       patch({ buildKind: k, ...validFor(k) });
@@ -231,6 +231,7 @@ export function createGame(port: SimPort): Game {
     tileError(t) {
       const { buildKind, validTiles, snapshot } = get();
       if (!buildKind) return null;
+      if (get().demo) return get().demo!.note;
       if (locked()) return 'The plan is locked: unlock it to make changes';
       if (!inBounds(t)) return 'Outside the map';
       if (draftedTiles().some((d) => sameTile(d, t))) return 'Already in this turn\'s plan';
@@ -253,6 +254,7 @@ export function createGame(port: SimPort): Game {
       return null;
     },
     removeAt(t) {
+      if (get().demo) return get().demo!.note;
       const kind = tileAt(get().snapshot, t)?.kind;
       if (kind !== 'public_housing' && kind !== 'fossil_plant' && kind !== 'renewable_plant' && kind !== 'road' && kind !== 'fire_station') return describeTileReason('nothing_to_remove');
       this.draftCommand({ type: 'remove', tile: { x: t.x, y: t.y } });

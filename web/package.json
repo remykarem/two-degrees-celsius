@@ -11,7 +11,8 @@
     "lint": "eslint src tests",
     "gen:contract": "cargo run -q -p sim-api --features ts --example contract_ts",
     "check:contract": "cargo test -q -p sim-api --test contract_ts",
-    "sync-mock": "node scripts/sync-mock.mjs",
+    "gen:recording": "cargo run -q -p sim-api --example recording",
+    "check:recording": "cargo test -q -p sim-api --test recording",
     "build:wasm": "node scripts/build-wasm.mjs"
   },
   "dependencies": {

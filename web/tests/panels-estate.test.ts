@@ -5,7 +5,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { Snapshot } from '../src/contract';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { createGame } from '../src/store';
 import EstateCard from '../src/panels/EstateCard.svelte';
 import GiniView from '../src/panels/GiniView.svelte';
@@ -96,12 +96,12 @@ describe('inspector, people and counts', () => {
     const mock = ok(createSimPort().init(1));
     const farm = mock.industry!.firms.find((f) => f.ownership.some((o) => o.household === mock.estate!.household))!;
     expect(farm).toBeTruthy();
-    expect(ownershipText(farm, mock.households)).toMatch(/Estate owner 0?\.\d+/);
+    expect(ownershipText(farm, mock.households)).toMatch(/Estate owner \d\.\d\d/);
     expect(html(IndustryPanel, { game: createGame(createSimPort()) })).toBeDefined();
   });
 });
 
-describe('money, emissions, events and the mock', () => {
+describe('money, emissions, events and the real simulation', () => {
   it('finance has the domestic wages memo row once wages are paid', () => {
     const s = clone(real());
     for (const x of s.finance.households.income) { if (x.id === 'wages') x.amount = 5000; if (x.id === 'domestic_wages') x.amount = 1800; }
@@ -129,7 +129,7 @@ describe('money, emissions, events and the mock', () => {
     expect(story).toContain('Estate owner (1 of 9 households');
     expect(story).toContain('Flights this game: 4');
   });
-  it('the mock carries what the panels render: parts, estate finance, domestic wages and the policies note', () => {
+  it('the real simulation carries what the panels render: parts, estate finance, domestic wages and the policies note', () => {
     const port = createSimPort();
     const s = ok(port.init(2));
     expect(s.breakdowns!.gini.byHousehold.find((h) => h.household === s.estate!.household)!.parts?.length).toBeGreaterThan(0);

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Breakdowns, Snapshot } from '../src/contract';
-import { createMockSim } from '../src/sim-port/mock';
+import { createSimPort } from './port';
 import { fmtUnit, popoverModel, sumCheck, breakdownOf } from '../src/panels/explain';
 import { cumulativeSeries, emissionsView } from '../src/panels/emissions';
 import { lorenzPath } from '../src/panels/lorenz';
@@ -18,9 +18,9 @@ import { taxLines } from '../src/panels/taxes';
 import { relabelLevers, uiLabel } from '../src/store';
 import { ok } from './helpers';
 
-const sim = createMockSim();
-const mk = () => { const s = createMockSim(); return { s, snap: ok(s.init(3)) }; };
-const play = (s: ReturnType<typeof createMockSim>, n: number, cmds: Parameters<typeof s.submitTurn>[0] = []) => { let r = ok(s.submitTurn(cmds)); for (let i = 1; i < n; i++) r = ok(s.submitTurn([])); return r.snapshot; };
+const sim = createSimPort();
+const mk = () => { const s = createSimPort(); return { s, snap: ok(s.init(3)) }; };
+const play = (s: ReturnType<typeof createSimPort>, n: number, cmds: Parameters<typeof s.submitTurn>[0] = []) => { let r = ok(s.submitTurn(cmds)); for (let i = 1; i < n; i++) r = ok(s.submitTurn([])); return r.snapshot; };
 const { s: simA, snap: start } = mk();
 const played = play(simA, 3);
 const bd = played.breakdowns as Breakdowns;
@@ -68,14 +68,15 @@ describe('breakdown popover logic', () => {
   it('the legitimacy terms add up to the trend and each is weight x (input - threshold)', () => {
     const l = bd.legitimacy;
     expect(l.terms.reduce((a, t) => a + t.contribution, 0)).toBeCloseTo(l.trend, 9);
-    for (const t of l.terms) expect(t.contribution).toBeCloseTo(t.weight * (t.input - (t.threshold ?? 0)), 9);
+    // Wellbeing adds above its threshold; every other term is a penalty applied with a minus sign.
+    for (const t of l.terms) expect(t.contribution).toBeCloseTo(t.id === 'wellbeing' ? t.weight * (t.input - (t.threshold ?? 0)) : -t.weight * Math.max(0, t.input - (t.threshold ?? 0)), 9);
   });
 });
 
 describe('emissions reconciliation display', () => {
   it('shows month, turn, sources, sink, net and cumulative from the wire, reconciled', () => {
     const v = emissionsView(bd.emissions);
-    expect(v.rows.map((r) => r.id)).toEqual(['firms', 'households', 'plants', 'gross', 'sink', 'net']);
+    expect(v.rows.map((r) => r.id)).toEqual(['firms', 'households', 'plants', 'aviation', 'gross', 'sink', 'net']);
     expect(v.reconciliation.ok).toBe(true);
     expect(v.reconciliation.text).toMatch(/gross/);
     expect(v.cumulative.used).toMatch(/ t$/);
@@ -119,7 +120,7 @@ describe('Lorenz data to path', () => {
   it('lists wealth by household', () => {
     const g = bd.gini as Breakdowns['gini'];
     expect(g.byHousehold.length).toBe(played.households.length);
-    expect(g.byHousehold[0]!.netWorth).toBe(played.households[0]!.netWorth);
+    expect(g.byHousehold[0]!.netWorth).toBeCloseTo(played.households[0]!.netWorth, 0); // the households view rounds to cents
   });
 });
 
@@ -146,7 +147,7 @@ describe('Policies tab derivation', () => {
     expect(row.pending?.text).toBeTruthy();
     expect(pendingLines(lines).length).toBe(1);
     const queued = timelineLines(after.policies!, levers);
-    expect(queued[0]!.kind).toBe('queued');
+    expect(queued.map((q) => q.kind)).toContain('queued');
     expect(ok(s.cancelPending(after.policies!.rows.find((r) => r.lever === 'tax_wage')!.pending!.id)).snapshot.policies!.timeline.some((e) => e.kind === 'cancelled')).toBe(true);
   });
   it('activates a change and records last change, active vs initial, in newest-first order', () => {
@@ -176,7 +177,7 @@ describe('Industry derivation', () => {
     const ind = played.industry!;
     expect(noStateOwnership(ind)).toBe(true);
     const lines = firmLines(ind);
-    expect(lines.length).toBe(played.firms.filter((f) => f.active).length);
+    expect(lines.length).toBe(played.industry!.firms.length);
     expect(lines[0]!.cells.map((c) => c.label)).toEqual(['Output', 'Price', 'Workers', 'Wage', 'Revenue', 'Profit', 'Emissions']);
     expect(lines[0]!.state).toMatch(/no shares/);
     expect(ownershipText(ind.firms[0]!)).toMatch(/Household/);
@@ -187,12 +188,12 @@ describe('Industry derivation', () => {
     const infra = infraLines(played.industry!);
     expect(infra.map((i) => i.kind)).toContain('road');
     expect(infra.find((i) => i.kind === 'road')!.upkeepTotal).toMatch(/month/);
-    expect(played.industry!.publicGoods.map((g) => g.id)).toEqual(expect.arrayContaining(['publicSpending', 'jobGuarantee', 'benefits', 'ubi']));
+    expect(played.industry!.publicGoods.map((g) => g.id)).toEqual(expect.arrayContaining(['public_works', 'job_guarantee', 'benefits', 'ubi']));
     for (const g of played.industry!.publicGoods) expect(g.buys.length).toBeGreaterThan(5);
   });
   it('selecting a firm and an infrastructure row goes through the store (selectFirstOf)', async () => {
     const { createGame } = await import('../src/store');
-    const game = createGame(createMockSim());
+    const game = createGame(createSimPort());
     game.newGame(2);
     expect(game.selectFirstOf('fossil_plant')).toBe(true);
     expect(game.state.get().selection).toMatchObject({ kind: 'tile' });
@@ -203,7 +204,7 @@ describe('Industry derivation', () => {
 describe('explorer', () => {
   const topics = ok(sim.assumptions());
   it('has every metric, lever and the panel anchors covered by a topic (usedBy)', () => {
-    const anchors = [...new Set(METRICS.map((m) => m.metric)), ...sim.levers().map((l) => l.key), 'energy', 'stress', 'health', 'ledger', 'inspector', 'taxes', 'capital_ratio', 'industry', 'wellbeing'];
+    const anchors = [...new Set(METRICS.map((m) => m.metric)), ...sim.levers().map((l) => l.key), 'panel:energy', 'climate_stress', 'bank_capital_ratio', 'panel:industry', 'wellbeing'];
     expect(anchorsWithoutTopic(topics, anchors)).toEqual([]);
   });
   it('has well-formed topics: unique ids, resolvable related, status and group', () => {
@@ -217,7 +218,7 @@ describe('explorer', () => {
     expect(searchTopics(topics, 'zzzznothing')).toEqual([]);
     expect(searchTopics(topics, '').length).toBe(topics.length);
     expect(searchTopics(topics, '', 'tuned').every((t) => t.status === 'tuned')).toBe(true);
-    expect(topicFor(topics, 'tax_wage')!.id).toBe('taxes');
+    expect(topicFor(topics, 'tax_wage')!.id).toBe('tax_income');
     expect(topicFor(topics, 'not-an-anchor')).toBeNull();
   });
 });

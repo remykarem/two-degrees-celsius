@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
 import { campTiles, HOUSEHOLD_COLORS, MARKER_SHAPES, planCommutes, planStands, poseAt } from '../src/scene/people';

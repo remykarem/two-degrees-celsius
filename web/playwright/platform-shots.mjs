@@ -19,7 +19,7 @@ await page.waitForTimeout(1500);
 await page.getByRole('button', { name: 'Dismiss' }).click().catch(() => {});
 const startBtn = page.getByRole('button', { name: /start|play|new game/i }).first();
 if (await page.getByRole('dialog').count()) await startBtn.click().catch(() => {});
-console.log('mock badge present:', (await page.getByText(/mock data/i).count()) > 0);
+console.log('demo badge present:', (await page.getByText(/recorded demo/i).count()) > 0);
 await page.evaluate(() => { const g = window.__game; for (let i = 0; i < 5; i++) { g.endTurn(); g.finishPlayback(); g.continueFromResults(); } });
 await page.waitForTimeout(800);
 await page.getByRole('button', { name: 'Dismiss' }).click().catch(() => {});

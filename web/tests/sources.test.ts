@@ -8,7 +8,7 @@ import { financeSections } from '../src/panels/finance';
 import { householdIncome } from '../src/panels/people';
 import { emissionOf, incomeOf, incomeTotal } from '../src/store/sources';
 import { createGame } from '../src/store';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 
 const real = (): Snapshot => JSON.parse(readFileSync(resolve(__dirname, '../../docs/fixtures/snapshot-turn1.json'), 'utf8')) as Snapshot;
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;

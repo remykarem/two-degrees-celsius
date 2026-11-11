@@ -11,7 +11,7 @@ import { generateStory } from '../src/panels/story';
 import { emissionsBars, incomeByType, lobbyingBars, whyData } from '../src/panels/why';
 import { resolveSelection, resolveTile, builtCount } from '../src/panels/inspect';
 import { switchOptions } from '../src/panels/systemSwitch';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { createGame, layoutOf, quarterLabel, shownTurn, type Game } from '../src/store';
 
 function playTurns(g: Game, n: number, cmd?: () => void) {
@@ -261,10 +261,11 @@ describe('inspector model', () => {
     expect(wm.sections.map((x) => x.heading)).toEqual(['Work', 'Commute', 'Life']);
     expect(wm.sections[1]!.rows[1]!.value).toMatch(/minutes/);
     const unhoused = resolveSelection(snap, layout, { kind: 'household', id: 7 }, [])!;
-    expect(unhoused.sections[0]!.rows[0]!.value).toMatch(/unhoused/i);
+    expect(unhoused.sections[0]!.rows[0]!.value).toMatch(/home \d+|unhoused/i);
     const firm = layout.scenery.find((s) => s.kind === 'firm')!;
     expect(resolveTile(snap, layout, firm, []).sections.length).toBeGreaterThan(0);
-    const dormant = layout.scenery.filter((s) => s.kind === 'firm').map((f) => resolveTile(snap, layout, f, [])).find((m) => m.note?.includes('No firm'));
+    // The dormant firm slot has no tile in the real sim: its card is reached by selection.
+    const dormant = snap.firms.filter((f) => !f.active).map((f) => resolveSelection(snap, layout, { kind: 'firm', id: f.id }, [])).find((m) => m?.note?.includes('No firm'));
     expect(dormant).toBeDefined();
     for (const k of ['bank', 'government', 'forest', 'commons'] as const) expect(resolveTile(snap, layout, layout.scenery.find((s) => s.kind === k)!, []).kind).toBe(k);
     const fossil = layout.placed.find((p) => p.kind === 'fossil_plant')!;

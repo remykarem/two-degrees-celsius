@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { attachKeys } from '../src/app/keys';
 import { focusTarget } from '../src/app/focus';
-import { createSimPort } from '../src/sim-port';
+import { createSimPort } from './port';
 import { createGame } from '../src/store';
 
 // A tiny DOM stub: the key handler only needs window.addEventListener and document.querySelector.

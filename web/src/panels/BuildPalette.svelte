@@ -8,7 +8,7 @@
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
-  const locked = $derived($gs.phase === 'playback' || $gs.phase === 'results' || $gs.phase === 'ended' || !!$gs.live?.locked);
+  const locked = $derived($gs.phase === 'playback' || $gs.phase === 'results' || $gs.phase === 'ended' || !!$gs.live?.locked || !!$gs.demo);
   const pcFree = $derived(($gs.snapshot?.pc.current ?? 0) - totalPc($gs.draft));
   const items = $derived(paletteActions($gs.actions));
   const radius = $derived(weatherOf($gs.snapshot)?.coverageRadius ?? 0);
@@ -39,6 +39,7 @@
       {#if why}<div class="off">{why}</div>{/if}
     </div>
   {/each}
+  {#if $gs.demo}<p class="hint" data-testid="demo-build-note">Recorded demo: building is off, because your choices cannot change the recording.</p>{/if}
   <p class="hint">
     {#if $gs.buildKind === 'road'}Click free ground to lay a road tile. Commutes that follow roads are faster, so connect homes to workplaces. Esc to stop.{:else if $gs.buildKind === 'fire_station'}{fill(text('inspect', 'palette_fire_station_help'), { radius })}{:else if $gs.buildKind}Free tiles are shaded green; click one to place it. Prices are the simulation's own. Esc to stop.{:else}Pick a building, then click the map.{/if}
   </p>
