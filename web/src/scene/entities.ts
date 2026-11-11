@@ -5,6 +5,8 @@ import { tileKey, worldOf } from './coords';
 import type { ModelId } from './models';
 import { homeTint, mix, WALL } from './palette';
 import { forestStateOf } from '../store/weather';
+import { hasWork } from '../store/scene-estate';
+import { ESTATE_STONE } from './estateModels';
 import { forestModelFor } from './weatherLook';
 
 export type EntityState = 'normal' | 'pending' | 'draft';
@@ -64,8 +66,9 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
       case 'home': {
         const hh = snap ? snap.households.find((h) => h.id === snap.homes.find((x) => x.id === sc.ref)?.household) : undefined;
         const cls: ClassKey = hh?.class ?? 'worker';
-        const mins = snap && hh ? snap.people.filter((q) => q.household === hh.id && q.job).map((q) => q.commuteMinutes).sort((a, b) => b - a) : undefined;
-        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: `home_${cls}` as ModelId, tint: homeTint(cls), household: hh, commuteMinutes: mins });
+        const mins = snap && hh ? snap.people.filter((q) => q.household === hh.id && hasWork(q)).map((q) => q.commuteMinutes).sort((a, b) => b - a) : undefined;
+        const estate = !!hh && snap?.estate?.household === hh.id;
+        out.push({ ...base, ref: ref(hh ? hh.label : sc.label), model: estate ? 'home_estate' : (`home_${cls}` as ModelId), tint: estate ? ESTATE_STONE : homeTint(cls), household: hh, commuteMinutes: mins });
         break;
       }
       case 'firm': {
@@ -131,7 +134,7 @@ export function factsFor(d: EntityDesc): { label: string; value: string }[] {
   const f: { label: string; value: string }[] = [];
   if (d.state !== 'normal') f.push({ label: d.state === 'pending' ? 'Under construction' : 'Planned', value: `${d.turnsLeft} turn${d.turnsLeft === 1 ? '' : 's'} left` });
   const h = d.household;
-  if (h) f.push({ label: 'Class', value: h.class }, { label: 'People', value: String(h.members.length) }, { label: 'Net worth', value: `$${num(h.netWorth)}` });
+  if (h) f.push({ label: 'Class', value: h.class }, ...(h.tag ? [{ label: 'Tag', value: h.tag }] : []), { label: 'People', value: String(h.members.length) }, { label: 'Net worth', value: `$${num(h.netWorth)}` });
   const fm = d.firm;
   if (fm) f.push({ label: 'Sector', value: fm.sector }, { label: 'Status', value: fm.active ? 'trading' : 'closed' }, ...(fm.active ? [{ label: 'Workers', value: String(fm.workers) }, { label: 'Emissions', value: `${num(fm.emissions)} t/month` }] : []));
   const pl = d.plant;

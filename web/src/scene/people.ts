@@ -3,14 +3,15 @@ import type { MapLayout, Tile } from '../store';
 import { centreOf, hash01, type Pt } from './coords';
 import { commuteFraction, pointAt, trackProgress } from './flows';
 import { route } from './paths';
+import { staffCommutesOf } from '../store/scene-estate';
 
 /** Pure people planning: who stands where, and who walks where during a month. No Three.js, no clock. */
 
-/** Okabe-Ito plus grey: eight household colours. Every household also has its own marker shape, so colour is never the only cue. */
-export const HOUSEHOLD_COLORS = [0xe69f00, 0x56b4e9, 0x009e73, 0xf0e442, 0x0072b2, 0xd55e00, 0xcc79a7, 0x8d8d8d] as const;
-export type MarkerShape = 'sphere' | 'cube' | 'cone' | 'octa' | 'disc' | 'tetra' | 'torus' | 'dodeca';
-export const MARKER_SHAPES: readonly MarkerShape[] = ['sphere', 'cube', 'cone', 'octa', 'disc', 'tetra', 'torus', 'dodeca'];
-export const SHAPE_LABEL: Record<MarkerShape, string> = { sphere: 'ball', cube: 'cube', cone: 'cone', octa: 'diamond', disc: 'disc', tetra: 'pyramid', torus: 'ring', dodeca: 'gem' };
+/** Okabe-Ito plus grey, plus dark gold for the ninth (the estate owner): nine household colours. Every household also has its own marker shape, so colour is never the only cue. */
+export const HOUSEHOLD_COLORS = [0xe69f00, 0x56b4e9, 0x009e73, 0xf0e442, 0x0072b2, 0xd55e00, 0xcc79a7, 0x8d8d8d, 0xb8860b] as const;
+export type MarkerShape = 'sphere' | 'cube' | 'cone' | 'octa' | 'disc' | 'tetra' | 'torus' | 'dodeca' | 'star';
+export const MARKER_SHAPES: readonly MarkerShape[] = ['sphere', 'cube', 'cone', 'octa', 'disc', 'tetra', 'torus', 'dodeca', 'star'];
+export const SHAPE_LABEL: Record<MarkerShape, string> = { sphere: 'ball', cube: 'cube', cone: 'cone', octa: 'diamond', disc: 'disc', tetra: 'pyramid', torus: 'ring', dodeca: 'gem', star: 'star' };
 export const AGE_SCALE: Record<AgeBand, number> = { child: 0.68, adult: 1, retired: 0.92 };
 
 export interface PersonStand {
@@ -74,7 +75,7 @@ const toward = (p: Pt, to: Pt, d: number): Pt => { const l = Math.hypot(to[0] - 
  * Longer commutes take a longer share of the month, so the pace is the same and the minutes show.
  */
 export function planCommutes(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
-  const list = frame.flows?.commutes ?? [];
+  const list = [...(frame.flows?.commutes ?? []), ...staffCommutesOf(frame)]; // Town v7: the pilot's commute to the hangar
   if (!list.length) return [];
   const n = layout.gridSize;
   const by = new Map(stands.map((s) => [s.id, s]));

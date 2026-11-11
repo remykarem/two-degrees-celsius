@@ -18,6 +18,9 @@ import { roadGeometry } from './roads';
 import { buildModel, makeTintMaterial, setTint, type BuiltModel } from './geometry';
 import { entityTints, legendFor, personTints, tileTints, type LensCtx } from './lenses';
 import { FxLayer } from './fx';
+import { EstateLayer } from './estate';
+import { jetPoseAt, jetRestPose, jetTrail } from './jetPath';
+import { aviationTonnes, estateTilesOf, isEstateTile, jetFlightIn, type EstateTiles } from '../store/scene-estate';
 import { WeatherLayer } from './weather';
 import { droughtLook } from './weatherLook';
 import { MODELS } from './models';
@@ -114,7 +117,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   const fx = new FxLayer();
   const people = new PeopleLayer();
   const weather = new WeatherLayer();
-  scene.add(layer.group, fx.group, people.group, weather.group);
+  const estateLayer = new EstateLayer();
+  scene.add(estateLayer.group, layer.group, fx.group, people.group, weather.group);
   const haze = new THREE.Fog(0xffffff, 1000, 2000);
   let look: WeatherLook = weatherLook(null);
 
@@ -153,13 +157,20 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     { label: 'Person', value: p.label }, { label: 'Age', value: p.ageBand },
     { label: 'Work', value: p.job ? `${descs.find((d) => d.firm?.id === p.job!.firm)?.firm?.name ?? 'Employed'}, ${p.commuteMinutes} min commute` : p.inLabourForce ? 'Looking for work' : 'Not in the labour force' },
   ];
+  let estateTiles: EstateTiles | null = null;
+  /** The jet's flight in the month being played (null: it stays put). `returns` false: the flight is in the latest month, so the jet is still away at the end. */
+  let flight: { tonnes: number; returns: boolean } | null = null;
+  const flightOf = (frame: { events: Parameters<typeof jetFlightIn>[0]; flows?: Parameters<typeof aviationTonnes>[0] } | undefined, returns: boolean) => {
+    const f = jetFlightIn(frame?.events);
+    return f ? { tonnes: Math.max(f.tonnes, aviationTonnes(frame?.flows)), returns } : null;
+  };
   let planMonth: number | null = null;
   let monthStart = 0;
   /** Pressure mode: the live frame being played (by sequence number), spread over the real month by the clock feed. */
   let liveSeq = -1;
   const tileColors: THREE.Color = new THREE.Color();
 
-  const lensCtx = (s: GameState): LensCtx => ({ descs, snapshot: s.snapshot, layout: layoutOf(s.snapshot), roads, asphalt });
+  const lensCtx = (s: GameState): LensCtx => ({ descs, snapshot: s.snapshot, layout: layoutOf(s.snapshot), roads, asphalt, estate: estateTiles });
 
   function paintTiles(s: GameState) {
     const base = tileTints(s.lens, lensCtx(s));
@@ -185,6 +196,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       if (p && d.state === 'normal' && ((p.state === 'pending') || (p.model === 'firm_vacant' && d.model !== 'firm_vacant'))) pops.set(d.key, 0.5);
     }
     layer.rebuild(descs, pops);
+    estateTiles = estateTilesOf(s.snapshot);
+    estateLayer.setEstate(estateTiles, size);
     const drafted = s.draft.flatMap((d) => (d.command.type === 'place' && d.command.kind === 'road' ? [{ x: d.command.tile.x, y: d.command.tile.y }] : []));
     const queued = [...layout.pendingRoads, ...drafted];
     connectedRoads = new Set([...layout.roads, ...queued].map(tileKey));
@@ -227,14 +240,15 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       if (liveSeq !== lv.frameSeq) {
         liveSeq = lv.frameSeq;
         plan = planFrame(lv.frame!, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!));
+        flight = flightOf(lv.frame!, true);
         commutes = new Map(planTrips(lv.frame!, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c]));
       }
       return;
     }
-    if (liveSeq !== -1) { liveSeq = -1; plan = null; commutes = null; }
+    if (liveSeq !== -1) { liveSeq = -1; plan = null; commutes = null; flight = null; }
     const active = s.phase === 'playback' && !s.playback.skipped && s.playback.month >= 0 && !!s.lastResult && !!s.snapshot;
     if (!active) {
-      if (plan) { plan = null; planMonth = null; commutes = null; }
+      if (plan) { plan = null; planMonth = null; commutes = null; flight = null; }
       bus.playback.set({ active: s.phase === 'playback' && !s.playback.skipped, month: s.phase === 'playback' ? s.playback.month : -1, monthT: 0, overall: s.phase === 'playback' ? 0 : 1 });
       return;
     }
@@ -244,6 +258,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       const frame = s.lastResult!.months[planMonth];
       plan = frame ? planFrame(frame, ctxFromSnapshot(layoutOf(s.snapshot), s.snapshot!)) : null;
       commutes = frame ? new Map(planTrips(frame, layoutOf(s.snapshot), stands, s.snapshot!.turn).map((c) => [c.person, c])) : null;
+      flight = flightOf(frame, planMonth < s.lastResult!.months.length - 1);
     }
   }
 
@@ -408,7 +423,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const ent = entityAt(descs, t)?.ref;
     const build = game.state.get().buildKind;
     const err = build ? game.tileError(t) : null;
-    return `Tile ${t.x}, ${t.y}: ${ent ? ent.label : 'empty'}${build ? (err ? `. Cannot build here: ${err}` : '. You can build here') : ''}`;
+    return `Tile ${t.x}, ${t.y}: ${ent ? ent.label : isEstateTile(estateTiles, t) ? (estateTiles!.runway.some((r) => r.x === t.x && r.y === t.y) ? 'estate runway' : 'estate grounds') : 'empty'}${build ? (err ? `. Cannot build here: ${err}` : '. You can build here') : ''}`;
   };
   const onKey = (e: KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -466,7 +481,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   let lastPaint = 0;
   let lastPublish = 0;
   let lastCam = '';
-  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances + people.instances + weather.instances, entities: layer.count });
+  const stats = () => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, instances: fx.instances + people.instances + weather.instances + estateLayer.drawn, entities: layer.count });
 
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
@@ -487,6 +502,12 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     if (!animating && !(ambientNeeded && now - lastPaint > 40)) return;
     fx.update(plan, monthT, sec, ambient, looping ? flowLoop : [], (sec / 3) % 1, s.lens === 'emissions');
     weather.update(sec, !reducedMotion());
+    if (estateTiles) {
+      const red = reducedMotion(), len = Math.max(1, estateLayer.runLen);
+      const flying = plan && flight;
+      const pose = plan ? (flying ? jetPoseAt(monthT, len, flight!.returns, red) : jetRestPose(false)) : jetRestPose(estateTiles.estate.jet.flyingThisMonth);
+      estateLayer.update({ pose, trail: flying ? jetTrail(monthT, len, flight!.returns, red) : [], weight: flying ? Math.min(1, flight!.tonnes / Math.max(1e-9, estateTiles.estate.flightTonnes)) : 0, lens: s.lens === 'emissions', sec, still: red });
+    } else estateLayer.update(null);
     people.update(sec, commutes, playing ? monthT : 0, selectedPerson, hoverPerson, reducedMotion() || !playing);
     renderer.render(scene, rig.camera);
     lastPaint = now;
@@ -533,6 +554,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       el.removeEventListener('webglcontextrestored', onRestored);
       layer.dispose();
       fx.dispose();
+      estateLayer.dispose();
       weather.dispose();
       scene.fog = null;
       people.dispose();

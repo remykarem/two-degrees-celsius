@@ -20,7 +20,19 @@ function markerGeometry(s: MarkerShape): THREE.BufferGeometry {
     case 'tetra': return new THREE.TetrahedronGeometry(0.075);
     case 'torus': return new THREE.TorusGeometry(0.055, 0.02, 6, 12);
     case 'dodeca': return new THREE.DodecahedronGeometry(0.06);
+    case 'star': return starGeometry();
   }
+}
+
+/** A five-point star standing upright (the ninth marker shape, the estate owner). */
+function starGeometry(): THREE.BufferGeometry {
+  const sh = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? 0.085 : 0.038, a = Math.PI / 2 + (i * Math.PI) / 5;
+    if (i === 0) sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); else sh.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  sh.closePath();
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.03, bevelEnabled: false }).translate(0, 0, -0.015);
 }
 
 export interface PersonPos { id: number; x: number; y: number; z: number }

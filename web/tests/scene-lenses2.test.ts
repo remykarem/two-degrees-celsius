@@ -40,7 +40,7 @@ describe('Town v2 lenses', () => {
   it('commute: longer commutes are darker, people without a job are grey', () => {
     const t = personTints('commute', snap, stands);
     const ex = extremes(snap);
-    for (const p of snap.people) expect(t.get(p.id)).toBe(p.job ? ramp(RAMP.commute, p.commuteMinutes / ex.maxCommute) : NOT_WORKING);
+    for (const p of snap.people) expect(t.get(p.id)).toBe(p.job || p.employer ? ramp(RAMP.commute, p.commuteMinutes / ex.maxCommute) : NOT_WORKING);
     expect(ramp(RAMP.commute, 1)).not.toBe(ramp(RAMP.commute, 0));
   });
   it('commute lens colours homes by their longest commuter', () => {

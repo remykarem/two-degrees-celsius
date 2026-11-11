@@ -6,10 +6,12 @@ import type { EntityDesc } from './entities';
 import type { PersonStand } from './people';
 import { tileFireRisk, weatherLook } from '../store/scene-weather';
 import { fireLensGround, rampFire, weatherGround, FIRE_RAMP } from './weatherLook';
+import { aviationOfSnapshot, hasWork, type EstateTiles } from '../store/scene-estate';
 import { CLASS_COLOR, CLASS_LABEL, GROUND, hex, mix, PATH } from './palette';
 
 /** Map lenses as pure colour functions: snapshot in, hex colours out. No Three.js. */
-export interface LensCtx { descs: EntityDesc[]; snapshot: Snapshot | null; layout: MapLayout; roads: Set<string>; /** Built roads (tile keys), drawn as road meshes, not by the ground tiles. */ asphalt: Set<string> }
+export interface LensCtx { descs: EntityDesc[]; snapshot: Snapshot | null; layout: MapLayout; roads: Set<string>; /** Built roads (tile keys), drawn as road meshes, not by the ground tiles. */ asphalt: Set<string>;
+  /** Town v7: the estate's tiles (optional: lenses without an estate behave as before). */ estate?: EstateTiles | null }
 
 export const RAMP = {
   emissions: [0xfff3c4, 0xf6a54a, 0xd55e00, 0x8a3a22],
@@ -38,7 +40,7 @@ export function extremes(s: Snapshot | null): Extremes {
   return {
     maxFirmEmissions: Math.max(1e-9, ...firmE),
     maxEmission: Math.max(1e-9, ...firmE, ...(s?.plants.map((p) => p.emissionsMonthly) ?? [0])),
-    maxCommute: Math.max(1, ...(s?.people.filter((p) => p.job).map((p) => p.commuteMinutes) ?? [0])),
+    maxCommute: Math.max(1, ...(s?.people.filter((p) => hasWork(p)).map((p) => p.commuteMinutes) ?? [0])),
     wealthLo: Math.min(...w), wealthHi: Math.max(...w),
     maxWorkers: Math.max(1, ...(s?.firms.map((f) => f.workers) ?? [0])),
   };
@@ -53,11 +55,11 @@ export const employmentShare = (h: { employed: number; labourForce: number }) =>
 export function householdEmployment(s: Snapshot | null, h: { id: number; class: string }): number {
   if (!s) return 1;
   const lf = s.people.filter((p) => p.household === h.id && p.inLabourForce);
-  return employmentShare({ employed: lf.filter((p) => p.job).length, labourForce: lf.length });
+  return employmentShare({ employed: lf.filter((p) => hasWork(p)).length, labourForce: lf.length });
 }
 export type EmploymentState = 'employed' | 'unemployed' | 'out';
 /** Per person: has a job, is looking for one, or is outside the labour force (child, retired, owner). */
-export const employmentState = (p: { job: unknown; inLabourForce: boolean }): EmploymentState => (p.job ? 'employed' : p.inLabourForce ? 'unemployed' : 'out');
+export const employmentState = (p: { job: unknown; employer?: unknown; inLabourForce: boolean }): EmploymentState => (p.job || p.employer ? 'employed' : p.inLabourForce ? 'unemployed' : 'out');
 export const netMoney = (h: { income: { wages: number; dividends: number; rent: number; interest: number; benefits: number; taxPaid: number; rentPaid: number; loanPayments: number; spending: number } }) => {
   const i = h.income;
   return i.wages + i.dividends + i.rent + i.interest + i.benefits - i.taxPaid - i.rentPaid - i.loanPayments - i.spending;
@@ -71,6 +73,14 @@ export function emitterWeights(ctx: LensCtx): { x: number; z: number; w: number 
     if (d.state === 'draft') continue;
     if (d.firm?.active) out.push({ x: d.x, z: d.z, w: d.firm.emissions / ex.maxEmission });
     else if (d.ref.kind === 'fossil_plant' && d.state === 'normal') out.push({ x: d.x, z: d.z, w: d.plant ? d.plant.emissionsMonthly / ex.maxEmission : 0.35 + 0.65 * (ctx.snapshot ? fossilShareOf(ctx.snapshot.energy) : 0.5) });
+  }
+  // Town v7: the jet's tonnes show as a heat weight on the runway (the same scale as firms and plants, with a floor so a flight is visible).
+  const av = aviationOfSnapshot(ctx.snapshot);
+  const e = ctx.estate;
+  if (e && av > 0 && e.runway.length) {
+    const mid = e.runway[Math.floor(e.runway.length / 2)]!;
+    const [x, z] = centreOf(mid, ctx.layout.gridSize);
+    out.push({ x, z, w: Math.max(0.3, Math.min(1, av / ex.maxEmission)) });
   }
   return out;
 }
@@ -88,7 +98,8 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
       // Forest and commons show their stock: lush green when healthy, dry straw when depleted.
       if (d.stock !== undefined) c = d.ref.kind === 'forest' ? mix(0xc9a85a, 0x6fb061, clamp01((d.stock - 0.15) / 0.7)) : mix(0xc9b27a, 0xb4d891, clamp01(d.stock / 0.6));
     } else if (lens === 'emissions') {
-      const e = d.firm?.active ? d.firm.emissions / ex.maxEmission : d.ref.kind === 'fossil_plant' ? w.find((q) => q.x === d.x && q.z === d.z)?.w : d.ref.kind === 'renewable_plant' ? 0 : undefined;
+      const estateHome = !!h && ctx.snapshot?.estate?.household === h.id;
+      const e = estateHome ? (h?.footprintTonnes ?? 0) / Math.max(1e-9, ...(ctx.snapshot?.households.map((q) => q.footprintTonnes) ?? [0])) : d.firm?.active ? d.firm.emissions / ex.maxEmission : d.ref.kind === 'fossil_plant' ? w.find((q) => q.x === d.x && q.z === d.z)?.w : d.ref.kind === 'renewable_plant' ? 0 : undefined;
       c = e === undefined ? dim(d.tint) : ramp(RAMP.emissions, e);
     } else if (lens === 'class') {
       c = h ? CLASS_COLOR[h.class] : dim(d.tint);
@@ -148,7 +159,7 @@ export function personTints(lens: Lens, snap: Snapshot | null, stands: readonly 
       case 'class': c = CLASS_COLOR[h.class]; break;
       case 'wealth': c = ramp(RAMP.wealth, logT(h.netWorth / Math.max(1, h.members.length), ex.wealthLo, ex.wealthHi)); break;
       case 'employment': { const e = employmentState(p); c = e === 'employed' ? EMPLOYED : e === 'unemployed' ? UNEMPLOYED : NOT_WORKING; break; }
-      case 'commute': c = p.job ? ramp(RAMP.commute, p.commuteMinutes / ex.maxCommute) : NOT_WORKING; break;
+      case 'commute': c = hasWork(p) ? ramp(RAMP.commute, p.commuteMinutes / ex.maxCommute) : NOT_WORKING; break;
       case 'flows': c = ramp(RAMP.flows, 0.5 + 0.5 * Math.tanh(netMoney(h) / Math.max(1, h.income.spending))); break;
       case 'emissions': c = ramp(RAMP.emissions, Math.min(1, h.footprintTonnes / Math.max(1e-9, ...snap.households.map((q) => q.footprintTonnes)))); break;
     }

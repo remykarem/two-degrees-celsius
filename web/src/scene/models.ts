@@ -1,3 +1,4 @@
+import { HOME_ESTATE } from './estateModels';
 import { AWNING_A, BRICK, CRANE, DARK, FOOD, GLASS, GOLD, GRASS, LEAF, METAL, PANEL, ROOF, ROOF_DARK, SMOKE_DARK, STONE, WALL, WOOD } from './palette';
 
 /**
@@ -50,6 +51,8 @@ export const MODELS = {
     box(0, 0, 0, 0.5, 0.3, 0.46, WALL, true), gable(0, 0.3, 0, 0.56, 0.26, 0.5, ROOF), box(0, 0.05, 0.24, 0.12, 0.16, 0.02, WOOD),
     cone(0, 0.58, 0, 0.1, 0.18, GOLD),
   ]),
+  /** Town v7: the estate house (estateModels.ts), the one home bigger than the rest. */
+  home_estate: HOME_ESTATE,
   home_dependent: model([
     cyl(0, 0, 0, 0.44, 0.24, WALL, true), cone(0, 0.24, 0, 0.58, 0.3, 0xcaa56a), box(0, 0.02, 0.21, 0.1, 0.14, 0.02, WOOD),
   ]),

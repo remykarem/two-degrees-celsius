@@ -26,7 +26,8 @@ describe('layout to entity mapping', () => {
   it('homes get a distinct model per class', () => {
     const homes = descs.filter((d) => d.ref.kind === 'home');
     expect(homes).toHaveLength(8);
-    expect(new Set(homes.map((h) => h.model)).size).toBe(new Set(homes.map((h) => h.household?.class)).size);
+    // Town v7: the estate house has a model of its own on top of the five class models.
+    expect(new Set(homes.map((h) => h.model)).size).toBe(new Set(homes.map((h) => (h.model === 'home_estate' ? 'estate' : h.household?.class))).size);
     const classes = ['capitalist', 'rentier', 'manager', 'worker', 'dependent'] as const;
     for (const c of classes) expect(MODELS[`home_${c}`]).toBeDefined();
     expect(new Set(classes.map((c) => JSON.stringify(MODELS[`home_${c}`].parts.map((p) => p.s + p.z.join()))))).toHaveProperty('size', 5);
