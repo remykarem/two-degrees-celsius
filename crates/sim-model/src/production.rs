@@ -18,12 +18,17 @@ pub fn climate_factor(s: &State, p: &Params) -> f64 {
     1.0 - p.production.climate_damage * ratio * ratio
 }
 
+/// Output of `tfp x K^alpha x L^beta` for capital `k` and effective labour `l`.
+pub fn cobb_douglas(p: &Params, tfp: f64, k: f64, l: f64) -> f64 {
+    tfp * pow(k, p.production.alpha_k) * pow(l, p.production.beta_n)
+}
+
 /// Output the firm would produce with `l` effective labour, before rationing and caps.
 pub fn capacity(s: &State, p: &Params, f: &Firm, l: f64) -> f64 {
     if l <= 0.0 || f.capital.0 <= 0.0 {
         return 0.0;
     }
-    let mut y = f.tfp.0 * pow(f.capital.0, p.production.alpha_k) * pow(l, p.production.beta_n);
+    let mut y = cobb_douglas(p, f.tfp.0, f.capital.0, l);
     if f.sector == Sector::Food {
         y *= pow(
             resource_health(s, p).max(1e-6),
@@ -55,7 +60,12 @@ pub fn effective_labour(s: &State, f: &Firm) -> f64 {
 /// Tonnes of CO2 per energy unit delivered: the fossil share of capacity times the fossil factor.
 pub fn grid_intensity(s: &State, p: &Params) -> f64 {
     let supply: f64 = s.plants.iter().map(|x| x.capacity.0).sum();
-    sim_types::safe_div(s.capacity(PlantKind::Fossil), supply, 0.0) * p.energy.factor_fossil
+    grid_intensity_of(p, s.capacity(PlantKind::Fossil), supply)
+}
+
+/// Grid intensity from the fossil capacity and the total capacity.
+pub fn grid_intensity_of(p: &Params, fossil_capacity: f64, total_capacity: f64) -> f64 {
+    sim_types::safe_div(fossil_capacity, total_capacity, 0.0) * p.energy.factor_fossil
 }
 
 /// Electricity each household would like this month (before rationing), from last month's

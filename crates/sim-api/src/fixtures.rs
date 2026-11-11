@@ -134,5 +134,7 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
         ("breakdowns.json".to_string(), pretty(&later.breakdowns)?),
         ("policies.json".to_string(), pretty(&later.policies)?),
         ("industry.json".to_string(), pretty(&later.industry)?),
+        // Contract v1.5: the model explorer catalog.
+        ("assumptions.json".to_string(), pretty(&api.assumptions()?)?),
     ])
 }

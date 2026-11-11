@@ -118,6 +118,20 @@ pub fn unemployment(s: &State) -> (People, People, Rate) {
     )
 }
 
+/// Carbon budget left: the budget minus the cumulative net emissions.
+pub fn remaining_budget(cumulative: Tonnes, p: &Params) -> Tonnes {
+    Tonnes(p.nature.budget_b0 - cumulative.0)
+}
+
+/// Government debt over annual GDP, 0 when GDP is not positive.
+pub fn debt_to_gdp(debt_usd: f64, gdp_annual_usd: f64) -> f64 {
+    if gdp_annual_usd > 0.0 {
+        debt_usd / gdp_annual_usd
+    } else {
+        0.0
+    }
+}
+
 /// Warming estimate: hits the limit exactly when the budget is gone.
 pub fn temperature(cumulative: Tonnes, p: &Params) -> f64 {
     p.nature.t0 + (p.nature.t_limit - p.nature.t0) * cumulative.0 / p.nature.budget_b0
@@ -233,7 +247,7 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
         wage_share: Rate(safe_div(wages, gdp_f, 0.0)),
         profit_share: Rate(safe_div(profits, gdp_f, 0.0)),
         avg_wellbeing: Rate(wb),
-        remaining_budget: Tonnes(p.nature.budget_b0 - s.nature.cumulative.0),
+        remaining_budget: remaining_budget(s.nature.cumulative, p),
         temperature: temperature(s.nature.cumulative, p),
         gpi_annual: gpi,
         money: s.total_deposits(),

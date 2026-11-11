@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 pub mod api;
+pub mod assumptions;
 pub mod breakdowns;
 pub mod command;
 pub mod content;
@@ -28,6 +29,7 @@ pub mod snapshot;
 pub mod turn;
 
 pub use api::Api;
+pub use assumptions::AssumptionTopic;
 pub use command::{Command, CommonsAccessWire, PolicyValue, Tile};
 pub use error::{ApiError, ApiResult};
 pub use events::{SimEvent, SimEventKind, TraceRecord};

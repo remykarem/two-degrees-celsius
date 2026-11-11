@@ -42,12 +42,7 @@ pub struct HistoryPoint {
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
 pub fn debt_to_gdp(s: &State) -> f64 {
-    let gdp = s.indicators.gdp_annual.dollars();
-    if gdp > 0.0 {
-        s.gov.debt.dollars() / gdp
-    } else {
-        0.0
-    }
+    sim_metrics::debt_to_gdp(s.gov.debt.dollars(), s.indicators.gdp_annual.dollars())
 }
 
 /// Share of the carbon budget left, clamped to 0..=1.

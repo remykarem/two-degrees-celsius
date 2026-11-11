@@ -1,0 +1,1927 @@
+[
+  {
+    "id": "emissions",
+    "title": "Emissions by source and net",
+    "group": "emissions_energy",
+    "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant.",
+    "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
+    "params": [
+      {
+        "path": "nature.household_footprint_base",
+        "label": "Direct footprint per person",
+        "value": 0.12,
+        "unit": "t CO2 per person per month"
+      },
+      {
+        "path": "energy.factor_fossil",
+        "label": "Emission factor of a fossil plant",
+        "value": 1.0,
+        "unit": "t CO2 per MWh delivered"
+      },
+      {
+        "path": "nature.sink_sigma",
+        "label": "Forest sink per unit of standing forest",
+        "value": 0.001,
+        "unit": "t CO2 per month per unit"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A Factory making 1,000 units a month with no green technology",
+        "inputs": {
+          "green_tech": 0.0,
+          "intensity_base": 0.012,
+          "output": 1000.0
+        },
+        "result": {
+          "value": 12.0,
+          "unit": "t CO2 per month"
+        },
+        "function": "firm_direct_emissions"
+      },
+      {
+        "label": "The same Factory after 20% green technology",
+        "inputs": {
+          "green_tech": 0.2,
+          "intensity_base": 0.012,
+          "output": 1000.0
+        },
+        "result": {
+          "value": 9.600000000000001,
+          "unit": "t CO2 per month"
+        },
+        "function": "firm_direct_emissions"
+      },
+      {
+        "label": "A fossil plant delivering 5 units of electricity in a month",
+        "inputs": {
+          "delivered": 5.0
+        },
+        "result": {
+          "value": 5.0,
+          "unit": "t CO2 per month"
+        },
+        "function": "plant_emissions_fossil"
+      },
+      {
+        "label": "A forest of 1,500 units",
+        "inputs": {
+          "forest": 1500.0
+        },
+        "result": {
+          "value": 1.5,
+          "unit": "t CO2 per month"
+        },
+        "note": "The sink shrinks as the forest burns or is cleared.",
+        "function": "forest_sink"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "Tuned for gameplay. A coal-like emission factor (about 1 t CO2 per MWh) is a rough real-world order of magnitude; the other figures are not calibrated to data.",
+    "leavesOut": [
+      "Only CO2 is counted; no methane, no imports or exports of embodied carbon.",
+      "The whole town's footprint is one number; no transport, heating or diet detail."
+    ],
+    "code": [
+      "crates/sim-model/src/nature.rs",
+      "crates/sim-model/src/production.rs"
+    ],
+    "related": [
+      "energy_power",
+      "accumulated_emissions",
+      "household_electricity",
+      "nature_forest_commons"
+    ],
+    "usedBy": [
+      "emissions",
+      "budget",
+      "forest",
+      "forest_health",
+      "carbon_price",
+      "emissions_cap",
+      "panel:ecology",
+      "panel:energy",
+      "energy:plant_emissions",
+      "people:footprint",
+      "industry:firms"
+    ]
+  },
+  {
+    "id": "energy_power",
+    "title": "Power: demand, supply and rationing",
+    "group": "emissions_energy",
+    "summary": "Firms and households need electricity each month. Each plant has a fixed capacity. If the town wants more than the plants can supply, everyone is served in the same proportion and firms make less. Only fossil plants emit, so the cleaner the plant mix, the lower the emissions per unit of electricity.",
+    "formula": "demand = firms (output x energy per unit x (1 - green tech) x heat) + households; served = min(1, supply / demand); plant output = delivered x plant capacity / total capacity",
+    "params": [
+      {
+        "path": "energy.plant_capacity",
+        "label": "Capacity of one plant",
+        "value": 5.0,
+        "unit": "MWh per month"
+      },
+      {
+        "path": "energy.factor_fossil",
+        "label": "Emission factor of a fossil plant",
+        "value": 1.0,
+        "unit": "t CO2 per MWh delivered"
+      },
+      {
+        "path": "weather.a_e",
+        "label": "Extra demand per unit of drought severity",
+        "value": 0.1,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Two fossil plants and one renewable plant",
+        "inputs": {
+          "fossil_capacity": 10.0,
+          "total_capacity": 15.0
+        },
+        "result": {
+          "value": 0.6666666666666666,
+          "unit": "t CO2 per MWh"
+        },
+        "function": "grid_intensity"
+      },
+      {
+        "label": "A Factory making 1,000 units with 20% green technology",
+        "inputs": {
+          "energy_per_unit": 0.018,
+          "green_tech": 0.2,
+          "heat": 1.0,
+          "output": 1000.0
+        },
+        "result": {
+          "value": 14.4,
+          "unit": "MWh per month"
+        },
+        "function": "firm_energy_use"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "The unit is called MWh but the capacities are game numbers chosen so that the starting town is near balance; they are not calibrated to real plants.",
+    "leavesOut": [
+      "No grid: no transmission, storage, imports, prices or blackouts by area.",
+      "Plants do not wear out and never run at part load by choice."
+    ],
+    "code": [
+      "crates/sim-model/src/production.rs"
+    ],
+    "related": [
+      "energy_units",
+      "household_electricity",
+      "emissions"
+    ],
+    "usedBy": [
+      "panel:energy",
+      "energy:served",
+      "energy:demand",
+      "energy:supply",
+      "energy:intensity",
+      "energy:renewable_share",
+      "place:fossil_plant",
+      "place:renewable_plant"
+    ]
+  },
+  {
+    "id": "energy_units",
+    "title": "Grid and energy units",
+    "group": "emissions_energy",
+    "summary": "Electricity in the game is counted in MWh per month (the label comes from content). Capacity, demand, deliveries and household use are all in this one unit. Grid intensity is the tonnes of CO2 emitted per unit delivered: the fossil share of capacity times the fossil emission factor.",
+    "formula": "grid intensity = fossil capacity / total capacity x fossil factor (t CO2 per MWh); renewable share = renewable capacity / total capacity",
+    "params": [
+      {
+        "path": "energy.factor_fossil",
+        "label": "Emission factor of a fossil plant",
+        "value": 1.0,
+        "unit": "t CO2 per MWh delivered"
+      },
+      {
+        "path": "energy.plant_capacity",
+        "label": "Capacity of one plant",
+        "value": 5.0,
+        "unit": "MWh per month"
+      }
+    ],
+    "examples": [
+      {
+        "label": "One fossil plant of three",
+        "inputs": {
+          "fossil_capacity": 5.0,
+          "total_capacity": 15.0
+        },
+        "result": {
+          "value": 0.3333333333333333,
+          "unit": "t CO2 per MWh"
+        },
+        "function": "grid_intensity"
+      },
+      {
+        "label": "An all-renewable grid",
+        "inputs": {
+          "fossil_capacity": 0.0,
+          "total_capacity": 15.0
+        },
+        "result": {
+          "value": 0.0,
+          "unit": "t CO2 per MWh"
+        },
+        "function": "grid_intensity"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "Unit label only; magnitudes are game numbers.",
+    "leavesOut": [
+      "No distinction between peak and average power, or between electricity and other energy."
+    ],
+    "code": [
+      "crates/sim-model/src/production.rs",
+      "crates/sim-api/src/finance.rs"
+    ],
+    "related": [
+      "energy_power"
+    ],
+    "usedBy": [
+      "energy:intensity",
+      "energy:renewable_share",
+      "panel:energy"
+    ]
+  },
+  {
+    "id": "household_electricity",
+    "title": "Household electricity needs",
+    "group": "people_households",
+    "summary": "Each household wants a base amount of electricity per person plus an amount that grows with how much it spends. The need is based on last month's consumption. A drought raises it (cooling, pumping). If the grid cannot meet total demand, households are served in the same proportion as firms.",
+    "formula": "use = heat x people x (base per person + k x spending per person / reference spending)",
+    "params": [
+      {
+        "path": "energy.hh_energy_base_pc",
+        "label": "Base need per person",
+        "value": 0.1,
+        "unit": "MWh per person per month"
+      },
+      {
+        "path": "energy.hh_energy_consumption_pc",
+        "label": "Extra need at the reference spending",
+        "value": 0.15,
+        "unit": "MWh per person per month"
+      },
+      {
+        "path": "energy.hh_ref_consumption_usd",
+        "label": "Reference spending per person",
+        "value": 2000.0,
+        "unit": "$ per person per month"
+      },
+      {
+        "path": "weather.a_e",
+        "label": "Extra demand per unit of drought severity",
+        "value": 0.1,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A household of 3 spending $6,000 a month in total ($2,000 each)",
+        "inputs": {
+          "consumption_usd": 6000.0,
+          "heat": 1.0,
+          "people": 3.0
+        },
+        "result": {
+          "value": 0.75,
+          "unit": "MWh per month"
+        },
+        "function": "household_energy_use"
+      },
+      {
+        "label": "The same household in a drought of severity 0.5 (heat = 1 + a_e x 0.5)",
+        "inputs": {
+          "consumption_usd": 6000.0,
+          "heat": 1.05,
+          "people": 3.0
+        },
+        "result": {
+          "value": 0.7875000000000001,
+          "unit": "MWh per month"
+        },
+        "function": "household_energy_use"
+      },
+      {
+        "label": "A household of 2 spending $1,000 a month in total",
+        "inputs": {
+          "consumption_usd": 1000.0,
+          "heat": 1.0,
+          "people": 2.0
+        },
+        "result": {
+          "value": 0.275,
+          "unit": "MWh per month"
+        },
+        "function": "household_energy_use"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "Invented to make households matter for emissions; not from household survey data.",
+    "leavesOut": [
+      "No appliances, heating fuel or cars; one electricity number per household."
+    ],
+    "code": [
+      "crates/sim-model/src/production.rs"
+    ],
+    "related": [
+      "energy_power",
+      "emissions"
+    ],
+    "usedBy": [
+      "people:energy_use",
+      "people:footprint",
+      "panel:people",
+      "panel:energy"
+    ]
+  },
+  {
+    "id": "accumulated_emissions",
+    "title": "Accumulated emissions and the carbon budget",
+    "group": "emissions_energy",
+    "summary": "Every month's net emissions are added to a running total. The game gives the town a fixed carbon budget for the whole run. The budget left is the budget minus the total so far. Warming is shown as a straight line from the starting temperature to the 1.5 C limit, reaching it exactly when the budget is gone. If cumulative emissions were ever negative they are held at zero.",
+    "formula": "cumulative = max(0, previous + net emissions); remaining = budget - cumulative; temperature = t0 + (limit - t0) x cumulative / budget",
+    "params": [
+      {
+        "path": "nature.budget_b0",
+        "label": "Carbon budget for the run",
+        "value": 900.0,
+        "unit": "t CO2"
+      },
+      {
+        "path": "nature.t0",
+        "label": "Starting temperature rise",
+        "value": 1.3,
+        "unit": "C"
+      },
+      {
+        "path": "nature.t_limit",
+        "label": "Temperature limit",
+        "value": 1.5,
+        "unit": "C"
+      },
+      {
+        "path": "run.turns",
+        "label": "Turns in a game",
+        "value": 40.0,
+        "unit": "turns"
+      }
+    ],
+    "examples": [
+      {
+        "label": "After 450 t of cumulative emissions",
+        "inputs": {
+          "cumulative": 450.0
+        },
+        "result": {
+          "value": 1.4,
+          "unit": "C"
+        },
+        "function": "temperature"
+      },
+      {
+        "label": "After 450 t of cumulative emissions",
+        "inputs": {
+          "cumulative": 450.0
+        },
+        "result": {
+          "value": 450.0,
+          "unit": "t CO2"
+        },
+        "function": "remaining_budget"
+      },
+      {
+        "label": "After 450 t of cumulative emissions",
+        "inputs": {
+          "cumulative": 450.0
+        },
+        "result": {
+          "value": 0.3846153846153846,
+          "unit": "0 to 1"
+        },
+        "function": "climate_stress"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "The budget is scaled down so that a 40-turn game of a 20-person town can use it up. It is not a real-world carbon budget, and the temperature line is a game device, not a climate model.",
+    "leavesOut": [
+      "No carbon cycle, no lag between emissions and warming, no other countries."
+    ],
+    "code": [
+      "crates/sim-model/src/nature.rs",
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "emissions",
+      "weather_stress"
+    ],
+    "usedBy": [
+      "budget",
+      "temperature",
+      "emissions",
+      "climate_stress",
+      "panel:ecology"
+    ]
+  },
+  {
+    "id": "household_spending",
+    "title": "Household spending and housing",
+    "group": "people_households",
+    "summary": "A household spends part of its income and, slowly, some of its wealth. Spending is split between food, goods and services. Households pay rent for their home; when rent is too large a share of income for several months they can be evicted and look for somewhere cheaper. Rents drift up when homes are nearly full and down when they are empty.",
+    "formula": "spending = propensity (by class) x disposable income + wealth consumption; rent adjusts by a small step when occupancy passes a trigger",
+    "params": [
+      {
+        "path": "goods.food_need_units_pc",
+        "label": "Food a person needs",
+        "value": 25.0,
+        "unit": "units per person per month"
+      },
+      {
+        "path": "goods.services_share",
+        "label": "Share of non-food spending going to services",
+        "value": 0.45,
+        "unit": "share"
+      },
+      {
+        "path": "goods.wealth_consumption_rate",
+        "label": "Share of wealth spent each month",
+        "value": 0.005,
+        "unit": "share per month"
+      },
+      {
+        "path": "goods.rent_burden_cap",
+        "label": "Rent share of income that triggers distress",
+        "value": 0.2,
+        "unit": "share"
+      },
+      {
+        "path": "goods.evict_after_months",
+        "label": "Months of unaffordable rent before eviction",
+        "value": 3.0,
+        "unit": "months"
+      },
+      {
+        "path": "goods.occupancy_trigger",
+        "label": "Occupancy above which rents rise",
+        "value": 0.95,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Tuned for plausible shares; not calibrated to household budget data.",
+    "leavesOut": [
+      "Eight households and seven homes: no housing market, mortgages, or moving between towns."
+    ],
+    "code": [
+      "crates/sim-model/src/goods.rs"
+    ],
+    "related": [
+      "income_wages_prices",
+      "money_credit"
+    ],
+    "usedBy": [
+      "housing",
+      "money",
+      "prices",
+      "panel:people",
+      "finance:hh-spend",
+      "finance:hh-save",
+      "finance:hh-nw",
+      "finance:hh-rent"
+    ]
+  },
+  {
+    "id": "production_output",
+    "title": "Production and output",
+    "group": "production_prices",
+    "summary": "A firm makes output from its capital and from labour. Labour is the sum over its workers of skill times effective hours; effective hours fall with a long commute. The farm also depends on forest and commons health, climate damage and drought. Output is rationed if the grid falls short, and an emissions cap can limit it further.",
+    "formula": "output = productivity x capital^alpha x labour^beta, then x farm health, x climate factor, x drought factor (farm), x smoke factor, x electricity served",
+    "params": [
+      {
+        "path": "production.alpha_k",
+        "label": "Capital exponent (alpha)",
+        "value": 0.3,
+        "unit": "exponent"
+      },
+      {
+        "path": "production.beta_n",
+        "label": "Labour exponent (beta)",
+        "value": 0.7,
+        "unit": "exponent"
+      },
+      {
+        "path": "production.farm_health_exp",
+        "label": "Farm output exponent on resource health",
+        "value": 0.5,
+        "unit": "exponent"
+      },
+      {
+        "path": "production.climate_damage",
+        "label": "Farm output lost at the full carbon budget",
+        "value": 0.3,
+        "unit": "share"
+      },
+      {
+        "path": "space.k_commute",
+        "label": "Hours lost per commuting minute",
+        "value": 0.004,
+        "unit": "hours per minute"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Productivity 1.0, capital 100 units, effective labour 50",
+        "inputs": {
+          "capital": 100.0,
+          "labour": 50.0,
+          "tfp": 1.0
+        },
+        "result": {
+          "value": 61.5572206672458,
+          "unit": "units per month"
+        },
+        "function": "cobb_douglas"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "Standard Cobb-Douglas shape with game-tuned exponents (alpha + beta = 1, constant returns); not estimated from data.",
+    "leavesOut": [
+      "No intermediate goods, no technology choice beyond green investment, no imports."
+    ],
+    "code": [
+      "crates/sim-model/src/production.rs",
+      "crates/sim-model/src/labour.rs"
+    ],
+    "related": [
+      "income_wages_prices",
+      "emissions"
+    ],
+    "usedBy": [
+      "gdp",
+      "unemployment",
+      "industry:firms",
+      "panel:industry",
+      "panel:economy"
+    ]
+  },
+  {
+    "id": "income_wages_prices",
+    "title": "Wages, prices and profit",
+    "group": "production_prices",
+    "summary": "Firms pay wages first, then the carbon price and profit tax, then dividends to their owners. Wages drift with unemployment (a Phillips-curve style rule) and with skill. Prices move toward clearing the market: up when inventory runs low, down when it piles up. A firm that cannot cover wages pays what it can and falls behind.",
+    "formula": "wage moves by k x (reference unemployment - unemployment); price moves by an adjustment x inventory gap; profit = revenue - wages - interest - carbon cost - profit tax",
+    "params": [
+      {
+        "path": "labour.wage_k",
+        "label": "Wage sensitivity to unemployment",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "labour.u_ref",
+        "label": "Reference unemployment",
+        "value": 0.09,
+        "unit": "share"
+      },
+      {
+        "path": "goods.price_adjust",
+        "label": "Price adjustment speed",
+        "value": 0.05,
+        "unit": "share per month"
+      },
+      {
+        "path": "goods.price_elasticity",
+        "label": "Price elasticity of demand",
+        "value": 2.0,
+        "unit": "elasticity"
+      },
+      {
+        "path": "income.cash_reserve_months",
+        "label": "Months of payroll kept as a cash reserve",
+        "value": 1.0,
+        "unit": "months"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Rules of thumb tuned until the town behaves plausibly; not estimated.",
+    "leavesOut": [
+      "No bargaining, unions setting wages directly, or contracts; prices are not set by market power."
+    ],
+    "code": [
+      "crates/sim-model/src/labour.rs",
+      "crates/sim-model/src/goods.rs",
+      "crates/sim-model/src/income.rs"
+    ],
+    "related": [
+      "production_output",
+      "gdp",
+      "wage_profit_share"
+    ],
+    "usedBy": [
+      "wage_share",
+      "profit_share",
+      "prices",
+      "finance:f-wage",
+      "finance:f-profit",
+      "finance:f-rev",
+      "finance:p-wage",
+      "finance:p-profit",
+      "finance:p-index",
+      "people:wage",
+      "people:commute",
+      "panel:industry"
+    ]
+  },
+  {
+    "id": "gdp",
+    "title": "GDP",
+    "group": "scoring",
+    "summary": "GDP is what the town produces and sells in a month, put on a yearly footing. It adds firm sales, investment (capital that firms buy) and government services (public works, upkeep and the job guarantee). The headline figure is real GDP: nominal GDP divided by a price index, so price rises are not counted as growth.",
+    "formula": "GDP per year = 12 x (firm sales + investment + government services); real GDP = GDP / price index",
+    "params": [],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "The accounting definition is standard; the model's parts are simplified.",
+    "leavesOut": [
+      "Unpaid work, housework and nature's services are not in GDP (GPI subtracts some of nature's costs)."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "gpi",
+      "wage_profit_share"
+    ],
+    "usedBy": [
+      "gdp",
+      "avg_income",
+      "median_income",
+      "money",
+      "prices",
+      "finance:p-median",
+      "finance:p-avg"
+    ]
+  },
+  {
+    "id": "gpi",
+    "title": "GPI (genuine progress indicator)",
+    "group": "scoring",
+    "summary": "GPI starts from GDP and adjusts it for things GDP ignores. It is cut by inequality (a more unequal town counts for less), and by two costs: the social cost of the carbon emitted and the cost of natural capital used up (forest and commons lost). It can be much lower than GDP, or even negative.",
+    "formula": "GPI per year = GDP x (1 - Gini) - social cost of carbon x 12 x gross emissions - depletion cost x 12 x depletion",
+    "params": [
+      {
+        "path": "metrics.scc_usd",
+        "label": "Social cost of carbon",
+        "value": 200.0,
+        "unit": "$ per t CO2"
+      },
+      {
+        "path": "metrics.depletion_usd_per_unit",
+        "label": "Cost of one unit of natural capital lost",
+        "value": 5.0,
+        "unit": "$ per unit"
+      }
+    ],
+    "examples": [
+      {
+        "label": "GDP of $600,000 a year, Gini 0.3, 12 t gross emissions and 2 units depleted in the month",
+        "inputs": {
+          "depletion_month": 2.0,
+          "gdp_annual": 600000.0,
+          "gini": 0.3,
+          "gross_emissions_month": 12.0
+        },
+        "result": {
+          "value": 391080.0,
+          "unit": "$ per year"
+        },
+        "function": "gpi_annual"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "The social cost of carbon is in the range of published estimates; the depletion price and the Gini weighting are game choices.",
+    "leavesOut": [
+      "Leaves out unpaid work, leisure, health and many other items real GPIs include."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "gdp",
+      "gini",
+      "emissions"
+    ],
+    "usedBy": [
+      "gpi",
+      "panel:economy"
+    ]
+  },
+  {
+    "id": "wage_profit_share",
+    "title": "Wage share and profit share",
+    "group": "scoring",
+    "summary": "Wage share is the wages households receive divided by monthly GDP. Profit share is the profit of firms that made a profit divided by monthly GDP. They do not add to one: rent, interest, taxes and government services make up the rest. Both come with the dollar amounts they are made of.",
+    "formula": "wage share = wages paid to households / GDP; profit share = profits of profitable firms / GDP (both for the latest month)",
+    "params": [],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Definitions are standard; the Finance tab also shows a labour-versus-profit split (wages / (wages + profit)), which is a different ratio.",
+    "leavesOut": [
+      "Self-employment and owner income are folded into profit or dividends."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs",
+      "crates/sim-api/src/finance.rs"
+    ],
+    "related": [
+      "gdp",
+      "income_wages_prices"
+    ],
+    "usedBy": [
+      "wage_share",
+      "profit_share",
+      "finance:p-wage",
+      "finance:p-profit",
+      "panel:economy"
+    ]
+  },
+  {
+    "id": "debt_gdp",
+    "title": "Public debt over GDP",
+    "group": "scoring",
+    "summary": "Public debt is what the government owes the bank. It is shown over a full year of GDP. When the ratio goes above one, legitimacy starts to drain. The government borrows when it spends more than it collects, within what the bank can lend, and repays part of any surplus.",
+    "formula": "debt / GDP = government debt / annual nominal GDP",
+    "params": [
+      {
+        "path": "government.repay_share",
+        "label": "Share of a surplus used to repay debt",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "government.legit_debt",
+        "label": "Legitimacy lost per unit of debt/GDP above 1",
+        "value": 0.008,
+        "unit": "per month"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Debt of $300,000 with annual GDP of $600,000",
+        "inputs": {
+          "debt": 300000.0,
+          "gdp_annual": 600000.0
+        },
+        "result": {
+          "value": 0.5,
+          "unit": "ratio"
+        },
+        "function": "debt_to_gdp"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "Debt is only to the local bank; no bonds, no interest-rate risk beyond the bank's rate.",
+    "leavesOut": [
+      "No foreign lenders, no central bank, no default by the government."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs"
+    ],
+    "related": [
+      "legitimacy",
+      "money_credit",
+      "gdp"
+    ],
+    "usedBy": [
+      "debt",
+      "finance:gov-debt",
+      "finance:gov-dgdp",
+      "finance:gov-bal",
+      "finance:gov-in",
+      "finance:gov-out"
+    ]
+  },
+  {
+    "id": "gini",
+    "title": "Inequality (Gini)",
+    "group": "scoring",
+    "summary": "The Gini coefficient measures how unequal wealth is: 0 means everyone has the same, 1 means one person has everything. In the game each person is given an equal share of their household's net worth, then the Gini is taken across all 20 people. The Lorenz curve shows the same thing as a picture. Net worth is savings plus homes and firm shares owned, minus debt.",
+    "formula": "Gini = sum over all pairs of people of |wealth_i - wealth_j| / (2 x people x total wealth), kept within 0..1",
+    "params": [],
+    "examples": [
+      {
+        "label": "Four people holding $10, $20, $30 and $40",
+        "inputs": {
+          "a": 10.0,
+          "b": 20.0,
+          "c": 30.0,
+          "d": 40.0
+        },
+        "result": {
+          "value": 0.25,
+          "unit": "0 to 1"
+        },
+        "function": "gini_of_four"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "The formula is the standard one; the wealth sharing inside a household is a simplification.",
+    "leavesOut": [
+      "No income Gini; no distinction between wealth earned and inherited."
+    ],
+    "code": [
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "legitimacy",
+      "class_politics"
+    ],
+    "usedBy": [
+      "gini",
+      "top_wealth_share",
+      "finance:p-gini",
+      "panel:society"
+    ]
+  },
+  {
+    "id": "legitimacy",
+    "title": "Legitimacy",
+    "group": "scoring",
+    "summary": "Legitimacy is the public's trust in the government, from 0 to 1. At zero the town collapses. Each month it goes up when people are doing well and goes down for high unemployment, high inequality, high public debt, a bank bailout, or switching economic system. Political capital to spend regenerates in proportion to it.",
+    "formula": "legitimacy = previous + w x (wellbeing - 0.5) - w x max(0, unemployment - threshold) - w x max(0, Gini - threshold) - w x max(0, debt/GDP - 1) - bailout penalty - switching resistance, kept within 0..1",
+    "params": [
+      {
+        "path": "government.legit_wellbeing",
+        "label": "Weight of wellbeing",
+        "value": 0.01,
+        "unit": "per month"
+      },
+      {
+        "path": "government.legit_unemployment",
+        "label": "Weight of unemployment",
+        "value": 0.02,
+        "unit": "per month"
+      },
+      {
+        "path": "government.legit_unemployment_threshold",
+        "label": "Unemployment threshold",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "government.legit_gini",
+        "label": "Weight of inequality",
+        "value": 0.012,
+        "unit": "per month"
+      },
+      {
+        "path": "government.legit_gini_threshold",
+        "label": "Gini threshold",
+        "value": 0.45,
+        "unit": "0 to 1"
+      },
+      {
+        "path": "government.legit_debt",
+        "label": "Weight of public debt",
+        "value": 0.008,
+        "unit": "per month"
+      },
+      {
+        "path": "government.legit_bailout",
+        "label": "Bailout penalty",
+        "value": 0.05,
+        "unit": "legitimacy points"
+      },
+      {
+        "path": "turn.pc_base",
+        "label": "Political capital regenerated per turn at full legitimacy",
+        "value": 8.0,
+        "unit": "political capital"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Wellbeing 0.6, unemployment 15%, Gini 0.5, debt/GDP 1.2",
+        "inputs": {
+          "debt_to_gdp": 1.2,
+          "gini": 0.5,
+          "unemployment": 0.15,
+          "wellbeing": 0.6
+        },
+        "result": {
+          "value": -0.0021999999999999997,
+          "unit": "legitimacy points per month"
+        },
+        "function": "legitimacy_change"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "Weights are game balance numbers; real legitimacy is not a single number.",
+    "leavesOut": [
+      "No elections, parties or protests; the player simply governs until trust runs out."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs"
+    ],
+    "related": [
+      "gini",
+      "debt_gdp",
+      "scoring_outcomes",
+      "policy_lobbying"
+    ],
+    "usedBy": [
+      "legitimacy",
+      "finance:gov-leg",
+      "panel:society",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "capital_ratio",
+    "title": "Bank capital ratio",
+    "group": "finance_credit",
+    "summary": "The bank's capital ratio is its equity divided by its loans. The policy sets a minimum ratio; the bank cannot lend more than its equity divided by that ratio. Headroom is how many dollars it can still lend. A higher required ratio makes lending safer but limits credit and growth.",
+    "formula": "capital ratio = equity / loans; lending limit = equity / required ratio; headroom = limit - loans",
+    "params": [
+      {
+        "path": "credit.bailout_target_ratio",
+        "label": "Ratio a bailout restores",
+        "value": 0.12,
+        "unit": "share"
+      },
+      {
+        "path": "credit.max_firm_leverage",
+        "label": "Maximum firm debt share",
+        "value": 0.6,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Equity of $50,000 with a 10% requirement",
+        "inputs": {
+          "capital_ratio": 0.1,
+          "equity": 50000.0
+        },
+        "result": {
+          "value": 500000.0,
+          "unit": "$"
+        },
+        "function": "max_loans"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "The idea follows capital rules for real banks; the numbers are game values.",
+    "leavesOut": [
+      "One bank, no depositors who run, no interbank market."
+    ],
+    "code": [
+      "crates/sim-model/src/credit.rs",
+      "crates/sim-model/src/util.rs"
+    ],
+    "related": [
+      "money_credit",
+      "debt_gdp"
+    ],
+    "usedBy": [
+      "bank_capital_ratio",
+      "bailout",
+      "finance:bank-cr",
+      "finance:bank-eq",
+      "finance:bank-loans",
+      "finance:bank-head",
+      "finance:bank-def",
+      "finance:bank-dep",
+      "finance:bank-int"
+    ]
+  },
+  {
+    "id": "money_credit",
+    "title": "Money and credit",
+    "group": "finance_credit",
+    "summary": "Money is bank deposits. When the bank lends, it creates a deposit; when a loan is repaid the deposit disappears. So lending creates money and repayment destroys it. Firms and the government borrow, with interest set by the base rate plus a spread that rises with leverage. Loans that are not repaid for several months are written off and cost the bank equity.",
+    "formula": "loan rate = base rate + spread (rises with leverage); deposits = money supply; write-off after N months without payment",
+    "params": [
+      {
+        "path": "credit.spread_base",
+        "label": "Base spread over the policy rate",
+        "value": 0.005,
+        "unit": "per year"
+      },
+      {
+        "path": "credit.spread_leverage",
+        "label": "Extra spread per unit of leverage",
+        "value": 0.02,
+        "unit": "per year"
+      },
+      {
+        "path": "credit.firm_term_months",
+        "label": "Firm loan term",
+        "value": 120.0,
+        "unit": "months"
+      },
+      {
+        "path": "credit.default_after_months",
+        "label": "Months before a loan is written off",
+        "value": 3.0,
+        "unit": "months"
+      },
+      {
+        "path": "credit.deposit_spread",
+        "label": "Gap between loan and deposit rates",
+        "value": 0.01,
+        "unit": "per year"
+      },
+      {
+        "path": "credit.bank_payout",
+        "label": "Share of bank profit paid to its owner",
+        "value": 0.5,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "The money-creation mechanism follows how banks really work; the rates and terms are game values.",
+    "leavesOut": [
+      "No central bank, no cash, no foreign money, no household credit (switched off)."
+    ],
+    "code": [
+      "crates/sim-model/src/credit.rs"
+    ],
+    "related": [
+      "capital_ratio",
+      "debt_gdp"
+    ],
+    "usedBy": [
+      "money",
+      "base_rate",
+      "finance:m-supply",
+      "finance:m-created",
+      "finance:m-destroyed",
+      "finance:f-debt",
+      "finance:f-cash",
+      "finance:f-inv",
+      "finance:hh-debt",
+      "finance:hh-loan",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_income",
+    "title": "Income tax",
+    "group": "government_policy",
+    "summary": "Income tax (the lever key is tax_wage) is a flat rate on the wages households earn, including job-guarantee pay and public-works pay. It is collected monthly from savings; a household that cannot pay in full pays what it has.",
+    "formula": "income tax = rate x wages earned (paid only up to the household's savings)",
+    "params": [],
+    "examples": [
+      {
+        "label": "A rate of 15% on $8,000 of wages in a month",
+        "inputs": {
+          "base": 8000.0,
+          "rate": 0.15
+        },
+        "result": {
+          "value": 1200.0,
+          "unit": "$"
+        },
+        "function": "income_tax"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "A flat rate; real income taxes are progressive and have allowances.",
+    "leavesOut": [
+      "No tax-free allowance, no brackets, no tax on pensions separately."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs",
+      "crates/sim-model/src/util.rs"
+    ],
+    "related": [
+      "tax_profit",
+      "tax_capital",
+      "tax_wealth",
+      "tax_carbon",
+      "tax_gst"
+    ],
+    "usedBy": [
+      "tax_wage",
+      "finance:hh-tax",
+      "finance:gov-in",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_profit",
+    "title": "Profit tax",
+    "group": "government_policy",
+    "summary": "Profit tax is charged on a firm's profit before dividends (revenue minus wages, interest and carbon cost). Nothing is charged on a loss. Lobbying by owners can lower the rate in force below the rate you set.",
+    "formula": "profit tax = effective rate x max(0, revenue - wages - interest - carbon cost)",
+    "params": [
+      {
+        "path": "lobby.max_net",
+        "label": "Largest share of a policy lobbying can remove",
+        "value": 0.95,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A rate of 25% on $4,000 of pre-tax profit",
+        "inputs": {
+          "pre_tax_profit": 4000.0,
+          "rate": 0.25
+        },
+        "result": {
+          "value": 1000.0,
+          "unit": "$"
+        },
+        "function": "profit_tax"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "A flat corporate tax; no loss carry-forward, depreciation allowances or avoidance.",
+    "leavesOut": [
+      "No loss carry-forward, no tax havens."
+    ],
+    "code": [
+      "crates/sim-model/src/income.rs",
+      "crates/sim-model/src/util.rs",
+      "crates/sim-model/src/lobbying.rs"
+    ],
+    "related": [
+      "tax_income",
+      "policy_lobbying"
+    ],
+    "usedBy": [
+      "tax_profit",
+      "finance:f-profit",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_capital",
+    "title": "Capital tax",
+    "group": "government_policy",
+    "summary": "Capital tax is charged on what households receive from owning things: dividends from firms, rent from homes and interest. It is a flat rate on that income, collected monthly.",
+    "formula": "capital tax = rate x (dividends + rent received + interest received)",
+    "params": [],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "A flat rate on capital income; no distinction between kinds of capital income or capital gains.",
+    "leavesOut": [
+      "No capital gains tax, no inheritance tax."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs"
+    ],
+    "related": [
+      "tax_income",
+      "tax_wealth"
+    ],
+    "usedBy": [
+      "tax_capital",
+      "finance:gov-in",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_wealth",
+    "title": "Wealth tax",
+    "group": "government_policy",
+    "summary": "The wealth tax is an annual rate on a household's net worth above a threshold, collected in twelfths each month. Net worth is savings plus homes and firm shares, minus debt. Lobbying can weaken the rate in force.",
+    "formula": "monthly wealth tax = effective annual rate x max(0, net worth - threshold) / 12",
+    "params": [],
+    "examples": [
+      {
+        "label": "A household worth $200,000 with a $100,000 threshold and a 2% annual rate",
+        "inputs": {
+          "annual_rate": 0.02,
+          "net_worth": 200000.0,
+          "threshold": 100000.0
+        },
+        "result": {
+          "value": 166.67,
+          "unit": "$"
+        },
+        "function": "wealth_tax_monthly"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "The mechanism is standard; the threshold and rate ranges are game values.",
+    "leavesOut": [
+      "No valuation problems or capital flight: wealth is measured exactly and cannot leave."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs",
+      "crates/sim-model/src/util.rs"
+    ],
+    "related": [
+      "tax_income",
+      "gini"
+    ],
+    "usedBy": [
+      "wealth_tax",
+      "wealth_threshold",
+      "finance:hh-nw",
+      "finance:gov-in",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_carbon",
+    "title": "Carbon price",
+    "group": "government_policy",
+    "summary": "The carbon price is dollars per tonne of CO2, charged to each firm on its footprint: its direct emissions plus the emissions of the electricity it uses. It reduces profit, so firms invest in green technology and cut output. The price in force can be lowered by lobbying. An emissions cap is a separate limit on a firm's footprint.",
+    "formula": "carbon payment = effective price x (direct emissions + energy use x grid intensity)",
+    "params": [
+      {
+        "path": "invest.green_step",
+        "label": "Green technology gained per investment step",
+        "value": 0.05,
+        "unit": "share"
+      },
+      {
+        "path": "invest.green_max",
+        "label": "Maximum green technology",
+        "value": 0.8,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A price of $50 per tonne on a footprint of 10 t",
+        "inputs": {
+          "footprint": 10.0,
+          "price": 50.0
+        },
+        "result": {
+          "value": 500.0,
+          "unit": "$"
+        },
+        "function": "carbon_cost"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "The mechanism follows a carbon price; the response of firms is a simple rule.",
+    "leavesOut": [
+      "Households do not pay a carbon price on their own footprint."
+    ],
+    "code": [
+      "crates/sim-model/src/income.rs",
+      "crates/sim-model/src/util.rs"
+    ],
+    "related": [
+      "emissions",
+      "policy_lobbying"
+    ],
+    "usedBy": [
+      "carbon_price",
+      "emissions_cap",
+      "green_subsidy",
+      "finance:gov-in",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "tax_gst",
+    "title": "GST / VAT: not modelled",
+    "group": "government_policy",
+    "summary": "The town has no sales tax. Adding one would change prices, demand and the ledger, so it is a possible future change rather than a setting. The government's tax money comes from income, profit, capital, wealth and carbon taxes.",
+    "formula": "There is no GST or VAT in the model.",
+    "params": [],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Not modelled.",
+    "leavesOut": [
+      "No sales tax, no tariffs, no excise duties."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs"
+    ],
+    "related": [
+      "tax_income",
+      "tax_profit"
+    ],
+    "usedBy": [
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "policy_lobbying",
+    "title": "Policy, political capital and lobbying",
+    "group": "government_policy",
+    "summary": "Each change you make costs political capital and takes a few turns to start. Wealthy owners lobby against some policies: carbon price, profit tax, wealth tax and the emissions cap. The gap between the rate you set and the rate in force is the lobbying effect. Unions push back, and a campaign finance cap limits how much owners can spend. Cancelling a queued change refunds part of its cost.",
+    "formula": "effective policy = nominal x (1 - net lobbying pressure); cost = base x size of change x (1 + opposition)",
+    "params": [
+      {
+        "path": "turn.pc_cap",
+        "label": "Maximum political capital",
+        "value": 100.0,
+        "unit": "political capital"
+      },
+      {
+        "path": "turn.pc_base",
+        "label": "Political capital regenerated per turn at full legitimacy",
+        "value": 8.0,
+        "unit": "political capital"
+      },
+      {
+        "path": "turn.cancel_refund",
+        "label": "Share refunded when a queued change is cancelled",
+        "value": 0.5,
+        "unit": "share"
+      },
+      {
+        "path": "lobby.spend_rate",
+        "label": "Share of income owners spend on lobbying",
+        "value": 0.02,
+        "unit": "share"
+      },
+      {
+        "path": "lobby.max_net",
+        "label": "Largest net lobbying pressure",
+        "value": 0.95,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Lobbying strength and costs are game balance, not measured.",
+    "leavesOut": [
+      "No parties, voters or legislature; lobbying is one number."
+    ],
+    "code": [
+      "crates/sim-model/src/lobbying.rs",
+      "crates/sim-engine/src/turn.rs"
+    ],
+    "related": [
+      "legitimacy",
+      "tax_profit",
+      "tax_carbon",
+      "tax_wealth"
+    ],
+    "usedBy": [
+      "campaign_cap",
+      "panel:policies",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "benefits_labour",
+    "title": "Wages floor, benefits, basic income and job guarantee",
+    "group": "government_policy",
+    "summary": "The minimum wage sets a floor under what firms pay. Benefits go to unemployed adults and retired people. Basic income goes to every person. The job guarantee employs a share of the unemployed at the minimum wage in government jobs. All are paid monthly from taxes and borrowing; if the treasury cannot pay, payments are cut pro rata.",
+    "formula": "benefits = amount x eligible people; basic income = amount x people; job guarantee = minimum wage x people in the scheme",
+    "params": [
+      {
+        "path": "government.cash_target_months",
+        "label": "Months of public spending kept in cash",
+        "value": 1.0,
+        "unit": "months"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Amounts are game values; the schemes follow common designs.",
+    "leavesOut": [
+      "No pensions system, no means testing or administration costs."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs"
+    ],
+    "related": [
+      "debt_gdp",
+      "legitimacy"
+    ],
+    "usedBy": [
+      "min_wage",
+      "benefit",
+      "ubi",
+      "job_guarantee",
+      "unemployment",
+      "finance:gov-out",
+      "panel:finance"
+    ]
+  },
+  {
+    "id": "public_spending",
+    "title": "Public spending, infrastructure and subsidies",
+    "group": "government_policy",
+    "summary": "The government buys goods and services from firms with the public spending lever (part to the Factory, part to the Shop). It pays upkeep on roads, public housing, power plants and fire stations and pays to build new ones, as wages to households. A green subsidy covers part of firms' green investment. Resilience spending lowers fire and drought risk.",
+    "formula": "goods bought = spending x (1 - services share); services bought = spending x services share; upkeep = count x upkeep per item",
+    "params": [
+      {
+        "path": "goods.gov_services_share",
+        "label": "Share of public spending buying services",
+        "value": 0.5,
+        "unit": "share"
+      },
+      {
+        "path": "government.road_cost_usd",
+        "label": "Cost of a road",
+        "value": 2500.0,
+        "unit": "$"
+      },
+      {
+        "path": "government.road_upkeep_usd",
+        "label": "Upkeep of a road",
+        "value": 10.0,
+        "unit": "$ per month"
+      },
+      {
+        "path": "government.plant_cost_usd",
+        "label": "Cost of a power plant",
+        "value": 40000.0,
+        "unit": "$"
+      },
+      {
+        "path": "government.plant_upkeep_usd",
+        "label": "Upkeep of a power plant",
+        "value": 10.0,
+        "unit": "$ per month"
+      },
+      {
+        "path": "government.public_housing_cost_usd",
+        "label": "Cost of a public home",
+        "value": 40000.0,
+        "unit": "$"
+      },
+      {
+        "path": "government.housing_upkeep_usd",
+        "label": "Upkeep of a public home",
+        "value": 25.0,
+        "unit": "$ per month"
+      },
+      {
+        "path": "weather.fire_station_cost_usd",
+        "label": "Cost of a fire station",
+        "value": 8000.0,
+        "unit": "$"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Costs and upkeep are round game numbers.",
+    "leavesOut": [
+      "No procurement process, no waste, no cost overruns."
+    ],
+    "code": [
+      "crates/sim-model/src/government.rs",
+      "crates/sim-model/src/goods.rs"
+    ],
+    "related": [
+      "debt_gdp",
+      "gdp"
+    ],
+    "usedBy": [
+      "public_spending",
+      "green_subsidy",
+      "resilience_spending",
+      "place:road",
+      "place:public_housing",
+      "place:fire_station",
+      "panel:industry",
+      "industry:infrastructure",
+      "industry:public_goods"
+    ]
+  },
+  {
+    "id": "economic_systems",
+    "title": "Economic systems",
+    "group": "government_policy",
+    "summary": "The town runs under one of three systems: Market, Regulated or Co-op. Each changes which policies are available and how firms are owned and run (for example, worker co-ops share dividends among employees). Switching takes several months, costs political capital and drains legitimacy while it happens. No system gives the state a share of firms.",
+    "formula": "each system is a set of rules in content/systems/*.json; switching costs political capital and resistance",
+    "params": [],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Systems are stylised ideal types, not descriptions of real countries.",
+    "leavesOut": [
+      "No mixed economies in between and no state-owned firms in any system."
+    ],
+    "code": [
+      "content/systems/market.json",
+      "crates/sim-engine/src/turn.rs"
+    ],
+    "related": [
+      "policy_lobbying",
+      "class_politics"
+    ],
+    "usedBy": [
+      "switch_system",
+      "industry:ownership",
+      "panel:industry"
+    ]
+  },
+  {
+    "id": "class_politics",
+    "title": "Class and mobility",
+    "group": "class_politics",
+    "summary": "A household's class is worked out from where its income comes from and its skills: capitalists and rentiers live mainly on capital income, workers on wages, managers are skilled. Class sets how much of income is spent and how much political power a household has. A skilled household with savings may start a new firm when demand is strong.",
+    "formula": "class from the share of income that is capital income and skill; political power grows with wealth",
+    "params": [
+      {
+        "path": "class.capital_share_threshold",
+        "label": "Capital income share that makes a capitalist",
+        "value": 0.5,
+        "unit": "share"
+      },
+      {
+        "path": "class.skill_threshold",
+        "label": "Skill that makes a manager",
+        "value": 0.7,
+        "unit": "0 to 1"
+      },
+      {
+        "path": "class.startup_cost_usd",
+        "label": "Savings to start a firm",
+        "value": 30000.0,
+        "unit": "$"
+      },
+      {
+        "path": "class.mobility_rate",
+        "label": "Chance of changing class each month",
+        "value": 0.03,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Thresholds are game values; class is a label the model derives, not a measured category.",
+    "leavesOut": [
+      "No inheritance, education or social networks."
+    ],
+    "code": [
+      "crates/sim-model/src/class.rs"
+    ],
+    "related": [
+      "policy_lobbying",
+      "gini"
+    ],
+    "usedBy": [
+      "panel:people",
+      "people:class",
+      "top_wealth_share"
+    ]
+  },
+  {
+    "id": "nature_forest_commons",
+    "title": "Forest and commons",
+    "group": "nature_climate",
+    "summary": "The forest and the commons are stocks that regrow. The forest also absorbs carbon. The farm harvests both. A commons can be open, managed by the community with a cap, or enclosed by a wealthy owner who charges a fee. Building clears some forest. Health is the stock as a share of its maximum; the farm's output follows the average of the two.",
+    "formula": "growth = r x stock x (1 - stock / max) - harvest; forest sink = sigma x forest",
+    "params": [
+      {
+        "path": "nature.forest_growth",
+        "label": "Forest growth rate",
+        "value": 0.004,
+        "unit": "per month"
+      },
+      {
+        "path": "nature.forest_max",
+        "label": "Forest maximum",
+        "value": 2000.0,
+        "unit": "units"
+      },
+      {
+        "path": "nature.commons_growth",
+        "label": "Commons growth rate",
+        "value": 0.02,
+        "unit": "per month"
+      },
+      {
+        "path": "nature.commons_max",
+        "label": "Commons maximum",
+        "value": 1000.0,
+        "unit": "units"
+      },
+      {
+        "path": "nature.farm_harvest_commons",
+        "label": "Commons harvested per unit of farm output",
+        "value": 0.007,
+        "unit": "units"
+      },
+      {
+        "path": "nature.farm_harvest_forest",
+        "label": "Forest harvested per unit of farm output",
+        "value": 0.002,
+        "unit": "units"
+      },
+      {
+        "path": "nature.forest_clear_per_build",
+        "label": "Forest cleared per dollar of building",
+        "value": 0.0002,
+        "unit": "units per $"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A forest of 1,000 units",
+        "inputs": {
+          "forest": 1000.0
+        },
+        "result": {
+          "value": 1.0,
+          "unit": "t CO2 per month"
+        },
+        "function": "forest_sink"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "Logistic growth is the textbook shape; rates are game values.",
+    "leavesOut": [
+      "No species, soils or water; two stocks stand for all of nature."
+    ],
+    "code": [
+      "crates/sim-model/src/nature.rs"
+    ],
+    "related": [
+      "emissions",
+      "weather_stress"
+    ],
+    "usedBy": [
+      "forest",
+      "commons",
+      "forest_health",
+      "commons_health",
+      "farm_health",
+      "commons_harvest",
+      "commons_access",
+      "panel:ecology"
+    ]
+  },
+  {
+    "id": "weather_stress",
+    "title": "Weather: climate stress, drought and fire",
+    "group": "weather",
+    "summary": "Climate stress is zero until the carbon budget remaining falls to an onset level and then rises to one as the budget runs out. Higher stress makes droughts and forest fires likelier and fiercer. A drought slows the commons, hurts the farm and raises electricity demand. A fire burns forest tiles, spreads to neighbours and costs output and wellbeing nearby. Fire stations and resilience spending cut the risk and the damage. A forecast shows the risk level.",
+    "formula": "stress = ((onset - remaining share) / (onset - full)) clamped to 0..1, raised to a curve exponent",
+    "params": [
+      {
+        "path": "weather.onset",
+        "label": "Budget share left at which stress begins",
+        "value": 0.75,
+        "unit": "share"
+      },
+      {
+        "path": "weather.full",
+        "label": "Budget share left at which stress is full",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "weather.curve",
+        "label": "Curve exponent",
+        "value": 1.0,
+        "unit": "exponent"
+      },
+      {
+        "path": "weather.fire_base",
+        "label": "Base fire chance",
+        "value": 0.09,
+        "unit": "per month"
+      },
+      {
+        "path": "weather.drought_base",
+        "label": "Base drought chance",
+        "value": 0.12,
+        "unit": "per month"
+      },
+      {
+        "path": "weather.fire_station_cost_usd",
+        "label": "Cost of a fire station",
+        "value": 8000.0,
+        "unit": "$"
+      },
+      {
+        "path": "weather.station_spread_cut",
+        "label": "Fire spread cut near a station",
+        "value": 0.6,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "After 450 t of cumulative emissions",
+        "inputs": {
+          "cumulative": 450.0
+        },
+        "result": {
+          "value": 0.3846153846153846,
+          "unit": "0 to 1"
+        },
+        "function": "climate_stress"
+      },
+      {
+        "label": "After 800 t of cumulative emissions",
+        "inputs": {
+          "cumulative": 800.0
+        },
+        "result": {
+          "value": 0.9829059829059827,
+          "unit": "0 to 1"
+        },
+        "function": "climate_stress"
+      }
+    ],
+    "status": "placeholder",
+    "statusNote": "The shape (more extreme weather as the budget runs out) is realistic; the numbers are game values.",
+    "leavesOut": [
+      "No floods, storms or heat deaths; weather is only fire and drought."
+    ],
+    "code": [
+      "crates/sim-model/src/weather.rs",
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "accumulated_emissions",
+      "nature_forest_commons"
+    ],
+    "usedBy": [
+      "climate_stress",
+      "resilience_spending",
+      "panel:ecology"
+    ]
+  },
+  {
+    "id": "wellbeing_unemployment",
+    "title": "Wellbeing and unemployment",
+    "group": "people_households",
+    "summary": "Wellbeing is a weighted mix of how well a person's consumption meets their needs, whether they have work, whether they are housed, the state of the environment and local smoke, and how secure their finances are. It moves slowly toward its target. Unemployment is the share of people in the labour force without a job; legitimacy uses a smoothed version.",
+    "formula": "wellbeing target = weighted sum of consumption, employment, housing, environment, security (less commute and smoke); unemployment = (labour force - employed) / labour force",
+    "params": [
+      {
+        "path": "wellbeing.needs_usd_pc",
+        "label": "Spending that meets a person's needs",
+        "value": 1500.0,
+        "unit": "$ per person per month"
+      },
+      {
+        "path": "wellbeing.w_consumption",
+        "label": "Weight of consumption",
+        "value": 0.3,
+        "unit": "share"
+      },
+      {
+        "path": "wellbeing.w_employment",
+        "label": "Weight of employment",
+        "value": 0.2,
+        "unit": "share"
+      },
+      {
+        "path": "wellbeing.w_housing",
+        "label": "Weight of housing",
+        "value": 0.2,
+        "unit": "share"
+      },
+      {
+        "path": "wellbeing.w_environment",
+        "label": "Weight of the environment",
+        "value": 0.15,
+        "unit": "share"
+      },
+      {
+        "path": "wellbeing.w_security",
+        "label": "Weight of financial security",
+        "value": 0.15,
+        "unit": "share"
+      },
+      {
+        "path": "metrics.unemployment_smoothing",
+        "label": "Weight of the newest month in smoothed unemployment",
+        "value": 0.05,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Weights are a design choice; wellbeing is not measured against survey data.",
+    "leavesOut": [
+      "No health, education, community or leisure."
+    ],
+    "code": [
+      "crates/sim-model/src/wellbeing.rs",
+      "crates/sim-metrics/src/lib.rs"
+    ],
+    "related": [
+      "legitimacy",
+      "household_spending"
+    ],
+    "usedBy": [
+      "wellbeing",
+      "unemployment",
+      "panel:society",
+      "panel:people",
+      "people:wellbeing"
+    ]
+  },
+  {
+    "id": "scoring_outcomes",
+    "title": "Winning and losing",
+    "group": "scoring",
+    "summary": "The game lasts a fixed number of turns (each turn is a quarter, so 40 turns is ten years). You lose if the carbon budget runs out, if legitimacy falls to zero, if unemployment rises past the collapse level, or if a bank failure cascades. The first loss ends the game; surviving the last turn is a win, and the results screen scores the run.",
+    "formula": "outcome = the first of: budget exhausted, legitimacy 0, unemployment above the collapse level, bank cascade; otherwise survived",
+    "params": [
+      {
+        "path": "run.turns",
+        "label": "Turns in a game",
+        "value": 40.0,
+        "unit": "turns"
+      },
+      {
+        "path": "run.ticks_per_turn",
+        "label": "Months per turn",
+        "value": 3.0,
+        "unit": "months"
+      },
+      {
+        "path": "government.collapse_unemployment",
+        "label": "Unemployment that collapses the town",
+        "value": 0.35,
+        "unit": "share"
+      },
+      {
+        "path": "nature.budget_b0",
+        "label": "Carbon budget for the run",
+        "value": 900.0,
+        "unit": "t CO2"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Thresholds are game design.",
+    "leavesOut": [
+      "No partial credit for recovering after a crisis."
+    ],
+    "code": [
+      "crates/sim-engine/src/lib.rs",
+      "crates/sim-api/src/snapshot.rs"
+    ],
+    "related": [
+      "legitimacy",
+      "accumulated_emissions"
+    ],
+    "usedBy": [
+      "panel:economy",
+      "panel:society",
+      "panel:ecology"
+    ]
+  },
+  {
+    "id": "leaves_out",
+    "title": "What this model leaves out",
+    "group": "leaves_out",
+    "summary": "This is a game about trade-offs in a small closed town, not a forecast. It has 20 people in 8 households, three firms, one bank and a government. It leaves out most of what makes a real economy and a real climate complicated, so use it to see how mechanisms interact, not to predict numbers.",
+    "formula": "(no formula)",
+    "params": [
+      {
+        "path": "run.turns",
+        "label": "Turns in a game",
+        "value": 40.0,
+        "unit": "turns"
+      },
+      {
+        "path": "nature.budget_b0",
+        "label": "Carbon budget for the run",
+        "value": 900.0,
+        "unit": "t CO2"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "All values in the game are tuned for play; see each topic for its status.",
+    "leavesOut": [
+      "Trade and other towns: the economy is closed.",
+      "Births, deaths, ageing and migration: the population is fixed.",
+      "Other greenhouse gases and the global climate system.",
+      "Real-world data: nothing is calibrated.",
+      "Households' borrowing, housing markets, stock markets and a central bank.",
+      "Politics beyond one lever for lobbying and one number for legitimacy."
+    ],
+    "code": [
+      "SPEC.md",
+      "docs/deviations.md"
+    ],
+    "related": [
+      "emissions",
+      "gdp",
+      "legitimacy"
+    ],
+    "usedBy": [
+      "panel:economy",
+      "panel:ecology",
+      "panel:society",
+      "panel:finance",
+      "panel:people",
+      "panel:industry",
+      "panel:policies"
+    ]
+  }
+]

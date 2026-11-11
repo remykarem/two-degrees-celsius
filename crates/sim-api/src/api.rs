@@ -121,6 +121,13 @@ impl Api {
         &self.meta.actions
     }
 
+    /// The model explorer catalog (contract v1.5), resolved against the live params: parameter
+    /// values with units and worked examples computed by the model's own functions. Static for
+    /// a given params file.
+    pub fn assumptions(&self) -> ApiResult<Vec<crate::assumptions::AssumptionTopic>> {
+        crate::assumptions::resolve(&self.sim.params, &self.meta.energy_unit)
+    }
+
     pub fn snapshot(&self) -> Snapshot {
         snapshot::build(
             &self.sim,

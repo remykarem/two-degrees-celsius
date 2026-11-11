@@ -98,6 +98,12 @@ impl WasmSim {
         wrap(self.get().map(|a| a.actions().to_vec()))
     }
 
+    /// `Result<AssumptionTopic[]>` (contract v1.5): the model explorer catalog, resolved from
+    /// the live params. Static for a given params file.
+    pub fn assumptions(&self) -> String {
+        wrap(self.get().and_then(|a| a.assumptions()))
+    }
+
     /// `Result<Snapshot>`.
     pub fn snapshot(&self) -> String {
         wrap(self.get().map(|a| a.snapshot()))

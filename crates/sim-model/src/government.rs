@@ -273,11 +273,13 @@ pub fn legitimacy_step(s: &State, p: &Params, bailout: bool) -> LegitStep {
     let i = &s.indicators;
     let gdp_annual = i.gdp_annual.dollars().max(1.0);
     let debt_input = s.gov.debt.dollars() / gdp_annual;
-    let wellbeing_term = gp.legit_wellbeing * (i.avg_wellbeing.0 - 0.5);
-    let unemployment_term = gp.legit_unemployment
-        * (i.unemployment_smooth.0 - gp.legit_unemployment_threshold).max(0.0);
-    let inequality_term = gp.legit_gini * (i.gini.0 - gp.legit_gini_threshold).max(0.0);
-    let debt_term = gp.legit_debt * (debt_input - 1.0).max(0.0);
+    let (wellbeing_term, unemployment_term, inequality_term, debt_term) = legitimacy_terms(
+        gp,
+        i.avg_wellbeing.0,
+        i.unemployment_smooth.0,
+        i.gini.0,
+        debt_input,
+    );
     let before = s.gov.legitimacy.0;
     let mut l = before + wellbeing_term - unemployment_term - inequality_term - debt_term;
     let bailout_term = if bailout { gp.legit_bailout } else { 0.0 };
@@ -304,4 +306,22 @@ pub fn legitimacy_step(s: &State, p: &Params, bailout: bool) -> LegitStep {
         raw: l,
         after: l.clamp(0.0, 1.0),
     }
+}
+
+/// The four indicator terms of the legitimacy update, as magnitudes: `(wellbeing, unemployment,
+/// inequality, debt)`. The first is signed (it adds above 0.5 and drains below); the others are
+/// drains (zero below their threshold).
+pub fn legitimacy_terms(
+    gp: &sim_params::GovParams,
+    wellbeing: f64,
+    unemployment_smooth: f64,
+    gini: f64,
+    debt_to_gdp: f64,
+) -> (f64, f64, f64, f64) {
+    (
+        gp.legit_wellbeing * (wellbeing - 0.5),
+        gp.legit_unemployment * (unemployment_smooth - gp.legit_unemployment_threshold).max(0.0),
+        gp.legit_gini * (gini - gp.legit_gini_threshold).max(0.0),
+        gp.legit_debt * (debt_to_gdp - 1.0).max(0.0),
+    )
 }
