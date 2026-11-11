@@ -20,8 +20,9 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress (section 10: the 'How it works' explorer is queued as v5.1) | Working on finance/ledger/energy |
 | `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
 | `docs/town-v6.md` | APPROVED (DRY cleanup: the web is a thin renderer; model text, thresholds and UI bands move to `content/` and the wire; contract v1.8) | Changing where text or thresholds live |
-| `docs/town-v8.md` | DRAFT, DEFERRED (daily ticks; was v5, then v6) | Planning the time-step refactor |
-| `docs/town-v7.md` | DRAFT (GST/VAT and state ownership). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
+| `docs/town-v7.md` | DRAFT (the elite estate: one very rich household, private jet, runway; contract v1.9). Not implemented | Planning the estate work |
+| `docs/town-v8.md` | DRAFT (GST/VAT and state ownership; was v7). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
+| `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
 | How to make a change | `docs/how-to.md` |
 | Vocabulary | `docs/glossary.md` |
 | Open problems and debt | `docs/known-issues.md` |
@@ -53,7 +54,9 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/web-notes-panels2.md` | CURRENT (panels notes) | Working in `web/src/panels` |
 | `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
 | `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
-| `docs/town-v8.md` | DRAFT, DEFERRED (daily ticks; was v5, then v6) | Planning the time-step refactor |
+| `docs/town-v7.md` | DRAFT (the elite estate) | Planning the estate work |
+| `docs/town-v8.md` | DRAFT (GST and state ownership; was v7) | Planning fiscal and ownership work |
+| `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |
 | `docs/how-to.md` | CURRENT | Making a change |
 | `docs/glossary.md` | CURRENT | Any unfamiliar term |

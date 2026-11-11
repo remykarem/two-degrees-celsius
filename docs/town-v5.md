@@ -1,6 +1,6 @@
 # Town v5 design: information release (approved)
 
-Status: **APPROVED (user: make v5 "more info-friendly" and expose more metrics; daily ticks are deferred to `docs/town-v8.md`).** No economic rules change in v5: it makes the existing model **visible and traceable**. Numbers and labels are defaults for the user to adjust.
+Status: **APPROVED (user: make v5 "more info-friendly" and expose more metrics; daily ticks are deferred to `docs/town-v9.md`).** No economic rules change in v5: it makes the existing model **visible and traceable**. Numbers and labels are defaults for the user to adjust.
 
 ## 1. What the user asked for
 1. A **Finance tab**.
