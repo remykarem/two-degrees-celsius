@@ -139,6 +139,9 @@ Monthly jet emissions have a standard deviation of 2 x sqrt(0.4 x 0.6) = 0.98 t,
 | Employed | 9 | 10 |
 | Unemployment at start | 1 / 10 = 10.0% | 1 / 11 = 9.1% |
 | Unemployment if the pilot is let go | | 2 / 11 = 18.2% |
+| **In the running game at turn 1 (after settling), measured on the real wire** | 2 / 10 = 20.0% (fixture before the estate commit) | **2 / 11 = 18.2%** (9 employed of 11, the pilot counted as employed) |
+
+The first three rows are raw `initial_town.json` content. The game starts after the settling months, and `labour.rs` reshuffles jobs in them: in the fixtures a Farm job is shed and the Destitute household's adult is hired into the Factory, leaving Worker A's two adults without a job. That already gave 20% before the estate existed. The pilot is correctly employed (not unemployed, in the labour force of 11); the second unemployed person is a settling result, not a pilot or Shop price effect (checked: `docs/fixtures/snapshot-turn1.json` at the commit before the estate shows persons 10 and 18 unemployed, 2 of 10). No code change; the state hash is unaffected by this finding.
 | Wage drift (`wage_k` 0.1 x (`u_ref` 0.09 - u)) | -0.0010 a month | -0.0001 a month |
 
 So the pilot nudges wage drift up by about 0.0009 a month (about 1% a year) while employed; if they are let go, unemployment passes 18%, above the `legit_unemployment_threshold` (0.10): about 0.02 x 0.082 = 0.0016 legitimacy a month, and closer to the `bank_cascade_unemployment` 0.20 line (a second job loss elsewhere crosses it). This is a one-person swing worth 8 to 9 points of unemployment in a 10-person labour force; it is the price of a small town and must be in the balance pass.
@@ -279,7 +282,7 @@ What differs from the draft above, and what was measured.
 |---|---|---|
 | People / households / homes | 20 / 8 / 7 | 22 / 9 / 8 |
 | Start Gini (after settling), top wealth share | 0.72, 0.61 | 0.88, 0.79 |
-| Unemployment at start (raw content) | 10.0% | 9.1% |
+| Unemployment at start (raw content; 20.0% and 18.2% after settling, see section 5A) | 10.0% | 9.1% |
 | A (no action): half the budget gone, exhausted | turn 14.0, 27.3 (19 of 20 budget, 1 bank failure) | turn 12.0, **24.3** (20 of 20 budget) |
 | B (sensible play): survived, budget left (median), legitimacy minimum (median) | 20 of 20, 30%, 0.61 | 20 of 20, **10%**, **0.24** |
 | C (neglect): first loss tick | 75 to 81 | 66 to 67 |
