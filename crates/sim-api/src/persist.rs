@@ -3,6 +3,7 @@
 use crate::error::{code, ApiError, ApiResult};
 use crate::history::HistoryPoint;
 use crate::ledger::LedgerStore;
+use crate::log::WrapperLog;
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_params::Params;
@@ -23,6 +24,7 @@ struct SaveBlob {
     state: State,
     history: Vec<HistoryPoint>,
     ledger: LedgerStore,
+    log: WrapperLog,
 }
 
 /// Everything `import` restores.
@@ -33,6 +35,7 @@ pub struct Imported {
     pub clamped_total: Cents,
     pub history: Vec<HistoryPoint>,
     pub ledger: LedgerStore,
+    pub log: WrapperLog,
 }
 
 /// FNV-1a over the canonical JSON of the params: stable across platforms and runs.
@@ -47,7 +50,12 @@ pub fn params_hash(p: &Params) -> ApiResult<String> {
     Ok(format!("{h:016x}"))
 }
 
-pub fn export(sim: &Sim, history: &[HistoryPoint], ledger: &LedgerStore) -> ApiResult<String> {
+pub fn export(
+    sim: &Sim,
+    history: &[HistoryPoint],
+    ledger: &LedgerStore,
+    log: &WrapperLog,
+) -> ApiResult<String> {
     let (rng_state, rng_inc) = sim.rng.parts();
     let blob = SaveBlob {
         schema_version: crate::SCHEMA_VERSION,
@@ -59,6 +67,7 @@ pub fn export(sim: &Sim, history: &[HistoryPoint], ledger: &LedgerStore) -> ApiR
         state: sim.state.clone(),
         history: history.to_vec(),
         ledger: ledger.clone(),
+        log: log.clone(),
     };
     serde_json::to_string(&blob)
         .map_err(|e| ApiError::new(code::BAD_STATE, format!("export failed: {e}")))
@@ -76,7 +85,7 @@ pub fn import(blob: &str, params: &Params, detail_turns: u32) -> ApiResult<Impor
         return Err(ApiError::new(
             code::SCHEMA_MISMATCH,
             format!(
-                "save has schemaVersion {:?}, this build reads {} (Town v5 added the transaction ledger to the saved game, so older saves cannot be loaded; start a new game)",
+                "save has schemaVersion {:?}, this build reads {} (Town v5 added the transaction ledger and Town v5.2 the policy history and per-month emissions records to the saved game, so older saves cannot be loaded; start a new game)",
                 version,
                 crate::SCHEMA_VERSION
             ),
@@ -104,6 +113,9 @@ pub fn import(blob: &str, params: &Params, detail_turns: u32) -> ApiResult<Impor
         .verify(&b.state)
         .map_err(|e| bad(format!("saved ledger is inconsistent: {e}")))?;
     ledger.set_detail_turns(detail_turns, b.state.turn.saturating_sub(1));
+    b.log
+        .verify(b.state.tick, b.state.turn)
+        .map_err(|e| bad(format!("saved wrapper log is inconsistent: {e}")))?;
     Ok(Imported {
         state: b.state,
         rng: Rng::from_parts(b.rng_state, b.rng_inc),
@@ -111,6 +123,7 @@ pub fn import(blob: &str, params: &Params, detail_turns: u32) -> ApiResult<Impor
         clamped_total: Cents(b.clamped_total),
         history: b.history,
         ledger,
+        log: b.log,
     })
 }
 

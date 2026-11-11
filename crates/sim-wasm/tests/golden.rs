@@ -51,6 +51,31 @@ fn ledger_hashes(sim: &WasmSim, plan: &Value) -> Value {
     Value::Object(h)
 }
 
+/// `{ id: result.value }` of every breakdown that has one, plus the cumulative emissions.
+fn breakdown_results(snap: &Value) -> Value {
+    let mut m = serde_json::Map::new();
+    for id in [
+        "gdp",
+        "gpi",
+        "wageShare",
+        "profitShare",
+        "debtToGdp",
+        "gini",
+        "legitimacy",
+        "capitalRatio",
+    ] {
+        m.insert(
+            id.to_string(),
+            snap["breakdowns"][id]["result"]["value"].clone(),
+        );
+    }
+    m.insert(
+        "emissionsCumulative".to_string(),
+        snap["breakdowns"]["emissions"]["cumulative"]["tonnes"].clone(),
+    );
+    Value::Object(m)
+}
+
 fn run(plan: &Value) -> Value {
     let mut sim = WasmSim::new();
     let init = sim.init(plan["seed"].as_f64().unwrap(), None);
@@ -82,6 +107,11 @@ fn run(plan: &Value) -> Value {
             "gdpRealAnnual": pick(&snap, &["indicators", "gdpRealAnnual"]),
             "legitimacy": pick(&snap, &["government", "legitimacy"]),
             "temperature": pick(&snap, &["indicators", "temperature"]),
+            // Contract v1.6: a hash of the re-serialised `snapshot.breakdowns` and the result of
+            // each breakdown (exact doubles), so the wasm run can be compared field by field.
+            "breakdownsFnv": fnv(&snap["breakdowns"].to_string()),
+            "breakdownResults": breakdown_results(&snap),
+            "emissionsReconcile": pick(&snap, &["breakdowns", "emissions", "reconciles"]),
         }));
         if turn == plan["exportAfterTurn"].as_u64().unwrap() {
             let blob = sim.export_state();

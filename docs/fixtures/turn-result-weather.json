@@ -2553,7 +2553,7 @@
     }
   ],
   "snapshot": {
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -4559,6 +4559,1202 @@
         "bankInterestIncome": 3847.33
       }
     },
+    "breakdowns": {
+      "gdp": {
+        "id": "gdp",
+        "title": "GDP (real, per year)",
+        "formula": "GDP = (firm sales + investment + government services) x 12, divided by the price index",
+        "inputs": [
+          {
+            "label": "Firm sales (month)",
+            "value": 31433.17,
+            "unit": "$",
+            "source": "finance"
+          },
+          {
+            "label": "Investment (month)",
+            "value": 0.0,
+            "unit": "$"
+          },
+          {
+            "label": "Government services (month)",
+            "value": 60.0,
+            "unit": "$"
+          },
+          {
+            "label": "Price index",
+            "value": 0.9113483712734904,
+            "unit": "index",
+            "source": "prices"
+          }
+        ],
+        "result": {
+          "value": 414680.1068749471,
+          "unit": "$/year"
+        },
+        "parts": [
+          {
+            "label": "Factory sales",
+            "value": 141328.56,
+            "unit": "$/year",
+            "note": "firm sales this month x 12"
+          },
+          {
+            "label": "Farm sales",
+            "value": 138600.0,
+            "unit": "$/year",
+            "note": "firm sales this month x 12"
+          },
+          {
+            "label": "Shop sales",
+            "value": 97269.48,
+            "unit": "$/year",
+            "note": "firm sales this month x 12"
+          },
+          {
+            "label": "Investment",
+            "value": 0.0,
+            "unit": "$/year",
+            "note": "firms' capital spending this month x 12"
+          },
+          {
+            "label": "Government services",
+            "value": 720.0,
+            "unit": "$/year",
+            "note": "public works, upkeep and job guarantee pay x 12"
+          },
+          {
+            "label": "Price adjustment",
+            "value": 36762.06687494711,
+            "unit": "$/year",
+            "note": "converts to constant base-year prices"
+          }
+        ],
+        "sumsToResult": true
+      },
+      "gpi": {
+        "id": "gpi",
+        "title": "GPI (per year)",
+        "formula": "GPI = GDP x (1 - Gini) - social cost of carbon x 12 x gross emissions - depletion cost x 12 x depletion",
+        "inputs": [
+          {
+            "label": "GDP (nominal, annual)",
+            "value": 377918.04,
+            "unit": "$/year",
+            "source": "gdp"
+          },
+          {
+            "label": "Gini",
+            "value": 0.7147316411871165,
+            "unit": "0..1",
+            "source": "gini"
+          },
+          {
+            "label": "Gross emissions (month)",
+            "value": 12.686535220489533,
+            "unit": "t CO2",
+            "source": "emissions"
+          },
+          {
+            "label": "Social cost of carbon",
+            "value": 200.0,
+            "unit": "$/t CO2"
+          },
+          {
+            "label": "Natural capital lost (month)",
+            "value": 0.4103383237199978,
+            "unit": "units"
+          },
+          {
+            "label": "Depletion cost",
+            "value": 5.0,
+            "unit": "$/unit"
+          }
+        ],
+        "result": {
+          "value": 77335.75420798357,
+          "unit": "$/year"
+        },
+        "parts": [
+          {
+            "label": "GDP (nominal)",
+            "value": 377918.04,
+            "unit": "$/year"
+          },
+          {
+            "label": "Inequality discount",
+            "value": -270109.9809634183,
+            "unit": "$/year",
+            "note": "GDP x (1 - Gini) takes the Gini share of GDP away"
+          },
+          {
+            "label": "Social cost of carbon",
+            "value": -30447.68452917488,
+            "unit": "$/year",
+            "note": "cost per tonne x 12 x gross emissions this month"
+          },
+          {
+            "label": "Depletion of forest and commons",
+            "value": -24.620299423199867,
+            "unit": "$/year",
+            "note": "cost per unit x 12 x natural capital lost this month"
+          }
+        ],
+        "sumsToResult": true
+      },
+      "wageShare": {
+        "id": "wageShare",
+        "title": "Wage share",
+        "formula": "Wage share = wages paid to households / GDP (monthly)",
+        "inputs": [
+          {
+            "label": "Total wages (month)",
+            "value": 20315.16,
+            "unit": "$"
+          },
+          {
+            "label": "GDP (month)",
+            "value": 31493.17,
+            "unit": "$",
+            "source": "gdp"
+          }
+        ],
+        "result": {
+          "value": 0.6450655808862683,
+          "unit": "share"
+        },
+        "parts": [
+          {
+            "label": "Owner family wages",
+            "value": 0.0,
+            "unit": "share"
+          },
+          {
+            "label": "Landlord wages",
+            "value": 0.0,
+            "unit": "share"
+          },
+          {
+            "label": "Manager A wages",
+            "value": 0.18948806995294534,
+            "unit": "share"
+          },
+          {
+            "label": "Manager B wages",
+            "value": 0.18371602477616575,
+            "unit": "share"
+          },
+          {
+            "label": "Worker A wages",
+            "value": 0.08852998920083308,
+            "unit": "share"
+          },
+          {
+            "label": "Worker B wages",
+            "value": 0.10047194359919945,
+            "unit": "share"
+          },
+          {
+            "label": "Worker C wages",
+            "value": 0.04456553595589139,
+            "unit": "share"
+          },
+          {
+            "label": "Destitute household wages",
+            "value": 0.038294017401233345,
+            "unit": "share"
+          }
+        ],
+        "sumsToResult": true
+      },
+      "profitShare": {
+        "id": "profitShare",
+        "title": "Profit share",
+        "formula": "Profit share = profits of firms making a profit / GDP (monthly)",
+        "inputs": [
+          {
+            "label": "Total profit (month)",
+            "value": 9727.09,
+            "unit": "$"
+          },
+          {
+            "label": "GDP (month)",
+            "value": 31493.17,
+            "unit": "$",
+            "source": "gdp"
+          }
+        ],
+        "result": {
+          "value": 0.30886347738255626,
+          "unit": "share"
+        },
+        "parts": [
+          {
+            "label": "Factory profit",
+            "value": 0.12291299986632022,
+            "unit": "share"
+          },
+          {
+            "label": "Farm profit",
+            "value": 0.16401079980198882,
+            "unit": "share"
+          },
+          {
+            "label": "Shop profit",
+            "value": 0.02193967771424725,
+            "unit": "share"
+          }
+        ],
+        "sumsToResult": true
+      },
+      "debtToGdp": {
+        "id": "debtToGdp",
+        "title": "Public debt / GDP",
+        "formula": "Debt / GDP = government debt / annual GDP (nominal); 0 if GDP is not positive",
+        "inputs": [
+          {
+            "label": "Government debt",
+            "value": 100361.53,
+            "unit": "$"
+          },
+          {
+            "label": "GDP (annual, nominal)",
+            "value": 377918.04,
+            "unit": "$/year",
+            "source": "gdp"
+          }
+        ],
+        "result": {
+          "value": 0.2655642742008294,
+          "unit": "share"
+        }
+      },
+      "gini": {
+        "id": "gini",
+        "title": "Inequality (Gini)",
+        "formula": "Gini = sum over all pairs of people of |wealth_i - wealth_j| / (2 x people x total wealth); each person holds an equal share of their household's net worth; 0 = equal, 1 = one person has everything",
+        "inputs": [
+          {
+            "label": "People",
+            "value": 20.0,
+            "unit": "people"
+          },
+          {
+            "label": "Total household net worth",
+            "value": 765330.6213992895,
+            "unit": "$"
+          },
+          {
+            "label": "Richest household's share",
+            "value": 0.5600337834678492,
+            "unit": "share",
+            "source": "top_wealth_share"
+          }
+        ],
+        "result": {
+          "value": 0.7147316411871165,
+          "unit": "0..1"
+        },
+        "lorenz": [
+          {
+            "populationShare": 0.0,
+            "wealthShare": 0.0
+          },
+          {
+            "populationShare": 0.05,
+            "wealthShare": -0.0006679139520974543
+          },
+          {
+            "populationShare": 0.1,
+            "wealthShare": -0.0013358279041949086
+          },
+          {
+            "populationShare": 0.15,
+            "wealthShare": -0.0018976068983250207
+          },
+          {
+            "populationShare": 0.2,
+            "wealthShare": -0.002459385892455133
+          },
+          {
+            "populationShare": 0.25,
+            "wealthShare": -0.003021164886585245
+          },
+          {
+            "populationShare": 0.3,
+            "wealthShare": 0.0003775840905703177
+          },
+          {
+            "populationShare": 0.35,
+            "wealthShare": 0.003776333067725881
+          },
+          {
+            "populationShare": 0.4,
+            "wealthShare": 0.007175082044881443
+          },
+          {
+            "populationShare": 0.45,
+            "wealthShare": 0.010926127566555725
+          },
+          {
+            "populationShare": 0.5,
+            "wealthShare": 0.014677173088230007
+          },
+          {
+            "populationShare": 0.55,
+            "wealthShare": 0.0468607627395006
+          },
+          {
+            "populationShare": 0.6,
+            "wealthShare": 0.07904435239077119
+          },
+          {
+            "populationShare": 0.65,
+            "wealthShare": 0.11122794204204178
+          },
+          {
+            "populationShare": 0.7,
+            "wealthShare": 0.15418178327198648
+          },
+          {
+            "populationShare": 0.75,
+            "wealthShare": 0.1971356245019312
+          },
+          {
+            "populationShare": 0.8,
+            "wealthShare": 0.2400894657318759
+          },
+          {
+            "populationShare": 0.85,
+            "wealthShare": 0.33918186393105604
+          },
+          {
+            "populationShare": 0.9,
+            "wealthShare": 0.43827426213023624
+          },
+          {
+            "populationShare": 0.95,
+            "wealthShare": 0.7191371310651181
+          },
+          {
+            "populationShare": 1.0,
+            "wealthShare": 1.0
+          }
+        ],
+        "byHousehold": [
+          {
+            "household": 0,
+            "people": 2,
+            "netWorth": 429905.90801984066
+          },
+          {
+            "household": 1,
+            "people": 2,
+            "netWorth": 151676.89337944883
+          },
+          {
+            "household": 2,
+            "people": 3,
+            "netWorth": 98621.67
+          },
+          {
+            "household": 3,
+            "people": 3,
+            "netWorth": 73893.26
+          },
+          {
+            "household": 4,
+            "people": 3,
+            "netWorth": -1289.84
+          },
+          {
+            "household": 5,
+            "people": 3,
+            "netWorth": 7803.5
+          },
+          {
+            "household": 6,
+            "people": 2,
+            "netWorth": 5741.58
+          },
+          {
+            "household": 7,
+            "people": 2,
+            "netWorth": -1022.35
+          }
+        ]
+      },
+      "legitimacy": {
+        "id": "legitimacy",
+        "title": "Legitimacy",
+        "formula": "Each month: legitimacy = previous + w1 x (wellbeing - 0.5) - w2 x max(0, unemployment - threshold) - w3 x max(0, Gini - threshold) - w4 x max(0, debt/GDP - 1) - bailout penalty - system-change resistance, kept within 0..1",
+        "inputs": [
+          {
+            "label": "Average wellbeing",
+            "value": 0.6673489576202105,
+            "unit": "0..1",
+            "source": "wellbeing"
+          },
+          {
+            "label": "Unemployment (smoothed)",
+            "value": 0.09490787229288247,
+            "unit": "share",
+            "source": "unemployment"
+          },
+          {
+            "label": "Gini",
+            "value": 0.7152411786336257,
+            "unit": "0..1",
+            "source": "gini"
+          },
+          {
+            "label": "Public debt / GDP",
+            "value": 0.2653758706540263,
+            "unit": "ratio",
+            "source": "debt"
+          },
+          {
+            "label": "Bank bailout this month",
+            "value": 0.0,
+            "unit": "0 or 1"
+          }
+        ],
+        "result": {
+          "value": 0.5835221432162347,
+          "unit": "0..1"
+        },
+        "parts": [
+          {
+            "label": "Level before the month",
+            "value": 0.5850315477836362,
+            "unit": "0..1"
+          },
+          {
+            "label": "Wellbeing above or below 0.5",
+            "value": 0.0016734895762021051,
+            "unit": "0..1"
+          },
+          {
+            "label": "Unemployment above its threshold",
+            "value": -0.0,
+            "unit": "0..1"
+          },
+          {
+            "label": "Inequality above its threshold",
+            "value": -0.0031828941436035083,
+            "unit": "0..1"
+          },
+          {
+            "label": "Public debt above one year of GDP",
+            "value": -0.0,
+            "unit": "0..1"
+          },
+          {
+            "label": "Bank bailout",
+            "value": -0.0,
+            "unit": "0..1"
+          },
+          {
+            "label": "Switching economic system (resistance)",
+            "value": -0.0,
+            "unit": "0..1",
+            "note": "only while a system change is under way"
+          },
+          {
+            "label": "Clamped to 0..1",
+            "value": 0.0,
+            "unit": "0..1",
+            "note": "legitimacy cannot leave the range 0..1"
+          }
+        ],
+        "sumsToResult": true,
+        "terms": [
+          {
+            "id": "wellbeing",
+            "label": "Wellbeing above or below 0.5",
+            "input": 0.6673489576202105,
+            "threshold": 0.5,
+            "weight": 0.01,
+            "contribution": 0.0016734895762021051
+          },
+          {
+            "id": "unemployment",
+            "label": "Unemployment above its threshold",
+            "input": 0.09490787229288247,
+            "threshold": 0.1,
+            "weight": 0.02,
+            "contribution": -0.0
+          },
+          {
+            "id": "inequality",
+            "label": "Inequality above its threshold",
+            "input": 0.7152411786336257,
+            "threshold": 0.45,
+            "weight": 0.012,
+            "contribution": -0.0031828941436035083
+          },
+          {
+            "id": "debt",
+            "label": "Public debt above one year of GDP",
+            "input": 0.2653758706540263,
+            "threshold": 1.0,
+            "weight": 0.008,
+            "contribution": -0.0
+          },
+          {
+            "id": "bailout",
+            "label": "Bank bailout",
+            "input": 0.0,
+            "weight": 0.05,
+            "contribution": -0.0
+          }
+        ],
+        "trend": -0.0015094045674014511
+      },
+      "capitalRatio": {
+        "id": "capitalRatio",
+        "title": "Bank capital ratio",
+        "formula": "Capital ratio = bank equity / loans outstanding (1 when there are no loans). The bank may lend while equity / limit >= loans; headroom = equity / limit - loans",
+        "inputs": [
+          {
+            "label": "Bank equity",
+            "value": 42848.44,
+            "unit": "$"
+          },
+          {
+            "label": "Loans outstanding",
+            "value": 337441.7,
+            "unit": "$"
+          },
+          {
+            "label": "Capital ratio limit (policy)",
+            "value": 0.1,
+            "unit": "share",
+            "source": "bank_capital_ratio"
+          },
+          {
+            "label": "Lending limit (equity / limit)",
+            "value": 428484.4,
+            "unit": "$"
+          },
+          {
+            "label": "Headroom (room to lend)",
+            "value": 91042.70000000001,
+            "unit": "$"
+          }
+        ],
+        "result": {
+          "value": 0.12698027540757412,
+          "unit": "share"
+        }
+      },
+      "emissions": {
+        "month": {
+          "firms": 2.6113136363531924,
+          "households": 2.4000000000000004,
+          "plants": 7.675221584136341,
+          "grossTotal": 12.686535220489533,
+          "sink": -1.010241361252595,
+          "net": 11.676293859236939,
+          "headline": 11.676293859236939
+        },
+        "turn": {
+          "firms": 7.6456035813935825,
+          "households": 7.200000000000001,
+          "plants": 22.81391613543948,
+          "grossTotal": 37.65951971683306,
+          "sink": -3.091124059694243,
+          "net": 34.568395657138815,
+          "headline": 34.56839565713882
+        },
+        "cumulative": {
+          "tonnes": 624.7468457835064,
+          "budget": 900.0,
+          "remaining": 275.2531542164936,
+          "share": 0.6941631619816737
+        },
+        "reconciles": true,
+        "note": "Gross emissions = firms (direct) + households (direct) + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.",
+        "monthLines": [
+          {
+            "kind": "firm",
+            "id": 0,
+            "label": "Factory",
+            "tonnes": 1.7208695868952955,
+            "informational": false
+          },
+          {
+            "kind": "firm",
+            "id": 1,
+            "label": "Farm",
+            "tonnes": 0.8904440494578968,
+            "informational": false
+          },
+          {
+            "kind": "firm",
+            "id": 2,
+            "label": "Shop",
+            "tonnes": 0.0,
+            "informational": false
+          },
+          {
+            "kind": "households",
+            "label": "Households (direct footprint)",
+            "tonnes": 2.4000000000000004,
+            "informational": false
+          },
+          {
+            "kind": "plant",
+            "id": 0,
+            "label": "Fossil plant at (10,2)",
+            "tonnes": 3.8376107920681704,
+            "informational": false
+          },
+          {
+            "kind": "plant",
+            "id": 1,
+            "label": "Fossil plant at (10,4)",
+            "tonnes": 3.8376107920681704,
+            "informational": false
+          },
+          {
+            "kind": "sink",
+            "label": "Forest sink (absorbed)",
+            "tonnes": -1.010241361252595,
+            "informational": false
+          },
+          {
+            "kind": "fire_sink_loss",
+            "label": "Sink lost to fire (information only, not in any sum)",
+            "tonnes": 0.020617170637808057,
+            "informational": true
+          }
+        ],
+        "turnNumber": 19,
+        "turnMonths": 3
+      },
+      "taxes": [
+        {
+          "id": "income",
+          "label": "Income tax",
+          "appliesTo": "Wages and salaries households earn (job guarantee and public-works pay included)",
+          "rateNominal": 0.3,
+          "rateEffective": 0.3,
+          "revenueMonth": 6022.01,
+          "revenueQuarter": 17296.13,
+          "modelled": true,
+          "unit": "fraction",
+          "baseMonth": 20315.16,
+          "baseLabel": "household wages this month ($)",
+          "realisedRate": 0.2964293660497875,
+          "note": "Lever key tax_wage. Paid only from what the household has in savings."
+        },
+        {
+          "id": "profit",
+          "label": "Profit tax",
+          "appliesTo": "Firm profit before tax (nothing on a loss), before dividends",
+          "rateNominal": 0.25,
+          "rateEffective": 0.10757044699812324,
+          "revenueMonth": 1172.2,
+          "revenueQuarter": 3799.15,
+          "modelled": true,
+          "unit": "fraction",
+          "baseMonth": 10899.289999999999,
+          "baseLabel": "firm profit before tax this month ($)",
+          "realisedRate": 0.10754828984273289,
+          "note": "Lobbying can weaken it: the rate in force is the effective rate."
+        },
+        {
+          "id": "capital",
+          "label": "Capital tax",
+          "appliesTo": "Households' dividends, rent received and interest received",
+          "rateNominal": 0.4,
+          "rateEffective": 0.4,
+          "revenueMonth": 3815.43,
+          "revenueQuarter": 12700.36,
+          "modelled": true,
+          "unit": "fraction",
+          "baseMonth": 9538.58,
+          "baseLabel": "household capital income this month ($)",
+          "realisedRate": 0.3999997903251847,
+          "note": "Lever key tax_capital."
+        },
+        {
+          "id": "wealth",
+          "label": "Wealth tax",
+          "appliesTo": "Household net worth above the threshold (annual rate, collected in twelfths)",
+          "rateNominal": 0.0,
+          "rateEffective": 0.0,
+          "revenueMonth": 0.0,
+          "revenueQuarter": 0.0,
+          "modelled": true,
+          "unit": "fraction",
+          "baseMonth": 281582.8013992895,
+          "baseLabel": "net worth above the threshold ($)",
+          "realisedRate": 0.0,
+          "note": "Annual rate; the realised rate is revenue x 12 over the taxed wealth. Lobbying can weaken it."
+        },
+        {
+          "id": "carbon",
+          "label": "Carbon price",
+          "appliesTo": "Each firm's footprint: direct emissions plus the emissions of the electricity it uses",
+          "rateNominal": 0.0,
+          "rateEffective": 0.0,
+          "revenueMonth": 0.0,
+          "revenueQuarter": 0.0,
+          "modelled": true,
+          "unit": "usd_per_tonne",
+          "baseMonth": 6.56585368756713,
+          "baseLabel": "firm footprints this month (t CO2)",
+          "realisedRate": 0.0,
+          "note": "A price in dollars per tonne, not a fraction. Lobbying can weaken it."
+        },
+        {
+          "id": "gst",
+          "label": "GST / VAT",
+          "appliesTo": "Not modelled: the town has no sales or value-added tax",
+          "rateNominal": null,
+          "rateEffective": null,
+          "revenueMonth": 0.0,
+          "revenueQuarter": 0.0,
+          "modelled": false,
+          "unit": "fraction",
+          "baseMonth": null,
+          "baseLabel": "",
+          "realisedRate": null,
+          "note": "Adding a sales tax would change prices, demand and the ledger; it is a possible future option."
+        }
+      ]
+    },
+    "policies": {
+      "rows": [
+        {
+          "lever": "carbon_price",
+          "label": "Carbon price",
+          "group": "Climate and energy",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": 0.0,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": 0.0
+        },
+        {
+          "lever": "tax_wage",
+          "label": "Income tax",
+          "group": "Taxes",
+          "initial": 0.3,
+          "active": 0.3,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "tax_profit",
+          "label": "Profit tax",
+          "group": "Taxes",
+          "initial": 0.25,
+          "active": 0.25,
+          "effective": 0.10757044699812324,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": 0.569718212007507
+        },
+        {
+          "lever": "tax_capital",
+          "label": "Capital tax",
+          "group": "Taxes",
+          "initial": 0.4,
+          "active": 0.4,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "wealth_tax",
+          "label": "Wealth tax",
+          "group": "Taxes",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": 0.0,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": 0.0
+        },
+        {
+          "lever": "wealth_threshold",
+          "label": "Wealth tax threshold",
+          "group": "Taxes",
+          "initial": 150000.0,
+          "active": 150000.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "base_rate",
+          "label": "Interest base rate",
+          "group": "Money and credit",
+          "initial": 0.04,
+          "active": 0.04,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "min_wage",
+          "label": "Minimum wage",
+          "group": "Labour and welfare",
+          "initial": 1200.0,
+          "active": 1200.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "benefit",
+          "label": "Unemployment benefit",
+          "group": "Labour and welfare",
+          "initial": 800.0,
+          "active": 800.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "ubi",
+          "label": "Universal basic income",
+          "group": "Labour and welfare",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "green_subsidy",
+          "label": "Green investment subsidy",
+          "group": "Climate and energy",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "campaign_cap",
+          "label": "Campaign finance cap",
+          "group": "Politics",
+          "initial": 1.0,
+          "active": 1.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "emissions_cap",
+          "label": "Emissions cap per firm",
+          "group": "Climate and energy",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": 0.0,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": 0.0
+        },
+        {
+          "lever": "commons_harvest",
+          "label": "Commons harvest",
+          "group": "Nature and commons",
+          "initial": 1.0,
+          "active": 1.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "commons_access",
+          "label": "Commons access rule",
+          "group": "Nature and commons",
+          "initial": "open",
+          "active": "open",
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "bank_capital_ratio",
+          "label": "Bank capital ratio",
+          "group": "Money and credit",
+          "initial": 0.1,
+          "active": 0.1,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "bailout",
+          "label": "Bank bailout",
+          "group": "Money and credit",
+          "initial": false,
+          "active": false,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "public_spending",
+          "label": "Public spending",
+          "group": "Government spending",
+          "initial": 8000.0,
+          "active": 8000.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "job_guarantee",
+          "label": "Job guarantee",
+          "group": "Labour and welfare",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        },
+        {
+          "lever": "resilience_spending",
+          "label": "Resilience spending",
+          "group": "Climate and energy",
+          "initial": 0.0,
+          "active": 0.0,
+          "effective": null,
+          "pending": null,
+          "lastChangeTurn": null,
+          "weakenedBy": null
+        }
+      ],
+      "timeline": [
+        {
+          "turn": 1,
+          "lever": "tax_profit",
+          "kind": "weakened",
+          "from": 0.25,
+          "to": 0.11252068128007586,
+          "reason": "lobbying cut it by 55%"
+        },
+        {
+          "turn": 2,
+          "lever": "tax_profit",
+          "kind": "weakened",
+          "from": 0.25,
+          "to": 0.11053738667016957,
+          "reason": "lobbying cut it by 56%"
+        },
+        {
+          "turn": 3,
+          "lever": "tax_profit",
+          "kind": "weakened",
+          "from": 0.25,
+          "to": 0.10857564315702475,
+          "reason": "lobbying cut it by 57%"
+        },
+        {
+          "turn": 7,
+          "lever": "tax_profit",
+          "kind": "weakened",
+          "from": 0.25,
+          "to": 0.1072677763161359,
+          "reason": "lobbying cut it by 57%"
+        }
+      ],
+      "cancelRefund": 0.5
+    },
+    "industry": {
+      "firms": [
+        {
+          "firm": 0,
+          "name": "Factory",
+          "sector": "goods",
+          "output": 143.4057989079413,
+          "price": 87.1,
+          "workers": 3.0,
+          "wage": 1458.27,
+          "revenue": 11777.38,
+          "profit": 3870.92,
+          "emissions": 1.7208695868952955,
+          "ownership": [
+            {
+              "owner": "household",
+              "household": 0,
+              "share": 1.0
+            }
+          ],
+          "stateShare": -0.0,
+          "active": true
+        },
+        {
+          "firm": 1,
+          "name": "Farm",
+          "sector": "food",
+          "output": 445.2220247289484,
+          "price": 23.57,
+          "workers": 4.0,
+          "wage": 1398.17,
+          "revenue": 11550.0,
+          "profit": 5165.22,
+          "emissions": 0.8904440494578968,
+          "ownership": [
+            {
+              "owner": "household",
+              "household": 0,
+              "share": 1.0
+            }
+          ],
+          "stateShare": -0.0,
+          "active": true
+        },
+        {
+          "firm": 2,
+          "name": "Shop",
+          "sector": "services",
+          "output": 149.3810960485238,
+          "price": 63.08,
+          "workers": 3.0,
+          "wage": 1398.17,
+          "revenue": 8105.79,
+          "profit": 690.95,
+          "emissions": 0.0,
+          "ownership": [
+            {
+              "owner": "household",
+              "household": 1,
+              "share": 1.0
+            }
+          ],
+          "stateShare": -0.0,
+          "active": true
+        },
+        {
+          "firm": 3,
+          "name": "Shop 2",
+          "sector": "services",
+          "output": 0.0,
+          "price": 70.0,
+          "workers": 0.0,
+          "wage": 1650.0,
+          "revenue": 0.0,
+          "profit": 0.0,
+          "emissions": 0.0,
+          "ownership": [
+            {
+              "owner": "household",
+              "household": 1,
+              "share": 1.0
+            }
+          ],
+          "stateShare": -0.0,
+          "active": false
+        }
+      ],
+      "infrastructure": [
+        {
+          "kind": "road",
+          "count": 4,
+          "buildCost": 2500.0,
+          "upkeepMonthly": 40.0,
+          "upkeepEachMonthly": 10.0
+        },
+        {
+          "kind": "public_housing",
+          "count": 0,
+          "buildCost": 40000.0,
+          "upkeepMonthly": 0.0,
+          "upkeepEachMonthly": 25.0
+        },
+        {
+          "kind": "fossil_plant",
+          "count": 2,
+          "buildCost": 40000.0,
+          "upkeepMonthly": 20.0,
+          "upkeepEachMonthly": 10.0
+        },
+        {
+          "kind": "renewable_plant",
+          "count": 0,
+          "buildCost": 40000.0,
+          "upkeepMonthly": 0.0,
+          "upkeepEachMonthly": 10.0
+        },
+        {
+          "kind": "fire_station",
+          "count": 0,
+          "buildCost": 8000.0,
+          "upkeepMonthly": 0.0,
+          "upkeepEachMonthly": 30.0
+        }
+      ],
+      "publicGoods": [
+        {
+          "id": "goods_purchases",
+          "label": "Government purchases of goods",
+          "spendingMonthly": 4000.0,
+          "buys": "Goods from the Factory, bought with the public spending lever. Split with services by a fixed share; this is derived, the ledger records one purchase line."
+        },
+        {
+          "id": "services",
+          "label": "Government purchases of services",
+          "spendingMonthly": 4000.0,
+          "buys": "Services from the Shop, the other part of the public spending lever."
+        },
+        {
+          "id": "public_works",
+          "label": "Public works (upkeep and construction)",
+          "spendingMonthly": 60.0,
+          "buys": "Upkeep of roads, public housing, power plants and fire stations, resilience spending and new builds; paid out as wages to households."
+        },
+        {
+          "id": "job_guarantee",
+          "label": "Job guarantee",
+          "spendingMonthly": 0.0,
+          "buys": "Government jobs at the minimum wage for unemployed people who want one."
+        },
+        {
+          "id": "benefits",
+          "label": "Benefits",
+          "spendingMonthly": 2400.0,
+          "buys": "Payments to unemployed adults and retired people."
+        },
+        {
+          "id": "ubi",
+          "label": "Universal basic income",
+          "spendingMonthly": 0.0,
+          "buys": "A flat payment to every person."
+        },
+        {
+          "id": "subsidy",
+          "label": "Green investment subsidy",
+          "spendingMonthly": 0.0,
+          "buys": "Part of firms' green investment costs."
+        }
+      ],
+      "note": "No state shareholding in the current economic systems (Market, Regulated, Co-op): the state's ownership share is 0% for every firm. The state-owned variant exists in the model but no system uses it yet."
+    },
     "history": [
       {
         "turn": 1,
@@ -4582,7 +5778,9 @@
         "govSpending": 37137.2,
         "bankCapitalRatio": 0.12670920643759476,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 11.730039085752166,
+        "cumulativeEmissions": 30.912944131612818
       },
       {
         "turn": 2,
@@ -4606,7 +5804,9 @@
         "govSpending": 37154.170000000006,
         "bankCapitalRatio": 0.1267304419634873,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 11.752185654566297,
+        "cumulativeEmissions": 61.89301756211211
       },
       {
         "turn": 3,
@@ -4630,7 +5830,9 @@
         "govSpending": 37169.57,
         "bankCapitalRatio": 0.12673916956853404,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 11.774838123621215,
+        "cumulativeEmissions": 92.94010263783836
       },
       {
         "turn": 4,
@@ -4654,7 +5856,9 @@
         "govSpending": 34780.19,
         "bankCapitalRatio": 0.12703402588468332,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.173147575006746,
+        "cumulativeEmissions": 125.25135081603958
       },
       {
         "turn": 5,
@@ -4678,7 +5882,9 @@
         "govSpending": 34781.01,
         "bankCapitalRatio": 0.1270944732431203,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.196240788707275,
+        "cumulativeEmissions": 157.563534696899
       },
       {
         "turn": 6,
@@ -4702,7 +5908,9 @@
         "govSpending": 34780.83,
         "bankCapitalRatio": 0.12709628414024507,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.217140134421387,
+        "cumulativeEmissions": 189.9389285331208
       },
       {
         "turn": 7,
@@ -4726,7 +5934,9 @@
         "govSpending": 34780.69,
         "bankCapitalRatio": 0.12707529152596467,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.237836573786371,
+        "cumulativeEmissions": 222.37568768557347
       },
       {
         "turn": 8,
@@ -4750,7 +5960,9 @@
         "govSpending": 34780.64,
         "bankCapitalRatio": 0.12704595863293822,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.281182553030824,
+        "cumulativeEmissions": 254.92061202291345
       },
       {
         "turn": 9,
@@ -4774,7 +5986,9 @@
         "govSpending": 34780.69,
         "bankCapitalRatio": 0.12701886582045258,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.299329500939574,
+        "cumulativeEmissions": 287.5234364407812
       },
       {
         "turn": 10,
@@ -4798,7 +6012,9 @@
         "govSpending": 34780.75000000001,
         "bankCapitalRatio": 0.12699623439846244,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.30744235701617,
+        "cumulativeEmissions": 320.18136060379885
       },
       {
         "turn": 11,
@@ -4822,7 +6038,9 @@
         "govSpending": 34780.84,
         "bankCapitalRatio": 0.12697949816069518,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.3107670733222,
+        "cumulativeEmissions": 352.9494240669969
       },
       {
         "turn": 12,
@@ -4846,7 +6064,9 @@
         "govSpending": 34780.86,
         "bankCapitalRatio": 0.12696310700014438,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.35859702557498,
+        "cumulativeEmissions": 385.92910222580343
       },
       {
         "turn": 13,
@@ -4870,7 +6090,9 @@
         "govSpending": 32380.39,
         "bankCapitalRatio": 0.12702295507321856,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.821192402296404,
+        "cumulativeEmissions": 420.52953250216393
       },
       {
         "turn": 14,
@@ -4894,7 +6116,9 @@
         "govSpending": 32377.47,
         "bankCapitalRatio": 0.1271256255731012,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.818246935347261,
+        "cumulativeEmissions": 455.0717261807544
       },
       {
         "turn": 15,
@@ -4918,7 +6142,9 @@
         "govSpending": 34773.14,
         "bankCapitalRatio": 0.12710848809582584,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.439006796360019,
+        "cumulativeEmissions": 488.53088199929186
       },
       {
         "turn": 16,
@@ -4942,7 +6168,9 @@
         "govSpending": 34770.56,
         "bankCapitalRatio": 0.1270422995672979,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.444077005460548,
+        "cumulativeEmissions": 522.1130077642131
       },
       {
         "turn": 17,
@@ -4966,7 +6194,9 @@
         "govSpending": 34771.19,
         "bankCapitalRatio": 0.12689636990853542,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.399509136264934,
+        "cumulativeEmissions": 556.1175068590019
       },
       {
         "turn": 18,
@@ -4990,7 +6220,9 @@
         "govSpending": 34776.09,
         "bankCapitalRatio": 0.12687051547024636,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.407830479211338,
+        "cumulativeEmissions": 590.1784501263676
       },
       {
         "turn": 19,
@@ -5014,7 +6246,9 @@
         "govSpending": 33981.82,
         "bankCapitalRatio": 0.12698027540757412,
         "renewableShare": 0.0,
-        "gridServed": 1.0
+        "gridServed": 1.0,
+        "grossEmissions": 12.686535220489533,
+        "cumulativeEmissions": 624.7468457835064
       }
     ]
   }

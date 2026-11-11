@@ -130,5 +130,9 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
         ),
         ("finance.json".to_string(), pretty(&later.finance)?),
         ("energy.json".to_string(), pretty(&later.energy)?),
+        // Contract v1.6: breakdowns, policies and industry after three played turns.
+        ("breakdowns.json".to_string(), pretty(&later.breakdowns)?),
+        ("policies.json".to_string(), pretty(&later.policies)?),
+        ("industry.json".to_string(), pretty(&later.industry)?),
     ])
 }

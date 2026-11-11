@@ -7,18 +7,23 @@
 #![forbid(unsafe_code)]
 
 pub mod api;
+pub mod breakdowns;
 pub mod command;
 pub mod content;
+pub mod emissions;
 pub mod error;
 pub mod events;
 pub mod finance;
 pub mod fixtures;
 pub mod frames;
 pub mod history;
+pub mod industry;
 pub mod keys;
 pub mod ledger;
+pub mod log;
 pub mod meta;
 pub mod persist;
+pub mod policies;
 pub mod snapshot;
 pub mod turn;
 
@@ -34,6 +39,7 @@ pub use snapshot::Snapshot;
 pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 
 /// Version of the wire format and of saved games. Bump when either changes shape.
-/// Town v5 (contract v1.4) added the ledger to the saved wrapper blob: 4. The model `State` has
-/// its own `sim_types::SCHEMA_VERSION` (3), unchanged.
-pub const SCHEMA_VERSION: u32 = 4;
+/// Town v5 (contract v1.4) added the ledger to the saved wrapper blob: 4. Town v5.2 (contract
+/// v1.6) added the wrapper log (per-tick emissions and legitimacy records, policy history): 5.
+/// The model `State` has its own `sim_types::SCHEMA_VERSION` (3), unchanged.
+pub const SCHEMA_VERSION: u32 = 5;

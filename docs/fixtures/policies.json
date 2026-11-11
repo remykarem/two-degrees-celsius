@@ -1,0 +1,282 @@
+{
+  "rows": [
+    {
+      "lever": "carbon_price",
+      "label": "Carbon price",
+      "group": "Climate and energy",
+      "initial": 0.0,
+      "active": 50.0,
+      "effective": 21.61,
+      "pending": null,
+      "lastChangeTurn": 3,
+      "weakenedBy": 0.5678000000000001
+    },
+    {
+      "lever": "tax_wage",
+      "label": "Income tax",
+      "group": "Taxes",
+      "initial": 0.3,
+      "active": 0.3,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "tax_profit",
+      "label": "Profit tax",
+      "group": "Taxes",
+      "initial": 0.25,
+      "active": 0.25,
+      "effective": 0.10805450478038275,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": 0.567781980878469
+    },
+    {
+      "lever": "tax_capital",
+      "label": "Capital tax",
+      "group": "Taxes",
+      "initial": 0.4,
+      "active": 0.4,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "wealth_tax",
+      "label": "Wealth tax",
+      "group": "Taxes",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": 0.0,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": 0.0
+    },
+    {
+      "lever": "wealth_threshold",
+      "label": "Wealth tax threshold",
+      "group": "Taxes",
+      "initial": 150000.0,
+      "active": 150000.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "base_rate",
+      "label": "Interest base rate",
+      "group": "Money and credit",
+      "initial": 0.04,
+      "active": 0.04,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "min_wage",
+      "label": "Minimum wage",
+      "group": "Labour and welfare",
+      "initial": 1200.0,
+      "active": 1200.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "benefit",
+      "label": "Unemployment benefit",
+      "group": "Labour and welfare",
+      "initial": 800.0,
+      "active": 800.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "ubi",
+      "label": "Universal basic income",
+      "group": "Labour and welfare",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "green_subsidy",
+      "label": "Green investment subsidy",
+      "group": "Climate and energy",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "campaign_cap",
+      "label": "Campaign finance cap",
+      "group": "Politics",
+      "initial": 1.0,
+      "active": 1.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "emissions_cap",
+      "label": "Emissions cap per firm",
+      "group": "Climate and energy",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": 0.0,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": 0.0
+    },
+    {
+      "lever": "commons_harvest",
+      "label": "Commons harvest",
+      "group": "Nature and commons",
+      "initial": 1.0,
+      "active": 1.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "commons_access",
+      "label": "Commons access rule",
+      "group": "Nature and commons",
+      "initial": "open",
+      "active": "open",
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "bank_capital_ratio",
+      "label": "Bank capital ratio",
+      "group": "Money and credit",
+      "initial": 0.1,
+      "active": 0.1,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "bailout",
+      "label": "Bank bailout",
+      "group": "Money and credit",
+      "initial": false,
+      "active": false,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "public_spending",
+      "label": "Public spending",
+      "group": "Government spending",
+      "initial": 8000.0,
+      "active": 8000.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "job_guarantee",
+      "label": "Job guarantee",
+      "group": "Labour and welfare",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    },
+    {
+      "lever": "resilience_spending",
+      "label": "Resilience spending",
+      "group": "Climate and energy",
+      "initial": 0.0,
+      "active": 0.0,
+      "effective": null,
+      "pending": null,
+      "lastChangeTurn": null,
+      "weakenedBy": null
+    }
+  ],
+  "timeline": [
+    {
+      "turn": 1,
+      "lever": "campaign_cap",
+      "kind": "rejected",
+      "from": 1.0,
+      "to": 0.5,
+      "reason": "lever_unavailable"
+    },
+    {
+      "turn": 1,
+      "lever": "carbon_price",
+      "kind": "queued",
+      "from": 0.0,
+      "to": 50.0,
+      "reason": "takes effect in turn 3"
+    },
+    {
+      "turn": 1,
+      "lever": "tax_profit",
+      "kind": "weakened",
+      "from": 0.25,
+      "to": 0.11252068128007586,
+      "reason": "lobbying cut it by 55%"
+    },
+    {
+      "turn": 2,
+      "lever": "tax_profit",
+      "kind": "weakened",
+      "from": 0.25,
+      "to": 0.11053738667016957,
+      "reason": "lobbying cut it by 56%"
+    },
+    {
+      "turn": 3,
+      "lever": "carbon_price",
+      "kind": "activated",
+      "from": 0.0,
+      "to": 50.0
+    },
+    {
+      "turn": 3,
+      "lever": "carbon_price",
+      "kind": "weakened",
+      "from": 50.0,
+      "to": 21.61,
+      "reason": "lobbying cut it by 57%"
+    },
+    {
+      "turn": 3,
+      "lever": "tax_profit",
+      "kind": "weakened",
+      "from": 0.25,
+      "to": 0.10805450478038275,
+      "reason": "lobbying cut it by 57%"
+    }
+  ],
+  "cancelRefund": 0.5
+}

@@ -1,10 +1,10 @@
 {
   "actions": "9120d5597d63372b",
-  "cancel2": "77cd6db1e9e20b74",
-  "export": "5e450db83fac8ee1",
-  "finalSnapshot": "20b3f46d5ed7f762",
-  "import": "800a9ade9bf3a018",
-  "init": "215e8e0685e5128c",
+  "cancel2": "287d79ca4619807c",
+  "export": "b54a3395576f837f",
+  "finalSnapshot": "a832cd87616245c7",
+  "import": "f4c86511199c856c",
+  "init": "73883f91b73dd57c",
   "ledger": {
     "1": {
       "bank": "ed79bc63484dc90d",
@@ -57,10 +57,23 @@
       "person8": "ae1cff82e8e82a53"
     }
   },
-  "levers": "67d8596584b5a7f9",
+  "levers": "019eb3c17ea65193",
   "turns": [
     {
-      "fnv": "aa148ed92e6c3907",
+      "breakdownResults": {
+        "capitalRatio": 0.12670920643759473,
+        "debtToGdp": 0.25075444495349913,
+        "emissionsCumulative": 30.912944131612818,
+        "gdp": 373643.56888156047,
+        "gini": 0.7215695878264985,
+        "gpi": 79396.01960184245,
+        "legitimacy": 0.6918247922210627,
+        "profitShare": 0.3722482702925166,
+        "wageShare": 0.5765424486911686
+      },
+      "breakdownsFnv": "fc64597b8ce05f3e",
+      "emissionsReconcile": true,
+      "fnv": "7c044842235e96a3",
       "gdpRealAnnual": 373643.56888156047,
       "legitimacy": 0.6918247922210627,
       "ok": true,
@@ -68,7 +81,20 @@
       "turn": 1
     },
     {
-      "fnv": "2aaa0371d9e34ab7",
+      "breakdownResults": {
+        "capitalRatio": 0.12532242547395608,
+        "debtToGdp": 0.2426271597798703,
+        "emissionsCumulative": 62.10250981211211,
+        "gdp": 427756.94230338855,
+        "gini": 0.7176686761656735,
+        "gpi": 94531.83883064022,
+        "legitimacy": 0.6835428797599991,
+        "profitShare": 0.44002393479445157,
+        "wageShare": 0.5030864010897643
+      },
+      "breakdownsFnv": "8e0dce73b5b727df",
+      "emissionsReconcile": true,
+      "fnv": "6272ea3d84d2f784",
       "gdpRealAnnual": 427756.94230338855,
       "legitimacy": 0.6835428797599991,
       "ok": true,
@@ -76,7 +102,20 @@
       "turn": 2
     },
     {
-      "fnv": "fa4ec48c1c66d842",
+      "breakdownResults": {
+        "capitalRatio": 0.12567060236986707,
+        "debtToGdp": 0.24572868576414808,
+        "emissionsCumulative": 96.6051449631923,
+        "gdp": 454758.2923029503,
+        "gini": 0.7148635702463645,
+        "gpi": 99052.74448151405,
+        "legitimacy": 0.6762239768023434,
+        "profitShare": 0.4128250026211734,
+        "wageShare": 0.5345054924367709
+      },
+      "breakdownsFnv": "004b7780ee3e8c66",
+      "emissionsReconcile": true,
+      "fnv": "881c28bc9fdfcda6",
       "gdpRealAnnual": 454758.2923029503,
       "legitimacy": 0.6762239768023434,
       "ok": true,
@@ -84,7 +123,20 @@
       "turn": 3
     },
     {
-      "fnv": "7c1f70eef91c0c35",
+      "breakdownResults": {
+        "capitalRatio": 0.12509313327266836,
+        "debtToGdp": 0.26368177209007004,
+        "emissionsCumulative": 132.1002399994605,
+        "gdp": 458314.2924150045,
+        "gini": 0.7078970056150132,
+        "gpi": 102156.28902223978,
+        "legitimacy": 0.6712361629016201,
+        "profitShare": 0.3606031527514521,
+        "wageShare": 0.5923335405189621
+      },
+      "breakdownsFnv": "b2dfbb500e784fc9",
+      "emissionsReconcile": true,
+      "fnv": "a7038712d09085e5",
       "gdpRealAnnual": 458314.2924150045,
       "legitimacy": 0.6712361629016201,
       "ok": true,
@@ -92,7 +144,20 @@
       "turn": 4
     },
     {
-      "fnv": "2b4f22addb0da017",
+      "breakdownResults": {
+        "capitalRatio": 0.10449320646831406,
+        "debtToGdp": 0.4571545209408349,
+        "emissionsCumulative": 162.632863839241,
+        "gdp": 462276.8988711465,
+        "gini": 0.6289356650609134,
+        "gpi": 144897.03434642273,
+        "legitimacy": 0.6704331095194975,
+        "profitShare": 0.3214283485889349,
+        "wageShare": 0.5927718918401771
+      },
+      "breakdownsFnv": "378a9563f3a559ea",
+      "emissionsReconcile": true,
+      "fnv": "0d6f79accb3cd42a",
       "gdpRealAnnual": 462276.8988711465,
       "legitimacy": 0.6704331095194975,
       "ok": true,
@@ -100,7 +165,20 @@
       "turn": 5
     },
     {
-      "fnv": "97d9a8cff745cf82",
+      "breakdownResults": {
+        "capitalRatio": 0.10766084949824854,
+        "debtToGdp": 0.467127599892938,
+        "emissionsCumulative": 190.22228939647832,
+        "gdp": 466943.34902626177,
+        "gini": 0.6262261916181592,
+        "gpi": 147852.46152120584,
+        "legitimacy": 0.6726283428631501,
+        "profitShare": 0.36023076970834567,
+        "wageShare": 0.5921583621165997
+      },
+      "breakdownsFnv": "cc652a0730d66781",
+      "emissionsReconcile": true,
+      "fnv": "b7971658dac6f433",
       "gdpRealAnnual": 466943.34902626177,
       "legitimacy": 0.6726283428631501,
       "ok": true,
@@ -108,7 +186,20 @@
       "turn": 6
     },
     {
-      "fnv": "19c44e54331a8228",
+      "breakdownResults": {
+        "capitalRatio": 0.11048793609381354,
+        "debtToGdp": 0.47997633472787254,
+        "emissionsCumulative": 218.0033476500072,
+        "gdp": 471420.4109094504,
+        "gini": 0.623458472367241,
+        "gpi": 149779.67548587872,
+        "legitimacy": 0.6759673652803468,
+        "profitShare": 0.3587485615916909,
+        "wageShare": 0.5932026772680492
+      },
+      "breakdownsFnv": "9673483099cb01c9",
+      "emissionsReconcile": true,
+      "fnv": "625f0d37496e58c2",
       "gdpRealAnnual": 471420.4109094504,
       "legitimacy": 0.6759673652803468,
       "ok": true,
@@ -116,7 +207,20 @@
       "turn": 7
     },
     {
-      "fnv": "a2ca7aa803656e03",
+      "breakdownResults": {
+        "capitalRatio": 0.11331978207327197,
+        "debtToGdp": 0.49222174426016124,
+        "emissionsCumulative": 245.95426531581256,
+        "gdp": 475867.4663569764,
+        "gini": 0.6206203804418732,
+        "gpi": 151829.97192481952,
+        "legitimacy": 0.6795439783049516,
+        "profitShare": 0.35574049668005786,
+        "wageShare": 0.5958968637627823
+      },
+      "breakdownsFnv": "55415e44153404c9",
+      "emissionsReconcile": true,
+      "fnv": "f6c62876738b99dd",
       "gdpRealAnnual": 475867.4663569764,
       "legitimacy": 0.6795439783049516,
       "ok": true,
@@ -124,7 +228,20 @@
       "turn": 8
     },
     {
-      "fnv": "872723bc12d9a328",
+      "breakdownResults": {
+        "capitalRatio": 0.11615667738848047,
+        "debtToGdp": 0.5026241261744198,
+        "emissionsCumulative": 274.0811894155133,
+        "gdp": 480187.92535136495,
+        "gini": 0.6172428658703845,
+        "gpi": 154683.10079498103,
+        "legitimacy": 0.6832742876090342,
+        "profitShare": 0.353040879954462,
+        "wageShare": 0.5982618528875095
+      },
+      "breakdownsFnv": "2e2b8a36d401aa6a",
+      "emissionsReconcile": true,
+      "fnv": "b095e311e0326d1c",
       "gdpRealAnnual": 480187.92535136495,
       "legitimacy": 0.6832742876090342,
       "ok": true,
@@ -132,7 +249,20 @@
       "turn": 9
     },
     {
-      "fnv": "6d3ee915a6983d9d",
+      "breakdownResults": {
+        "capitalRatio": 0.11896846032015919,
+        "debtToGdp": 0.5142986726930641,
+        "emissionsCumulative": 298.38001447712537,
+        "gdp": 484249.6757842585,
+        "gini": 0.6144414372657058,
+        "gpi": 160124.81843913603,
+        "legitimacy": 0.6871044335868957,
+        "profitShare": 0.34751715987469856,
+        "wageShare": 0.6037077828118639
+      },
+      "breakdownsFnv": "09dce6cf3eedafbb",
+      "emissionsReconcile": true,
+      "fnv": "4db40d953b71d5de",
       "gdpRealAnnual": 484249.6757842585,
       "legitimacy": 0.6871044335868957,
       "ok": true,
@@ -140,7 +270,20 @@
       "turn": 10
     },
     {
-      "fnv": "97a3b0364827071e",
+      "breakdownResults": {
+        "capitalRatio": 0.12173850337917308,
+        "debtToGdp": 0.5251690990448449,
+        "emissionsCumulative": 322.90211621897754,
+        "gdp": 488256.165692817,
+        "gini": 0.6115149935689521,
+        "gpi": 162682.77286103883,
+        "legitimacy": 0.6908766273946316,
+        "profitShare": 0.34118491224570446,
+        "wageShare": 0.6100019571580859
+      },
+      "breakdownsFnv": "2386d01f82437c7f",
+      "emissionsReconcile": true,
+      "fnv": "7446a587e696edcb",
       "gdpRealAnnual": 488256.165692817,
       "legitimacy": 0.6908766273946316,
       "ok": true,
@@ -148,7 +291,20 @@
       "turn": 11
     },
     {
-      "fnv": "2ffbccf9fd6c0bc9",
+      "breakdownResults": {
+        "capitalRatio": 0.12447813032714224,
+        "debtToGdp": 0.5352652461451047,
+        "emissionsCumulative": 347.5904333623726,
+        "gdp": 492118.60804598365,
+        "gini": 0.608550615145365,
+        "gpi": 165572.76041410718,
+        "legitimacy": 0.6949288832890501,
+        "profitShare": 0.33455143567933865,
+        "wageShare": 0.6165939417218985
+      },
+      "breakdownsFnv": "337bae84619f5525",
+      "emissionsReconcile": true,
+      "fnv": "feb3c23e4709f116",
       "gdpRealAnnual": 492118.60804598365,
       "legitimacy": 0.6949288832890501,
       "ok": true,
@@ -156,7 +312,20 @@
       "turn": 12
     },
     {
-      "fnv": "bf6250b0af626746",
+      "breakdownResults": {
+        "capitalRatio": 0.12535699600674602,
+        "debtToGdp": 0.5425687770462888,
+        "emissionsCumulative": 372.422643760539,
+        "gdp": 495758.36846572295,
+        "gini": 0.605036137828547,
+        "gpi": 169436.1806850115,
+        "legitimacy": 0.6991735406590556,
+        "profitShare": 0.3289231526487418,
+        "wageShare": 0.6223311388666708
+      },
+      "breakdownsFnv": "1adf3b4e4359e1a3",
+      "emissionsReconcile": true,
+      "fnv": "2445bec3df7bb157",
       "gdpRealAnnual": 495758.36846572295,
       "legitimacy": 0.6991735406590556,
       "ok": true,
@@ -164,7 +333,20 @@
       "turn": 13
     },
     {
-      "fnv": "19aa9772a73da376",
+      "breakdownResults": {
+        "capitalRatio": 0.12552578085059216,
+        "debtToGdp": 0.548523075638298,
+        "emissionsCumulative": 397.42247200504886,
+        "gdp": 499166.10507827805,
+        "gini": 0.6012248549665413,
+        "gpi": 173865.67374089718,
+        "legitimacy": 0.7035959699687618,
+        "profitShare": 0.3233718582766319,
+        "wageShare": 0.6278523493191456
+      },
+      "breakdownsFnv": "39d2bea66120baba",
+      "emissionsReconcile": true,
+      "fnv": "20b0672ffd690bec",
       "gdpRealAnnual": 499166.10507827805,
       "legitimacy": 0.7035959699687618,
       "ok": true,
@@ -172,7 +354,20 @@
       "turn": 14
     },
     {
-      "fnv": "d692449a715e0586",
+      "breakdownResults": {
+        "capitalRatio": 0.12559529140635095,
+        "debtToGdp": 0.5537358916793552,
+        "emissionsCumulative": 422.6430973094679,
+        "gdp": 502347.9588427119,
+        "gini": 0.5981937528971685,
+        "gpi": 178120.19629144526,
+        "legitimacy": 0.7081973249269138,
+        "profitShare": 0.31768256143989493,
+        "wageShare": 0.633558795351057
+      },
+      "breakdownsFnv": "e27add44e90544cc",
+      "emissionsReconcile": true,
+      "fnv": "449700c271e85760",
       "gdpRealAnnual": 502347.9588427119,
       "legitimacy": 0.7081973249269138,
       "ok": true,
@@ -180,7 +375,20 @@
       "turn": 15
     },
     {
-      "fnv": "c771f24ba66b5847",
+      "breakdownResults": {
+        "capitalRatio": 0.12047107066867252,
+        "debtToGdp": 0.6280760539485535,
+        "emissionsCumulative": 448.2516119899414,
+        "gdp": 504902.2925746365,
+        "gini": 0.5739148463038554,
+        "gpi": 193051.64013320694,
+        "legitimacy": 0.7136820599530186,
+        "profitShare": 0.2876653948993056,
+        "wageShare": 0.6398836573028046
+      },
+      "breakdownsFnv": "61a994c10539a830",
+      "emissionsReconcile": true,
+      "fnv": "1b90f8e2f1d121a8",
       "gdpRealAnnual": 504902.2925746365,
       "legitimacy": 0.7136820599530186,
       "ok": true,
@@ -188,7 +396,20 @@
       "turn": 16
     },
     {
-      "fnv": "f19735271b497fc0",
+      "breakdownResults": {
+        "capitalRatio": 0.12326791488180767,
+        "debtToGdp": 0.6307905899027281,
+        "emissionsCumulative": 473.80077886146836,
+        "gdp": 508579.5301190691,
+        "gini": 0.5716747977727131,
+        "gpi": 198689.56719945706,
+        "legitimacy": 0.7195499727382613,
+        "profitShare": 0.3047627832653418,
+        "wageShare": 0.6461864396983682
+      },
+      "breakdownsFnv": "707f1ed5d3ed9008",
+      "emissionsReconcile": true,
+      "fnv": "bb17f7d435000e12",
       "gdpRealAnnual": 508579.5301190691,
       "legitimacy": 0.7195499727382613,
       "ok": true,
@@ -196,7 +417,20 @@
       "turn": 17
     },
     {
-      "fnv": "e9e7714c0c666dc5",
+      "breakdownResults": {
+        "capitalRatio": 0.12533547132890185,
+        "debtToGdp": 0.6311992991491157,
+        "emissionsCumulative": 499.62114931545744,
+        "gdp": 511977.7181941374,
+        "gini": 0.5684025748191743,
+        "gpi": 204968.3677256504,
+        "legitimacy": 0.725038546793601,
+        "profitShare": 0.2996049222592614,
+        "wageShare": 0.651415219731425
+      },
+      "breakdownsFnv": "3c76de4656871fef",
+      "emissionsReconcile": true,
+      "fnv": "d66715d8a2a71508",
       "gdpRealAnnual": 511977.7181941374,
       "legitimacy": 0.725038546793601,
       "ok": true,
@@ -204,7 +438,20 @@
       "turn": 18
     },
     {
-      "fnv": "d23fb178d6cd5092",
+      "breakdownResults": {
+        "capitalRatio": 0.125771376296801,
+        "debtToGdp": 0.6304994850996838,
+        "emissionsCumulative": 525.705476846707,
+        "gdp": 514644.96658113354,
+        "gini": 0.5657096688270147,
+        "gpi": 210987.74165628347,
+        "legitimacy": 0.730824854503084,
+        "profitShare": 0.289965033506968,
+        "wageShare": 0.6569850028258889
+      },
+      "breakdownsFnv": "d9510fc1422d7395",
+      "emissionsReconcile": true,
+      "fnv": "cdacae442977a24f",
       "gdpRealAnnual": 514644.96658113354,
       "legitimacy": 0.730824854503084,
       "ok": true,
@@ -212,7 +459,20 @@
       "turn": 19
     },
     {
-      "fnv": "4407e5a46b61ec6e",
+      "breakdownResults": {
+        "capitalRatio": 0.1259139813151722,
+        "debtToGdp": 0.6264516600658524,
+        "emissionsCumulative": 552.0089875906577,
+        "gdp": 516673.2251843267,
+        "gini": 0.5634487259676755,
+        "gpi": 218053.49940625386,
+        "legitimacy": 0.7368971045108681,
+        "profitShare": 0.2871801892521788,
+        "wageShare": 0.6597929091855996
+      },
+      "breakdownsFnv": "056debd9b40b327a",
+      "emissionsReconcile": true,
+      "fnv": "fbb7da97f80a1c5e",
       "gdpRealAnnual": 516673.2251843267,
       "legitimacy": 0.7368971045108681,
       "ok": true,
@@ -220,7 +480,20 @@
       "turn": 20
     },
     {
-      "fnv": "dd8a08be4e62c23e",
+      "breakdownResults": {
+        "capitalRatio": 0.1259908821787034,
+        "debtToGdp": 0.6265604638238517,
+        "emissionsCumulative": 578.5205541668091,
+        "gdp": 516876.3216722885,
+        "gini": 0.561953452396253,
+        "gpi": 223253.53086635921,
+        "legitimacy": 0.7431718803438997,
+        "profitShare": 0.2803700693306698,
+        "wageShare": 0.6671374068817676
+      },
+      "breakdownsFnv": "5e59b7df4354a849",
+      "emissionsReconcile": true,
+      "fnv": "197ca1bf8a3797a2",
       "gdpRealAnnual": 516876.3216722885,
       "legitimacy": 0.7431718803438997,
       "ok": true,
@@ -228,7 +501,20 @@
       "turn": 21
     },
     {
-      "fnv": "facc662975242343",
+      "breakdownResults": {
+        "capitalRatio": 0.12494195169414127,
+        "debtToGdp": 0.6403727552446047,
+        "emissionsCumulative": 605.2651713434618,
+        "gdp": 519700.18125158723,
+        "gini": 0.5564377656515093,
+        "gpi": 232489.69781958478,
+        "legitimacy": 0.7497254012394968,
+        "profitShare": 0.2776260503549138,
+        "wageShare": 0.6700998778058731
+      },
+      "breakdownsFnv": "d50f902fd0daabe3",
+      "emissionsReconcile": true,
+      "fnv": "e20ae131cb12aec9",
       "gdpRealAnnual": 519700.18125158723,
       "legitimacy": 0.7497254012394968,
       "ok": true,
@@ -236,7 +522,20 @@
       "turn": 22
     },
     {
-      "fnv": "d59c08b1f73c13d5",
+      "breakdownResults": {
+        "capitalRatio": 0.12489166862536087,
+        "debtToGdp": 0.6470037937938782,
+        "emissionsCumulative": 632.4206639545049,
+        "gdp": 520969.1090735998,
+        "gini": 0.5515694051741101,
+        "gpi": 243556.5601706538,
+        "legitimacy": 0.7563060588492106,
+        "profitShare": 0.2785984353660411,
+        "wageShare": 0.6690696435888576
+      },
+      "breakdownsFnv": "90872897fdb66dfc",
+      "emissionsReconcile": true,
+      "fnv": "67b38d803e6512ae",
       "gdpRealAnnual": 520969.1090735998,
       "legitimacy": 0.7563060588492106,
       "ok": true,
@@ -244,7 +543,20 @@
       "turn": 23
     },
     {
-      "fnv": "c9464a4443ad6e0a",
+      "breakdownResults": {
+        "capitalRatio": 0.12499776973971866,
+        "debtToGdp": 0.6478304900900462,
+        "emissionsCumulative": 659.7811201585907,
+        "gdp": 522428.9760528417,
+        "gini": 0.5462506549971228,
+        "gpi": 256812.60098826647,
+        "legitimacy": 0.7633992873367071,
+        "profitShare": 0.2828057794210949,
+        "wageShare": 0.664495358398324
+      },
+      "breakdownsFnv": "82b95379b9c44f8b",
+      "emissionsReconcile": true,
+      "fnv": "68f1b72550f6afc3",
       "gdpRealAnnual": 522428.9760528417,
       "legitimacy": 0.7633992873367071,
       "ok": true,
@@ -252,7 +564,20 @@
       "turn": 24
     },
     {
-      "fnv": "a1f829a8132c4d63",
+      "breakdownResults": {
+        "capitalRatio": 0.1251183564321141,
+        "debtToGdp": 0.651847801494034,
+        "emissionsCumulative": 687.3136621673798,
+        "gdp": 524007.4508334488,
+        "gini": 0.5440172700061617,
+        "gpi": 266275.96524732775,
+        "legitimacy": 0.7709135108156695,
+        "profitShare": 0.28166384537094524,
+        "wageShare": 0.6657099066567045
+      },
+      "breakdownsFnv": "e418d4abc65f50c2",
+      "emissionsReconcile": true,
+      "fnv": "7d565a321e30c06e",
       "gdpRealAnnual": 524007.4508334488,
       "legitimacy": 0.7709135108156695,
       "ok": true,
@@ -260,7 +585,20 @@
       "turn": 25
     },
     {
-      "fnv": "fa655b1a07deb1a8",
+      "breakdownResults": {
+        "capitalRatio": 0.12520265225395777,
+        "debtToGdp": 0.6615889158174273,
+        "emissionsCumulative": 715.037267321009,
+        "gdp": 522133.4511727575,
+        "gini": 0.5413783159313653,
+        "gpi": 273158.3312570501,
+        "legitimacy": 0.7786131205382951,
+        "profitShare": 0.2735155620111872,
+        "wageShare": 0.674582832690733
+      },
+      "breakdownsFnv": "c88fbccc141b3f19",
+      "emissionsReconcile": true,
+      "fnv": "d01111eb5c458f91",
       "gdpRealAnnual": 522133.4511727575,
       "legitimacy": 0.7786131205382951,
       "ok": true,

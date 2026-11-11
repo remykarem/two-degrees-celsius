@@ -1,0 +1,170 @@
+{
+  "firms": [
+    {
+      "firm": 0,
+      "name": "Factory",
+      "sector": "goods",
+      "output": 126.2422031926277,
+      "price": 97.65,
+      "workers": 3.0,
+      "wage": 1514.61,
+      "revenue": 11666.77,
+      "profit": 3889.42,
+      "emissions": 1.5149064383115325,
+      "ownership": [
+        {
+          "owner": "household",
+          "household": 0,
+          "share": 1.0
+        }
+      ],
+      "stateShare": -0.0,
+      "active": true
+    },
+    {
+      "firm": 1,
+      "name": "Farm",
+      "sector": "food",
+      "output": 541.9489551067059,
+      "price": 24.06,
+      "workers": 3.0,
+      "wage": 1480.36,
+      "revenue": 12100.0,
+      "profit": 6623.41,
+      "emissions": 1.0838979102134116,
+      "ownership": [
+        {
+          "owner": "household",
+          "household": 0,
+          "share": 1.0
+        }
+      ],
+      "stateShare": -0.0,
+      "active": true
+    },
+    {
+      "firm": 2,
+      "name": "Shop",
+      "sector": "services",
+      "output": 137.42266192518943,
+      "price": 73.38,
+      "workers": 3.0,
+      "wage": 1480.36,
+      "revenue": 8366.98,
+      "profit": 885.48,
+      "emissions": 0.0,
+      "ownership": [
+        {
+          "owner": "household",
+          "household": 1,
+          "share": 1.0
+        }
+      ],
+      "stateShare": -0.0,
+      "active": true
+    },
+    {
+      "firm": 3,
+      "name": "Shop 2",
+      "sector": "services",
+      "output": 0.0,
+      "price": 70.0,
+      "workers": 0.0,
+      "wage": 1650.0,
+      "revenue": 0.0,
+      "profit": 0.0,
+      "emissions": 0.0,
+      "ownership": [
+        {
+          "owner": "household",
+          "household": 1,
+          "share": 1.0
+        }
+      ],
+      "stateShare": -0.0,
+      "active": false
+    }
+  ],
+  "infrastructure": [
+    {
+      "kind": "road",
+      "count": 5,
+      "buildCost": 2500.0,
+      "upkeepMonthly": 50.0,
+      "upkeepEachMonthly": 10.0
+    },
+    {
+      "kind": "public_housing",
+      "count": 0,
+      "buildCost": 40000.0,
+      "upkeepMonthly": 0.0,
+      "upkeepEachMonthly": 25.0
+    },
+    {
+      "kind": "fossil_plant",
+      "count": 2,
+      "buildCost": 40000.0,
+      "upkeepMonthly": 20.0,
+      "upkeepEachMonthly": 10.0
+    },
+    {
+      "kind": "renewable_plant",
+      "count": 0,
+      "buildCost": 40000.0,
+      "upkeepMonthly": 0.0,
+      "upkeepEachMonthly": 10.0
+    },
+    {
+      "kind": "fire_station",
+      "count": 0,
+      "buildCost": 8000.0,
+      "upkeepMonthly": 0.0,
+      "upkeepEachMonthly": 30.0
+    }
+  ],
+  "publicGoods": [
+    {
+      "id": "goods_purchases",
+      "label": "Government purchases of goods",
+      "spendingMonthly": 4000.0,
+      "buys": "Goods from the Factory, bought with the public spending lever. Split with services by a fixed share; this is derived, the ledger records one purchase line."
+    },
+    {
+      "id": "services",
+      "label": "Government purchases of services",
+      "spendingMonthly": 4000.0,
+      "buys": "Services from the Shop, the other part of the public spending lever."
+    },
+    {
+      "id": "public_works",
+      "label": "Public works (upkeep and construction)",
+      "spendingMonthly": 70.0,
+      "buys": "Upkeep of roads, public housing, power plants and fire stations, resilience spending and new builds; paid out as wages to households."
+    },
+    {
+      "id": "job_guarantee",
+      "label": "Job guarantee",
+      "spendingMonthly": 0.0,
+      "buys": "Government jobs at the minimum wage for unemployed people who want one."
+    },
+    {
+      "id": "benefits",
+      "label": "Benefits",
+      "spendingMonthly": 3200.0,
+      "buys": "Payments to unemployed adults and retired people."
+    },
+    {
+      "id": "ubi",
+      "label": "Universal basic income",
+      "spendingMonthly": 0.0,
+      "buys": "A flat payment to every person."
+    },
+    {
+      "id": "subsidy",
+      "label": "Green investment subsidy",
+      "spendingMonthly": 0.0,
+      "buys": "Part of firms' green investment costs."
+    }
+  ],
+  "note": "No state shareholding in the current economic systems (Market, Regulated, Co-op): the state's ownership share is 0% for every firm. The state-owned variant exists in the model but no system uses it yet."
+}

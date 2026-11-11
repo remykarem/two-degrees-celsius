@@ -8,7 +8,7 @@ fn committed_fixtures_are_current_and_deterministic() {
     let first = sim_api::fixtures::generate().unwrap();
     let second = sim_api::fixtures::generate().unwrap();
     assert_eq!(first, second, "fixtures differ between two runs");
-    assert_eq!(first.len(), 12);
+    assert_eq!(first.len(), 15);
     for (name, body) in first {
         let committed = std::fs::read_to_string(dir.join(&name))
             .unwrap_or_else(|e| panic!("{name}: {e} (run the fixtures example)"));
@@ -41,7 +41,7 @@ fn fixtures_have_the_documented_content() {
         .unwrap()
         .is_empty());
     let snap = read("snapshot-turn1.json");
-    assert_eq!(snap["schemaVersion"], 4);
+    assert_eq!(snap["schemaVersion"], 5);
     // Contract v1.4: finance and energy are on every snapshot.
     assert_eq!(snap["energy"]["unit"], "MWh");
     assert!(snap["finance"]["government"]["revenue"]["wageTax"].is_number());

@@ -428,6 +428,10 @@ pub struct Snapshot {
     pub energy: EnergyView,
     /// Contract v1.4 (section 14).
     pub finance: Finance,
+    /// Contract v1.6 (section 16).
+    pub breakdowns: crate::breakdowns::Breakdowns,
+    pub policies: crate::policies::Policies,
+    pub industry: crate::industry::Industry,
     pub history: Vec<HistoryPoint>,
 }
 
@@ -551,9 +555,10 @@ fn indicators(sim: &Sim) -> Indicators {
     }
 }
 
-fn policy(sim: &Sim) -> BTreeMap<LeverKey, PolicyEntry> {
-    let p = &sim.state.policy;
-    let e = &sim.state.effective;
+/// Every lever's nominal value and, for lobbied ones, the value in force.
+pub fn policy_map(s: &st::State) -> BTreeMap<LeverKey, PolicyEntry> {
+    let p = &s.policy;
+    let e = &s.effective;
     let num = |v: f64| PolicyScalar::Number(v);
     let plain = |v: f64| PolicyEntry {
         nominal: num(v),
@@ -563,7 +568,7 @@ fn policy(sim: &Sim) -> BTreeMap<LeverKey, PolicyEntry> {
         nominal: num(n),
         effective: Some(eff),
     };
-    let mode = match sim.state.nature.commons_access {
+    let mode = match s.nature.commons_access {
         st::CommonsAccess::Open => "open",
         st::CommonsAccess::Community { .. } => "community",
         st::CommonsAccess::Enclosed(_) => "enclosed",
@@ -708,7 +713,7 @@ fn plants(sim: &Sim) -> Vec<PlantView> {
 }
 
 /// Firms have no label in the sim (gap G8): name them from sector and slot order.
-fn firm_names(firms: &[st::Firm]) -> Vec<String> {
+pub(crate) fn firm_names(firms: &[st::Firm]) -> Vec<String> {
     let mut goods = 0u32;
     let mut food = 0u32;
     let mut services = 0u32;
@@ -768,8 +773,11 @@ pub fn build(
     history: &[HistoryPoint],
     meta: &Meta,
     ledger: &crate::ledger::LedgerStore,
+    log: &crate::log::WrapperLog,
 ) -> Snapshot {
     let s = &sim.state;
+    let finance = crate::finance::build(sim, ledger);
+    let policy = policy_map(s);
     let tp = &sim.params.turn;
     Snapshot {
         schema_version: crate::SCHEMA_VERSION,
@@ -797,7 +805,8 @@ pub fn build(
         map: map_view(s),
         buildings: buildings(sim),
         pending: s.pending.iter().map(PendingItem::from_sim).collect(),
-        policy: policy(sim),
+        policies: crate::policies::build(sim, meta, &policy, &log.policy),
+        policy,
         net_lobby: s.net_lobby.0,
         union_density: s.union_density.0,
         indicators: indicators(sim),
@@ -848,7 +857,9 @@ pub fn build(
             unhoused_households: s.housing.unhoused_households,
         },
         energy: crate::finance::energy(sim, &meta.energy_unit),
-        finance: crate::finance::build(sim, ledger),
+        breakdowns: crate::breakdowns::build(sim, &finance, log),
+        industry: crate::industry::build(sim, &finance),
+        finance,
         history: history.to_vec(),
     }
 }

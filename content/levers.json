@@ -26,10 +26,11 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Climate and energy"
     },
     "tax_wage": {
-      "label": "Wage tax",
+      "label": "Income tax",
       "unit": "fraction",
       "min": 0,
       "max": 0.6,
@@ -40,7 +41,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Taxes"
     },
     "tax_profit": {
       "label": "Profit tax",
@@ -54,7 +56,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Taxes"
     },
     "tax_capital": {
       "label": "Capital tax",
@@ -68,7 +71,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Taxes"
     },
     "wealth_tax": {
       "label": "Wealth tax",
@@ -87,7 +91,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Taxes"
     },
     "wealth_threshold": {
       "label": "Wealth tax threshold",
@@ -101,7 +106,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Taxes"
     },
     "base_rate": {
       "label": "Interest base rate",
@@ -120,7 +126,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Money and credit"
     },
     "min_wage": {
       "label": "Minimum wage",
@@ -139,7 +146,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Labour and welfare"
     },
     "benefit": {
       "label": "Unemployment benefit",
@@ -158,7 +166,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Labour and welfare"
     },
     "ubi": {
       "label": "Universal basic income",
@@ -177,7 +186,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Labour and welfare"
     },
     "green_subsidy": {
       "label": "Green investment subsidy",
@@ -196,7 +206,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Climate and energy"
     },
     "campaign_cap": {
       "label": "Campaign finance cap",
@@ -209,7 +220,8 @@
       "availableIn": [
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Politics"
     },
     "emissions_cap": {
       "label": "Emissions cap per firm",
@@ -224,7 +236,8 @@
         "regulated",
         "coop"
       ],
-      "zeroMeansNone": true
+      "zeroMeansNone": true,
+      "group": "Climate and energy"
     },
     "commons_harvest": {
       "label": "Commons harvest",
@@ -243,7 +256,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Nature and commons"
     },
     "commons_access": {
       "label": "Commons access rule",
@@ -267,7 +281,8 @@
           "regulated",
           "coop"
         ]
-      }
+      },
+      "group": "Nature and commons"
     },
     "bank_capital_ratio": {
       "label": "Bank capital ratio",
@@ -286,7 +301,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Money and credit"
     },
     "bailout": {
       "label": "Bank bailout",
@@ -300,7 +316,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Money and credit"
     },
     "public_spending": {
       "label": "Public spending",
@@ -323,7 +340,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Government spending"
     },
     "job_guarantee": {
       "label": "Job guarantee",
@@ -342,7 +360,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Labour and welfare"
     },
     "resilience_spending": {
       "label": "Resilience spending",
@@ -369,7 +388,8 @@
         "market",
         "regulated",
         "coop"
-      ]
+      ],
+      "group": "Climate and energy"
     }
   },
   "actions": {

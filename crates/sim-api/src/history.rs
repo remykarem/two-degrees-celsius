@@ -34,6 +34,10 @@ pub struct HistoryPoint {
     pub bank_capital_ratio: f64,
     pub renewable_share: f64,
     pub grid_served: f64,
+    /// Contract v1.6: gross emissions (tonnes per month, before the sink) and the cumulative net
+    /// emissions in tonnes, at the end of the turn.
+    pub gross_emissions: f64,
+    pub cumulative_emissions: f64,
 }
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
@@ -95,5 +99,7 @@ pub fn point(
             0.0
         },
         grid_served: s.energy.served.0,
+        gross_emissions: s.nature.gross_emissions.0,
+        cumulative_emissions: s.nature.cumulative.0,
     }
 }

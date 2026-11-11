@@ -48,6 +48,8 @@ pub struct CostModel {
 pub struct LeverInfo {
     pub key: LeverKey,
     pub label: String,
+    /// Contract v1.6: the group the Policies tab lists the lever under (from `levers.json`).
+    pub group: String,
     pub unit: LeverUnit,
     pub min: f64,
     pub max: f64,
@@ -108,6 +110,7 @@ struct GameFile {
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct LeverEntry {
     label: String,
+    group: String,
     unit: LeverUnit,
     min: f64,
     max: f64,
@@ -249,6 +252,7 @@ impl Meta {
             levers.push(LeverInfo {
                 key,
                 label: e.label.clone(),
+                group: e.group.clone(),
                 unit: e.unit,
                 min: e.min,
                 max: e.max,
