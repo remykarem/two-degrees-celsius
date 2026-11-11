@@ -278,6 +278,9 @@ struct Earn {
     person: u32,
     household: u32,
     firm: Option<u32>,
+    /// Paying household of domestic staff; absent in older saves.
+    #[serde(default)]
+    employer: Option<u32>,
     amount: i64,
 }
 
@@ -287,6 +290,8 @@ struct EarnRoll {
     turn: u32,
     month: u8,
     firm: Option<u32>,
+    #[serde(default)]
+    employer: Option<u32>,
     amount: i64,
     count: u32,
 }
@@ -441,6 +446,7 @@ impl LedgerStore {
                 person: e.person.0,
                 household: e.household.0,
                 firm: e.firm.map(|f| f.0),
+                employer: e.employer.map(|h| h.0),
                 amount: e.amount.0,
             });
         }
@@ -506,6 +512,7 @@ impl LedgerStore {
             let (turn, month) = (turn_of(e.tick), (e.tick % 3) as u8);
             match self.earning_rollups.iter_mut().find(|r| {
                 r.person == e.person && r.turn == turn && r.month == month && r.firm == e.firm
+                    && r.employer == e.employer
             }) {
                 Some(r) => {
                     r.amount += e.amount;
@@ -516,6 +523,7 @@ impl LedgerStore {
                     turn,
                     month,
                     firm: e.firm,
+                    employer: e.employer,
                     amount: e.amount,
                     count: 1,
                 }),
@@ -705,16 +713,18 @@ impl LedgerStore {
             .persons
             .get(person as usize)
             .map_or_else(|| format!("person {person}"), |x| x.label.clone());
-        let firm_acct = |f: Option<u32>| match f {
-            Some(f) => LedgerAccount::Firm(sim_types::FirmId(f)),
-            None => LedgerAccount::Government,
+        // Payer: a firm, else the employing household (domestic staff), else the government (job guarantee).
+        let firm_acct = |f: Option<u32>, h: Option<u32>| match (f, h) {
+            (Some(f), _) => LedgerAccount::Firm(sim_types::FirmId(f)),
+            (None, Some(h)) => LedgerAccount::Household(sim_types::HouseholdId(h)),
+            (None, None) => LedgerAccount::Government,
         };
         let earnings = self
             .earnings
             .iter()
             .filter(|e| e.person == person)
             .map(|e| {
-                let from = firm_acct(e.firm);
+                let from = firm_acct(e.firm, e.employer);
                 let p = after(e.tick);
                 LedgerEntry {
                     turn: turn_of(e.tick),
@@ -742,7 +752,7 @@ impl LedgerStore {
             .map(|r| LedgerSummaryRow {
                 turn: r.turn,
                 month: r.month,
-                counterparty: AccountRef::from_sim(firm_acct(r.firm)),
+                counterparty: AccountRef::from_sim(firm_acct(r.firm, r.employer)),
                 kind: LedgerKindKey::Wage,
                 inflow: Cents(r.amount).dollars(),
                 outflow: 0.0,

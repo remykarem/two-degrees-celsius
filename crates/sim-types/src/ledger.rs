@@ -383,6 +383,8 @@ pub struct Earning {
     pub person: PersonId,
     pub household: HouseholdId,
     pub firm: Option<FirmId>,
+    /// The paying household for domestic staff (Town v7); `None` for firm jobs and the job guarantee.
+    pub employer: Option<HouseholdId>,
     pub amount: Cents,
 }
 

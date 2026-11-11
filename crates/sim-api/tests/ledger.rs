@@ -347,6 +347,34 @@ fn person_ledger_lists_wages_credited_to_the_household_and_employment_events() {
     assert_eq!(pl.events.len(), pl.event_turns.len());
 }
 
+/// V7-10: a domestic wage names the estate household as the payer (not the government), in the
+/// detailed window and after roll-up, and the estate household's own ledger shows the matching debit.
+#[test]
+fn pilot_earnings_name_the_estate_household_as_payer() {
+    let mut api = api_with(4, 2); // short detail window so older turns are rolled up
+    play(&mut api, 6);
+    let snap = api.snapshot();
+    let pilot = snap
+        .people
+        .iter()
+        .find(|p| p.employer.is_some())
+        .expect("the pilot has an employer household");
+    let estate = pilot.employer.as_ref().unwrap().household;
+    let pl = api.person_ledger(pilot.id).unwrap();
+    assert!(!pl.earnings.is_empty());
+    for e in &pl.earnings {
+        assert_eq!(e.from, AccountRef::Household { id: estate });
+    }
+    assert!(!pl.summary.is_empty(), "older turns are rolled up");
+    for r in &pl.summary {
+        assert_eq!(r.counterparty, AccountRef::Household { id: estate });
+    }
+    let hp = page(&api, &AccountRef::Household { id: estate });
+    assert!(hp.entries.iter().any(|e| e.kind == LedgerKindKey::Wage
+        && e.from == AccountRef::Household { id: estate }
+        && e.to == AccountRef::Household { id: pilot.household }));
+}
+
 fn cents(d: f64) -> i64 {
     (d * 100.0).round() as i64
 }

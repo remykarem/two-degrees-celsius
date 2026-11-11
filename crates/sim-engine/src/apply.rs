@@ -124,6 +124,7 @@ fn capture_earning(s: &State, c: &Delta, cap: &mut Capture) {
                 person: *id,
                 household: x.household,
                 firm: job,
+                employer: x.staff_of,
                 amount: w,
             });
         }
