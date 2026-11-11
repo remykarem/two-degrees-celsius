@@ -1,0 +1,752 @@
+{
+  "entities": [
+    {
+      "id": "person",
+      "kind": "actor",
+      "category": "people",
+      "label": "Person",
+      "plural": "People",
+      "roles": [
+        "income_source",
+        "energy_consumer",
+        "labelled"
+      ],
+      "owner": "none",
+      "sceneModel": {},
+      "inspector": [
+        "person_work",
+        "person_commute",
+        "person_life"
+      ],
+      "tileKinds": [],
+      "footprint": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "estate_owner",
+      "kind": "actor",
+      "category": "estate",
+      "label": "Estate owner",
+      "plural": "Estate owners",
+      "roles": [
+        "income_source",
+        "energy_consumer",
+        "labelled"
+      ],
+      "variantOf": "person",
+      "owner": "none",
+      "inspector": [
+        "person_work",
+        "person_commute",
+        "person_life",
+        "estate_owner"
+      ],
+      "tileKinds": [],
+      "footprint": [],
+      "sceneModel": {},
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "pilot",
+      "kind": "actor",
+      "category": "estate",
+      "label": "Pilot",
+      "plural": "Pilots",
+      "roles": [
+        "income_source",
+        "energy_consumer",
+        "labelled"
+      ],
+      "variantOf": "person",
+      "owner": "none",
+      "inspector": [
+        "person_work",
+        "person_commute",
+        "person_life",
+        "pilot"
+      ],
+      "tileKinds": [],
+      "footprint": [],
+      "sceneModel": {},
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "household",
+      "kind": "actor",
+      "category": "people",
+      "label": "Household",
+      "plural": "Households",
+      "roles": [
+        "owned",
+        "payer",
+        "payee",
+        "emitter",
+        "income_source",
+        "energy_consumer",
+        "labelled"
+      ],
+      "owner": "none",
+      "inspector": [
+        "household_home",
+        "household_wealth",
+        "household_money",
+        "household_life"
+      ],
+      "tileKinds": [],
+      "footprint": [],
+      "sceneModel": {},
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "estate_household",
+      "kind": "actor",
+      "category": "estate",
+      "label": "Estate household",
+      "plural": "Estate households",
+      "roles": [
+        "owned",
+        "payer",
+        "payee",
+        "emitter",
+        "employer",
+        "income_source",
+        "energy_consumer",
+        "labelled"
+      ],
+      "variantOf": "household",
+      "owner": "none",
+      "inspector": [
+        "household_home",
+        "household_wealth",
+        "household_money",
+        "household_life",
+        "estate_owner"
+      ],
+      "tileKinds": [],
+      "footprint": [],
+      "sceneModel": {},
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "firm",
+      "kind": "actor",
+      "category": "firms",
+      "label": "Firm",
+      "plural": "Firms",
+      "roles": [
+        "located",
+        "owned",
+        "emitter",
+        "payer",
+        "payee",
+        "employer",
+        "income_source",
+        "energy_consumer",
+        "hazard_exposed",
+        "labelled"
+      ],
+      "tileKinds": [
+        "firm"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "varies",
+      "sceneModel": {
+        "default": [
+          "firm_goods"
+        ],
+        "goods": [
+          "firm_goods"
+        ],
+        "food": [
+          "firm_food"
+        ],
+        "services": [
+          "firm_shop"
+        ],
+        "vacant": [
+          "firm_vacant"
+        ]
+      },
+      "labels": {
+        "closed": "{name} (closed)"
+      },
+      "inspector": [
+        "firm_firm",
+        "firm_output",
+        "firm_books"
+      ],
+      "attributes": {}
+    },
+    {
+      "id": "bank",
+      "kind": "actor",
+      "category": "finance",
+      "label": "Bank",
+      "plural": "Banks",
+      "roles": [
+        "located",
+        "owned",
+        "payer",
+        "payee",
+        "labelled"
+      ],
+      "tileKinds": [
+        "bank"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "none",
+      "sceneModel": {
+        "default": [
+          "bank"
+        ]
+      },
+      "inspector": [
+        "bank_balance"
+      ],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "government",
+      "kind": "actor",
+      "category": "government",
+      "label": "Town hall",
+      "plural": "Town halls",
+      "roles": [
+        "located",
+        "owned",
+        "payer",
+        "payee",
+        "employer",
+        "labelled"
+      ],
+      "tileKinds": [
+        "town_hall"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "state",
+      "sceneModel": {
+        "default": [
+          "government"
+        ]
+      },
+      "inspector": [
+        "government_state",
+        "government_politics"
+      ],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "home",
+      "kind": "facility",
+      "category": "housing",
+      "label": "Home",
+      "plural": "Homes",
+      "roles": [
+        "located",
+        "owned",
+        "income_source",
+        "hazard_exposed",
+        "labelled"
+      ],
+      "tileKinds": [
+        "home"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "varies",
+      "sceneModel": {
+        "default": [
+          "home_worker"
+        ],
+        "capitalist": [
+          "home_capitalist"
+        ],
+        "rentier": [
+          "home_rentier"
+        ],
+        "manager": [
+          "home_manager"
+        ],
+        "worker": [
+          "home_worker"
+        ],
+        "dependent": [
+          "home_dependent"
+        ]
+      },
+      "labels": {
+        "vacant": "Vacant home",
+        "occupied": "{name} home"
+      },
+      "inspector": [],
+      "attributes": {}
+    },
+    {
+      "id": "estate_house",
+      "kind": "facility",
+      "category": "estate",
+      "label": "Estate house",
+      "plural": "Estate houses",
+      "roles": [
+        "located",
+        "owned",
+        "labelled"
+      ],
+      "variantOf": "home",
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "household",
+      "sceneModel": {
+        "default": [
+          "home_estate"
+        ]
+      },
+      "inspector": [],
+      "tileKinds": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "public_housing",
+      "kind": "facility",
+      "category": "housing",
+      "label": "Public housing",
+      "plural": "Public housing",
+      "roles": [
+        "located",
+        "owned",
+        "payer",
+        "income_source",
+        "buildable",
+        "labelled"
+      ],
+      "tileKinds": [
+        "public_housing"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "infraKind": "public_housing",
+      "owner": "public",
+      "sceneModel": {
+        "default": [
+          "public_housing"
+        ]
+      },
+      "inspector": [
+        "housing_town"
+      ],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "estate_grounds",
+      "kind": "facility",
+      "category": "estate",
+      "label": "Estate grounds",
+      "plural": "Estate grounds",
+      "roles": [
+        "located",
+        "owned",
+        "labelled"
+      ],
+      "tileKinds": [
+        "estate_grounds"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "owner": "household",
+      "sceneModel": {},
+      "inspector": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "runway",
+      "kind": "facility",
+      "category": "estate",
+      "label": "Runway",
+      "plural": "Runways",
+      "roles": [
+        "located",
+        "owned",
+        "labelled"
+      ],
+      "tileKinds": [
+        "runway"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "owner": "household",
+      "sceneModel": {},
+      "inspector": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "hangar",
+      "kind": "facility",
+      "category": "estate",
+      "label": "Hangar",
+      "plural": "Hangars",
+      "roles": [
+        "located",
+        "owned",
+        "labelled"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "household",
+      "sceneModel": {},
+      "inspector": [],
+      "tileKinds": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "jet",
+      "kind": "facility",
+      "category": "estate",
+      "label": "Private jet",
+      "plural": "Private jets",
+      "roles": [
+        "owned",
+        "emitter",
+        "payer",
+        "labelled"
+      ],
+      "owner": "household",
+      "sceneModel": {},
+      "inspector": [],
+      "tileKinds": [],
+      "footprint": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "road",
+      "kind": "facility",
+      "category": "transport",
+      "label": "Road",
+      "plural": "Roads",
+      "roles": [
+        "located",
+        "payer",
+        "buildable",
+        "labelled"
+      ],
+      "tileKinds": [
+        "road"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "infraKind": "road",
+      "owner": "public",
+      "sceneModel": {
+        "default": [
+          "road_site"
+        ]
+      },
+      "inspector": [],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "fossil_plant",
+      "kind": "facility",
+      "category": "energy",
+      "label": "Fossil plant",
+      "plural": "Fossil power plants",
+      "roles": [
+        "located",
+        "emitter",
+        "energy_producer",
+        "payer",
+        "buildable",
+        "labelled"
+      ],
+      "tileKinds": [
+        "fossil_plant"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "infraKind": "fossil_plant",
+      "owner": "public",
+      "group": "power_plant",
+      "attributes": {
+        "fuel": "fossil"
+      },
+      "sceneModel": {
+        "default": [
+          "fossil_plant"
+        ]
+      },
+      "inspector": [
+        "plant_this",
+        "energy_town"
+      ],
+      "labels": {}
+    },
+    {
+      "id": "renewable_plant",
+      "kind": "facility",
+      "category": "energy",
+      "label": "Renewable plant",
+      "plural": "Renewable power plants",
+      "roles": [
+        "located",
+        "energy_producer",
+        "payer",
+        "buildable",
+        "labelled"
+      ],
+      "tileKinds": [
+        "renewable_plant"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "infraKind": "renewable_plant",
+      "owner": "public",
+      "group": "power_plant",
+      "attributes": {
+        "fuel": "renewable"
+      },
+      "sceneModel": {
+        "default": [
+          "renewable_plant"
+        ]
+      },
+      "inspector": [
+        "plant_this",
+        "energy_town"
+      ],
+      "labels": {}
+    },
+    {
+      "id": "fire_station",
+      "kind": "facility",
+      "category": "safety",
+      "label": "Fire station",
+      "plural": "Fire stations",
+      "roles": [
+        "located",
+        "payer",
+        "buildable",
+        "hazard_mitigator",
+        "labelled"
+      ],
+      "tileKinds": [
+        "fire_station"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "infraKind": "fire_station",
+      "owner": "public",
+      "sceneModel": {
+        "default": [
+          "fire_station"
+        ]
+      },
+      "inspector": [
+        "fire_cover"
+      ],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "forest",
+      "kind": "stock",
+      "category": "nature",
+      "label": "Forest",
+      "plural": "Forests",
+      "roles": [
+        "located",
+        "sink",
+        "hazard_exposed",
+        "labelled"
+      ],
+      "tileKinds": [
+        "forest"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "none",
+      "sceneModel": {
+        "default": [
+          "forest_0"
+        ],
+        "standing": [
+          "forest_0",
+          "forest_1",
+          "forest_2"
+        ],
+        "burning": [
+          "forest_burning"
+        ],
+        "regrowing": [
+          "forest_regrowing"
+        ]
+      },
+      "labels": {
+        "burning": "Burning forest",
+        "regrowing": "Burnt forest (regrowing)"
+      },
+      "inspector": [
+        "forest"
+      ],
+      "attributes": {}
+    },
+    {
+      "id": "commons",
+      "kind": "stock",
+      "category": "nature",
+      "label": "Commons",
+      "plural": "Commons",
+      "roles": [
+        "located",
+        "income_source",
+        "payee",
+        "hazard_exposed",
+        "labelled"
+      ],
+      "tileKinds": [
+        "commons"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "none",
+      "sceneModel": {
+        "default": [
+          "commons_open"
+        ],
+        "open": [
+          "commons_open"
+        ],
+        "community": [
+          "commons_community"
+        ],
+        "enclosed": [
+          "commons_enclosed"
+        ],
+        "collapsed": [
+          "commons_collapsed"
+        ]
+      },
+      "inspector": [
+        "commons"
+      ],
+      "labels": {},
+      "attributes": {}
+    },
+    {
+      "id": "empty",
+      "kind": "stock",
+      "category": "nature",
+      "label": "Empty tile",
+      "plural": "Empty tiles",
+      "roles": [
+        "located",
+        "labelled"
+      ],
+      "tileKinds": [
+        "empty"
+      ],
+      "footprint": [
+        [
+          0,
+          0
+        ]
+      ],
+      "owner": "none",
+      "sceneModel": {},
+      "inspector": [],
+      "labels": {},
+      "attributes": {}
+    }
+  ]
+}

@@ -93,7 +93,11 @@ emissionSources: Array<EmissionSourceDef>,
 /**
  * Contract v2.0: labels and categories of the income sources (household income lists).
  */
-incomeSources: Array<IncomeSourceDef>, };
+incomeSources: Array<IncomeSourceDef>, 
+/**
+ * Contract v2.1: the entity registry (`content/entities.json`).
+ */
+entities: Array<EntityKind>, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -205,6 +209,49 @@ export type EnergyDemand = { firms: number, households: number, total: number, }
 export type EnergyPlantKind = "fossil" | "renewable";
 
 export type EnergyView = { unit: string, supply: Array<PlantSupply>, demand: EnergyDemand, served: number, intensity: number, renewableShare: number, emissionsByPlant: Array<PlantEmissions>, };
+
+export type EntityAxis = "actor" | "facility" | "stock";
+
+export type EntityCategory = "people" | "firms" | "finance" | "government" | "housing" | "energy" | "transport" | "safety" | "estate" | "nature";
+
+export type EntityKind = { id: string, kind: EntityAxis, category: EntityCategory, label: string, plural: string, roles: Array<Role>, 
+/**
+ * Map tile kinds this entity stands on (none for a person or a jet).
+ */
+tileKinds: Array<TileKindKey>, 
+/**
+ * Tiles of one instance relative to its anchor; non-empty for every `located` entity.
+ */
+footprint: Array<[number, number]>, 
+/**
+ * The buildable kind of the wire (`InfraKind`), for the entities the player can build.
+ */
+infraKind?: InfraKindKey, 
+/**
+ * An entity that specialises another (the pilot is a person); it must name an existing id.
+ */
+variantOf?: string, 
+/**
+ * A family several kinds share (`power_plant` for fossil and renewable plants).
+ */
+group?: string, owner: OwnerEdge, 
+/**
+ * Free labelled attributes (`fuel: fossil`); words only, no numbers.
+ */
+attributes: { [key in string]: string }, 
+/**
+ * Scene model ids by variant key (`default` is required when any are listed); several ids are
+ * alternatives the scene picks between by position.
+ */
+sceneModel: { [key in string]: Array<string> }, 
+/**
+ * Wording by state (`burning`, `closed`); `{name}` is filled by the web.
+ */
+labels: { [key in string]: string }, 
+/**
+ * Inspector sections, in order.
+ */
+inspector: Array<InspectorSection>, };
 
 export type EstateFinance = { month: EstateMoney, last12: EstateMoney, months: number, 
 /**
@@ -414,6 +461,8 @@ upkeepMonthly: number,
  */
 upkeepEachMonthly: number, };
 
+export type InspectorSection = "emissions" | "person_work" | "person_commute" | "person_life" | "household_home" | "household_wealth" | "household_money" | "household_life" | "estate_owner" | "pilot" | "firm_firm" | "firm_output" | "firm_books" | "bank_balance" | "government_state" | "government_politics" | "housing_town" | "fire_cover" | "plant_this" | "energy_town" | "forest" | "commons";
+
 export type JetView = { value: number, 
 /**
  * The jet flew in the latest month (play the flight when this month's frame has a
@@ -524,6 +573,8 @@ commonsStock: number, commonsAccess: CommonsAccessKey, cumulativeTonnes: number,
  * Contract v1.2: 0..=1. Forest and commons shares, and the farm's resource-health factor.
  */
 forestHealth: number, commonsHealth: number, farmHealth: number, };
+
+export type OwnerEdge = "none" | "household" | "public" | "state" | "workers" | "bank" | "varies";
 
 export type OwnerKind = "household" | "workers" | "state" | "bank";
 
@@ -648,6 +699,8 @@ export type RentFlow = { household: number,
 home: number | null, amount: number, };
 
 export type RiskKey = "low" | "medium" | "high";
+
+export type Role = "located" | "owned" | "emitter" | "sink" | "payer" | "payee" | "employer" | "income_source" | "energy_producer" | "energy_consumer" | "hazard_exposed" | "hazard_mitigator" | "buildable" | "lever_target" | "labelled";
 
 export type Runway = { perTurn: number, runOutTurn?: number, 
 /**

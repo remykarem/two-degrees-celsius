@@ -142,6 +142,8 @@ pub struct Catalog {
     pub emission_sources: Vec<crate::sources::EmissionSourceDef>,
     /// Contract v2.0: labels and categories of the income sources (household income lists).
     pub income_sources: Vec<crate::sources::IncomeSourceDef>,
+    /// Contract v2.1: the entity registry (`content/entities.json`).
+    pub entities: Vec<crate::entities::EntityKind>,
 }
 
 #[derive(Deserialize)]
@@ -250,5 +252,6 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         systems,
         emission_sources: f.emission_sources,
         income_sources: f.income_sources,
+        entities: crate::entities::load()?,
     })
 }

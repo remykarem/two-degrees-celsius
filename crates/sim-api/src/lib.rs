@@ -15,6 +15,7 @@ pub mod content;
 #[cfg(feature = "ts")]
 pub mod contract_ts;
 pub mod emissions;
+pub mod entities;
 pub mod error;
 pub mod events;
 pub mod finance;
