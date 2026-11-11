@@ -28,3 +28,6 @@ export const classShort = (k: string): string => text('class_short', k);
 export const kindLabel = (k: string): string => text('ledger_kind', k);
 export const ownerText = (k: string): string => text('owner_text', k);
 export const ownerWord = (k: string): string => text('owner_word', k);
+/** Label of an emission or income source (content/ui.json `emission_sources`, `income_sources`); the id itself when unknown. */
+export const emissionSourceLabel = (id: string): string => catalog().emissionSources.find((s) => s.id === id)?.label ?? id;
+export const incomeSourceLabel = (id: string): string => catalog().incomeSources.find((s) => s.id === id)?.label ?? id;

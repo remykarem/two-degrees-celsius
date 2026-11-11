@@ -1,6 +1,7 @@
 import type { AccountRef, FinanceFlows, FinanceView, HistoryPoint, LedgerKind, Snapshot } from '../contract';
 import { money, pct } from './format';
 import { bands, text } from '../store/catalog';
+import { incomeOf, incomeTotal } from '../store/sources';
 import { capitalBacking, debtBacking, legitimacyBacking, shareBacking } from './backing';
 import type { BreakdownKey } from './metrics';
 
@@ -31,10 +32,9 @@ const BANK: AccountRef = { kind: 'bank' };
 const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
 const hist = (h: HistoryPoint[], f: (p: HistoryPoint) => number | undefined): number[] => h.map(f).filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
-const label = (group: 'revenue' | 'spending' | 'income', k: string): string => text('finance_label', `${group}.${k}`);
+const label = (group: 'revenue' | 'spending', k: string): string => text('finance_label', `${group}.${k}`);
 const REVENUE_KEYS: (keyof FinanceFlows['govRevenue'])[] = ['wageTax', 'profitTax', 'capitalTax', 'wealthTax', 'carbon', 'other'];
 const SPENDING_KEYS: (keyof FinanceFlows['govSpending'])[] = ['benefits', 'ubi', 'publicSpending', 'jobGuarantee', 'upkeep', 'subsidy', 'interest', 'builds', 'other'];
-const INCOME_KEYS: (keyof FinanceFlows['householdIncome'])[] = ['wages', 'dividends', 'rent', 'interest', 'benefits'];
 /** Authored hint of a finance row (content/ui.json `text.finance_hint`), or undefined when the row has none. */
 const hintOf = (key: string): string | undefined => { const t = text('finance_hint', key); return t.startsWith('?') ? undefined : t; };
 const REVENUE_KIND: Partial<Record<keyof FinanceFlows['govRevenue'], LedgerKind>> = { wageTax: 'tax', profitTax: 'tax', capitalTax: 'tax', wealthTax: 'tax', carbon: 'tax' };
@@ -48,10 +48,10 @@ const HOW: Record<string, BreakdownKey> = { 'gov-dgdp': 'debtToGdp', 'gov-leg': 
 /** Adds the "how?" link and the backing numbers of percent rows. */
 function decorate(snap: Snapshot, secs: FinSection[]): FinSection[] {
   const hh = snap.finance.households;
-  const incomeTotal = hh.income.wages + hh.income.dividends + hh.income.rent + hh.income.interest + hh.income.benefits;
+  const incomeSum = incomeTotal(hh.income);
   const backing: Record<string, string> = {
     'gov-dgdp': debtBacking(snap), 'gov-leg': legitimacyBacking(snap), 'bank-cr': capitalBacking(snap), 'p-wage': shareBacking(snap, 'wage'), 'p-profit': shareBacking(snap, 'profit'),
-    'bank-def': `on ${money(snap.finance.bank.loans)} of loans`, 'hh-save': `income ${money(incomeTotal)}, spending ${money(hh.spending)} a month`,
+    'bank-def': `on ${money(snap.finance.bank.loans)} of loans`, 'hh-save': `income ${money(incomeSum)}, spending ${money(hh.spending)} a month`,
   };
   return secs.map((sec) => ({ ...sec, rows: sec.rows.map((r) => {
     const hint = hintOf(r.id.startsWith('rev-') ? `revenue.${r.id.slice(4)}` : r.id);
@@ -73,13 +73,11 @@ function rawSections(snap: Snapshot): FinSection[] {
   const govSpend: FinRow[] = SPENDING_KEYS.map((k) => ({
     id: `spend-${k}`, label: label('spending', k), month: gov.spending[k], quarter: q ? q.govSpending[k] : null, fmt: 'money', ledger: { account: GOV, ...(SPENDING_KIND[k] ? { kind: SPENDING_KIND[k]! } : {}) },
   }));
-  const income: FinRow[] = INCOME_KEYS.map((k) => ({
-    id: `inc-${k}`, label: label('income', k), month: hh.income[k], quarter: q ? q.householdIncome[k] : null, fmt: 'money',
+  // One row per income source on the wire (contract v2.0). A source that is part of another (domestic wages inside wages, paid by the estate's household) is a memo row, not added to a total.
+  const income: FinRow[] = hh.income.map((s) => ({
+    id: `inc-${s.id}`, label: s.partOf ? `of which ${s.label.toLowerCase()}` : s.label, month: s.amount, quarter: q ? incomeOf(q.householdIncome, s.id) : null, fmt: 'money',
+    ...(s.id === 'domestic_wages' ? { ledger: { account: { kind: 'household', id: snap.estate?.household ?? 0 } as AccountRef, kind: 'wage' as LedgerKind } } : {}),
   }));
-  // Contract v1.9: the part of `wages` that a household paid to its staff (the estate's pilot). It is inside the wages row, so it is a memo row, not added to a total.
-  if (hh.income.domesticWages !== undefined) {
-    income.splice(1, 0, { id: 'inc-domesticWages', label: `of which ${text('estate', 'domestic_wages_row').toLowerCase()}`, month: hh.income.domesticWages, quarter: q?.householdIncome.domesticWages ?? null, fmt: 'money', ledger: { account: { kind: 'household', id: snap.estate?.household ?? 0 }, kind: 'wage' } });
-  }
   const qv = (get: (x: FinanceFlows) => number): number | null => (q ? get(q) : null);
   return [
     { id: 'government', title: 'Government', rows: [
@@ -136,7 +134,7 @@ function rawSections(snap: Snapshot): FinSection[] {
 }
 
 /** True when the monthly flows are all zero (the game has not played a month yet). */
-export const financeEmpty = (f: FinanceView): boolean => sum(f.government.revenue) + sum(f.government.spending) + sum(f.households.income) === 0;
+export const financeEmpty = (f: FinanceView): boolean => sum(f.government.revenue) + sum(f.government.spending) + incomeTotal(f.households.income) === 0;
 
 export interface CapitalGauge { /** 0..1 position of the ratio on the scale. */ at: number; /** 0..1 position of the limit. */ limitAt: number; status: 'ok' | 'tight' | 'breach'; text: string }
 /** The capital ratio against its limit. The scale runs from 0 to twice the limit (or the ratio, if higher). */
@@ -157,13 +155,13 @@ export function circularFlow(f: FinanceView, ticksPerTurn: number): { edges: Flo
   const a = q ?? ({ govRevenue: f.government.revenue, govSpending: f.government.spending, householdIncome: f.households.income, householdTaxes: f.households.taxes, rentPaid: f.households.rentPaid, loanPayments: f.households.loanPayments, householdSpending: f.households.spending, firmRevenue: f.firms.revenue, wageBill: f.firms.wageBill, firmProfit: f.firms.profit, investment: f.firms.investment, bankInterestIncome: f.bank.interestIncome } as FinanceFlows);
   const edges: FlowEdge[] = [
     { from: 'households', to: 'firms', amount: a.householdSpending * k, label: 'spending' },
-    { from: 'firms', to: 'households', amount: (a.householdIncome.wages + a.householdIncome.dividends) * k, label: 'wages and dividends' },
+    { from: 'firms', to: 'households', amount: (incomeOf(a.householdIncome, 'wages') + incomeOf(a.householdIncome, 'dividends')) * k, label: 'wages and dividends' },
     { from: 'households', to: 'government', amount: a.householdTaxes * k, label: 'taxes' },
     { from: 'firms', to: 'government', amount: a.govRevenue.profitTax * k, label: 'profit tax' },
     { from: 'government', to: 'households', amount: (a.govSpending.benefits + a.govSpending.ubi) * k, label: 'benefits' },
     { from: 'government', to: 'firms', amount: a.govSpending.publicSpending * k, label: 'public purchases' },
     { from: 'households', to: 'bank', amount: a.loanPayments * k, label: 'loan payments' },
-    { from: 'bank', to: 'households', amount: a.householdIncome.interest * k, label: 'interest' },
+    { from: 'bank', to: 'households', amount: incomeOf(a.householdIncome, 'interest') * k, label: 'interest' },
     { from: 'government', to: 'bank', amount: a.govSpending.interest * k, label: 'debt interest' },
   ];
   return { edges: edges.filter((e) => e.amount > 0.5), approx: !q };

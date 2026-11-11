@@ -1,4 +1,5 @@
-import type { ClassKey, Snapshot } from '../contract';
+import type { ClassKey, HouseholdView, Snapshot } from '../contract';
+import { incomeTotal } from '../store/sources';
 import { fossilShareOf, text, type Lens, type MapLayout } from '../store';
 import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
@@ -60,9 +61,9 @@ export function householdEmployment(s: Snapshot | null, h: { id: number; class: 
 export type EmploymentState = 'employed' | 'unemployed' | 'out';
 /** Per person: has a job, is looking for one, or is outside the labour force (child, retired, owner). */
 export const employmentState = (p: { job: unknown; employer?: unknown; inLabourForce: boolean }): EmploymentState => (p.job || p.employer ? 'employed' : p.inLabourForce ? 'unemployed' : 'out');
-export const netMoney = (h: { income: { wages: number; dividends: number; rent: number; interest: number; benefits: number; taxPaid: number; rentPaid: number; loanPayments: number; spending: number } }) => {
+export const netMoney = (h: Pick<HouseholdView, 'income'>) => {
   const i = h.income;
-  return i.wages + i.dividends + i.rent + i.interest + i.benefits - i.taxPaid - i.rentPaid - i.loanPayments - i.spending;
+  return incomeTotal(i.sources) - i.taxPaid - i.rentPaid - i.loanPayments - i.spending;
 };
 
 /** Emitter weights per tile owner: active firms and plants by their emissions over the heaviest emitter. */

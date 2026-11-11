@@ -2761,7 +2761,7 @@
     }
   ],
   "snapshot": {
-    "schemaVersion": 5,
+    "schemaVersion": 6,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -4203,11 +4203,38 @@
         "debt": 0.0,
         "netWorth": 257371.45,
         "income": {
-          "wages": 0.0,
-          "dividends": 3010.73,
-          "rent": 0.0,
-          "interest": 11.48,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 0.0
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 3010.73
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 11.48
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 1208.88,
           "rentPaid": 0.0,
           "loanPayments": 0.0,
@@ -4236,11 +4263,38 @@
         "debt": 104711.57,
         "netWorth": 160014.15,
         "income": {
-          "wages": 0.0,
-          "dividends": 1446.54,
-          "rent": 1500.84,
-          "interest": 7.37,
-          "benefits": 800.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 0.0
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 1446.54
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 1500.84
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 7.37
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 800.0
+            }
+          ],
           "taxPaid": 1181.9,
           "rentPaid": 0.0,
           "loanPayments": 708.93,
@@ -4270,11 +4324,38 @@
         "debt": 24164.23,
         "netWorth": 89627.13,
         "income": {
-          "wages": 5220.81,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 175.22,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 5220.81
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 175.22
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 1561.02,
           "rentPaid": 0.0,
           "loanPayments": 163.6,
@@ -4304,11 +4385,38 @@
         "debt": 8054.74,
         "netWorth": 67484.77,
         "income": {
-          "wages": 4921.66,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 192.31,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 4921.66
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 192.31
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 1546.33,
           "rentPaid": 375.21,
           "loanPayments": 54.54,
@@ -4338,11 +4446,38 @@
         "debt": 3442.04,
         "netWorth": -1758.11,
         "income": {
-          "wages": 2423.64,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 6.0,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 2423.64
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 6.0
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 722.4,
           "rentPaid": 0.0,
           "loanPayments": 23.31,
@@ -4372,11 +4507,38 @@
         "debt": 2416.42,
         "netWorth": 5642.83,
         "income": {
-          "wages": 2770.59,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 22.16,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 2770.59
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 22.16
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 832.95,
           "rentPaid": 375.21,
           "loanPayments": 16.36,
@@ -4406,11 +4568,38 @@
         "debt": 0.0,
         "netWorth": 7224.8,
         "income": {
-          "wages": 3023.63,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 18.23,
-          "benefits": 800.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 3023.63
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 18.23
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 800.0
+            }
+          ],
           "taxPaid": 907.29,
           "rentPaid": 375.21,
           "loanPayments": 0.0,
@@ -4439,11 +4628,38 @@
         "debt": 2423.69,
         "netWorth": -69.82,
         "income": {
-          "wages": 1211.82,
-          "dividends": 0.0,
-          "rent": 0.0,
-          "interest": 4.79,
-          "benefits": 800.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 1211.82
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 4.79
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 800.0
+            }
+          ],
           "taxPaid": 361.92,
           "rentPaid": 375.21,
           "loanPayments": 16.41,
@@ -4471,11 +4687,38 @@
         "debt": 0.0,
         "netWorth": 2143018.35,
         "income": {
-          "wages": 0.0,
-          "dividends": 5384.45,
-          "rent": 0.0,
-          "interest": 8.96,
-          "benefits": 0.0,
+          "sources": [
+            {
+              "id": "wages",
+              "label": "Wages",
+              "category": "labour",
+              "amount": 0.0
+            },
+            {
+              "id": "dividends",
+              "label": "Dividends",
+              "category": "capital",
+              "amount": 5384.45
+            },
+            {
+              "id": "rent",
+              "label": "Rent received",
+              "category": "capital",
+              "amount": 0.0
+            },
+            {
+              "id": "interest",
+              "label": "Interest",
+              "category": "capital",
+              "amount": 8.96
+            },
+            {
+              "id": "benefits",
+              "label": "Benefits",
+              "category": "transfer",
+              "amount": 0.0
+            }
+          ],
           "taxPaid": 2157.36,
           "rentPaid": 0.0,
           "loanPayments": 0.0,
@@ -4850,14 +5093,45 @@
         "interestIncome": 1093.45
       },
       "households": {
-        "income": {
-          "wages": 19572.15,
-          "dividends": 9841.72,
-          "rent": 1500.84,
-          "interest": 446.52,
-          "benefits": 2400.0,
-          "domesticWages": 1800.0
-        },
+        "income": [
+          {
+            "id": "wages",
+            "label": "Wages",
+            "category": "labour",
+            "amount": 19572.15
+          },
+          {
+            "id": "domestic_wages",
+            "label": "Domestic wages (paid by the estate)",
+            "category": "labour",
+            "partOf": "wages",
+            "amount": 1800.0
+          },
+          {
+            "id": "dividends",
+            "label": "Dividends",
+            "category": "capital",
+            "amount": 9841.72
+          },
+          {
+            "id": "rent",
+            "label": "Rent received",
+            "category": "capital",
+            "amount": 1500.84
+          },
+          {
+            "id": "interest",
+            "label": "Interest",
+            "category": "capital",
+            "amount": 446.52
+          },
+          {
+            "id": "benefits",
+            "label": "Benefits",
+            "category": "transfer",
+            "amount": 2400.0
+          }
+        ],
         "taxes": 10480.05,
         "rentPaid": 1500.84,
         "loanPayments": 983.15,
@@ -4902,14 +5176,45 @@
           "builds": 0.0,
           "other": 0.0
         },
-        "householdIncome": {
-          "wages": 58831.08,
-          "dividends": 29916.38,
-          "rent": 4495.08,
-          "interest": 1346.58,
-          "benefits": 7200.0,
-          "domesticWages": 5400.0
-        },
+        "householdIncome": [
+          {
+            "id": "wages",
+            "label": "Wages",
+            "category": "labour",
+            "amount": 58831.08
+          },
+          {
+            "id": "domestic_wages",
+            "label": "Domestic wages (paid by the estate)",
+            "category": "labour",
+            "partOf": "wages",
+            "amount": 5400.0
+          },
+          {
+            "id": "dividends",
+            "label": "Dividends",
+            "category": "capital",
+            "amount": 29916.38
+          },
+          {
+            "id": "rent",
+            "label": "Rent received",
+            "category": "capital",
+            "amount": 4495.08
+          },
+          {
+            "id": "interest",
+            "label": "Interest",
+            "category": "capital",
+            "amount": 1346.58
+          },
+          {
+            "id": "benefits",
+            "label": "Benefits",
+            "category": "transfer",
+            "amount": 7200.0
+          }
+        ],
         "householdTaxes": 31628.51,
         "rentPaid": 4495.08,
         "loanPayments": 2958.3,
@@ -5625,20 +5930,64 @@
           "runsOutBeforeEnd": true
         },
         "month": {
-          "firms": 2.94877388214257,
-          "households": 3.0199999999999996,
-          "plants": 8.022079615936644,
-          "aviation": 2.0,
+          "sources": [
+            {
+              "id": "firms",
+              "label": "Firms",
+              "category": "industry",
+              "tonnes": 2.94877388214257
+            },
+            {
+              "id": "households",
+              "label": "Homes (heating, transport)",
+              "category": "homes",
+              "tonnes": 3.0199999999999996
+            },
+            {
+              "id": "plants",
+              "label": "Power plants",
+              "category": "energy",
+              "tonnes": 8.022079615936644
+            },
+            {
+              "id": "aviation",
+              "label": "Private jet flight",
+              "category": "aviation",
+              "tonnes": 2.0
+            }
+          ],
           "grossTotal": 15.990853498079213,
           "sink": -1.3786010545072116,
           "net": 14.612252443572002,
           "headline": 14.612252443572002
         },
         "turn": {
-          "firms": 8.948606778469626,
-          "households": 9.059999999999999,
-          "plants": 24.044363074178914,
-          "aviation": 4.0,
+          "sources": [
+            {
+              "id": "firms",
+              "label": "Firms",
+              "category": "industry",
+              "tonnes": 8.948606778469626
+            },
+            {
+              "id": "households",
+              "label": "Homes (heating, transport)",
+              "category": "homes",
+              "tonnes": 9.059999999999999
+            },
+            {
+              "id": "plants",
+              "label": "Power plants",
+              "category": "energy",
+              "tonnes": 24.044363074178914
+            },
+            {
+              "id": "aviation",
+              "label": "Private jet flight",
+              "category": "aviation",
+              "tonnes": 4.0
+            }
+          ],
           "grossTotal": 46.052969852648545,
           "sink": -4.1848842330674865,
           "net": 41.86808561958106,
@@ -5657,6 +6006,7 @@
             "kind": "firm",
             "id": 0,
             "label": "Factory",
+            "category": "industry",
             "tonnes": 1.8572420883791467,
             "informational": false
           },
@@ -5664,6 +6014,7 @@
             "kind": "firm",
             "id": 1,
             "label": "Farm",
+            "category": "industry",
             "tonnes": 1.0915317937634235,
             "informational": false
           },
@@ -5671,12 +6022,14 @@
             "kind": "firm",
             "id": 2,
             "label": "Shop",
+            "category": "industry",
             "tonnes": 0.0,
             "informational": false
           },
           {
             "kind": "households",
-            "label": "Households (direct footprint)",
+            "label": "Homes (heating, transport)",
+            "category": "homes",
             "tonnes": 3.0199999999999996,
             "informational": false
           },
@@ -5684,6 +6037,7 @@
             "kind": "plant",
             "id": 0,
             "label": "Fossil plant at (10,2)",
+            "category": "energy",
             "tonnes": 4.011039807968322,
             "informational": false
           },
@@ -5691,12 +6045,14 @@
             "kind": "plant",
             "id": 1,
             "label": "Fossil plant at (10,4)",
+            "category": "energy",
             "tonnes": 4.011039807968322,
             "informational": false
           },
           {
             "kind": "aviation",
             "label": "Private jet flight",
+            "category": "aviation",
             "tonnes": 2.0,
             "informational": false
           },

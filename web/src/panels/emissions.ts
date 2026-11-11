@@ -1,5 +1,5 @@
 import type { Breakdowns, EmissionsLine, HistoryPoint } from '../contract';
-import { text } from '../store/catalog';
+import { emissionOf, sourceIds } from '../store/sources';
 import { tonnes } from './format';
 
 /** Pure view of snapshot.breakdowns.emissions (contract v1.6). Totals are the wire's; the reconciliation line shows the wire's numbers beside the flag. */
@@ -11,22 +11,25 @@ export interface EmissionsView {
   reconciliation: { text: string; ok: boolean; wireFlag: boolean; note: string };
 }
 const TOL = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
-const lineOk = (l: EmissionsLine) => TOL(l.firms + l.households + l.plants + (l.aviation ?? 0), l.grossTotal) && TOL(l.grossTotal + l.sink, l.net) && TOL(l.net, l.headline);
+const listed = (l: EmissionsLine) => l.sources.reduce((a, x) => a + x.tonnes, 0);
+const lineOk = (l: EmissionsLine) => TOL(listed(l), l.grossTotal) && TOL(l.grossTotal + l.sink, l.net) && TOL(l.net, l.headline);
 
 export function emissionsView(e: Breakdowns['emissions']): EmissionsView {
   const m = e.month, t = e.turn;
   const r = (id: string, label: string, a: number, b: number, kind: EmissionsRow['kind']): EmissionsRow => ({ id, label, month: tonnes(a), turn: tonnes(b), kind });
   const ok = lineOk(m) && lineOk(t) && e.reconciles;
   const c = e.cumulative;
+  // One row per emission source on the wire (month's order, then any the turn adds); a source one line omits is zero there.
+  const srcs = sourceIds(m, t);
+  const parts = srcs.map((x) => tonnes(emissionOf(m, x.id)));
   return {
     rows: [
-      r('firms', 'Firms', m.firms, t.firms, 'source'), r('households', 'Households', m.households, t.households, 'source'), r('plants', 'Power plants', m.plants, t.plants, 'source'),
-      ...((m.aviation ?? 0) !== 0 || (t.aviation ?? 0) !== 0 ? [r('aviation', text('estate', 'aviation_source'), m.aviation ?? 0, t.aviation ?? 0, 'source')] : []),
+      ...srcs.map((x) => r(x.id, x.label, emissionOf(m, x.id), emissionOf(t, x.id), 'source')),
       r('gross', 'Gross total', m.grossTotal, t.grossTotal, 'total'), r('sink', 'Forest sink', m.sink, t.sink, 'sink'), r('net', 'Net emissions', m.net, t.net, 'net'),
     ],
     cumulative: { used: tonnes(c.tonnes), budget: tonnes(c.budget), remaining: tonnes(c.remaining), shareText: `${(c.share * 100).toFixed(1)}% of the budget used (${tonnes(c.tonnes)} of ${tonnes(c.budget)})`, share: c.share },
     reconciliation: {
-      text: `Month: ${tonnes(m.firms)} + ${tonnes(m.households)} + ${tonnes(m.plants)}${(m.aviation ?? 0) !== 0 ? ` + ${tonnes(m.aviation ?? 0)}` : ''} = ${tonnes(m.grossTotal)} gross; ${tonnes(m.grossTotal)} ${m.sink < 0 ? '-' : '+'} ${tonnes(Math.abs(m.sink))} sink = ${tonnes(m.net)} net, the headline ${tonnes(m.headline)}.`,
+      text: `Month: ${parts.join(' + ') || tonnes(0)} = ${tonnes(m.grossTotal)} gross; ${tonnes(m.grossTotal)} ${m.sink < 0 ? '-' : '+'} ${tonnes(Math.abs(m.sink))} sink = ${tonnes(m.net)} net, the headline ${tonnes(m.headline)}.`,
       ok, wireFlag: e.reconciles, note: e.note,
     },
   };

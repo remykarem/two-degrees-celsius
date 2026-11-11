@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { AccountRef, LedgerEntry, LedgerPage, Snapshot } from '../src/contract';
 import { reconcile } from '../src/panels/ledger';
 import { createWasmPort, type WasmModuleLike } from '../src/sim-port/wasm';
+import { incomeOf } from '../src/store/sources';
 import { ok, reconciles } from './helpers';
 
 // Plays 12 turns on the REAL simulation (the wasm package) and checks the Town v5 wire against the viewer's rules.
@@ -29,8 +30,8 @@ describe.skipIf(!present)(`the real sim after ${TURNS} turns (wasm)`, async () =
   const gov = pages.get(JSON.stringify({ kind: 'government' }))!;
   const latestTick = Math.max(...gov.entries.map((e) => e.tick));
 
-  it('is schemaVersion 4 with the v1.4 blocks', () => {
-    expect(snap.schemaVersion).toBe(5);
+  it('is schemaVersion 6 with the v1.4 blocks', () => {
+    expect(snap.schemaVersion).toBe(6);
     expect(Array.isArray(snap.energy.supply)).toBe(true);
     expect(snap.finance.quarter.govRevenue).toBeDefined();
     expect(snap.finance.government.cash).toBeGreaterThan(0);
@@ -77,10 +78,10 @@ describe.skipIf(!present)(`the real sim after ${TURNS} turns (wasm)`, async () =
     const hh = snap.households.map((h) => pages.get(JSON.stringify({ kind: 'household', id: h.id }))!);
     const hhAt = (f2: (e: LedgerEntry, me: AccountRef) => boolean) => sum(hh.flatMap((p) => p.entries.filter((e) => e.tick === latestTick && f2(e, p.account)).map((e) => e.amount)));
     const into = (e: LedgerEntry, me: AccountRef) => same(e.to, me), outOf = (e: LedgerEntry, me: AccountRef) => same(e.from, me);
-    expect(f.households.income.wages).toBeCloseTo(hhAt((e, me) => into(e, me) && ['wage', 'lobby', 'build', 'upkeep', 'subsidy'].includes(e.kind)), 1);
+    expect(incomeOf(f.households.income, 'wages')).toBeCloseTo(hhAt((e, me) => into(e, me) && ['wage', 'lobby', 'build', 'upkeep', 'subsidy'].includes(e.kind)), 1);
     expect(f.households.taxes).toBeCloseTo(hhAt((e, me) => outOf(e, me) && e.kind === 'tax'), 1);
     expect(f.households.spending).toBeCloseTo(hhAt((e, me) => outOf(e, me) && e.kind === 'purchase'), 1);
-    expect(f.households.income.benefits).toBeCloseTo(hhAt((e, me) => into(e, me) && e.kind === 'benefit'), 1);
+    expect(incomeOf(f.households.income, 'benefits')).toBeCloseTo(hhAt((e, me) => into(e, me) && e.kind === 'benefit'), 1);
     // firms: revenue is money received for purchases. (The Factory buying capital goods from itself moves no money, so this can sit below the model's own firm revenue.)
     const firms = snap.firms.map((x) => pages.get(JSON.stringify({ kind: 'firm', id: x.id }))!);
     const firmRev = sum(firms.flatMap((p) => p.entries.filter((e) => e.tick === latestTick && e.kind === 'purchase' && same(e.to, p.account)).map((e) => e.amount)));

@@ -187,7 +187,7 @@ impl Api {
 
     /// The history point for the turn just played.
     fn history_point(&self, turn: u32) -> HistoryPoint {
-        let f = crate::finance::turn_flows(&self.ledger, turn);
+        let f = crate::finance::turn_flows(&self.ledger, turn, &self.meta.sources);
         history::point(
             &self.sim.state,
             &self.sim.params,

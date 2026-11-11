@@ -104,15 +104,15 @@ describe('inspector, people and counts', () => {
 describe('money, emissions, events and the mock', () => {
   it('finance has the domestic wages memo row once wages are paid', () => {
     const s = clone(real());
-    s.finance.households.income.wages = 5000; s.finance.households.income.domesticWages = 1800;
-    const row = financeSections(s).flatMap((x) => x.rows).find((r) => r.id === 'inc-domesticWages');
+    for (const x of s.finance.households.income) { if (x.id === 'wages') x.amount = 5000; if (x.id === 'domestic_wages') x.amount = 1800; }
+    const row = financeSections(s).flatMap((x) => x.rows).find((r) => r.id === 'inc-domestic_wages');
     expect(row?.month).toBe(1800);
     expect(row?.label).toContain('domestic wages');
   });
   it('the emissions table adds the aviation line and still reconciles', () => {
     const s = clone(real());
     const e = s.breakdowns!.emissions;
-    for (const l of [e.month, e.turn]) { l.aviation = 2; l.grossTotal += 2; l.net += 2; l.headline += 2; }
+    for (const l of [e.month, e.turn]) { l.sources = l.sources.filter((x) => x.id !== 'aviation').concat({ id: 'aviation', label: 'Private jet flight', category: 'aviation', tonnes: 2 }); l.grossTotal += 2; l.net += 2; l.headline += 2; }
     e.reconciles = true;
     const v = emissionsView(e);
     expect(v.rows.some((r) => r.id === 'aviation')).toBe(true);
@@ -134,8 +134,8 @@ describe('money, emissions, events and the mock', () => {
     const s = ok(port.init(2));
     expect(s.breakdowns!.gini.byHousehold.find((h) => h.household === s.estate!.household)!.parts?.length).toBeGreaterThan(0);
     expect(s.estate!.finance.last12).toBeDefined();
-    expect(s.finance.households.income.domesticWages).toBeDefined();
-    expect(s.breakdowns!.emissions.month.aviation).toBeDefined();
+    expect(s.finance.households.income.some((x) => x.id === 'domestic_wages')).toBe(true);
+    expect(s.breakdowns!.emissions.month.sources.some((x) => x.id === 'households')).toBe(true);
     expect(html(PoliciesPanel, { game: createGame(port) })).toBeDefined();
   });
 });

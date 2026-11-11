@@ -227,7 +227,7 @@ describe('v0.3 store behaviour', () => {
     g.setLens('wealth');
     const text = g.exportSave()!;
     const file = JSON.parse(text);
-    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 5 });
+    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 6 });
     expect(Object.keys(file)).toEqual(expect.arrayContaining(['schemaVersion', 'simState', 'lastResult', 'previous', 'uiPrefs']));
     expect(file).not.toHaveProperty('layout');
 

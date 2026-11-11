@@ -169,7 +169,7 @@ describe('estate in the scene data', () => {
     const est = c.descs.find((d) => d.model === 'home_estate')!;
     expect(entityTints('wealth', c).get(est.key)).toBeDefined();
     expect(entityTints('class', c).get(est.key)).toBeDefined();
-    const withJet = { ...snap, breakdowns: { ...snap.breakdowns!, emissions: { ...snap.breakdowns!.emissions, month: { ...snap.breakdowns!.emissions.month, aviation: 2 } } } };
+    const withJet = { ...snap, breakdowns: { ...snap.breakdowns!, emissions: { ...snap.breakdowns!.emissions, month: { ...snap.breakdowns!.emissions.month, sources: [...snap.breakdowns!.emissions.month.sources.filter((x) => x.id !== 'aviation'), { id: 'aviation', label: 'Private jet flight', category: 'aviation' as const, tonnes: 2 }] } } } };
     const before = emitterWeights(ctx(snap)).length;
     expect(emitterWeights({ ...ctx(withJet) }).length).toBe(before + 1);
     expect(emitterWeights({ ...ctx(withJet), estate: null }).length).toBe(before);

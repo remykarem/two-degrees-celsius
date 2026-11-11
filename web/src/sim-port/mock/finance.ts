@@ -3,6 +3,7 @@ import { GEN } from './data';
 import { moneyMoved, sumFlows } from './ledger';
 import { plantTiles } from './frames';
 import type { MockState } from './state';
+import { incomeList, wireFlows } from './sources';
 
 // MOCK ONLY: the finance view is summed from the mock ledger's own bookings; the energy numbers are invented (labelled in the UI by the mock badge).
 
@@ -23,14 +24,14 @@ export function financeView(s: MockState, households: HouseholdView[], ind: { mo
     government: { revenue: flows.govRevenue, spending: flows.govSpending, balance: govIn - govOut, cash: L.balance.gov ?? 0, debt: s.debt, debtToGdp, legitimacy: s.legitimacy, basis: 'month' },
     bank: { equity: s.bank.equity, loans: s.bank.loans, deposits: bank.deposits, capitalRatio: ratio, capitalRatioLimit: limit, headroom: limit > 0 ? Math.max(0, s.bank.equity / limit - s.bank.loans) : 0, defaultRate: bank.defaultRate, interestIncome: flows.bankInterestIncome },
     households: {
-      income, taxes: flows.householdTaxes, rentPaid: flows.rentPaid, loanPayments: flows.loanPayments, spending: flows.householdSpending,
+      income: incomeList(income, 'finance'), taxes: flows.householdTaxes, rentPaid: flows.rentPaid, loanPayments: flows.loanPayments, spending: flows.householdSpending,
       savingRate: totalIn > 0 ? Math.max(-1, Math.min(1, (totalIn - flows.householdTaxes - flows.rentPaid - flows.loanPayments - flows.householdSpending) / totalIn)) : 0,
       debt: households.reduce((a, h) => a + h.debt, 0), netWorth: households.reduce((a, h) => a + h.netWorth, 0),
     },
     firms: { revenue: flows.firmRevenue, wageBill: flows.wageBill, profit: flows.firmProfit, investment: flows.investment, debt: GEN.firms.reduce((a, f) => a + (s.firmActive[f.id] ? f.debt : 0), 0), cash: firmsCash },
     money: { supply: ind.moneyInCirculation, createdThisTurn: moved.created, destroyedThisTurn: moved.destroyed },
     priceIndex: ind.priceIndex, wageShare: ind.wageShare, profitShare: ind.profitShare,
-    quarter,
+    quarter: wireFlows(quarter),
   };
 }
 

@@ -12,10 +12,11 @@ const near = (a: number, b: number) => Math.abs(a - b) <= EPS * Math.max(1, Math
 const withSums = (b: Breakdown): Breakdown => (b.parts ? { ...b, sumsToResult: near(b.parts.reduce((a, p) => a + p.value, 0), b.result.value) } : b);
 
 import { emissionsMonth, type EmMonth } from './emissions';
+import { emissionSources } from './sources';
 const line = (m: EmMonth): EmissionsLine => {
   const grossTotal = m.firms + m.households + m.plants + (m.aviation ?? 0);
   const net = grossTotal + m.sink;
-  return { firms: m.firms, households: m.households, plants: m.plants, aviation: m.aviation ?? 0, grossTotal, sink: m.sink, net, headline: net };
+  return { sources: emissionSources(m), grossTotal, sink: m.sink, net, headline: net };
 };
 const sumMonths = (ms: EmMonth[]): EmMonth => ms.reduce((a, m) => ({ firms: a.firms + m.firms, households: a.households + m.households, plants: a.plants + m.plants, sink: a.sink + m.sink, aviation: (a.aviation ?? 0) + (m.aviation ?? 0) }), { firms: 0, households: 0, plants: 0, sink: 0, aviation: 0 });
 
@@ -81,7 +82,7 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
   const mon = log.length ? log[log.length - 1]! : emissionsMonth(s.lastMonthlyEmissions, s.lastPlantEmissions, s.forest);
   const turn = sumMonths(log.slice(-3));
   const month = line(mon), tl = line(turn);
-  const ok = (l: EmissionsLine) => near(l.firms + l.households + l.plants + (l.aviation ?? 0), l.grossTotal) && near(l.grossTotal + l.sink, l.net) && near(l.net, l.headline);
+  const ok = (l: EmissionsLine) => near(l.sources.reduce((a, x) => a + x.tonnes, 0), l.grossTotal) && near(l.grossTotal + l.sink, l.net) && near(l.net, l.headline);
   const rem = Math.max(0, GEN.carbon.budget - s.cumulativeTonnes);
   const perTurn = Math.max(0, month.net) * GEN.game.ticksPerTurn;
   const runOut = perTurn > 0 ? Math.min(s.turn, GEN.game.lastTurn + 1) + rem / perTurn : undefined;

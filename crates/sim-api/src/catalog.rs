@@ -138,6 +138,10 @@ pub struct Catalog {
     /// Authored text by group, then key (see `content/ui.json`). `{name}` placeholders are filled by the web.
     pub text: BTreeMap<String, BTreeMap<String, String>>,
     pub systems: Vec<SystemCard>,
+    /// Contract v2.0: labels and categories of the emission sources (lines of `breakdowns.emissions`).
+    pub emission_sources: Vec<crate::sources::EmissionSourceDef>,
+    /// Contract v2.0: labels and categories of the income sources (household income lists).
+    pub income_sources: Vec<crate::sources::IncomeSourceDef>,
 }
 
 #[derive(Deserialize)]
@@ -168,10 +172,18 @@ struct UiFile {
     text: BTreeMap<String, BTreeMap<String, String>>,
     system_cards: Vec<CardDef>,
     system_param_labels: BTreeMap<String, ParamLabel>,
+    emission_sources: Vec<crate::sources::EmissionSourceDef>,
+    income_sources: Vec<crate::sources::IncomeSourceDef>,
 }
 
 fn bad(msg: String) -> ApiError {
     ApiError::new(code::BAD_METADATA, format!("content/ui.json: {msg}"))
+}
+
+/// The emission and income source definitions of `content/ui.json`, validated.
+pub fn sources() -> ApiResult<crate::sources::Sources> {
+    let f: UiFile = serde_json::from_str(UI).map_err(|e| bad(e.to_string()))?;
+    crate::sources::Sources::new(f.emission_sources, f.income_sources)
 }
 
 /// Parse `content/ui.json` and resolve the system cards against `params`.
@@ -236,5 +248,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         lever_groups: f.lever_groups,
         text: f.text,
         systems,
+        emission_sources: f.emission_sources,
+        income_sources: f.income_sources,
     })
 }

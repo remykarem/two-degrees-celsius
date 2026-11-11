@@ -70,6 +70,13 @@ fn check_snapshot(s: &Snapshot) {
             .sum();
         close(lines, e.month.net, "sum of lines");
         close(e.turn.net, e.turn.headline, "turn net vs headline");
+        // Contract v2.0: the sources of a line are a list that adds up to the gross total, each
+        // with a label and a category from content/ui.json.
+        for l in [&e.month, &e.turn] {
+            let listed: f64 = l.sources.iter().map(|x| x.tonnes).sum();
+            close(listed, l.gross_total, "sources sum to gross");
+            assert!(l.sources.iter().all(|x| !x.label.is_empty()));
+        }
         assert!(e.turn_months >= 1 && e.turn_months <= 3);
     }
     close(
@@ -310,4 +317,36 @@ fn emissions_lines_before_any_month_are_empty_and_reconcile() {
     let e = api.snapshot().breakdowns.emissions;
     assert!(e.reconciles && e.month_lines.is_empty());
     assert_eq!(e.cumulative.tonnes, 0.0);
+}
+
+#[test]
+fn emission_and_income_sources_come_from_content_and_validate() {
+    use sim_api::sources::{EmissionSourceDef, Sources, EMISSION_IDS};
+    let api = Api::init(1).unwrap();
+    let e = api.snapshot().breakdowns.emissions;
+    let ids: Vec<&str> = e.month.sources.iter().map(|x| x.id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["firms", "households", "plants"],
+        "zero aviation is left out"
+    );
+    let hh = &api.snapshot().households[0].income.sources;
+    assert_eq!(
+        hh.len(),
+        5,
+        "household income lists five sources (no domestic wages)"
+    );
+    let flows = &api.snapshot().finance.quarter.household_income;
+    assert!(flows
+        .iter()
+        .any(|x| x.id == "domestic_wages" && x.part_of.as_deref() == Some("wages")));
+    // A content file that drops an id the model totals is refused.
+    let def = |id: &str| EmissionSourceDef {
+        id: id.into(),
+        label: id.into(),
+        category: sim_api::sources::EmissionCategory::Industry,
+        show_when_zero: false,
+    };
+    let short: Vec<_> = EMISSION_IDS[1..].iter().map(|i| def(i)).collect();
+    assert!(Sources::new(short, Vec::new()).is_err());
 }

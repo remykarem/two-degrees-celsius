@@ -7,6 +7,7 @@ use crate::keys::{
     AgeBandKey, ClassKey, GameOutcome, LeverKey, PlainOutcome, SectorKey, SystemKey, TileKindKey,
 };
 use crate::meta::{GameCalendar, Meta};
+use crate::sources::{IncomeSource, IncomeView};
 use crate::turn::PendingItem;
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
@@ -101,14 +102,11 @@ pub struct Indicators {
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdIncome {
-    pub wages: f64,
-    pub dividends: f64,
-    pub rent: f64,
-    pub interest: f64,
-    pub benefits: f64,
+    /// Contract v2.0: income by source (`content/ui.json` `income_sources`), not fixed fields.
+    pub sources: Vec<IncomeSource>,
     pub tax_paid: f64,
     pub rent_paid: f64,
     pub loan_payments: f64,
@@ -855,11 +853,16 @@ fn households(sim: &Sim, meta: &Meta) -> Vec<HouseholdView> {
             debt: h.debt.dollars(),
             net_worth: h.wealth.dollars(),
             income: HouseholdIncome {
-                wages: h.income.wages.dollars(),
-                dividends: h.income.dividends.dollars(),
-                rent: h.income.rent_received.dollars(),
-                interest: h.income.interest_received.dollars(),
-                benefits: h.income.benefits.dollars(),
+                sources: meta
+                    .sources
+                    .income_list(IncomeView::Household, |id| match id {
+                        "wages" => h.income.wages.dollars(),
+                        "dividends" => h.income.dividends.dollars(),
+                        "rent" => h.income.rent_received.dollars(),
+                        "interest" => h.income.interest_received.dollars(),
+                        "benefits" => h.income.benefits.dollars(),
+                        _ => 0.0, // ids are validated against INCOME_IDS at load
+                    }),
                 tax_paid: h.income.tax_paid.dollars(),
                 rent_paid: h.income.rent_paid.dollars(),
                 loan_payments: h.income.loan_payments.dollars(),
@@ -1046,7 +1049,7 @@ pub fn build(
     log: &crate::log::WrapperLog,
 ) -> Snapshot {
     let s = &sim.state;
-    let finance = crate::finance::build(sim, ledger);
+    let finance = crate::finance::build(sim, ledger, &meta.sources);
     let policy = policy_map(s);
     let tp = &sim.params.turn;
     Snapshot {
@@ -1127,7 +1130,7 @@ pub fn build(
             unhoused_households: s.housing.unhoused_households,
         },
         energy: crate::finance::energy(sim, &meta.energy_unit),
-        breakdowns: crate::breakdowns::build(sim, &finance, log),
+        breakdowns: crate::breakdowns::build(sim, &finance, log, &meta.sources),
         industry: crate::industry::build(sim, &finance),
         finance,
         history: history.to_vec(),

@@ -7,6 +7,7 @@ use crate::emissions::{self, EmissionsBreakdown};
 use crate::finance::Finance;
 use crate::log::WrapperLog;
 use crate::snapshot::firm_names;
+use crate::sources::Sources;
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_types::LegitStep;
@@ -692,7 +693,7 @@ fn taxes(sim: &Sim, f: &Finance) -> Vec<TaxRow> {
     ]
 }
 
-pub fn build(sim: &Sim, f: &Finance, log: &WrapperLog) -> Breakdowns {
+pub fn build(sim: &Sim, f: &Finance, log: &WrapperLog, sources: &Sources) -> Breakdowns {
     Breakdowns {
         gdp: gdp(sim),
         gpi: gpi(sim),
@@ -702,7 +703,7 @@ pub fn build(sim: &Sim, f: &Finance, log: &WrapperLog) -> Breakdowns {
         gini: gini(sim),
         legitimacy: legitimacy(sim, log),
         capital_ratio: capital_ratio(sim, f),
-        emissions: emissions::build(sim, &log.ticks),
+        emissions: emissions::build(sim, &log.ticks, sources),
         taxes: taxes(sim, f),
     }
 }

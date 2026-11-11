@@ -5,6 +5,7 @@
 use crate::command::Tile;
 use crate::ledger::{FinEntry, LedgerStore};
 use crate::snapshot::{EstateFinance, EstateMoney};
+use crate::sources::{IncomeSource, IncomeView, Sources};
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_types::{Cents, HouseholdId, LedgerAccount, LedgerKind, PlantKind, Posting};
@@ -61,29 +62,15 @@ impl GovSpending {
     }
 }
 
-#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "ts", ts(rename = "FinanceHouseholdIncome"))]
-pub struct HouseholdIncome {
-    pub wages: f64,
-    pub dividends: f64,
-    pub rent: f64,
-    pub interest: f64,
-    pub benefits: f64,
-    /// Contract v1.9: the part of `wages` paid by a household to its staff (the estate's pilot).
-    #[serde(default)]
-    pub domestic_wages: f64,
-}
-
 /// The flow values of a period (a month, or the trailing quarter), in dollars.
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FinanceFlows {
     pub gov_revenue: GovRevenue,
     pub gov_spending: GovSpending,
-    pub household_income: HouseholdIncome,
+    /// Contract v2.0: a list (`content/ui.json` `income_sources`), not fixed fields.
+    pub household_income: Vec<IncomeSource>,
     pub household_taxes: f64,
     pub rent_paid: f64,
     pub loan_payments: f64,
@@ -130,7 +117,7 @@ pub struct BankFinance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdFinance {
-    pub income: HouseholdIncome,
+    pub income: Vec<IncomeSource>,
     pub taxes: f64,
     pub rent_paid: f64,
     pub loan_payments: f64,
@@ -349,7 +336,7 @@ impl Sums {
         }
     }
 
-    fn flows(&self) -> FinanceFlows {
+    fn flows(&self, sources: &Sources) -> FinanceFlows {
         let d = |c: i64| Cents(c).dollars();
         let r = &self.rev;
         let s = &self.spend;
@@ -374,14 +361,15 @@ impl Sums {
                 builds: d(s[BUILDS]),
                 other: d(s[SP_OTHER]),
             },
-            household_income: HouseholdIncome {
-                wages: d(i[WAGES]),
-                dividends: d(i[DIVIDENDS]),
-                rent: d(i[RENT]),
-                interest: d(i[INT]),
-                benefits: d(i[BENEFIT]),
-                domestic_wages: d(self.domestic_wages),
-            },
+            household_income: sources.income_list(IncomeView::Finance, |id| match id {
+                "wages" => d(i[WAGES]),
+                "domestic_wages" => d(self.domestic_wages),
+                "dividends" => d(i[DIVIDENDS]),
+                "rent" => d(i[RENT]),
+                "interest" => d(i[INT]),
+                "benefits" => d(i[BENEFIT]),
+                _ => 0.0, // ids are validated against INCOME_IDS at load
+            }),
             household_taxes: d(self.hh_taxes),
             rent_paid: d(self.rent_paid),
             loan_payments: d(self.loan_payments),
@@ -420,12 +408,12 @@ fn sums(store: &LedgerStore, from: u32, to: u32) -> Sums {
 }
 
 /// The flows of one turn (all three ticks), for the history points.
-pub fn turn_flows(store: &LedgerStore, turn: u32) -> FinanceFlows {
+pub fn turn_flows(store: &LedgerStore, turn: u32, sources: &Sources) -> FinanceFlows {
     let first = turn.saturating_sub(crate::ledger::FIRST_TURN) * 3;
-    sums(store, first, first + 2).flows()
+    sums(store, first, first + 2).flows(sources)
 }
 
-pub fn build(sim: &Sim, store: &LedgerStore) -> Finance {
+pub fn build(sim: &Sim, store: &LedgerStore, sources: &Sources) -> Finance {
     let s = &sim.state;
     let zero = Sums::default();
     let (month, quarter, turn_sums) = match store.last_tick() {
@@ -436,7 +424,7 @@ pub fn build(sim: &Sim, store: &LedgerStore) -> Finance {
         ),
         None => (zero, zero, zero),
     };
-    let m = month.flows();
+    let m = month.flows(sources);
     let kappa = s.policy.bank_capital_ratio.0;
     let equity = s.bank.equity.dollars();
     let loans = s.bank.loans.dollars();
@@ -509,7 +497,7 @@ pub fn build(sim: &Sim, store: &LedgerStore) -> Finance {
         price_index: s.indicators.price_index,
         wage_share,
         profit_share,
-        quarter: quarter.flows(),
+        quarter: quarter.flows(sources),
     }
 }
 

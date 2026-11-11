@@ -6,7 +6,7 @@ import { initialLedger, type MockLedger } from './ledger';
 import type { Rng } from './rng';
 
 /** The mock's own save format. Equal to the real sim's schemaVersion (4 since the ledger joined the saved blob, Town v5), so saves from before the ledger are refused by both. */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 export const GRID = 12;
 
 export interface PersonState { id: number; label: string; household: number; ageBand: AgeBand; skill: number; labourForce: boolean; job: number | null; /** Town v7: employed by this household as domestic staff (the estate's pilot). */ staffOf?: number | null }

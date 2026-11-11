@@ -1,6 +1,7 @@
 import type { FirmOwner, InfraKind, PersonView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
 import { fossilShareOf, occupant, pendingAt, sameTile, tileAt } from '../store';
+import { incomeTotal } from '../store/sources';
 import { forestStateOf, forecastView, weatherOf } from '../store/weather';
 import { classLabel, fill, infraLabel, ownerText, ownerWord, text } from '../store/catalog';
 import { energyText, plantAt, plantRows, unitHelp } from './energy';
@@ -93,12 +94,8 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
   const h = s.households.find((x) => x.id === id);
   if (!h) return null;
   const inc = h.income;
-  const parts: IncomePart[] = [
-    { label: 'Wages', value: inc.wages, text: money(inc.wages) }, { label: 'Dividends', value: inc.dividends, text: money(inc.dividends) },
-    { label: 'Rent', value: inc.rent, text: money(inc.rent) }, { label: 'Interest', value: inc.interest, text: money(inc.interest) },
-    { label: 'Benefits', value: inc.benefits, text: money(inc.benefits) },
-  ];
-  const total = inc.wages + inc.dividends + inc.rent + inc.interest + inc.benefits;
+  const parts: IncomePart[] = inc.sources.map((x) => ({ label: x.label, value: x.amount, text: money(x.amount) }));
+  const total = incomeTotal(inc.sources);
   const members: PersonView[] = h.members.flatMap((m) => s.people.filter((p) => p.id === m));
   const homeId = home?.id ?? h.home;
   const theHome = home ?? s.homes.find((x) => x.id === homeId);

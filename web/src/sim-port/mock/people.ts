@@ -1,5 +1,6 @@
 import type { HouseholdView, PersonView, SimEvent } from '../../contract';
 import { GEN } from './data';
+import { incomeList, type MockIncome } from './sources';
 import { coverShortfall, hKey, recordMonth } from './ledger';
 import { commute, commuteToTile, type Route } from './space';
 import { settleEstatePay } from './estate';
@@ -59,7 +60,7 @@ export function economy(s: MockState): Economy {
 }
 
 /** The household income lines (`HouseholdView.income`); the mock's ledger books the estate's domestic wage separately. */
-export type Income = HouseholdView['income'];
+export type Income = MockIncome;
 export function householdIncome(s: MockState, h: HouseholdState, e: Economy): Income {
   const members = h.members.map((id) => s.people[id]!);
   const taxWage = Number(s.policy.tax_wage), taxProfit = Number(s.policy.tax_profit);
@@ -81,6 +82,7 @@ export function householdIncome(s: MockState, h: HouseholdState, e: Economy): In
 }
 
 export const totalIncome = (i: Income) => i.wages + i.dividends + i.rent + i.interest + i.benefits;
+const wireIncome = (i: Income): HouseholdView['income'] => ({ sources: incomeList(i, 'household'), taxPaid: i.taxPaid, rentPaid: i.rentPaid, loanPayments: i.loanPayments, spending: i.spending });
 
 /** Wealth: savings plus owned homes and founded firms, minus debt (mock valuation of firms: capital x 1,500). */
 export function netWorth(s: MockState, h: HouseholdState): number {
@@ -109,7 +111,7 @@ export function householdViews(s: MockState): HouseholdView[] {
     const isEstate = !!GEN.estate && GEN.estate.household === h.id;
     const nw = netWorth(s, h);
     const band = wealthBandOf(nw);
-    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: nw, income: householdIncome(s, h, e), politicalPower: power, arrearsMonths: h.arrears,
+    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: nw, income: wireIncome(householdIncome(s, h, e)), politicalPower: power, arrearsMonths: h.arrears,
       wellbeing: mine.reduce((a, p) => a + p.wellbeing, 0) / Math.max(1, mine.length),
       footprintTonnes: isEstate ? GEN.estate!.householdEmissionsT + (s.estate?.flyingThisMonth ? GEN.estate!.flightTonnes : 0) : 0.1 * (s.lastMonthlyEmissions / s.households.length), foodMet: h.savings > 0 || h.home !== null ? 1 : 0.7,
       ...(isEstate && GEN.catalog.tags?.estate_owner ? { tag: GEN.catalog.tags.estate_owner } : {}), ...(band ? { wealthBand: band } : {}) };

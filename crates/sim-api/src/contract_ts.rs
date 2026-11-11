@@ -151,10 +151,6 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ("events", <crate::events::TraceRecord as TS>::decl(&cfg)),
         ("finance", <crate::finance::GovRevenue as TS>::decl(&cfg)),
         ("finance", <crate::finance::GovSpending as TS>::decl(&cfg)),
-        (
-            "finance",
-            <crate::finance::HouseholdIncome as TS>::decl(&cfg),
-        ),
         ("finance", <crate::finance::FinanceFlows as TS>::decl(&cfg)),
         (
             "finance",
@@ -334,6 +330,27 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ("turn", <crate::turn::TurnStart as TS>::decl(&cfg)),
         ("turn", <crate::turn::MonthResult as TS>::decl(&cfg)),
         ("turn", <crate::turn::CancelResult as TS>::decl(&cfg)),
+        (
+            "sources",
+            <crate::sources::EmissionSourceDef as TS>::decl(&cfg),
+        ),
+        (
+            "sources",
+            <crate::sources::IncomeSourceDef as TS>::decl(&cfg),
+        ),
+        (
+            "sources",
+            <crate::sources::EmissionCategory as TS>::decl(&cfg),
+        ),
+        (
+            "sources",
+            <crate::sources::EmissionSourceTotal as TS>::decl(&cfg),
+        ),
+        (
+            "sources",
+            <crate::sources::IncomeCategory as TS>::decl(&cfg),
+        ),
+        ("sources", <crate::sources::IncomeSource as TS>::decl(&cfg)),
     ]
 }
 

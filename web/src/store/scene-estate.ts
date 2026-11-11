@@ -1,3 +1,4 @@
+import { emissionOf } from './sources';
 import type { Estate, FrameInput, MonthFlows, PersonView, SimEvent, Snapshot, TileRef } from '../contract';
 
 /**
@@ -69,7 +70,7 @@ export function aviationTonnes(flows: Partial<MonthFlows> | undefined): number {
 }
 
 /** The latest month's aviation tonnes from the snapshot's emissions breakdown (0 when missing). */
-export const aviationOfSnapshot = (snap: Snapshot | null): number => Math.max(0, snap?.breakdowns?.emissions.month.aviation ?? 0);
+export const aviationOfSnapshot = (snap: Snapshot | null): number => Math.max(0, emissionOf(snap?.breakdowns?.emissions.month, 'aviation'));
 
 /** Staff commutes of a frame, shaped like ordinary commutes so the people layer can walk them. Empty when none. */
 export function staffCommutesOf(frame: Pick<FrameInput, 'flows'>): { person: number; from: TileRef | null; to: TileRef; minutes: number }[] {

@@ -6,6 +6,7 @@ import { METRIC_LEDGER } from '../src/panels/metrics';
 import { eventLedger } from '../src/panels/results';
 import { fossilShareOf } from '../src/store';
 import type { EnergyView, Snapshot } from '../src/contract';
+import { incomeOf } from '../src/store/sources';
 import { ok } from './helpers';
 
 const sim = createMockSim();
@@ -57,7 +58,7 @@ describe('finance derivations', () => {
     const s = ok(sim2.submitTurn([])).snapshot;
     let wages = 0;
     for (const h of s.households) for (const e of ok(sim2.ledger({ kind: 'household', id: h.id })).entries) if (e.kind === 'wage' && e.to.kind === 'household' && e.to.id === h.id) wages += e.amount; // received by this household (a domestic wage is also in the payer's ledger)
-    expect(s.finance.quarter!.householdIncome.wages).toBeCloseTo(wages, 0);
+    expect(incomeOf(s.finance.quarter!.householdIncome, 'wages')).toBeCloseTo(wages, 0);
   });
   it('formats and flags an empty first month', () => {
     expect(fmtFin(0.1234, 'pct')).toBe('12.3%');

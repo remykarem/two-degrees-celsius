@@ -702,20 +702,58 @@
       "runsOutBeforeEnd": true
     },
     "month": {
-      "firms": 2.6144172348885273,
-      "households": 3.0199999999999996,
-      "plants": 7.654035336092704,
-      "aviation": 0.0,
+      "sources": [
+        {
+          "id": "firms",
+          "label": "Firms",
+          "category": "industry",
+          "tonnes": 2.6144172348885273
+        },
+        {
+          "id": "households",
+          "label": "Homes (heating, transport)",
+          "category": "homes",
+          "tonnes": 3.0199999999999996
+        },
+        {
+          "id": "plants",
+          "label": "Power plants",
+          "category": "energy",
+          "tonnes": 7.654035336092704
+        }
+      ],
       "grossTotal": 13.288452570981232,
       "sink": -1.4116427209140938,
       "net": 11.876809850067138,
       "headline": 11.876809850067138
     },
     "turn": {
-      "firms": 7.832105723040547,
-      "households": 9.059999999999999,
-      "plants": 22.634030459613605,
-      "aviation": 4.0,
+      "sources": [
+        {
+          "id": "firms",
+          "label": "Firms",
+          "category": "industry",
+          "tonnes": 7.832105723040547
+        },
+        {
+          "id": "households",
+          "label": "Homes (heating, transport)",
+          "category": "homes",
+          "tonnes": 9.059999999999999
+        },
+        {
+          "id": "plants",
+          "label": "Power plants",
+          "category": "energy",
+          "tonnes": 22.634030459613605
+        },
+        {
+          "id": "aviation",
+          "label": "Private jet flight",
+          "category": "aviation",
+          "tonnes": 4.0
+        }
+      ],
       "grossTotal": 43.52613618265415,
       "sink": -4.235552791376881,
       "net": 39.290583391277266,
@@ -734,6 +772,7 @@
         "kind": "firm",
         "id": 0,
         "label": "Factory",
+        "category": "industry",
         "tonnes": 1.5871939499786296,
         "informational": false
       },
@@ -741,6 +780,7 @@
         "kind": "firm",
         "id": 1,
         "label": "Farm",
+        "category": "industry",
         "tonnes": 1.0272232849098977,
         "informational": false
       },
@@ -748,12 +788,14 @@
         "kind": "firm",
         "id": 2,
         "label": "Shop",
+        "category": "industry",
         "tonnes": 0.0,
         "informational": false
       },
       {
         "kind": "households",
-        "label": "Households (direct footprint)",
+        "label": "Homes (heating, transport)",
+        "category": "homes",
         "tonnes": 3.0199999999999996,
         "informational": false
       },
@@ -761,6 +803,7 @@
         "kind": "plant",
         "id": 0,
         "label": "Fossil plant at (10,2)",
+        "category": "energy",
         "tonnes": 3.827017668046352,
         "informational": false
       },
@@ -768,6 +811,7 @@
         "kind": "plant",
         "id": 1,
         "label": "Fossil plant at (10,4)",
+        "category": "energy",
         "tonnes": 3.827017668046352,
         "informational": false
       },

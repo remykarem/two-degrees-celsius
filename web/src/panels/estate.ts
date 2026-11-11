@@ -1,5 +1,6 @@
 import type { Estate, HouseholdView, PersonView, Snapshot } from '../contract';
 import { fill, text } from '../store/catalog';
+import { incomeTotal } from '../store/sources';
 import { compact, money, tonnes } from './format';
 
 /**
@@ -80,8 +81,6 @@ export interface EstateCardModel {
   shortfall: string | null;
 }
 
-const INCOME_LABELS: [keyof HouseholdView['income'], string][] = [['dividends', 'Dividends'], ['wages', 'Wages'], ['rent', 'Rent'], ['interest', 'Interest'], ['benefits', 'Benefits']];
-
 export function estateCard(s: Snapshot): EstateCardModel | null {
   const e = s.estate, h = estateHousehold(s);
   if (!e || !h) return null;
@@ -93,8 +92,8 @@ export function estateCard(s: Snapshot): EstateCardModel | null {
     topLine: topHouseholdLine(s),
     netWorth: money(h.netWorth),
     wealthParts: parts.map((p) => ({ label: t(`wealth_part_${p.id}`), value: p.value, text: money(p.value) })),
-    income: INCOME_LABELS.map(([k, label]) => ({ label, value: h.income[k], text: money(h.income[k]) })).filter((r) => r.value > 0),
-    incomeTotal: money(h.income.wages + h.income.dividends + h.income.rent + h.income.interest + h.income.benefits),
+    income: h.income.sources.map((x) => ({ label: x.label, value: x.amount, text: money(x.amount) })).filter((r) => r.value > 0),
+    incomeTotal: money(incomeTotal(h.income.sources)),
     jet: [
       { label: t('jet_label'), value: money(e.jet.value) },
       { label: 'Flew this month', value: e.jet.flyingThisMonth ? 'yes' : 'no' },

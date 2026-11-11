@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AccountRef } from '../src/contract';
 import { createMockSim } from '../src/sim-port/mock';
 import type { SimPort } from '../src/sim-port/port';
+import { incomeOf } from '../src/store/sources';
 import { reconciles } from './helpers';
 
 const ok = <T>(r: { ok: true; value: T } | { ok: false; error: { message: string } }): T => { if (!r.ok) throw new Error(r.error.message); return r.value; };
@@ -38,7 +39,7 @@ describe('mock ledger', () => {
     const sim = createMockSim();
     ok(sim.init(5));
     const snap = ok(sim.submitTurn([])).snapshot;
-    const hh = snap.households.find((h) => h.income.wages > 0)!;
+    const hh = snap.households.find((h) => incomeOf(h.income.sources, 'wages') > 0)!;
     const page = ok(sim.ledger({ kind: 'household', id: hh.id }));
     expect(page.closingBalance).toBeCloseTo(hh.savings, 1);
     const kinds = new Set(page.entries.map((e) => e.kind));

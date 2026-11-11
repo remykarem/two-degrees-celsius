@@ -85,7 +85,15 @@ wealthBands: Array<WealthBand>, bands: Bands, leverGroups: Array<LeverGroupInfo>
 /**
  * Authored text by group, then key (see `content/ui.json`). `{name}` placeholders are filled by the web.
  */
-text: { [key in string]: { [key in string]: string } }, systems: Array<SystemCard>, };
+text: { [key in string]: { [key in string]: string } }, systems: Array<SystemCard>, 
+/**
+ * Contract v2.0: labels and categories of the emission sources (lines of `breakdowns.emissions`).
+ */
+emissionSources: Array<EmissionSourceDef>, 
+/**
+ * Contract v2.0: labels and categories of the income sources (household income lists).
+ */
+incomeSources: Array<IncomeSourceDef>, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -133,13 +141,23 @@ export type Distribution = "bernoulli" | "uniform" | "uniform_index";
 
 export type DroughtView = { severity: number, monthsLeft: number, };
 
+export type EmissionCategory = "industry" | "homes" | "energy" | "aviation" | "waste";
+
 export type EmissionLine = { source: EmissionSourceKind, id?: number, 
 /**
  * Set for `plant` sources: the tile the plant stands on.
  */
 tile?: Tile, tonnes: number, };
 
+export type EmissionSourceDef = { id: string, label: string, category: EmissionCategory, 
+/**
+ * A source that is zero is left out of a line unless this is true.
+ */
+showWhenZero: boolean, };
+
 export type EmissionSourceKind = "firm" | "households" | "plant" | "sink" | "fire_sink_loss" | "aviation";
+
+export type EmissionSourceTotal = { id: string, label: string, category: EmissionCategory, tonnes: number, };
 
 export type EmissionsBreakdown = { 
 /**
@@ -155,13 +173,9 @@ monthLines: Array<SourceLine>,
  */
 turnNumber: number, turnMonths: number, };
 
-export type EmissionsLine = { firms: number, households: number, plants: number, 
+export type EmissionsLine = { sources: Array<EmissionSourceTotal>, 
 /**
- * Contract v1.9: private jet flights (zero without an estate flight).
- */
-aviation: number, 
-/**
- * `firms + households + plants + aviation`.
+ * The sum of `sources`.
  */
 grossTotal: number, 
 /**
@@ -230,13 +244,11 @@ export type Finance = { government: GovernmentFinance, bank: BankFinance, househ
  */
 quarter: FinanceFlows, };
 
-export type FinanceFlows = { govRevenue: GovRevenue, govSpending: GovSpending, householdIncome: FinanceHouseholdIncome, householdTaxes: number, rentPaid: number, loanPayments: number, householdSpending: number, firmRevenue: number, wageBill: number, firmProfit: number, investment: number, bankInterestIncome: number, };
-
-export type FinanceHouseholdIncome = { wages: number, dividends: number, rent: number, interest: number, benefits: number, 
+export type FinanceFlows = { govRevenue: GovRevenue, govSpending: GovSpending, 
 /**
- * Contract v1.9: the part of `wages` paid by a household to its staff (the estate's pilot).
+ * Contract v2.0: a list (`content/ui.json` `income_sources`), not fixed fields.
  */
-domesticWages: number, };
+householdIncome: Array<IncomeSource>, householdTaxes: number, rentPaid: number, loanPayments: number, householdSpending: number, firmRevenue: number, wageBill: number, firmProfit: number, investment: number, bankInterestIncome: number, };
 
 export type FireView = { tile: Tile, monthsLeft: number, };
 
@@ -316,9 +328,13 @@ export type HomeOwnerView = number | PublicOwner;
 
 export type HomeView = { id: number, tile: Tile, owner: HomeOwnerView, household: number | null, rent: number, value: number, };
 
-export type HouseholdFinance = { income: FinanceHouseholdIncome, taxes: number, rentPaid: number, loanPayments: number, spending: number, savingRate: number, debt: number, netWorth: number, };
+export type HouseholdFinance = { income: Array<IncomeSource>, taxes: number, rentPaid: number, loanPayments: number, spending: number, savingRate: number, debt: number, netWorth: number, };
 
-export type HouseholdIncome = { wages: number, dividends: number, rent: number, interest: number, benefits: number, taxPaid: number, rentPaid: number, loanPayments: number, spending: number, };
+export type HouseholdIncome = { 
+/**
+ * Contract v2.0: income by source (`content/ui.json` `income_sources`), not fixed fields.
+ */
+sources: Array<IncomeSource>, taxPaid: number, rentPaid: number, loanPayments: number, spending: number, };
 
 export type HouseholdView = { id: number, label: string, 
 /**
@@ -350,7 +366,17 @@ parts: Array<WealthPartView>, };
 
 export type HousingView = { homes: number, rentPrivate: number, rentPublic: number, occupancy: number, unhousedHouseholds: number, };
 
+export type IncomeCategory = "labour" | "capital" | "transfer";
+
 export type IncomeKindKey = "wages" | "dividends" | "rent" | "interest" | "benefits";
+
+export type IncomeSource = { id: string, label: string, category: IncomeCategory, partOf?: string, amount: number, };
+
+export type IncomeSourceDef = { id: string, label: string, category: IncomeCategory, 
+/**
+ * A source that is part of another (domestic wages are part of wages): not added to totals.
+ */
+partOf?: string, };
 
 export type Indicators = { gdpAnnual: number, gdpRealAnnual: number, unemployment: number, employed: number, labourForce: number, gini: number, 
 /**
@@ -652,6 +678,10 @@ estate?: EstateView, };
 export type SourceKind = "firm" | "households" | "plant" | "aviation" | "sink" | "fire_sink_loss";
 
 export type SourceLine = { kind: SourceKind, id?: number, label: string, 
+/**
+ * The roll-up category of the source (`content/ui.json`); none for the sink and the fire line.
+ */
+category?: EmissionCategory, 
 /**
  * Tonnes this month. The sink is negative; `fire_sink_loss` is positive but informational.
  */

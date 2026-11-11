@@ -211,7 +211,7 @@ fn old_saves_and_corrupt_ledgers_are_refused() {
     play(&mut a, 3);
     let blob = a.export_state().unwrap();
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    assert_eq!(v["schemaVersion"], 5);
+    assert_eq!(v["schemaVersion"], 6);
     // A schema 3 save (no ledger).
     let mut old = v.clone();
     old["schemaVersion"] = 3.into();
@@ -516,11 +516,11 @@ fn finance_households_and_firms_agree_with_the_state() {
         .map(|h| h.income.interest_received.0)
         .sum();
     let ben: i64 = s.state.households.iter().map(|h| h.income.benefits.0).sum();
-    assert_eq!(cents(f.households.income.wages), wages);
-    assert_eq!(cents(f.households.income.dividends), divs);
-    assert_eq!(cents(f.households.income.rent), rent);
-    assert_eq!(cents(f.households.income.interest), int);
-    assert_eq!(cents(f.households.income.benefits), ben);
+    assert_eq!(cents(income_of(&f.households.income, "wages")), wages);
+    assert_eq!(cents(income_of(&f.households.income, "dividends")), divs);
+    assert_eq!(cents(income_of(&f.households.income, "rent")), rent);
+    assert_eq!(cents(income_of(&f.households.income, "interest")), int);
+    assert_eq!(cents(income_of(&f.households.income, "benefits")), ben);
     let spending: i64 = s.state.households.iter().map(|h| h.income.spending.0).sum();
     let tax: i64 = s.state.households.iter().map(|h| h.income.tax_paid.0).sum();
     let rent_paid: i64 = s
@@ -549,6 +549,11 @@ fn finance_households_and_firms_agree_with_the_state() {
     assert!(
         (0.0..=1.0).contains(&f.wage_share) && (f.wage_share + f.profit_share - 1.0).abs() < 1e-9
     );
+}
+
+/// One income source of a list by id.
+fn income_of(list: &[sim_api::sources::IncomeSource], id: &str) -> f64 {
+    list.iter().find(|s| s.id == id).map_or(0.0, |s| s.amount)
 }
 
 #[test]
@@ -585,7 +590,7 @@ fn history_points_carry_the_new_fields_and_energy_is_labelled() {
     assert_eq!(s.energy.supply.len(), s.plants.len());
     let d = &s.energy.demand;
     assert!((d.firms + d.households - d.total).abs() < 1e-9);
-    assert_eq!(s.schema_version, 5);
+    assert_eq!(s.schema_version, 6);
 }
 
 /// V7-6: the estate's wealth tax owed is on the wire (`estate.finance.wealthTaxOwed`), so the web

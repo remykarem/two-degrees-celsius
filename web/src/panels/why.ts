@@ -1,12 +1,11 @@
 import type { LeverInfo, Snapshot, TraceRecord } from '../contract';
 import { formatLever, lobbyingDiffers, money, pct, tonnes } from './format';
 import type { WhyKind } from './metrics';
+import { emissionSourceLabel, incomeSourceLabel } from '../store/catalog';
 
 export interface Bar { label: string; value: number; text: string; sub?: string; /** Second bar in the same row (lobbying: the effective value). */ pair?: number; tone?: 'plain' | 'sink' | 'muted' }
 export interface BarGroup { heading: string; bars: Bar[]; /** Paired reference value (lobbying: what you set). */ pairLabel?: [string, string] }
 export interface WhyData { kind: WhyKind; title: string; blurb: string; groups: BarGroup[]; empty: string | null }
-
-const KIND_LABEL: Record<string, string> = { wages: 'Wages', dividends: 'Dividends', rent: 'Rent', interest: 'Interest', benefits: 'Benefits' };
 
 /** 'Fossil plant at (4,7)': the plant behind a trace record (by id, else by tile). */
 export function plantLabel(t: { id?: number; tile?: { x: number; y: number } }, snap: Snapshot | null): string {
@@ -22,7 +21,7 @@ export function emissionsBars(trace: TraceRecord[], snap: Snapshot | null): Bar[
     if (t.type !== 'emissions') continue;
     const label = t.source === 'firm' ? snap?.firms.find((f) => f.id === t.id)?.name ?? `Firm ${t.id ?? ''}`.trim()
       : t.source === 'plant' ? plantLabel(t, snap)
-      : t.source === 'households' ? 'Households' : t.source === 'fire_sink_loss' ? 'Sink lost to fire' : 'Forest sink (absorbed)';
+      : t.source === 'households' ? emissionSourceLabel('households') : t.source === 'aviation' ? emissionSourceLabel('aviation') : t.source === 'fire_sink_loss' ? 'Sink lost to fire' : 'Forest sink (absorbed)';
     const cur = by.get(label) ?? { label, value: 0, text: '', tone: t.source === 'sink' ? 'sink' as const : 'plain' as const };
     cur.value += t.source === 'sink' ? -Math.abs(t.tonnes) : t.source === 'fire_sink_loss' ? Math.abs(t.tonnes) : t.tonnes;
     by.set(label, cur);
@@ -37,7 +36,7 @@ export function incomeByType(trace: TraceRecord[]): Bar[] {
   const by = new Map<string, number>();
   for (const t of trace) if (t.type === 'income') by.set(t.kind, (by.get(t.kind) ?? 0) + t.amount);
   const total = [...by.values()].reduce((a, b) => a + b, 0);
-  return [...by.entries()].map(([k, v]) => ({ label: KIND_LABEL[k] ?? k, value: v, text: money(v), sub: total > 0 ? pct(v / total) : undefined }))
+  return [...by.entries()].map(([k, v]) => ({ label: incomeSourceLabel(k), value: v, text: money(v), sub: total > 0 ? pct(v / total) : undefined }))
     .sort((a, b) => b.value - a.value);
 }
 

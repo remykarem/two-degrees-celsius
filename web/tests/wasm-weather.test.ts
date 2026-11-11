@@ -23,7 +23,7 @@ const keys = (o: object) => Object.keys(o).sort();
 describe.skipIf(!present)('real simulation: weather (contract v1.2)', () => {
   it('speaks schemaVersion 3 and carries the weather block, health fields and forest tile states', async () => {
     const snap = ok((await realPort()).init(7));
-    expect([3, 4, 5]).toContain(snap.schemaVersion);
+    expect([3, 4, 5, 6]).toContain(snap.schemaVersion);
     expect(snap.weather.stress).toBe(0);
     expect(snap.weather.forecast).toEqual({ fireRisk: 'low', droughtRisk: 'low' });
     for (const k of ['forestHealth', 'commonsHealth', 'farmHealth'] as const) expect(snap.nature[k]).toBeGreaterThan(0);

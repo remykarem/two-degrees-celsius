@@ -2,6 +2,7 @@ import type { ClassKey, HouseholdView, PersonView, Snapshot } from '../contract'
 import type { Selection } from '../store';
 import { money } from './format';
 import { classShort } from '../store/catalog';
+import { incomeTotal } from '../store/sources';
 import { employerLine } from './estate';
 
 export type HouseholdSortKey = 'id' | 'netWorth' | 'income';
@@ -24,7 +25,7 @@ export interface HouseholdRow {
 export const CLASS_SHORT = classShort;
 
 /** Monthly income of a household from all five sources. */
-export const householdIncome = (h: HouseholdView) => h.income.wages + h.income.dividends + h.income.rent + h.income.interest + h.income.benefits;
+export const householdIncome = (h: HouseholdView) => incomeTotal(h.income.sources);
 
 export function householdRows(snap: Snapshot, sort: HouseholdSortKey = 'id'): HouseholdRow[] {
   const rows = snap.households.map((h): HouseholdRow => {

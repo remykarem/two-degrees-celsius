@@ -29,6 +29,7 @@ pub mod meta;
 pub mod persist;
 pub mod policies;
 pub mod snapshot;
+pub mod sources;
 pub mod turn;
 
 pub use api::Api;
@@ -47,6 +48,8 @@ pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 /// Town v5 (contract v1.4) added the ledger to the saved wrapper blob: 4. Town v5.2 (contract
 /// v1.6) added the wrapper log (per-tick emissions and legitimacy records, policy history): 5.
 /// The model `State` has its own `sim_types::SCHEMA_VERSION`: 3 until Town v7, 4 since the estate
-/// joined the state. This wire version stays 5: contract v1.9 is additive, and a save from before
-/// Town v7 is refused by the state schema check (and by the params hash).
-pub const SCHEMA_VERSION: u32 = 5;
+/// joined the state. This wire version stayed 5 through contract v1.9 (additive). Platform cleanup
+/// (contract v2.0, `docs/snapshot-contract.md` section 20) reshaped emissions and income into
+/// source lists: 6. The saved blob itself did not change shape; the bump keeps the contract
+/// version and the snapshot's `schemaVersion` honest, and refuses saves made by the old web.
+pub const SCHEMA_VERSION: u32 = 6;

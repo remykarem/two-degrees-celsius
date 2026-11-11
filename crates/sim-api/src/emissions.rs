@@ -10,21 +10,20 @@
 //! line is flagged informational and left out of every sum.
 use crate::log::TickRecord;
 use crate::snapshot::firm_names;
+use crate::sources::{EmissionCategory, EmissionSourceTotal, Sources};
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_types::PlantKind;
 
+/// One period (the latest month, or the months of the latest turn). Contract v2.0: the sources
+/// are a list (`content/ui.json` `emission_sources` names, labels and categorises them), not
+/// fixed fields. `sources` sum to `gross_total`; a source that is zero may be left out.
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmissionsLine {
-    pub firms: f64,
-    pub households: f64,
-    pub plants: f64,
-    /// Contract v1.9: private jet flights (zero without an estate flight).
-    #[serde(default)]
-    pub aviation: f64,
-    /// `firms + households + plants + aviation`.
+    pub sources: Vec<EmissionSourceTotal>,
+    /// The sum of `sources`.
     pub gross_total: f64,
     /// Forest sink, negative.
     pub sink: f64,
@@ -33,6 +32,44 @@ pub struct EmissionsLine {
     /// The model's own net figure for the same period (the state's `net_emissions`, summed over
     /// the ticks of a turn). `net` must equal it; `EmissionsBreakdown.reconciles` says so.
     pub headline: f64,
+}
+
+/// Totals of a period before they become a wire line.
+#[derive(Clone, Copy, Debug, Default)]
+struct Acc {
+    firms: f64,
+    households: f64,
+    plants: f64,
+    aviation: f64,
+    sink: f64,
+    headline: f64,
+}
+
+impl Acc {
+    fn tonnes(&self, id: &str) -> f64 {
+        match id {
+            "firms" => self.firms,
+            "households" => self.households,
+            "plants" => self.plants,
+            "aviation" => self.aviation,
+            _ => 0.0, // ids are validated against EMISSION_IDS at load
+        }
+    }
+
+    fn gross(&self) -> f64 {
+        self.firms + self.households + self.plants + self.aviation
+    }
+
+    fn line(&self, sources: &Sources) -> EmissionsLine {
+        let gross = self.gross();
+        EmissionsLine {
+            sources: sources.emission_line(|id| self.tonnes(id)),
+            gross_total: gross,
+            sink: self.sink,
+            net: gross + self.sink,
+            headline: self.headline,
+        }
+    }
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -69,6 +106,10 @@ pub struct SourceLine {
     #[cfg_attr(feature = "ts", ts(optional))]
     pub id: Option<u32>,
     pub label: String,
+    /// The roll-up category of the source (`content/ui.json`); none for the sink and the fire line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub category: Option<EmissionCategory>,
     /// Tonnes this month. The sink is negative; `fire_sink_loss` is positive but informational.
     pub tonnes: f64,
     /// True for `fire_sink_loss`: shown for information, never part of a sum.
@@ -127,26 +168,26 @@ pub fn tolerance(gross: f64) -> f64 {
     1e-6 + 1e-9 * gross.abs()
 }
 
-fn line(ticks: &[&TickRecord]) -> EmissionsLine {
-    let mut l = EmissionsLine::default();
+fn acc(ticks: &[&TickRecord]) -> Acc {
+    let mut a = Acc::default();
     for t in ticks {
-        l.firms += t.firms_total();
-        l.households += t.households;
-        l.plants += t.plants_total();
-        l.aviation += t.aviation;
-        l.sink += t.sink;
-        l.headline += t.net_state;
+        a.firms += t.firms_total();
+        a.households += t.households;
+        a.plants += t.plants_total();
+        a.aviation += t.aviation;
+        a.sink += t.sink;
+        a.headline += t.net_state;
     }
-    l.gross_total = l.firms + l.households + l.plants + l.aviation;
-    l.net = l.gross_total + l.sink;
-    l
+    a
 }
 
 fn line_reconciles(l: &EmissionsLine) -> bool {
+    let listed: f64 = l.sources.iter().map(|s| s.tonnes).sum();
     (l.net - l.headline).abs() <= tolerance(l.gross_total)
+        && (listed - l.gross_total).abs() <= tolerance(l.gross_total)
 }
 
-pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
+pub fn build(sim: &Sim, ticks: &[TickRecord], sources: &Sources) -> EmissionsBreakdown {
     let s = &sim.state;
     let b0 = sim.params.nature.budget_b0;
     let cumulative = Cumulative {
@@ -162,8 +203,8 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
     let Some(last) = ticks.last() else {
         return EmissionsBreakdown {
             runway: runway(sim),
-            month: EmissionsLine::default(),
-            turn: EmissionsLine::default(),
+            month: Acc::default().line(sources),
+            turn: Acc::default().line(sources),
             cumulative,
             reconciles: true,
             note: NOTE.to_string(),
@@ -173,15 +214,23 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
         };
     };
     let in_turn: Vec<&TickRecord> = ticks.iter().filter(|t| t.turn == last.turn).collect();
-    let month = line(&[last]);
-    let turn = line(&in_turn);
+    let month = acc(&[last]).line(sources);
+    let turn = acc(&in_turn).line(sources);
     let names = firm_names(&s.firms);
+    let cat = |id: &str| {
+        sources
+            .emission
+            .iter()
+            .find(|d| d.id == id)
+            .map(|d| d.category)
+    };
     let mut lines: Vec<SourceLine> = last
         .firms
         .iter()
         .map(|(id, t)| SourceLine {
             kind: SourceKind::Firm,
             id: Some(*id),
+            category: cat("firms"),
             label: names
                 .get(*id as usize)
                 .cloned()
@@ -193,7 +242,8 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
     lines.push(SourceLine {
         kind: SourceKind::Households,
         id: None,
-        label: "Households (direct footprint)".to_string(),
+        category: cat("households"),
+        label: "Homes (heating, transport)".to_string(),
         tonnes: last.households,
         informational: false,
     });
@@ -215,6 +265,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
         lines.push(SourceLine {
             kind: SourceKind::Plant,
             id: Some(*id),
+            category: cat("plants"),
             label,
             tonnes: *t,
             informational: false,
@@ -224,6 +275,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
         lines.push(SourceLine {
             kind: SourceKind::Aviation,
             id: None,
+            category: cat("aviation"),
             label: "Private jet flight".to_string(),
             tonnes: last.aviation,
             informational: false,
@@ -232,6 +284,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
     lines.push(SourceLine {
         kind: SourceKind::Sink,
         id: None,
+        category: None,
         label: "Forest sink (absorbed)".to_string(),
         tonnes: last.sink,
         informational: false,
@@ -240,6 +293,7 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
         lines.push(SourceLine {
             kind: SourceKind::FireSinkLoss,
             id: None,
+            category: None,
             label: "Sink lost to fire (information only, not in any sum)".to_string(),
             tonnes: last.fire_sink_loss,
             informational: true,

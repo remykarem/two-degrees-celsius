@@ -1,5 +1,6 @@
 import type { ClassKey, FrameInput, MonthFlows, PlantView, Sector, SimEvent, Snapshot } from '../contract';
 import { fossilShareOf, type MapLayout, type Tile } from '../store';
+import { emissionOf } from '../store/sources';
 import { centreOf, hash01, tileKey, type Pt } from './coords';
 import { route } from './paths';
 
@@ -143,7 +144,7 @@ export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [
 
 /** Emissions as a flow list straight from a snapshot, used for ambient smoke outside playback. */
 export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emissions']> {
-  const households = s.breakdowns?.emissions.month.households ?? 0; // the model's own household footprint for the latest month
+  const households = emissionOf(s.breakdowns?.emissions.month, 'households');  // the model's own household footprint for the latest month
   return [
     ...s.firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: f.active ? f.emissions : 0 })),
     ...s.plants.map((p) => ({ source: 'plant' as const, tile: { ...p.tile }, tonnes: p.emissionsMonthly })),

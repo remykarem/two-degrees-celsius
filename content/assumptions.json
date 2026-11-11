@@ -4,7 +4,7 @@
       "id": "emissions",
       "title": "Emissions by source and net",
       "group": "emissions_energy",
-      "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person, a larger one for the estate household), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant. A private jet flight is a fourth, occasional source (see the private jet topic).",
+      "summary": "Gross emissions are three things added together: what firms release directly in production, what homes release directly (heating and transport: a fixed footprint per person, a larger one for the estate household), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant. A private jet flight is a fourth, occasional source (see the private jet topic).",
       "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint; the estate household has its own figure) + private jet flights (tonnes per flight, in the months the jet flies) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
       "params": [
         {

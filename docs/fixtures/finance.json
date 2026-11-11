@@ -37,14 +37,45 @@
     "interestIncome": 1092.53
   },
   "households": {
-    "income": {
-      "wages": 18458.21,
-      "dividends": 13162.6,
-      "rent": 1435.08,
-      "interest": 475.68,
-      "benefits": 4000.0,
-      "domesticWages": 1800.0
-    },
+    "income": [
+      {
+        "id": "wages",
+        "label": "Wages",
+        "category": "labour",
+        "amount": 18458.21
+      },
+      {
+        "id": "domestic_wages",
+        "label": "Domestic wages (paid by the estate)",
+        "category": "labour",
+        "partOf": "wages",
+        "amount": 1800.0
+      },
+      {
+        "id": "dividends",
+        "label": "Dividends",
+        "category": "capital",
+        "amount": 13162.6
+      },
+      {
+        "id": "rent",
+        "label": "Rent received",
+        "category": "capital",
+        "amount": 1435.08
+      },
+      {
+        "id": "interest",
+        "label": "Interest",
+        "category": "capital",
+        "amount": 475.68
+      },
+      {
+        "id": "benefits",
+        "label": "Benefits",
+        "category": "transfer",
+        "amount": 4000.0
+      }
+    ],
     "taxes": 11436.82,
     "rentPaid": 1435.08,
     "loanPayments": 1004.08,
@@ -89,14 +120,45 @@
       "builds": 2500.04,
       "other": 0.0
     },
-    "householdIncome": {
-      "wages": 58180.14,
-      "dividends": 39275.59,
-      "rent": 4283.88,
-      "interest": 1431.67,
-      "benefits": 12000.0,
-      "domesticWages": 5400.0
-    },
+    "householdIncome": [
+      {
+        "id": "wages",
+        "label": "Wages",
+        "category": "labour",
+        "amount": 58180.14
+      },
+      {
+        "id": "domestic_wages",
+        "label": "Domestic wages (paid by the estate)",
+        "category": "labour",
+        "partOf": "wages",
+        "amount": 5400.0
+      },
+      {
+        "id": "dividends",
+        "label": "Dividends",
+        "category": "capital",
+        "amount": 39275.59
+      },
+      {
+        "id": "rent",
+        "label": "Rent received",
+        "category": "capital",
+        "amount": 4283.88
+      },
+      {
+        "id": "interest",
+        "label": "Interest",
+        "category": "capital",
+        "amount": 1431.67
+      },
+      {
+        "id": "benefits",
+        "label": "Benefits",
+        "category": "transfer",
+        "amount": 12000.0
+      }
+    ],
     "householdTaxes": 34357.83,
     "rentPaid": 4283.88,
     "loanPayments": 3024.08,

@@ -974,9 +974,7 @@
         "policy_blocked_title": "A policy was blocked"
       },
       "estate": {
-        "aviation_source": "Private jet flight",
         "does_not_work": "Does not work: outside the labour force",
-        "domestic_wages_row": "Domestic wages (paid by the estate)",
         "employer_line": "Employer: {label} (household)",
         "employs_line": "Employs: {name}",
         "estate_card_title": "The estate",
@@ -1014,11 +1012,6 @@
         "revenue.wageTax": "Income tax: charged on the wages households earn (the lever key is still tax_wage)."
       },
       "finance_label": {
-        "income.benefits": "Benefits",
-        "income.dividends": "Dividends",
-        "income.interest": "Interest",
-        "income.rent": "Rent received",
-        "income.wages": "Wages",
         "revenue.capitalTax": "Capital tax",
         "revenue.carbon": "Carbon revenue",
         "revenue.other": "Other revenue",
@@ -1410,6 +1403,65 @@
             "value": "Slower growth, and not a free pass on emissions."
           }
         ]
+      }
+    ],
+    "emissionSources": [
+      {
+        "id": "firms",
+        "label": "Firms",
+        "category": "industry",
+        "showWhenZero": true
+      },
+      {
+        "id": "households",
+        "label": "Homes (heating, transport)",
+        "category": "homes",
+        "showWhenZero": true
+      },
+      {
+        "id": "plants",
+        "label": "Power plants",
+        "category": "energy",
+        "showWhenZero": true
+      },
+      {
+        "id": "aviation",
+        "label": "Private jet flight",
+        "category": "aviation",
+        "showWhenZero": false
+      }
+    ],
+    "incomeSources": [
+      {
+        "id": "wages",
+        "label": "Wages",
+        "category": "labour"
+      },
+      {
+        "id": "domestic_wages",
+        "label": "Domestic wages (paid by the estate)",
+        "category": "labour",
+        "partOf": "wages"
+      },
+      {
+        "id": "dividends",
+        "label": "Dividends",
+        "category": "capital"
+      },
+      {
+        "id": "rent",
+        "label": "Rent received",
+        "category": "capital"
+      },
+      {
+        "id": "interest",
+        "label": "Interest",
+        "category": "capital"
+      },
+      {
+        "id": "benefits",
+        "label": "Benefits",
+        "category": "transfer"
       }
     ]
   },

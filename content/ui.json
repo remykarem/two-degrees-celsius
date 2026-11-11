@@ -127,12 +127,7 @@
       "spending.subsidy": "Subsidies",
       "spending.interest": "Debt interest",
       "spending.builds": "Building",
-      "spending.other": "Other spending",
-      "income.wages": "Wages",
-      "income.dividends": "Dividends",
-      "income.rent": "Rent received",
-      "income.interest": "Interest",
-      "income.benefits": "Benefits"
+      "spending.other": "Other spending"
     },
     "finance_hint": {
       "revenue.wageTax": "Income tax: charged on the wages households earn (the lever key is still tax_wage).",
@@ -284,13 +279,11 @@
       "pilot_status_employed": "Employed",
       "pilot_status_let_go": "Let go",
       "grounded_note": "The jet is grounded while the pilot is let go.",
-      "aviation_source": "Private jet flight",
       "wealth_part_net_cash": "Savings minus debt",
       "wealth_part_homes": "Homes owned",
       "wealth_part_jet": "Private jet",
       "wealth_part_bank": "Bank equity",
       "wealth_part_firms": "Firm equity",
-      "domestic_wages_row": "Domestic wages (paid by the estate)",
       "wealth_tax_note": "Paid in part if the estate's savings cannot cover it",
       "wealth_tax_short": "Wealth tax paid in part: about {owed} was due and {paid} was paid, because the estate's savings ({savings}) fall short.",
       "pilot_unpaid_warning": "The estate has paid the pilot short for {unpaid} of {max} months in a row. At {max} the pilot is let go and the jet is grounded.",
@@ -478,6 +471,20 @@
       "unit": "fraction"
     }
   },
+  "emission_sources": [
+    { "id": "firms", "label": "Firms", "category": "industry", "showWhenZero": true },
+    { "id": "households", "label": "Homes (heating, transport)", "category": "homes", "showWhenZero": true },
+    { "id": "plants", "label": "Power plants", "category": "energy", "showWhenZero": true },
+    { "id": "aviation", "label": "Private jet flight", "category": "aviation", "showWhenZero": false }
+  ],
+  "income_sources": [
+    { "id": "wages", "label": "Wages", "category": "labour", "views": ["household", "finance"] },
+    { "id": "domestic_wages", "label": "Domestic wages (paid by the estate)", "category": "labour", "partOf": "wages", "views": ["finance"] },
+    { "id": "dividends", "label": "Dividends", "category": "capital", "views": ["household", "finance"] },
+    { "id": "rent", "label": "Rent received", "category": "capital", "views": ["household", "finance"] },
+    { "id": "interest", "label": "Interest", "category": "capital", "views": ["household", "finance"] },
+    { "id": "benefits", "label": "Benefits", "category": "transfer", "views": ["household", "finance"] }
+  ],
   "tags": {
     "estate_owner": "Estate owner"
   },

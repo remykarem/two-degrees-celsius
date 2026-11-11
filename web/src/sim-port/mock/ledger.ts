@@ -3,6 +3,7 @@ import { GEN } from './data';
 import type { Economy, Income } from './people';
 import { personWage } from './people';
 import { buildingCounts, type MockState } from './state';
+import type { MockFlows } from './sources';
 
 // MOCK ONLY. The mock's money is invented; this module books it as double-entry transactions so the UI can be built and tested before the real
 // ledger (docs/town-v5.md section 4) exists. The rules are the real ones: every entry moves money between two accounts, each account's
@@ -27,7 +28,7 @@ export interface MockLedger {
   detail: Rec[];
   summary: Record<AcctKey, LedgerSummaryRow[]>;
   /** The last three months of flow totals (newest last), for the finance view. */
-  months: FinanceFlows[];
+  months: MockFlows[];
   personEvents: { person: number; turn: number; event: SimEvent }[];
   lastTurn: number;
 }
@@ -47,7 +48,7 @@ export function refOf(k: AcctKey): AccountRef {
   return k[0] === 'h' ? { kind: 'household', id: Number(k.slice(1)) } : { kind: 'firm', id: Number(k.slice(1)) };
 }
 
-export function emptyFlows(): FinanceFlows {
+export function emptyFlows(): MockFlows {
   return {
     govRevenue: { wageTax: 0, profitTax: 0, capitalTax: 0, wealthTax: 0, carbon: 0, other: 0 },
     govSpending: { benefits: 0, ubi: 0, publicSpending: 0, jobGuarantee: 0, upkeep: 0, subsidy: 0, interest: 0, builds: 0, other: 0 },
@@ -148,7 +149,7 @@ export function coverShortfall(s: MockState, hid: number): number {
 }
 
 /** Flow totals of a batch of entries (one month), classified by kind and detail. */
-export function flowsOf(recs: Rec[]): FinanceFlows {
+export function flowsOf(recs: Rec[]): MockFlows {
   const f = emptyFlows();
   const isH = (k: AcctKey) => k[0] === 'h' && k !== 'h' && !k.startsWith('x:');
   const isF = (k: AcctKey) => k[0] === 'f';
@@ -180,12 +181,12 @@ export function flowsOf(recs: Rec[]): FinanceFlows {
   return f;
 }
 
-export const sumFlows = (list: FinanceFlows[]): FinanceFlows => {
+export const sumFlows = (list: MockFlows[]): MockFlows => {
   const out = emptyFlows();
   for (const x of list) {
     for (const k of Object.keys(out.govRevenue) as (keyof FinanceFlows['govRevenue'])[]) out.govRevenue[k] += x.govRevenue[k];
     for (const k of Object.keys(out.govSpending) as (keyof FinanceFlows['govSpending'])[]) out.govSpending[k] += x.govSpending[k];
-    for (const k of Object.keys(out.householdIncome) as (keyof FinanceFlows['householdIncome'])[]) out.householdIncome[k] += x.householdIncome[k];
+    for (const k of Object.keys(out.householdIncome) as (keyof MockFlows['householdIncome'])[]) out.householdIncome[k] += x.householdIncome[k];
     for (const k of ['householdTaxes', 'rentPaid', 'loanPayments', 'householdSpending', 'firmRevenue', 'wageBill', 'firmProfit', 'investment', 'bankInterestIncome'] as const) out[k] += x[k];
   }
   return out;

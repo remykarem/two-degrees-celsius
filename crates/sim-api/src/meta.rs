@@ -209,6 +209,8 @@ pub struct Meta {
     pub estate_tag: String,
     /// Contract v1.9: `content/ui.json` `wealth_bands`, richest first.
     pub wealth_bands: Vec<crate::catalog::WealthBand>,
+    /// Contract v2.0: emission and income sources (labels, categories) from `content/ui.json`.
+    pub sources: crate::sources::Sources,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -347,6 +349,7 @@ impl Meta {
         Ok(Meta {
             estate_tag: ui.tags.get("estate_owner").cloned().unwrap_or_default(),
             wealth_bands: ui.wealth_bands,
+            sources: crate::catalog::sources()?,
             levers,
             actions,
             ledger_detail_turns: file.ledger.detail_turns,

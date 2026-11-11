@@ -136,7 +136,7 @@ describe('why panels', () => {
   });
   it('sums income by type', () => {
     const bars = incomeByType([{ type: 'income', household: 1, kind: 'wages', amount: 100 }, { type: 'income', household: 2, kind: 'wages', amount: 50 }, { type: 'income', household: 1, kind: 'rent', amount: 50 }]);
-    expect(bars.map((b) => [b.label, b.value])).toEqual([['Wages', 150], ['Rent', 50]]);
+    expect(bars.map((b) => [b.label, b.value])).toEqual([['Wages', 150], ['Rent received', 50]]);
   });
   it('lobbying bars carry set and in-force values', () => {
     const levers = createSimPort().levers();
@@ -251,7 +251,7 @@ describe('inspector model', () => {
     const home = layout.scenery.find((s) => s.kind === 'home')!;
     const hm = resolveTile(snap, layout, home, []);
     expect(hm.kind).toBe('household');
-    expect(hm.income!.map((p) => p.label)).toEqual(['Wages', 'Dividends', 'Rent', 'Interest', 'Benefits']);
+    expect(hm.income!.map((p) => p.label)).toEqual(['Wages', 'Dividends', 'Rent received', 'Interest', 'Benefits']);
     expect(hm.members!.length).toBeGreaterThanOrEqual(2);
     const person = resolveSelection(snap, layout, hm.members![0]!.selection, [])!;
     expect(person.kind).toBe('person');
