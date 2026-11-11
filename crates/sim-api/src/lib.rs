@@ -29,6 +29,7 @@ pub mod log;
 pub mod meta;
 pub mod persist;
 pub mod policies;
+pub mod recording;
 pub mod snapshot;
 pub mod sources;
 pub mod turn;

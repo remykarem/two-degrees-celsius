@@ -1,0 +1,89 @@
+{
+ "_note": "Script of the recorded demo (web 'Recorded demo' mode): seed and the commands played each turn, taken from tests/golden/plan.json with the commands the sim rejected removed. Regenerate the recording with: cd web && npm run gen:recording",
+ "seed": 7,
+ "turns": [
+  [
+   {
+    "type": "set_policy",
+    "lever": "carbon_price",
+    "value": 40
+   },
+   {
+    "type": "place",
+    "kind": "renewable_plant",
+    "tile": {
+     "x": 11,
+     "y": 6
+    }
+   },
+   {
+    "type": "set_policy",
+    "lever": "tax_wage",
+    "value": 0.12
+   }
+  ],
+  [
+   {
+    "type": "set_policy",
+    "lever": "benefit",
+    "value": 900
+   },
+   {
+    "type": "place",
+    "kind": "public_housing",
+    "tile": {
+     "x": 3,
+     "y": 5
+    }
+   },
+   {
+    "type": "place",
+    "kind": "road",
+    "tile": {
+     "x": 9,
+     "y": 6
+    }
+   }
+  ],
+  [
+   {
+    "type": "set_policy",
+    "lever": "min_wage",
+    "value": 1500
+   },
+   {
+    "type": "set_policy",
+    "lever": "resilience_spending",
+    "value": 1500
+   }
+  ],
+  [],
+  [],
+  [],
+  [
+   {
+    "type": "set_policy",
+    "lever": "wealth_tax",
+    "value": 0.01
+   },
+   {
+    "type": "set_policy",
+    "lever": "commons_harvest",
+    "value": 0.5
+   }
+  ],
+  [],
+  [
+   {
+    "type": "remove",
+    "tile": {
+     "x": 10,
+     "y": 2
+    }
+   }
+  ],
+  [],
+  [],
+  []
+ ]
+}

@@ -690,6 +690,24 @@ export type Purchase = { household: number, firm: number, sector: SectorKey, amo
 
 export type RandomDraw = { id: string, event: string, system: string, distribution: Distribution, probability: string, when: string, params: Array<AssumptionParam>, code: string, };
 
+export type Recording = { seed: number, 
+/**
+ * `SCHEMA_VERSION` of the wire the recording was made with.
+ */
+schemaVersion: number, 
+/**
+ * The commands played in each turn (the web shows them, so the player knows what was done).
+ */
+script: Array<Array<Command>>, 
+/**
+ * `init(seed)`.
+ */
+initial: Snapshot, levers: Array<LeverInfo>, actions: Array<ActionInfo>, catalog: Catalog, assumptions: Array<AssumptionTopic>, agents: AgentsCatalog, 
+/**
+ * `submitTurn(script[i])` for each turn, in order.
+ */
+turns: Array<TurnResult>, };
+
 export type RejectedCommand = { index: number, command: Command, reason: BlockReason, };
 
 export type RentFlow = { household: number, 

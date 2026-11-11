@@ -109,6 +109,7 @@ pub fn decls() -> Vec<(&'static str, String)> {
             <crate::entities::InspectorSection as TS>::decl(&cfg),
         ),
         ("entities", <crate::entities::EntityKind as TS>::decl(&cfg)),
+        ("recording", <crate::recording::Recording as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::CrisisBands as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::HealthBand as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::WordBand as TS>::decl(&cfg)),
