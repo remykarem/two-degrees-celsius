@@ -265,6 +265,12 @@
     },
     "lobby": {
       "note": "You set {set}; lobbying is expected to leave about {expected} in force (this opposes the change)."
+    },
+    "ledger": {
+      "firm_revenue_note": "Revenue on the ledger is money actually received. It can sit up to about 10% below the Revenue figure of the firm's books, because when the Factory buys capital goods from itself the model records a sale but no money moves.",
+      "external_bank credit creation": "Money the bank creates when it lends: the borrower's balance and debt both rise.",
+      "external_bank credit destruction": "Money that disappears when a loan is repaid: the payer's balance and debt both fall.",
+      "external_other": "An account outside the town (no ledger)."
     }
   },
   "system_cards": [

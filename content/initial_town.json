@@ -552,6 +552,7 @@
     "bank_capital_ratio": 0.1,
     "bailout": false,
     "job_guarantee": 0.0,
-    "public_spending_usd": 8000.0
+    "public_spending_usd": 8000.0,
+    "resilience_spending_usd": 0.0
   }
 }
