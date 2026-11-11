@@ -103,9 +103,23 @@ pub struct SystemCard {
     pub tradeoffs: Vec<Fact>,
 }
 
+/// A wealth band (contract v1.9): a household whose net worth is at or above `min` (the first
+/// match, from the highest `min` down) is in it; `min: null` catches everything below.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WealthBand {
+    pub min: Option<f64>,
+    pub id: String,
+    pub label: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Catalog {
+    /// Contract v1.9: short tags by key (`estate_owner`).
+    pub tags: BTreeMap<String, String>,
+    /// Contract v1.9: wealth bands, richest first.
+    pub wealth_bands: Vec<WealthBand>,
     pub bands: Bands,
     pub lever_groups: Vec<LeverGroupInfo>,
     /// Authored text by group, then key (see `content/ui.json`). `{name}` placeholders are filled by the web.
@@ -136,6 +150,8 @@ struct ParamLabel {
 struct UiFile {
     bands: Bands,
     lever_groups: Vec<LeverGroupInfo>,
+    tags: BTreeMap<String, String>,
+    wealth_bands: Vec<WealthBand>,
     text: BTreeMap<String, BTreeMap<String, String>>,
     system_cards: Vec<CardDef>,
     system_param_labels: BTreeMap<String, ParamLabel>,
@@ -192,7 +208,17 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
             tradeoffs: c.tradeoffs,
         });
     }
+    if !f.tags.contains_key("estate_owner") {
+        return Err(bad("tags.estate_owner is missing".into()));
+    }
+    if f.wealth_bands.is_empty() || f.wealth_bands.last().is_some_and(|b| b.min.is_some()) {
+        return Err(bad(
+            "wealth_bands must end with a band whose min is null".into()
+        ));
+    }
     Ok(Catalog {
+        tags: f.tags,
+        wealth_bands: f.wealth_bands,
         bands: f.bands,
         lever_groups: f.lever_groups,
         text: f.text,

@@ -361,7 +361,7 @@ fn run_to_the_end(seed: u64, plan: Plan) -> (u32, Snapshot) {
                 }
                 assert_eq!(r.snapshot.history.len(), played as usize);
                 assert_eq!(r.snapshot.history.last().unwrap().turn, t);
-                assert_eq!(r.snapshot.people.len(), 20);
+                assert_eq!(r.snapshot.people.len(), 22);
                 assert_eq!(r.snapshot.map.tiles.len(), 144);
             }
             Err(e) => {
@@ -416,10 +416,15 @@ fn frames_carry_real_flows() {
     let snap = &r.snapshot;
     let employed = snap.people.iter().filter(|p| p.job.is_some()).count();
     assert!(employed > 0);
-    for f in &r.months {
-        // One commute and one wage per person with a firm job, with real tiles.
-        assert_eq!(f.flows.commutes.len(), employed);
-        for c in &f.flows.commutes {
+    for (mi, f) in r.months.iter().enumerate() {
+        // One commute and one wage per person with a firm job, with real tiles. The snapshot is
+        // the end of the turn, so jobs are compared on the last month's frame (people can be
+        // hired or fired between months).
+        let last_month = mi == r.months.len() - 1;
+        if last_month {
+            assert_eq!(f.flows.commutes.len(), employed);
+        }
+        for c in f.flows.commutes.iter().filter(|_| last_month) {
             let p = &snap.people[c.person as usize];
             assert_eq!(p.job.unwrap().firm, c.firm);
             assert_eq!(c.household, p.household);
@@ -433,7 +438,9 @@ fn frames_carry_real_flows() {
             );
         }
         assert!(!f.flows.wages.is_empty());
-        assert!(f.flows.wages.len() <= employed);
+        if last_month {
+            assert!(f.flows.wages.len() <= employed);
+        }
         assert!(!f.flows.rent.is_empty());
         let sources: Vec<_> = f.flows.emissions.iter().map(|e| e.source).collect();
         assert!(sources.contains(&sim_api::events::EmissionSourceKind::Sink));

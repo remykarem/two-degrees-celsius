@@ -537,6 +537,10 @@ pub struct PersonInit {
     pub reservation_usd: f64,
     /// Index of the firm slot the person works in at the start.
     pub job: Option<usize>,
+    /// Town v7: index of the household that employs this person as domestic staff (the jet's
+    /// pilot). Must be the estate household.
+    #[serde(default)]
+    pub staff_of: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -632,9 +636,47 @@ pub struct PolicyInit {
     pub resilience_spending_usd: f64,
 }
 
+/// Town v7: the estate's layout and jet, all in content.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EstateInit {
+    /// Index of the estate household.
+    pub household: usize,
+    /// Index into `homes` of the estate house.
+    pub home: usize,
+    /// Pool, garden and drive tiles.
+    pub grounds: Vec<[u8; 2]>,
+    /// Runway tiles in take-off order.
+    pub runway: Vec<[u8; 2]>,
+    pub hangar_tile: [u8; 2],
+    pub jet_name: String,
+    pub jet_value_usd: f64,
+}
+
+/// Town v7 rules numbers (docs/town-v7.md).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EstateParams {
+    /// Chance of a flight in a month (one draw a month while the estate exists).
+    pub flight_prob_monthly: f64,
+    /// Tonnes of CO2 per flight.
+    pub flight_tonnes: f64,
+    /// Direct emissions of the estate household per month; replaces the per-person figure.
+    pub household_emissions_t: f64,
+    /// Monthly wage the estate pays its pilot.
+    pub pilot_wage_usd: f64,
+    /// Months of short pay in a row after which the pilot is let go.
+    pub pilot_unpaid_months_max: u32,
+    /// The pilot is rehired when the estate's savings cover this many months of wages.
+    pub pilot_rehire_months_of_wages: f64,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InitialTown {
+    /// Town v7: the elite estate, if the town has one.
+    #[serde(default)]
+    pub estate: Option<EstateInit>,
     pub map: MapInit,
     pub households: Vec<HouseholdInit>,
     pub homes: Vec<HomeInit>,
@@ -673,6 +715,7 @@ pub struct Params {
     pub lobby: LobbyParams,
     pub wellbeing: WellbeingParams,
     pub metrics: MetricsParams,
+    pub estate: EstateParams,
     pub systems: SystemsParams,
     pub initial: InitialTown,
 }
@@ -706,6 +749,7 @@ struct CoreParams {
     lobby: LobbyParams,
     wellbeing: WellbeingParams,
     metrics: MetricsParams,
+    estate: EstateParams,
 }
 
 impl Params {
@@ -739,6 +783,7 @@ impl Params {
             lobby: core.lobby,
             wellbeing: core.wellbeing,
             metrics: core.metrics,
+            estate: core.estate,
             systems: SystemsParams {
                 market,
                 regulated,
@@ -906,11 +951,40 @@ impl Params {
                 errs.push("a firm's founder is out of range".into());
             }
         }
+        if let Some(e) = &t.estate {
+            if e.household >= n {
+                errs.push("estate.household out of range".into());
+            } else if t.households[e.household].people.len() != 1 {
+                errs.push("the estate household must have exactly one person".into());
+            }
+            match t.homes.get(e.home) {
+                None => errs.push("estate.home does not exist".into()),
+                Some(hm) if hm.owner != Some(e.household) => {
+                    errs.push("the estate home must be owned by the estate household".into())
+                }
+                Some(_) => {}
+            }
+            if t.households.get(e.household).and_then(|x| x.home) != Some(e.home) {
+                errs.push("the estate household must live in the estate home".into());
+            }
+            for q in &e.grounds {
+                put(*q, "estate grounds", errs);
+            }
+            for q in &e.runway {
+                put(*q, "a runway tile", errs);
+            }
+            if e.runway.is_empty() {
+                errs.push("estate.runway is empty".into());
+            }
+            if !e.grounds.contains(&e.hangar_tile) && !e.runway.contains(&e.hangar_tile) {
+                errs.push("estate.hangar_tile must be a grounds or runway tile".into());
+            }
+        }
         // One household per home; every job refers to an active firm slot.
         let mut occupant: Vec<Option<usize>> = vec![None; t.homes.len()];
         for (i, hh) in t.households.iter().enumerate() {
-            if !(2..=4).contains(&hh.people.len()) {
-                errs.push(format!("household {i} must have 2 to 4 people"));
+            if !(1..=4).contains(&hh.people.len()) {
+                errs.push(format!("household {i} must have 1 to 4 people"));
             }
             if let Some(home) = hh.home {
                 match occupant.get_mut(home) {
@@ -924,6 +998,25 @@ impl Params {
                 }
             }
             for p in &hh.people {
+                if let Some(o) = p.staff_of {
+                    if t.estate.as_ref().map(|e| e.household) != Some(o) {
+                        errs.push(format!(
+                            "household {i}: {} is staff of household {o}, which is not the estate",
+                            p.label
+                        ));
+                    }
+                    if !p.labour_force || p.job.is_some() {
+                        errs.push(format!(
+                            "household {i}: staff member {} needs labour_force and no firm job",
+                            p.label
+                        ));
+                    }
+                    if hh.home.is_none() {
+                        errs.push(format!(
+                            "household {i}: staff member's household has no home"
+                        ));
+                    }
+                }
                 if let Some(f) = p.job {
                     if !t.firms.get(f).is_some_and(|x| x.active) {
                         errs.push(format!(

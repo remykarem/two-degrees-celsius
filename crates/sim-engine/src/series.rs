@@ -12,7 +12,8 @@ pub fn emissions_by_source(trace: &[TraceRecord]) -> (f64, f64, f64) {
         if let TraceRecord::Emissions { source, tonnes } = t {
             match source {
                 EmissionSource::Firm(_) => firms += tonnes.0,
-                EmissionSource::Households => hh += tonnes.0,
+                // Town v7: jet flights are counted with households in the CSV (3 columns).
+                EmissionSource::Households | EmissionSource::Aviation => hh += tonnes.0,
                 EmissionSource::Plant(_) => plants += tonnes.0,
                 EmissionSource::Sink | EmissionSource::FireSinkLoss => {}
             }

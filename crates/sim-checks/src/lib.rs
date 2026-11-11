@@ -343,6 +343,7 @@ pub fn check_state(
             | SystemId::Policy
             | SystemId::Labour
             | SystemId::Weather
+            | SystemId::Estate
             | SystemId::Production
             | SystemId::Nature
             | SystemId::Goods
@@ -414,11 +415,36 @@ pub fn check_people_homes_tiles(s: &State, tick: u32, system: SystemId) -> Resul
                 );
             }
         }
-        if (x.job.is_some() || x.jg) && !x.in_labour_force {
+        if (x.job.is_some() || x.jg || x.staff_of.is_some()) && !x.in_labour_force {
             return fail(
                 tick,
                 system,
                 format!("person {} works but is outside the labour force", x.id.0),
+            );
+        }
+        if let Some(o) = x.staff_of {
+            // Town v7: domestic staff work for the estate household only, and hold no other job.
+            let estate_hh = s.estate.as_ref().map(|e| e.household);
+            if estate_hh != Some(o) || x.job.is_some() || x.jg {
+                return fail(
+                    tick,
+                    system,
+                    format!("person {} is staff of household {} but also works elsewhere or the household is not the estate", x.id.0, o.0),
+                );
+            }
+        }
+    }
+    if let Some(e) = &s.estate {
+        let hh_ok = s
+            .households
+            .get(e.household.idx())
+            .is_some_and(|h| h.home == Some(e.home));
+        if !hh_ok || e.jet.owner != e.household {
+            return fail(
+                tick,
+                system,
+                "the estate household does not live in the estate home or does not own the jet"
+                    .into(),
             );
         }
     }

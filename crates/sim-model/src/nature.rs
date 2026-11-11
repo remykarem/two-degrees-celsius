@@ -26,13 +26,26 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         });
     }
     let mut hh_e = 0.0;
+    // Town v7: the estate household's direct figure replaces the per-person one, and a flight
+    // this month is its own source (Aviation), counted in the estate's footprint.
+    let estate_hh = s.estate.as_ref().map(|e| e.household);
+    let flight_e = match &s.estate {
+        Some(e) if e.jet.flying_this_month => p.estate.flight_tonnes,
+        _ => 0.0,
+    };
     for h in &s.households {
-        let direct = h.members.len() as f64 * np.household_footprint_base;
+        let is_estate = estate_hh == Some(h.id);
+        let direct = if is_estate {
+            p.estate.household_emissions_t
+        } else {
+            h.members.len() as f64 * np.household_footprint_base
+        };
         hh_e += direct;
+        let own = if is_estate { flight_e } else { 0.0 };
         d.household(
             h.id,
             HouseholdPatch {
-                footprint: Some(Tonnes(direct + h.energy_use.0 * gi)),
+                footprint: Some(Tonnes(direct + own + h.energy_use.0 * gi)),
                 ..HouseholdPatch::default()
             },
         );
@@ -41,6 +54,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         source: EmissionSource::Households,
         tonnes: Tonnes(hh_e),
     });
+    if flight_e > 0.0 {
+        d.trace.push(TraceRecord::Emissions {
+            source: EmissionSource::Aviation,
+            tonnes: Tonnes(flight_e),
+        });
+    }
     let mut plant_e = 0.0;
     for pl in &s.plants {
         plant_e += pl.emissions.0;
@@ -110,8 +129,8 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     n.harvest_forest = Units(harvest_f);
     n.depletion = Units(((f0 + c0) - (n.forest.0 + n.commons.0)).max(0.0));
     n.sink = Tonnes(sink);
-    n.gross_emissions = Tonnes(firm_e + hh_e + plant_e);
-    n.net_emissions = Tonnes(firm_e + hh_e + plant_e - sink);
+    n.gross_emissions = Tonnes(firm_e + hh_e + plant_e + flight_e);
+    n.net_emissions = Tonnes(firm_e + hh_e + plant_e + flight_e - sink);
     n.cumulative = Tonnes((n.cumulative.0 + n.net_emissions.0).max(0.0));
     n.atmosphere = Tonnes((n.atmosphere.0 + n.net_emissions.0).max(0.0));
     d.trace.push(TraceRecord::Emissions {

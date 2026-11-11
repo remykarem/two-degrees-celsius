@@ -80,6 +80,21 @@ pub struct Commute {
     pub minutes: u32,
 }
 
+/// Contract v1.9: a person on a household's payroll (the estate's pilot) commuting to the
+/// employer's workplace (the hangar tile). `wage` is what the employer paid this tick.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StaffCommute {
+    pub person: u32,
+    pub household: u32,
+    /// The employer household.
+    pub employer: u32,
+    pub from: Option<Tile>,
+    pub to: Tile,
+    pub tiles: u32,
+    pub minutes: u32,
+    pub wage: f64,
+}
+
 /// A household buying from a firm this month.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Purchase {
@@ -112,6 +127,9 @@ pub struct MonthFlows {
     pub rent: Vec<RentFlow>,
     pub wages: Vec<WageFlow>,
     pub emissions: Vec<EmissionLine>,
+    /// Contract v1.9; omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub staff_commutes: Vec<StaffCommute>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

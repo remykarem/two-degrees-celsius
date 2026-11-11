@@ -20,7 +20,7 @@ pub fn fixture_commands() -> Vec<Command> {
         },
         Command::Place {
             kind: InfraKind::Road,
-            tile: Tile { x: 4, y: 6 },
+            tile: Tile { x: 6, y: 7 },
         },
         Command::Place {
             kind: InfraKind::RenewablePlant,

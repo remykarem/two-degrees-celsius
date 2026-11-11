@@ -56,12 +56,23 @@ pub struct LorenzPoint {
     pub wealth_share: f64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdWealth {
     pub household: u32,
     pub people: u32,
     pub net_worth: f64,
+    /// Contract v1.9: what the net worth is made of (savings minus debt, homes, jet, bank
+    /// equity, firm equity). The ids are `net_cash`, `homes`, `jet`, `bank`, `firms`; labels
+    /// come from `content/ui.json` `text.estate.wealth_part_*`. Zero parts are omitted.
+    #[serde(default)]
+    pub parts: Vec<WealthPartView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WealthPartView {
+    pub id: String,
+    pub value: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -426,14 +437,30 @@ fn gini(sim: &Sim) -> GiniBreakdown {
             });
         }
     }
+    let parts = sim_metrics::household_wealth_parts(s, &sim.params);
     let by_household = s
         .households
         .iter()
         .zip(&wealth)
-        .map(|(h, w)| HouseholdWealth {
+        .zip(&parts)
+        .map(|((h, w), p)| HouseholdWealth {
             household: h.id.0,
             people: h.members.len() as u32,
             net_worth: w / 100.0,
+            parts: [
+                ("net_cash", p.net_cash),
+                ("homes", p.homes),
+                ("jet", p.jet),
+                ("bank", p.bank),
+                ("firms", p.firms),
+            ]
+            .into_iter()
+            .filter(|(_, v)| *v != 0.0)
+            .map(|(id, v)| WealthPartView {
+                id: id.to_string(),
+                value: v / 100.0,
+            })
+            .collect(),
         })
         .collect();
     GiniBreakdown {

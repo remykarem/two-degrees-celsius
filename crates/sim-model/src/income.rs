@@ -160,6 +160,41 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         );
     }
 
+    // Town v7: the estate pays its pilot (household to household), out of its savings plus what
+    // it received this tick. A short payment counts towards the pilot's dismissal.
+    if let Some(e) = s
+        .estate
+        .as_ref()
+        .filter(|e| crate::estate::pilot_employed(s, e))
+    {
+        let pid = e.pilot.expect("employed pilot exists");
+        let pilot = s.person(pid);
+        let due = Cents::from_dollars(p.estate.pilot_wage_usd);
+        let available =
+            s.households[e.household.idx()].savings.max(Cents::ZERO) + incoming[e.household.idx()];
+        let pay = due.min(available);
+        d.transfer_as(
+            Account::Household(e.household),
+            Account::Household(pilot.household),
+            pay,
+            FlowKind::Wage,
+            Purpose::DomesticWages,
+        );
+        incoming[pilot.household.idx()] += pay;
+        incoming[e.household.idx()] -= pay;
+        d.changes.push(Delta::Person(
+            pid,
+            PersonPatch {
+                wage: Some(pay),
+                ..PersonPatch::default()
+            },
+        ));
+        let mut next = e.clone();
+        next.wage_paid = pay;
+        next.unpaid_months = if pay < due { e.unpaid_months + 1 } else { 0 };
+        d.changes.push(Delta::Estate(next));
+    }
+
     // Rents: a household that lives in a home it does not own pays the home's rent to the owner
     // (a landlord household, or the government for public housing), out of its savings plus what
     // it earned this tick. Unpaid rent is arrears; the landlord bears the shortfall. A household

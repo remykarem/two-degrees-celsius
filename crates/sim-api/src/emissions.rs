@@ -20,7 +20,10 @@ pub struct EmissionsLine {
     pub firms: f64,
     pub households: f64,
     pub plants: f64,
-    /// `firms + households + plants`.
+    /// Contract v1.9: private jet flights (zero without an estate flight).
+    #[serde(default)]
+    pub aviation: f64,
+    /// `firms + households + plants + aviation`.
     pub gross_total: f64,
     /// Forest sink, negative.
     pub sink: f64,
@@ -47,6 +50,8 @@ pub enum SourceKind {
     Firm,
     Households,
     Plant,
+    /// Contract v1.9.
+    Aviation,
     Sink,
     FireSinkLoss,
 }
@@ -120,10 +125,11 @@ fn line(ticks: &[&TickRecord]) -> EmissionsLine {
         l.firms += t.firms_total();
         l.households += t.households;
         l.plants += t.plants_total();
+        l.aviation += t.aviation;
         l.sink += t.sink;
         l.headline += t.net_state;
     }
-    l.gross_total = l.firms + l.households + l.plants;
+    l.gross_total = l.firms + l.households + l.plants + l.aviation;
     l.net = l.gross_total + l.sink;
     l
 }
@@ -206,6 +212,15 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
             informational: false,
         });
     }
+    if last.aviation != 0.0 {
+        lines.push(SourceLine {
+            kind: SourceKind::Aviation,
+            id: None,
+            label: "Private jet flight".to_string(),
+            tonnes: last.aviation,
+            informational: false,
+        });
+    }
     lines.push(SourceLine {
         kind: SourceKind::Sink,
         id: None,
@@ -238,4 +253,4 @@ pub fn build(sim: &Sim, ticks: &[TickRecord]) -> EmissionsBreakdown {
     }
 }
 
-const NOTE: &str = "Gross emissions = firms (direct) + households (direct) + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.";
+const NOTE: &str = "Gross emissions = firms (direct) + households (direct) + private jet flights + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.";

@@ -6,6 +6,7 @@
 
 pub mod class;
 pub mod credit;
+pub mod estate;
 pub mod goods;
 pub mod government;
 pub mod income;
@@ -27,10 +28,11 @@ use sim_types::{Deltas, State, SystemId};
 pub type SystemFn = fn(&State, &Params, &mut Rng) -> Deltas;
 
 /// The systems in tick order (SPEC section 11), with the ids used in checks.
-pub const TICK_ORDER: [(SystemId, SystemFn); 13] = [
+pub const TICK_ORDER: [(SystemId, SystemFn); 14] = [
     (SystemId::Policy, policy::run),
     (SystemId::Labour, labour::run),
     (SystemId::Weather, weather::run),
+    (SystemId::Estate, estate::run),
     (SystemId::Production, production::run),
     (SystemId::Nature, nature::run),
     (SystemId::Goods, goods::run),

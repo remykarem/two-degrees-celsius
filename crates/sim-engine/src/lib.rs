@@ -51,6 +51,14 @@ impl Sim {
         for f in &mut s.firms {
             f.closed_tick = None;
         }
+        // The jet's flights during settling do not count towards the game's record.
+        if let Some(e) = &mut s.estate {
+            e.flights_total = 0;
+            e.tonnes_total = Tonnes::ZERO;
+            e.last_flight = None;
+            e.carbon_paid_total = Cents::ZERO;
+            e.jet.flying_this_month = false;
+        }
         self.clamped_total = Cents::ZERO;
         s.indicators = sim_metrics::compute(s, &self.params, &self.base_prices);
     }

@@ -169,8 +169,14 @@ fn every_event_and_trace_variant_round_trips() {
         },
         K::DroughtEnded,
         K::HomeDamaged { home: 2 },
+        K::PrivateJetFlight {
+            household: 8,
+            tonnes: 2.0,
+        },
+        K::PilotLetGo { person: 18 },
+        K::PilotHired { person: 18 },
     ];
-    assert_eq!(kinds.len(), 33);
+    assert_eq!(kinds.len(), 36);
     for k in kinds {
         let e = SimEvent::new(k);
         assert!((1..=3).contains(&e.importance));
@@ -333,9 +339,9 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
 fn initial_town_map_people_homes_and_shape() {
     let api = Api::init(1).unwrap();
     let s = api.snapshot();
-    assert_eq!(s.people.len(), 20);
-    assert_eq!(s.households.len(), 8);
-    assert_eq!(s.homes.len(), 7);
+    assert_eq!(s.people.len(), 22);
+    assert_eq!(s.households.len(), 9);
+    assert_eq!(s.homes.len(), 8);
     assert_eq!(s.households.iter().filter(|h| h.home.is_none()).count(), 1);
     assert_eq!(s.housing.unhoused_households, 1);
     assert_eq!(s.firms.len(), 4);
@@ -351,7 +357,7 @@ fn initial_town_map_people_homes_and_shape() {
     }
     assert_eq!(
         s.households.iter().map(|h| h.members.len()).sum::<usize>(),
-        20
+        22
     );
     // Buildings are a summary of the map.
     let count =
@@ -363,7 +369,9 @@ fn initial_town_map_people_homes_and_shape() {
     assert_eq!(s.buildings.road, count(T::Road));
     assert_eq!(s.buildings.fossil_plant as usize, s.plants.len());
     assert!(s.buildings.fossil_plant >= 1);
-    assert_eq!(count(T::Home), 7);
+    assert_eq!(count(T::Home), 8);
+    assert_eq!(count(T::EstateGrounds), 3);
+    assert_eq!(count(T::Runway), 3);
     assert_eq!(count(T::Bank), 1);
     assert_eq!(count(T::TownHall), 1);
     // Tiles are row-major, homes and plants agree with the map, plant tiles report emissions.
@@ -535,7 +543,7 @@ fn preview_validates_ranges_and_availability() {
     );
     assert_eq!(
         blocked(Command::Remove {
-            tile: Tile { x: 3, y: 9 }
+            tile: Tile { x: 6, y: 8 }
         }),
         Some(BlockReason::NothingToRemove)
     );
@@ -706,9 +714,9 @@ fn tile_commands_report_tile_validity() {
             place(InfraKind::Road, 0, 0),
             place(InfraKind::Road, 12, 0),
             place(InfraKind::Road, -1, 4),
-            place(InfraKind::Road, 4, 6),
+            place(InfraKind::Road, 6, 7),
             Command::Remove {
-                tile: Tile { x: 4, y: 6 },
+                tile: Tile { x: 6, y: 7 },
             },
             Command::Remove {
                 tile: Tile { x: 9, y: 3 },

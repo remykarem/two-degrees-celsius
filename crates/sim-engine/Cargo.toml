@@ -33,3 +33,7 @@ path = "../../tests/weather.rs"
 [[test]]
 name = "ledger"
 path = "../../tests/ledger.rs"
+
+[[test]]
+name = "estate"
+path = "../../tests/estate.rs"

@@ -6,10 +6,10 @@
       "group": "Climate and energy",
       "initial": 0.0,
       "active": 50.0,
-      "effective": 21.61,
+      "effective": 21.33,
       "pending": null,
       "lastChangeTurn": 3,
-      "weakenedBy": 0.5678000000000001
+      "weakenedBy": 0.5734
     },
     {
       "lever": "tax_wage",
@@ -28,10 +28,10 @@
       "group": "Taxes",
       "initial": 0.25,
       "active": 0.25,
-      "effective": 0.10805450478038275,
+      "effective": 0.10667029266895317,
       "pending": null,
       "lastChangeTurn": null,
-      "weakenedBy": 0.567781980878469
+      "weakenedBy": 0.5733188293241873
     },
     {
       "lever": "tax_capital",
@@ -243,16 +243,16 @@
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.11252068128007586,
-      "reason": "lobbying cut it by 55%"
+      "to": 0.1103492135199686,
+      "reason": "lobbying cut it by 56%"
     },
     {
       "turn": 2,
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.11053738667016957,
-      "reason": "lobbying cut it by 56%"
+      "to": 0.10816995050801265,
+      "reason": "lobbying cut it by 57%"
     },
     {
       "turn": 3,
@@ -266,7 +266,7 @@
       "lever": "carbon_price",
       "kind": "weakened",
       "from": 50.0,
-      "to": 21.61,
+      "to": 21.33,
       "reason": "lobbying cut it by 57%"
     },
     {
@@ -274,7 +274,7 @@
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.10805450478038275,
+      "to": 0.10667029266895317,
       "reason": "lobbying cut it by 57%"
     }
   ],

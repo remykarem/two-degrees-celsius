@@ -125,6 +125,37 @@ pub struct HouseholdView {
     pub wellbeing: f64,
     pub footprint_tonnes: f64,
     pub food_met: f64,
+    /// Contract v1.9: a short tag from `content/ui.json` `tags` ("Estate owner"); present for the
+    /// estate household only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    /// Contract v1.9: the wealth band of the household's net worth (`content/ui.json`
+    /// `wealth_bands`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wealth_band: Option<WealthBandView>,
+}
+
+/// Contract v1.9.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WealthBandView {
+    pub id: String,
+    pub label: String,
+}
+
+/// Contract v1.9: who employs a person who has no firm job.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EmployerKind {
+    Household,
+}
+
+/// Contract v1.9: the employer of a person on a household's payroll (the jet's pilot).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EmployerView {
+    pub kind: EmployerKind,
+    pub household: u32,
+    /// The employer household's label.
+    pub label: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -151,6 +182,9 @@ pub struct PersonView {
     /// In the government job guarantee (employed at the minimum wage, no firm).
     pub job_guarantee: bool,
     pub effective_hours: f64,
+    /// Contract v1.9: set for domestic staff (`job` stays `null`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employer: Option<EmployerView>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -441,6 +475,94 @@ pub struct Snapshot {
     pub policies: crate::policies::Policies,
     pub industry: crate::industry::Industry,
     pub history: Vec<HistoryPoint>,
+    /// Contract v1.9: the elite estate; absent when the town has none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub estate: Option<EstateView>,
+}
+
+/// Contract v1.9: the jet.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JetView {
+    pub value: f64,
+    /// The jet flew in the latest month (play the flight when this month's frame has a
+    /// `private_jet_flight` event).
+    pub flying_this_month: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastFlightView {
+    pub turn: u32,
+    /// 0..=2 within the turn.
+    pub month: u8,
+    pub tonnes: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PilotStatus {
+    Employed,
+    LetGo,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PilotView {
+    pub person: u32,
+    /// The monthly wage the estate owes (`params.estate.pilot_wage_usd`).
+    pub wage: f64,
+    pub status: PilotStatus,
+    /// Consecutive months the wage could not be paid in full.
+    pub unpaid_months: u32,
+    /// Months of short pay after which the pilot is let go.
+    pub unpaid_months_max: u32,
+}
+
+/// The estate's money, from the ledger: the latest month and the trailing twelve months, in
+/// dollars. `months` says how many months the second set covers (fewer early in the game).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EstateMoney {
+    pub dividends: f64,
+    pub wage_paid: f64,
+    pub wealth_tax: f64,
+    pub carbon_charge: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EstateFinance {
+    pub month: EstateMoney,
+    pub last12: EstateMoney,
+    pub months: u32,
+}
+
+/// Contract v1.9 (Town v7): the elite estate. Tiles come from `content/initial_town.json`; the
+/// scene draws what this says.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EstateView {
+    pub household: u32,
+    pub home: u32,
+    /// Pool, garden and drive tiles (`estate_grounds` on the map).
+    pub grounds_tiles: Vec<Tile>,
+    /// Runway tiles in take-off order (`runway` on the map).
+    pub runway_tiles: Vec<Tile>,
+    pub hangar_tile: Tile,
+    pub jet_name: String,
+    pub jet: JetView,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_flight: Option<LastFlightView>,
+    pub flights_total: u32,
+    pub tonnes_total: f64,
+    /// Tonnes of one flight (`params.estate.flight_tonnes`).
+    pub flight_tonnes: f64,
+    /// Direct monthly emissions of the estate household (`params.estate.household_emissions_t`).
+    pub household_emissions_t: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pilot: Option<PilotView>,
+    pub finance: EstateFinance,
 }
 
 /// Summary counts, derived from the map.
@@ -637,6 +759,11 @@ fn people(sim: &Sim) -> Vec<PersonView> {
         .persons
         .iter()
         .map(|p| PersonView {
+            employer: p.staff_of.map(|o| EmployerView {
+                kind: EmployerKind::Household,
+                household: o.0,
+                label: sim.state.households[o.idx()].label.clone(),
+            }),
             id: p.id.0,
             label: p.label.clone(),
             household: p.household.0,
@@ -654,7 +781,7 @@ fn people(sim: &Sim) -> Vec<PersonView> {
         .collect()
 }
 
-fn households(sim: &Sim) -> Vec<HouseholdView> {
+fn households(sim: &Sim, meta: &Meta) -> Vec<HouseholdView> {
     sim.state
         .households
         .iter()
@@ -683,8 +810,70 @@ fn households(sim: &Sim) -> Vec<HouseholdView> {
             wellbeing: h.wellbeing.0,
             footprint_tonnes: h.footprint.0,
             food_met: h.food_met.0,
+            tag: (sim.state.estate.as_ref().map(|e| e.household) == Some(h.id))
+                .then(|| meta.estate_tag.clone()),
+            wealth_band: Some(wealth_band(meta, h.wealth.dollars())),
         })
         .collect()
+}
+
+/// The band of a net worth in dollars: the first band whose `min` is at or below it.
+fn wealth_band(meta: &Meta, net_worth: f64) -> WealthBandView {
+    let b = meta
+        .wealth_bands
+        .iter()
+        .find(|b| b.min.is_none_or(|m| net_worth >= m))
+        .or(meta.wealth_bands.last());
+    match b {
+        Some(b) => WealthBandView {
+            id: b.id.clone(),
+            label: b.label.clone(),
+        },
+        None => WealthBandView {
+            id: String::new(),
+            label: String::new(),
+        },
+    }
+}
+
+fn estate_view(sim: &Sim, ledger: &crate::ledger::LedgerStore) -> Option<EstateView> {
+    let s = &sim.state;
+    let e = s.estate.as_ref()?;
+    let tpt = sim.params.run.ticks_per_turn.max(1);
+    let pilot = e.pilot.map(|id| PilotView {
+        person: id.0,
+        wage: sim.params.estate.pilot_wage_usd,
+        status: if s.person(id).staff_of == Some(e.household) {
+            PilotStatus::Employed
+        } else {
+            PilotStatus::LetGo
+        },
+        unpaid_months: e.unpaid_months,
+        unpaid_months_max: sim.params.estate.pilot_unpaid_months_max,
+    });
+    Some(EstateView {
+        household: e.household.0,
+        home: e.home.0,
+        grounds_tiles: e.grounds.iter().map(|t| Tile::from_sim(*t)).collect(),
+        runway_tiles: e.runway.iter().map(|t| Tile::from_sim(*t)).collect(),
+        hangar_tile: Tile::from_sim(e.hangar),
+        jet_name: e.jet_name.clone(),
+        jet: JetView {
+            value: e.jet.value.dollars(),
+            flying_this_month: e.jet.flying_this_month,
+        },
+        last_flight: e.last_flight.map(|f| LastFlightView {
+            turn: f.tick / tpt + 1,
+            month: (f.tick % tpt) as u8,
+            tonnes: f.tonnes.0,
+        }),
+        flights_total: e.flights_total,
+        tonnes_total: e.tonnes_total.0,
+        flight_tonnes: sim.params.estate.flight_tonnes,
+        household_emissions_t: sim.params.estate.household_emissions_t,
+        pilot,
+        finance: crate::finance::estate_finance(e.household, ledger),
+    })
 }
 
 fn homes(sim: &Sim) -> Vec<HomeView> {
@@ -822,7 +1011,7 @@ pub fn build(
         union_density: s.union_density.0,
         indicators: indicators(sim),
         people: people(sim),
-        households: households(sim),
+        households: households(sim, meta),
         homes: homes(sim),
         plants: plants(sim),
         firms: firms(sim),
@@ -872,6 +1061,7 @@ pub fn build(
         industry: crate::industry::build(sim, &finance),
         finance,
         history: history.to_vec(),
+        estate: estate_view(sim, ledger),
     }
 }
 

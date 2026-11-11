@@ -19,6 +19,6 @@ pub use turn::*;
 pub use units::*;
 
 /// Version of the serialised state layout.
-pub const SCHEMA_VERSION: u32 = 3;
+pub const SCHEMA_VERSION: u32 = 4;
 /// Firm slots: Factory, Farm, Shop and one dormant slot.
 pub const MAX_FIRMS: usize = 4;

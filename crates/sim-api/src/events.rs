@@ -114,6 +114,19 @@ pub enum SimEventKind {
     HomeDamaged {
         home: u32,
     },
+    /// Contract v1.9 (Town v7): the estate's jet flew this month.
+    PrivateJetFlight {
+        household: u32,
+        tonnes: f64,
+    },
+    /// Contract v1.9: the estate could not pay the pilot and let them go.
+    PilotLetGo {
+        person: u32,
+    },
+    /// Contract v1.9: the estate hired the pilot back.
+    PilotHired {
+        person: u32,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -233,6 +246,12 @@ impl SimEvent {
             },
             st::Event::DroughtEnded => K::DroughtEnded,
             st::Event::HomeDamaged { home } => K::HomeDamaged { home: home.0 },
+            st::Event::PrivateJetFlight { household, tonnes } => K::PrivateJetFlight {
+                household: household.0,
+                tonnes: tonnes.0,
+            },
+            st::Event::PilotLetGo { person } => K::PilotLetGo { person: person.0 },
+            st::Event::PilotHired { person } => K::PilotHired { person: person.0 },
         };
         SimEvent::new(kind)
     }
@@ -251,6 +270,7 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::FirmClosed { .. }
         | K::HouseholdEvicted { .. }
         | K::DroughtStarted { .. }
+        | K::PilotLetGo { .. }
         | K::ForestBurned { .. }
         | K::SystemSwitchCompleted { .. } => 3,
         K::LoanDefaulted { .. }
@@ -268,6 +288,8 @@ pub fn importance(k: &SimEventKind) -> u8 {
         | K::ElectricityRationed { .. }
         | K::FireStarted { .. }
         | K::HomeDamaged { .. }
+        | K::PrivateJetFlight { .. }
+        | K::PilotHired { .. }
         | K::SystemSwitchStarted { .. } => 2,
         K::Commuted { .. }
         | K::PersonHired { .. }
@@ -287,6 +309,8 @@ pub enum EmissionSourceKind {
     Sink,
     /// Sink capacity lost to fire; informational, not a term of net emissions.
     FireSinkLoss,
+    /// Contract v1.9: private jet flights.
+    Aviation,
 }
 
 /// One emissions line, used by both `TraceRecord::Emissions` and `MonthFlows.emissions`.
@@ -322,6 +346,7 @@ impl EmissionLine {
             ),
             st::EmissionSource::Sink => (EmissionSourceKind::Sink, None, None),
             st::EmissionSource::FireSinkLoss => (EmissionSourceKind::FireSinkLoss, None, None),
+            st::EmissionSource::Aviation => (EmissionSourceKind::Aviation, None, None),
         };
         EmissionLine {
             source,

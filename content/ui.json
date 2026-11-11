@@ -271,6 +271,27 @@
       "external_bank credit creation": "Money the bank creates when it lends: the borrower's balance and debt both rise.",
       "external_bank credit destruction": "Money that disappears when a loan is repaid: the payer's balance and debt both fall.",
       "external_other": "An account outside the town (no ledger)."
+    },
+    "estate": {
+      "employer_line": "Employer: {label} (household)",
+      "employs_line": "Employs: {name}",
+      "does_not_work": "Does not work: outside the labour force",
+      "home_label": "Estate",
+      "jet_label": "Private jet",
+      "flight_event": "Private jet flight from the estate: {tonnes} t CO2",
+      "pilot_let_go_event": "The estate could not pay its pilot and let them go. The jet is grounded.",
+      "pilot_hired_event": "The estate hired its pilot back. The jet can fly again.",
+      "pilot_status_employed": "Employed",
+      "pilot_status_let_go": "Let go",
+      "grounded_note": "The jet is grounded while the pilot is let go.",
+      "aviation_source": "Private jet flight",
+      "wealth_part_net_cash": "Savings minus debt",
+      "wealth_part_homes": "Homes owned",
+      "wealth_part_jet": "Private jet",
+      "wealth_part_bank": "Bank equity",
+      "wealth_part_firms": "Firm equity",
+      "domestic_wages_row": "Domestic wages (paid by the estate)",
+      "wealth_tax_note": "Paid in part if the estate's savings cannot cover it"
     }
   },
   "system_cards": [
@@ -450,5 +471,35 @@
       "label": "Output lost during the transition",
       "unit": "fraction"
     }
-  }
+  },
+  "tags": {
+    "estate_owner": "Estate owner"
+  },
+  "wealth_bands": [
+    {
+      "min": 1000000,
+      "id": "ultra_rich",
+      "label": "Ultra-rich"
+    },
+    {
+      "min": 250000,
+      "id": "wealthy",
+      "label": "Wealthy"
+    },
+    {
+      "min": 40000,
+      "id": "comfortable",
+      "label": "Comfortable"
+    },
+    {
+      "min": 0,
+      "id": "modest",
+      "label": "Modest"
+    },
+    {
+      "min": null,
+      "id": "in_debt",
+      "label": "In debt"
+    }
+  ]
 }

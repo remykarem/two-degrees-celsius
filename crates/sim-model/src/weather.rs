@@ -340,7 +340,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                     HomeOwner::Household(h) => Account::Household(h),
                     HomeOwner::Public => Account::Government,
                 };
-                let cost = Cents::from_dollars(c.home_repair_cost_usd);
+                // A payer pays at most what it holds (the estate keeps little cash).
+                let held = match payer {
+                    Account::Household(h) => s.households[h.idx()].savings,
+                    _ => s.gov.cash,
+                };
+                let cost = Cents::from_dollars(c.home_repair_cost_usd).min(held.max(Cents::ZERO));
                 for (h, part) in apportion(cost, &lw).into_iter().enumerate() {
                     d.transfer_as(
                         payer,

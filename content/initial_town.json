@@ -18,6 +18,34 @@
       [
         8,
         6
+      ],
+      [
+        1,
+        9
+      ],
+      [
+        1,
+        8
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        4,
+        6
       ]
     ],
     "forest": [
@@ -80,6 +108,50 @@
       [
         0,
         7
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        9
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        3,
+        9
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        5,
+        9
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        5,
+        11
       ]
     ],
     "commons": [
@@ -323,7 +395,7 @@
       "savings_usd": 6000,
       "debt_usd": 0,
       "home": 6,
-      "initial_income_usd": 1700,
+      "initial_income_usd": 3800,
       "people": [
         {
           "label": "Adult 1",
@@ -340,6 +412,15 @@
           "labour_force": false,
           "reservation_usd": 0,
           "job": null
+        },
+        {
+          "label": "Pilot",
+          "age_band": "Adult",
+          "skill": 0.65,
+          "labour_force": true,
+          "reservation_usd": 2000,
+          "job": null,
+          "staff_of": 8
         }
       ],
       "class": "Worker"
@@ -369,6 +450,24 @@
         }
       ],
       "class": "Dependent"
+    },
+    {
+      "label": "Estate owner",
+      "savings_usd": 15000,
+      "debt_usd": 0,
+      "home": 7,
+      "initial_income_usd": 5000,
+      "people": [
+        {
+          "label": "Adult 1",
+          "age_band": "Adult",
+          "skill": 0.5,
+          "labour_force": false,
+          "reservation_usd": 0,
+          "job": null
+        }
+      ],
+      "class": "Capitalist"
     }
   ],
   "homes": [
@@ -427,6 +526,14 @@
       ],
       "owner": 1,
       "value_usd": 45000
+    },
+    {
+      "tile": [
+        0,
+        10
+      ],
+      "owner": 8,
+      "value_usd": 1200000
     }
   ],
   "plants": [
@@ -470,7 +577,7 @@
     {
       "sector": "Food",
       "active": true,
-      "founder": 0,
+      "founder": 8,
       "tile": [
         7,
         9
@@ -498,7 +605,7 @@
       "cash_usd": 5000,
       "debt_usd": 20000,
       "wage_usd": 1650,
-      "price_usd": 70,
+      "price_usd": 75,
       "inventory_units": 0,
       "intensity_base": 0.0,
       "energy_per_unit": 0.002,
@@ -554,5 +661,43 @@
     "job_guarantee": 0.0,
     "public_spending_usd": 8000.0,
     "resilience_spending_usd": 0.0
+  },
+  "estate": {
+    "household": 8,
+    "home": 7,
+    "grounds": [
+      [
+        1,
+        10
+      ],
+      [
+        0,
+        11
+      ],
+      [
+        1,
+        11
+      ]
+    ],
+    "runway": [
+      [
+        2,
+        11
+      ],
+      [
+        3,
+        11
+      ],
+      [
+        4,
+        11
+      ]
+    ],
+    "hangar_tile": [
+      2,
+      11
+    ],
+    "jet_name": "Gulfstream",
+    "jet_value_usd": 800000
   }
 }

@@ -65,7 +65,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             let mut pool: Vec<usize> = s
                 .persons
                 .iter()
-                .filter(|x| x.in_labour_force && job[x.id.idx()].is_none())
+                .filter(|x| x.in_labour_force && job[x.id.idx()].is_none() && x.staff_of.is_none())
                 .filter(|x| skilled(x) == want_skilled)
                 .map(|x| x.id.idx())
                 .collect();
@@ -161,7 +161,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let jobless: Vec<usize> = s
         .persons
         .iter()
-        .filter(|x| x.in_labour_force && job[x.id.idx()].is_none())
+        .filter(|x| x.in_labour_force && job[x.id.idx()].is_none() && x.staff_of.is_none())
         .map(|x| x.id.idx())
         .collect();
     let want_jg = (s.policy.job_guarantee.0 * jobless.len() as f64).round() as usize;
@@ -186,7 +186,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     // Person updates: jobs, guarantee, skill drift (employment builds skill, idleness erodes it).
     for x in &s.persons {
         let i = x.id.idx();
-        let working = job[i].is_some() || in_jg[i];
+        let working = job[i].is_some() || in_jg[i] || x.staff_of.is_some();
         let mut patch = PersonPatch::default();
         if job[i] != x.job {
             patch.job = Some(job[i]);
@@ -201,7 +201,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         if minutes != x.commute_minutes {
             patch.commute_minutes = Some(minutes);
         }
-        let hours = if job[i].is_some() {
+        let hours = if job[i].is_some() || x.staff_of.is_some() {
             crate::space::effective_hours(&p.space, minutes)
         } else {
             1.0

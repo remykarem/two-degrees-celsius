@@ -1,4 +1,34 @@
 {
+  "tags": {
+    "estate_owner": "Estate owner"
+  },
+  "wealthBands": [
+    {
+      "min": 1000000.0,
+      "id": "ultra_rich",
+      "label": "Ultra-rich"
+    },
+    {
+      "min": 250000.0,
+      "id": "wealthy",
+      "label": "Wealthy"
+    },
+    {
+      "min": 40000.0,
+      "id": "comfortable",
+      "label": "Comfortable"
+    },
+    {
+      "min": 0.0,
+      "id": "modest",
+      "label": "Modest"
+    },
+    {
+      "min": null,
+      "id": "in_debt",
+      "label": "In debt"
+    }
+  ],
   "bands": {
     "crisis": {
       "legitimacyBelow": 0.2,
@@ -123,6 +153,27 @@
       "low_legitimacy_detail": "At zero the town collapses.",
       "low_legitimacy_title": "Collapse warning: legitimacy is very low",
       "policy_blocked_title": "A policy was blocked"
+    },
+    "estate": {
+      "aviation_source": "Private jet flight",
+      "does_not_work": "Does not work: outside the labour force",
+      "domestic_wages_row": "Domestic wages (paid by the estate)",
+      "employer_line": "Employer: {label} (household)",
+      "employs_line": "Employs: {name}",
+      "flight_event": "Private jet flight from the estate: {tonnes} t CO2",
+      "grounded_note": "The jet is grounded while the pilot is let go.",
+      "home_label": "Estate",
+      "jet_label": "Private jet",
+      "pilot_hired_event": "The estate hired its pilot back. The jet can fly again.",
+      "pilot_let_go_event": "The estate could not pay its pilot and let them go. The jet is grounded.",
+      "pilot_status_employed": "Employed",
+      "pilot_status_let_go": "Let go",
+      "wealth_part_bank": "Bank equity",
+      "wealth_part_firms": "Firm equity",
+      "wealth_part_homes": "Homes owned",
+      "wealth_part_jet": "Private jet",
+      "wealth_part_net_cash": "Savings minus debt",
+      "wealth_tax_note": "Paid in part if the estate's savings cannot cover it"
     },
     "finance_hint": {
       "bank-cr": "Equity over loans. Must stay above the limit, or lending stops.",

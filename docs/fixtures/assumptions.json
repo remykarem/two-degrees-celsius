@@ -3,8 +3,8 @@
     "id": "emissions",
     "title": "Emissions by source and net",
     "group": "emissions_energy",
-    "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant.",
-    "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
+    "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person, a larger one for the estate household), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant. A private jet flight is a fourth, occasional source (see the private jet topic).",
+    "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint; the estate household has its own figure) + private jet flights (tonnes per flight, in the months the jet flies) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
     "params": [
       {
         "path": "nature.household_footprint_base",
@@ -477,7 +477,7 @@
     "status": "tuned",
     "statusNote": "Tuned for plausible shares; not calibrated to household budget data.",
     "leavesOut": [
-      "Eight households and seven homes: no housing market, mortgages, or moving between towns."
+      "Nine households and eight homes: no housing market, mortgages, or moving between towns."
     ],
     "code": [
       "crates/sim-model/src/goods.rs"
@@ -813,7 +813,7 @@
     "id": "gini",
     "title": "Inequality (Gini)",
     "group": "scoring",
-    "summary": "The Gini coefficient measures how unequal wealth is: 0 means everyone has the same, 1 means one person has everything. In the game each person is given an equal share of their household's net worth, then the Gini is taken across all 20 people. The Lorenz curve shows the same thing as a picture. Net worth is savings plus homes and firm shares owned, minus debt.",
+    "summary": "The Gini coefficient measures how unequal wealth is: 0 means everyone has the same, 1 means one person has everything. In the game each person is given an equal share of their household's net worth, then the Gini is taken across all 22 people. The Lorenz curve shows the same thing as a picture. Net worth is savings plus homes and firm shares owned, minus debt.",
     "formula": "Gini = sum over all pairs of people of |wealth_i - wealth_j| / (2 x people x total wealth), kept within 0..1",
     "params": [],
     "examples": [
@@ -1928,6 +1928,76 @@
       "panel:people",
       "panel:industry",
       "panel:policies"
+    ]
+  },
+  {
+    "id": "private_jet",
+    "title": "The estate, its jet and its pilot",
+    "group": "emissions_energy",
+    "summary": "One very rich household lives on an estate in the south-west corner and owns a private jet and a short runway. Each month the jet flies with a fixed chance, but only while it has a pilot. A flight adds its tonnes to the month's emissions as their own source, and the estate pays the carbon price on those tonnes out of its savings. The estate's other emissions are a fixed figure per month that replaces the ordinary per-person one. The pilot is paid a fixed wage by the estate household; if the estate cannot pay it in full for several months in a row, the pilot is let go and the jet stays grounded until the estate can afford the wages again.",
+    "formula": "flight = random draw below the monthly chance, and the pilot is employed; flight emissions = tonnes per flight; carbon charge = carbon price x tonnes (capped by the estate's savings); pilot wage = fixed monthly wage, capped by what the estate holds; let go after N months of short pay; rehired when savings cover M months of wages",
+    "params": [
+      {
+        "path": "estate.flight_prob_monthly",
+        "label": "Chance the jet flies in a month",
+        "value": 0.4,
+        "unit": "probability per month"
+      },
+      {
+        "path": "estate.flight_tonnes",
+        "label": "Emissions of one flight",
+        "value": 2.0,
+        "unit": "t CO2 per flight"
+      },
+      {
+        "path": "estate.household_emissions_t",
+        "label": "Estate household direct emissions",
+        "value": 0.5,
+        "unit": "t CO2 per month"
+      },
+      {
+        "path": "estate.pilot_wage_usd",
+        "label": "Pilot's wage paid by the estate",
+        "value": 1800.0,
+        "unit": "$ per month"
+      },
+      {
+        "path": "estate.pilot_unpaid_months_max",
+        "label": "Months of short pay before the pilot is let go",
+        "value": 3.0,
+        "unit": "months"
+      },
+      {
+        "path": "estate.pilot_rehire_months_of_wages",
+        "label": "Months of wages the estate must hold to rehire",
+        "value": 3.0,
+        "unit": "months of wages"
+      }
+    ],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "Game numbers chosen to make wealth, jobs and emissions visible together; not calibrated to data.",
+    "leavesOut": [
+      "Jet fuel, crew other than the pilot, hangar and maintenance costs: a flight costs the estate money only through the carbon price.",
+      "Buying or selling the jet, depreciation, more than one flight a month, routes and destinations.",
+      "A carbon price on any household's other emissions."
+    ],
+    "code": [
+      "crates/sim-model/src/estate.rs",
+      "crates/sim-model/src/nature.rs",
+      "crates/sim-model/src/income.rs"
+    ],
+    "related": [
+      "emissions",
+      "gini",
+      "tax_carbon",
+      "tax_wealth"
+    ],
+    "usedBy": [
+      "emissions",
+      "gini",
+      "people:footprint",
+      "panel:people"
     ]
   }
 ]

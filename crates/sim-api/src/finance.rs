@@ -4,9 +4,10 @@
 //! ticks, fewer early in the game) in `quarter`. Stocks (debt, cash, equity) come from the state.
 use crate::command::Tile;
 use crate::ledger::{FinEntry, LedgerStore};
+use crate::snapshot::{EstateFinance, EstateMoney};
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
-use sim_types::{Cents, LedgerAccount, LedgerKind, PlantKind, Posting};
+use sim_types::{Cents, HouseholdId, LedgerAccount, LedgerKind, PlantKind, Posting};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,6 +67,9 @@ pub struct HouseholdIncome {
     pub rent: f64,
     pub interest: f64,
     pub benefits: f64,
+    /// Contract v1.9: the part of `wages` paid by a household to its staff (the estate's pilot).
+    #[serde(default)]
+    pub domestic_wages: f64,
 }
 
 /// The flow values of a period (a month, or the trailing quarter), in dollars.
@@ -180,6 +184,7 @@ struct Sums {
     created: i64,
     destroyed: i64,
     hh_net: i64,
+    domestic_wages: i64,
 }
 
 // Indices into `rev` and `spend`.
@@ -257,7 +262,12 @@ impl Sums {
                         | LedgerKind::Lobby
                         | LedgerKind::Build
                         | LedgerKind::Upkeep
-                        | LedgerKind::Subsidy => self.inc[WAGES] += a,
+                        | LedgerKind::Subsidy => {
+                            self.inc[WAGES] += a;
+                            if e.kind == LedgerKind::Wage && e.detail == "domestic wages" {
+                                self.domestic_wages += a;
+                            }
+                        }
                         LedgerKind::Dividend => self.inc[DIVIDENDS] += a,
                         LedgerKind::Rent => self.inc[RENT] += a,
                         LedgerKind::Benefit => self.inc[BENEFIT] += a,
@@ -359,6 +369,7 @@ impl Sums {
                 rent: d(i[RENT]),
                 interest: d(i[INT]),
                 benefits: d(i[BENEFIT]),
+                domestic_wages: d(self.domestic_wages),
             },
             household_taxes: d(self.hh_taxes),
             rent_paid: d(self.rent_paid),
@@ -583,5 +594,48 @@ pub fn energy(sim: &Sim, unit: &str) -> EnergyView {
                 tonnes: p.emissions.0,
             })
             .collect(),
+    }
+}
+
+/// The estate household's money from the ledger (contract v1.9): the latest month and the
+/// trailing twelve months (fewer early in the game).
+pub fn estate_finance(hh: HouseholdId, store: &LedgerStore) -> EstateFinance {
+    let me = LedgerAccount::Household(hh);
+    let Some(t) = store.last_tick() else {
+        return EstateFinance {
+            month: EstateMoney::default(),
+            last12: EstateMoney::default(),
+            months: 0,
+        };
+    };
+    let sum = |from: u32, to: u32| {
+        let (mut div, mut wage, mut wealth, mut carbon) = (0i64, 0i64, 0i64, 0i64);
+        for e in store.window(from, to) {
+            let a = e.amount.0;
+            if e.to == me && e.kind == LedgerKind::Dividend {
+                div += a;
+            }
+            if e.from == me && e.posting == Posting::Transfer {
+                match (e.kind, e.detail) {
+                    (LedgerKind::Wage, "domestic wages") => wage += a,
+                    (LedgerKind::Tax, "wealth tax") => wealth += a,
+                    (LedgerKind::Tax, "carbon price") => carbon += a,
+                    _ => {}
+                }
+            }
+        }
+        let d = |c: i64| Cents(c).dollars();
+        EstateMoney {
+            dividends: d(div),
+            wage_paid: d(wage),
+            wealth_tax: d(wealth),
+            carbon_charge: d(carbon),
+        }
+    };
+    let from = t.saturating_sub(11);
+    EstateFinance {
+        month: sum(t, t),
+        last12: sum(from, t),
+        months: t - from + 1,
     }
 }

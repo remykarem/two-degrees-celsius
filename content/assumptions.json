@@ -4,8 +4,8 @@
       "id": "emissions",
       "title": "Emissions by source and net",
       "group": "emissions_energy",
-      "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant.",
-      "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
+      "summary": "Gross emissions are three things added together: what firms release directly in production, what households release directly (a fixed footprint per person, a larger one for the estate household), and what the power plants release when they burn fuel. The forest then absorbs some, and what is left is net emissions. Electricity use is not counted a second time at the firm or household: it is counted once, at the plant. A private jet flight is a fourth, occasional source (see the private jet topic).",
+      "formula": "gross = firms (output x intensity x (1 - green tech)) + households (people x footprint; the estate household has its own figure) + private jet flights (tonnes per flight, in the months the jet flies) + plants (fossil energy delivered x emission factor); net = gross - forest sink",
       "params": [
         {
           "path": "nature.household_footprint_base",
@@ -400,7 +400,7 @@
       "status": "tuned",
       "statusNote": "Tuned for plausible shares; not calibrated to household budget data.",
       "leavesOut": [
-        "Eight households and seven homes: no housing market, mortgages, or moving between towns."
+        "Nine households and eight homes: no housing market, mortgages, or moving between towns."
       ],
       "code": [
         "crates/sim-model/src/goods.rs"
@@ -710,7 +710,7 @@
       "id": "gini",
       "title": "Inequality (Gini)",
       "group": "scoring",
-      "summary": "The Gini coefficient measures how unequal wealth is: 0 means everyone has the same, 1 means one person has everything. In the game each person is given an equal share of their household's net worth, then the Gini is taken across all 20 people. The Lorenz curve shows the same thing as a picture. Net worth is savings plus homes and firm shares owned, minus debt.",
+      "summary": "The Gini coefficient measures how unequal wealth is: 0 means everyone has the same, 1 means one person has everything. In the game each person is given an equal share of their household's net worth, then the Gini is taken across all 22 people. The Lorenz curve shows the same thing as a picture. Net worth is savings plus homes and firm shares owned, minus debt.",
       "formula": "Gini = sum over all pairs of people of |wealth_i - wealth_j| / (2 x people x total wealth), kept within 0..1",
       "params": [],
       "examples": [
@@ -1721,6 +1721,70 @@
         "panel:industry",
         "panel:policies"
       ]
+    },
+    {
+      "id": "private_jet",
+      "title": "The estate, its jet and its pilot",
+      "group": "emissions_energy",
+      "summary": "One very rich household lives on an estate in the south-west corner and owns a private jet and a short runway. Each month the jet flies with a fixed chance, but only while it has a pilot. A flight adds its tonnes to the month's emissions as their own source, and the estate pays the carbon price on those tonnes out of its savings. The estate's other emissions are a fixed figure per month that replaces the ordinary per-person one. The pilot is paid a fixed wage by the estate household; if the estate cannot pay it in full for several months in a row, the pilot is let go and the jet stays grounded until the estate can afford the wages again.",
+      "formula": "flight = random draw below the monthly chance, and the pilot is employed; flight emissions = tonnes per flight; carbon charge = carbon price x tonnes (capped by the estate's savings); pilot wage = fixed monthly wage, capped by what the estate holds; let go after N months of short pay; rehired when savings cover M months of wages",
+      "params": [
+        {
+          "path": "estate.flight_prob_monthly",
+          "label": "Chance the jet flies in a month",
+          "unit": "probability per month"
+        },
+        {
+          "path": "estate.flight_tonnes",
+          "label": "Emissions of one flight",
+          "unit": "t CO2 per flight"
+        },
+        {
+          "path": "estate.household_emissions_t",
+          "label": "Estate household direct emissions",
+          "unit": "t CO2 per month"
+        },
+        {
+          "path": "estate.pilot_wage_usd",
+          "label": "Pilot's wage paid by the estate",
+          "unit": "$ per month"
+        },
+        {
+          "path": "estate.pilot_unpaid_months_max",
+          "label": "Months of short pay before the pilot is let go",
+          "unit": "months"
+        },
+        {
+          "path": "estate.pilot_rehire_months_of_wages",
+          "label": "Months of wages the estate must hold to rehire",
+          "unit": "months of wages"
+        }
+      ],
+      "examples": [],
+      "status": "placeholder",
+      "statusNote": "Game numbers chosen to make wealth, jobs and emissions visible together; not calibrated to data.",
+      "leavesOut": [
+        "Jet fuel, crew other than the pilot, hangar and maintenance costs: a flight costs the estate money only through the carbon price.",
+        "Buying or selling the jet, depreciation, more than one flight a month, routes and destinations.",
+        "A carbon price on any household's other emissions."
+      ],
+      "code": [
+        "crates/sim-model/src/estate.rs",
+        "crates/sim-model/src/nature.rs",
+        "crates/sim-model/src/income.rs"
+      ],
+      "related": [
+        "emissions",
+        "gini",
+        "tax_carbon",
+        "tax_wealth"
+      ],
+      "usedBy": [
+        "emissions",
+        "gini",
+        "people:footprint",
+        "panel:people"
+      ]
     }
   ],
   "agents": {
@@ -1729,7 +1793,7 @@
         "id": "households",
         "title": "Households and people",
         "actor": "agent",
-        "summary": "Eight households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
+        "summary": "Nine households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
         "decides": [
           "How much to spend on food, goods and services this month",
           "Which firm in each sector gets that spending",
@@ -2098,6 +2162,40 @@
         "code": [
           "crates/sim-model/src/weather.rs"
         ]
+      },
+      {
+        "id": "estate",
+        "title": "The estate and its pilot",
+        "actor": "agent",
+        "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
+        "decides": [
+          "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)",
+          "Whether to let the pilot go after months of short pay, and to rehire once it can afford wages again"
+        ],
+        "observes": [
+          "Its savings, the carbon price after lobbying, whether the pilot is employed"
+        ],
+        "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
+        "params": [
+          {
+            "path": "estate.flight_prob_monthly",
+            "label": "Chance the jet flies in a month",
+            "unit": "probability per month"
+          },
+          {
+            "path": "estate.flight_tonnes",
+            "label": "Emissions of one flight",
+            "unit": "t CO2 per flight"
+          },
+          {
+            "path": "estate.pilot_wage_usd",
+            "label": "Pilot's wage",
+            "unit": "$ per month"
+          }
+        ],
+        "code": [
+          "crates/sim-model/src/estate.rs"
+        ]
       }
     ],
     "randomness": [
@@ -2277,11 +2375,27 @@
           }
         ],
         "code": "crates/sim-model/src/class.rs"
+      },
+      {
+        "id": "estate_flight",
+        "event": "The estate's jet flies",
+        "system": "estate",
+        "distribution": "bernoulli",
+        "probability": "the fixed monthly flight chance; the flight happens only if the pilot is employed (the draw is taken either way, so a dismissal never shifts the random stream)",
+        "when": "each month while the estate exists",
+        "params": [
+          {
+            "path": "estate.flight_prob_monthly",
+            "label": "Chance the jet flies in a month",
+            "unit": "probability per month"
+          }
+        ],
+        "code": "crates/sim-model/src/estate.rs"
       }
     ],
     "deterministic": [
       "Everything else is deterministic: spending, shop choice, hiring, wages, prices, credit, taxes, lobbying and legitimacy use no random draws.",
-      "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off and whether a household founds a firm; it does not change the starting town.",
+      "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off, whether a household founds a firm and when the estate's jet flies; it does not change the starting town.",
       "The starting differences between households (income, savings, skill, who owns what) are written in content/initial_town.json, not drawn."
     ]
   }

@@ -434,6 +434,14 @@
     "w_local_pollution": 0.04,
     "pollution_radius": 2
   },
+  "estate": {
+    "flight_prob_monthly": 0.4,
+    "flight_tonnes": 2.0,
+    "household_emissions_t": 0.5,
+    "pilot_wage_usd": 1800,
+    "pilot_unpaid_months_max": 3,
+    "pilot_rehire_months_of_wages": 3.0
+  },
   "metrics": {
     "unemployment_smoothing": 0.05,
     "scc_usd": 200.0,

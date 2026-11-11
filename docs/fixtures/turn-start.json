@@ -10,7 +10,7 @@
       },
       "submittedTurn": 1,
       "effectiveTurn": 3,
-      "pcCost": 12.335434555645008,
+      "pcCost": 12.397683112325783,
       "moneyCost": 0.0
     },
     {
@@ -19,8 +19,8 @@
         "type": "place",
         "kind": "road",
         "tile": {
-          "x": 4,
-          "y": 6
+          "x": 6,
+          "y": 7
         }
       },
       "submittedTurn": 1,
@@ -74,7 +74,7 @@
       "monthsDone": 0
     },
     "pc": {
-      "current": 45.16456544435499,
+      "current": 45.10231688767422,
       "cap": 100.0,
       "regenNextTurn": 5.6
     },
@@ -316,7 +316,7 @@
           "kind": "fossil_plant",
           "ref": 0,
           "buildable": false,
-          "emissionsMonthly": 3.4175408252005175
+          "emissionsMonthly": 3.5439629487163264
         },
         {
           "x": 11,
@@ -471,7 +471,7 @@
           "kind": "fossil_plant",
           "ref": 1,
           "buildable": false,
-          "emissionsMonthly": 3.4175408252005175
+          "emissionsMonthly": 3.5439629487163264
         },
         {
           "x": 11,
@@ -583,8 +583,8 @@
         {
           "x": 4,
           "y": 6,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 5,
@@ -658,8 +658,8 @@
         {
           "x": 4,
           "y": 7,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 5,
@@ -707,32 +707,34 @@
         {
           "x": 0,
           "y": 8,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 8,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 2,
           "y": 8,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 3,
           "y": 8,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 4,
           "y": 8,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 5,
@@ -780,38 +782,48 @@
         {
           "x": 0,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 1,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "road",
+          "buildable": false
         },
         {
           "x": 2,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 3,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 4,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 5,
           "y": 9,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 6,
@@ -853,38 +865,47 @@
         {
           "x": 0,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "home",
+          "ref": 7,
+          "buildable": false
         },
         {
           "x": 1,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "estate_grounds",
+          "buildable": false
         },
         {
           "x": 2,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 3,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 4,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 5,
           "y": 10,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 6,
@@ -925,38 +946,40 @@
         {
           "x": 0,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "estate_grounds",
+          "buildable": false
         },
         {
           "x": 1,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "estate_grounds",
+          "buildable": false
         },
         {
           "x": 2,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "runway",
+          "buildable": false
         },
         {
           "x": 3,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "runway",
+          "buildable": false
         },
         {
           "x": 4,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "runway",
+          "buildable": false
         },
         {
           "x": 5,
           "y": 11,
-          "kind": "empty",
-          "buildable": true
+          "kind": "forest",
+          "buildable": false,
+          "state": "standing",
+          "fireRisk": 0.0
         },
         {
           "x": 6,
@@ -1000,7 +1023,7 @@
       "publicHousing": 0,
       "fossilPlant": 2,
       "renewablePlant": 0,
-      "road": 4
+      "road": 11
     },
     "pending": [
       {
@@ -1012,7 +1035,7 @@
         },
         "submittedTurn": 1,
         "effectiveTurn": 3,
-        "pcCost": 12.335434555645008,
+        "pcCost": 12.397683112325783,
         "moneyCost": 0.0
       },
       {
@@ -1021,8 +1044,8 @@
           "type": "place",
           "kind": "road",
           "tile": {
-            "x": 4,
-            "y": 6
+            "x": 6,
+            "y": 7
           }
         },
         "submittedTurn": 1,
@@ -1057,7 +1080,7 @@
       },
       "tax_profit": {
         "nominal": 0.25,
-        "effective": 0.11451767013609351
+        "effective": 0.1125724027398193
       },
       "tax_capital": {
         "nominal": 0.4,
@@ -1128,27 +1151,27 @@
         "effective": null
       }
     },
-    "netLobby": 0.541929319455626,
-    "unionDensity": 0.09842720404279669,
+    "netLobby": 0.5497103890407228,
+    "unionDensity": 0.08261399344322025,
     "indicators": {
-      "gdpAnnual": 385679.04,
-      "gdpRealAnnual": 369592.06553165294,
-      "unemployment": 0.2,
-      "employed": 8.0,
-      "labourForce": 10.0,
-      "gini": 0.7212783787112409,
-      "avgIncomePerPerson": 1725.5,
-      "medianIncomePerPerson": 1178.89,
-      "topHouseholdWealthShare": 0.6063893266115038,
-      "wageShare": 0.5866918772666516,
-      "profitShare": 0.3622551020662155,
-      "avgWellbeing": 0.7155360782941905,
+      "gdpAnnual": 383148.24,
+      "gdpRealAnnual": 370418.46277679584,
+      "unemployment": 0.18181818181818182,
+      "employed": 9.0,
+      "labourForce": 11.0,
+      "gini": 0.8822686155546975,
+      "avgIncomePerPerson": 1596.97,
+      "medianIncomePerPerson": 1393.0,
+      "topHouseholdWealthShare": 0.7859463158410778,
+      "wageShare": 0.6059763187219651,
+      "profitShare": 0.39774067603703467,
+      "avgWellbeing": 0.6947775461744612,
       "remainingBudget": 900.0,
       "budgetShare": 1.0,
       "temperature": 1.3,
-      "gpiAnnual": 79847.76754410245,
-      "moneyInCirculation": 291729.16,
-      "priceIndex": 1.0435262982315547
+      "gpiAnnual": 10198.893071115213,
+      "moneyInCirculation": 262494.05,
+      "priceIndex": 1.0343659361031223
     },
     "people": [
       {
@@ -1161,7 +1184,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.9256893059052151,
+        "wellbeing": 0.9194706546848688,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1176,7 +1199,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.9256893059052151,
+        "wellbeing": 0.9194706546848688,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1191,7 +1214,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.5838136119194449,
+        "wellbeing": 0.6081408201332787,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1206,7 +1229,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.5838136119194449,
+        "wellbeing": 0.6081408201332787,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1220,10 +1243,10 @@
         "job": {
           "firm": 0
         },
-        "wage": 3054.39,
+        "wage": 2911.52,
         "commuteTiles": 7,
         "commuteMinutes": 42,
-        "wellbeing": 0.8552637275814825,
+        "wellbeing": 0.8406908208502453,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 0.872
@@ -1237,13 +1260,13 @@
         "job": {
           "firm": 2
         },
-        "wage": 2996.16,
+        "wage": 2856.11,
         "commuteTiles": 5,
-        "commuteMinutes": 26,
-        "wellbeing": 0.878597060058404,
+        "commuteMinutes": 22,
+        "wellbeing": 0.8706908197491443,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.9359999999999999
+        "effectiveHours": 0.952
       },
       {
         "id": 6,
@@ -1255,7 +1278,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.9052637257463141,
+        "wellbeing": 0.8906908190150769,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1267,15 +1290,15 @@
         "ageBand": "adult",
         "skill": 0.8917736684589478,
         "job": {
-          "firm": 0
+          "firm": 1
         },
-        "wage": 3054.39,
-        "commuteTiles": 10,
-        "commuteMinutes": 44,
-        "wellbeing": 0.829950015753437,
+        "wage": 2856.11,
+        "commuteTiles": 8,
+        "commuteMinutes": 32,
+        "wellbeing": 0.8263562394862434,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.864
+        "effectiveHours": 0.912
       },
       {
         "id": 8,
@@ -1286,13 +1309,13 @@
         "job": {
           "firm": 2
         },
-        "wage": 2996.16,
+        "wage": 2856.11,
         "commuteTiles": 4,
-        "commuteMinutes": 20,
-        "wellbeing": 0.8632833478633246,
+        "commuteMinutes": 16,
+        "wellbeing": 0.8530254591011938,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.96
+        "effectiveHours": 0.976
       },
       {
         "id": 9,
@@ -1304,7 +1327,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.8799500139182687,
+        "wellbeing": 0.8630254587341601,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1314,12 +1337,12 @@
         "label": "Adult 1",
         "household": 4,
         "ageBand": "adult",
-        "skill": 0.4275942282659167,
+        "skill": 0.4250312258986884,
         "job": null,
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.49914703926517157,
+        "wellbeing": 0.2759008974933873,
         "inLabourForce": true,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1329,17 +1352,15 @@
         "label": "Adult 2",
         "household": 4,
         "ageBand": "adult",
-        "skill": 0.5245727461523219,
-        "job": {
-          "firm": 2
-        },
-        "wage": 1665.1,
-        "commuteTiles": 6,
-        "commuteMinutes": 20,
-        "wellbeing": 0.6824793087877477,
+        "skill": 0.435376340464468,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.27590304552134143,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.96
+        "effectiveHours": 1.0
       },
       {
         "id": 12,
@@ -1351,7 +1372,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.6991459748426915,
+        "wellbeing": 0.4759001523609478,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1365,13 +1386,13 @@
         "job": {
           "firm": 1
         },
-        "wage": 1665.1,
+        "wage": 1587.27,
         "commuteTiles": 6,
-        "commuteMinutes": 36,
-        "wellbeing": 0.6816011794963228,
+        "commuteMinutes": 28,
+        "wellbeing": 0.7101944113321208,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.896
+        "effectiveHours": 0.9279999999999999
       },
       {
         "id": 14,
@@ -1382,13 +1403,13 @@
         "job": {
           "firm": 1
         },
-        "wage": 1665.1,
+        "wage": 1587.27,
         "commuteTiles": 6,
-        "commuteMinutes": 36,
-        "wellbeing": 0.6816011794963228,
+        "commuteMinutes": 28,
+        "wellbeing": 0.7101944113321208,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.896
+        "effectiveHours": 0.9279999999999999
       },
       {
         "id": 15,
@@ -1400,7 +1421,7 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.724934511239177,
+        "wellbeing": 0.7401944102310198,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1410,17 +1431,17 @@
         "label": "Adult 1",
         "household": 6,
         "ageBand": "adult",
-        "skill": 0.47211547153708955,
+        "skill": 0.4445680680434156,
         "job": {
-          "firm": 1
+          "firm": 0
         },
-        "wage": 1474.95,
-        "commuteTiles": 3,
-        "commuteMinutes": 18,
-        "wellbeing": 0.7122967607467318,
+        "wage": 1336.25,
+        "commuteTiles": 9,
+        "commuteMinutes": 38,
+        "wellbeing": 0.6822481072653195,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 0.968
+        "effectiveHours": 0.888
       },
       {
         "id": 17,
@@ -1432,28 +1453,50 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.7256300935906869,
+        "wellbeing": 0.7318424125539124,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
       },
       {
         "id": 18,
-        "label": "Adult 1",
-        "household": 7,
+        "label": "Pilot",
+        "household": 6,
         "ageBand": "adult",
-        "skill": 0.32797809895436997,
+        "skill": 0.6819445699980189,
         "job": null,
-        "wage": 0.0,
-        "commuteTiles": 0,
-        "commuteMinutes": 0,
-        "wellbeing": 0.23628594536057135,
+        "wage": 1800.0,
+        "commuteTiles": 6,
+        "commuteMinutes": 24,
+        "wellbeing": 0.708509080076991,
         "inLabourForce": true,
         "jobGuarantee": false,
-        "effectiveHours": 1.0
+        "effectiveHours": 0.944,
+        "employer": {
+          "kind": "household",
+          "household": 8,
+          "label": "Estate owner"
+        }
       },
       {
         "id": 19,
+        "label": "Adult 1",
+        "household": 7,
+        "ageBand": "adult",
+        "skill": 0.3788861811660783,
+        "job": {
+          "firm": 0
+        },
+        "wage": 1200.0,
+        "commuteTiles": 2,
+        "commuteMinutes": 12,
+        "wellbeing": 0.4979114640371448,
+        "inLabourForce": true,
+        "jobGuarantee": false,
+        "effectiveHours": 0.992
+      },
+      {
+        "id": 20,
         "label": "Retired 1",
         "household": 7,
         "ageBand": "retired",
@@ -1462,7 +1505,22 @@
         "wage": 0.0,
         "commuteTiles": 0,
         "commuteMinutes": 0,
-        "wellbeing": 0.4362858464878374,
+        "wellbeing": 0.5293058485429244,
+        "inLabourForce": false,
+        "jobGuarantee": false,
+        "effectiveHours": 1.0
+      },
+      {
+        "id": 21,
+        "label": "Adult 1",
+        "household": 8,
+        "ageBand": "adult",
+        "skill": 0.5,
+        "job": null,
+        "wage": 0.0,
+        "commuteTiles": 0,
+        "commuteMinutes": 0,
+        "wellbeing": 0.7472992085185547,
         "inLabourForce": false,
         "jobGuarantee": false,
         "effectiveHours": 1.0
@@ -1478,25 +1536,29 @@
         ],
         "home": 0,
         "class": "capitalist",
-        "savings": 60790.06,
+        "savings": 26627.83,
         "debt": 0.0,
-        "netWorth": 458448.82,
+        "netWorth": 280156.36,
         "income": {
           "wages": 0.0,
-          "dividends": 9463.0,
+          "dividends": 3692.08,
           "rent": 0.0,
-          "interest": 160.09,
+          "interest": 68.48,
           "benefits": 0.0,
-          "taxPaid": 3849.24,
+          "taxPaid": 1504.22,
           "rentPaid": 0.0,
           "loanPayments": 0.0,
-          "spending": 5679.47
+          "spending": 3238.61
         },
-        "politicalPower": 0.6066438930635678,
+        "politicalPower": 0.10209488934885007,
         "arrearsMonths": 0,
-        "wellbeing": 0.9256893059052151,
-        "footprintTonnes": 0.8643049999999999,
-        "foodMet": 1.0
+        "wellbeing": 0.9194706546848688,
+        "footprintTonnes": 0.6839007500000001,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "wealthy",
+          "label": "Wealthy"
+        }
       },
       {
         "id": 1,
@@ -1507,25 +1569,29 @@
         ],
         "home": 1,
         "class": "rentier",
-        "savings": 978.23,
+        "savings": 1267.45,
         "debt": 112541.03,
-        "netWorth": 133111.39,
+        "netWorth": 143742.14,
         "income": {
           "wages": 0.0,
-          "dividends": 244.86,
+          "dividends": 742.27,
           "rent": 1372.08,
-          "interest": 4.04,
+          "interest": 5.29,
           "benefits": 800.0,
-          "taxPaid": 648.39,
+          "taxPaid": 847.86,
           "rentPaid": 0.0,
           "loanPayments": 761.94,
-          "spending": 961.78
+          "spending": 1285.46
         },
-        "politicalPower": 0.17610904912784991,
+        "politicalPower": 0.052384052124599595,
         "arrearsMonths": 0,
-        "wellbeing": 0.5838136119194449,
-        "footprintTonnes": 0.51092225,
-        "foodMet": 0.7591002367797948
+        "wellbeing": 0.6081408201332787,
+        "footprintTonnes": 0.52105475,
+        "foodMet": 0.9448438074237413,
+        "wealthBand": {
+          "id": "comfortable",
+          "label": "Comfortable"
+        }
       },
       {
         "id": 2,
@@ -1537,25 +1603,29 @@
         ],
         "home": 2,
         "class": "manager",
-        "savings": 62059.1,
+        "savings": 64236.17,
         "debt": 25971.01,
-        "netWorth": 81088.09,
+        "netWorth": 83265.16,
         "income": {
-          "wages": 6287.43,
+          "wages": 6018.86,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 159.29,
+          "interest": 164.48,
           "benefits": 0.0,
-          "taxPaid": 1878.89,
+          "taxPaid": 1796.08,
           "rentPaid": 0.0,
           "loanPayments": 175.83,
-          "spending": 4159.27
+          "spending": 4014.55
         },
-        "politicalPower": 0.10695760403309633,
+        "politicalPower": 0.030252521109603046,
         "arrearsMonths": 0,
-        "wellbeing": 0.8797081711287337,
-        "footprintTonnes": 0.9731549999999999,
-        "foodMet": 1.0
+        "wellbeing": 0.8673574865381554,
+        "footprintTonnes": 0.9622492500000001,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "comfortable",
+          "label": "Comfortable"
+        }
       },
       {
         "id": 3,
@@ -1567,25 +1637,29 @@
         ],
         "home": 3,
         "class": "manager",
-        "savings": 70395.47,
+        "savings": 72369.34,
         "debt": 8657.01,
-        "netWorth": 61738.46,
+        "netWorth": 63712.33,
         "income": {
-          "wages": 6062.55,
+          "wages": 5735.86,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 180.37,
+          "interest": 185.02,
           "benefits": 0.0,
-          "taxPaid": 1887.32,
+          "taxPaid": 1787.68,
           "rentPaid": 343.02,
           "loanPayments": 58.61,
-          "spending": 3769.21
+          "spending": 3588.84
         },
-        "politicalPower": 0.08166133595603188,
+        "politicalPower": 0.02321188599650731,
         "arrearsMonths": 0,
-        "wellbeing": 0.8577277925116767,
-        "footprintTonnes": 0.9442185,
-        "foodMet": 1.0
+        "wellbeing": 0.8474690524405325,
+        "footprintTonnes": 0.931179,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "comfortable",
+          "label": "Comfortable"
+        }
       },
       {
         "id": 4,
@@ -1595,27 +1669,31 @@
           11,
           12
         ],
-        "home": 4,
-        "class": "worker",
-        "savings": 11740.81,
-        "debt": 3462.79,
-        "netWorth": 8278.02,
+        "home": null,
+        "class": "dependent",
+        "savings": 1623.64,
+        "debt": 3515.2,
+        "netWorth": -1891.56,
         "income": {
-          "wages": 1677.1,
+          "wages": 23.64,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 28.59,
-          "benefits": 800.0,
-          "taxPaid": 510.97,
-          "rentPaid": 343.02,
-          "loanPayments": 23.44,
-          "spending": 1900.5
+          "interest": 0.0,
+          "benefits": 1600.0,
+          "taxPaid": 0.0,
+          "rentPaid": 0.0,
+          "loanPayments": 0.0,
+          "spending": 1623.64
         },
-        "politicalPower": 0.010949320282215512,
+        "politicalPower": 0.0,
         "arrearsMonths": 0,
-        "wellbeing": 0.6269241076318702,
-        "footprintTonnes": 0.8026500000000001,
-        "foodMet": 1.0
+        "wellbeing": 0.3425680317918922,
+        "footprintTonnes": 0.781773,
+        "foodMet": 0.7956094573073625,
+        "wealthBand": {
+          "id": "in_debt",
+          "label": "In debt"
+        }
       },
       {
         "id": 5,
@@ -1627,83 +1705,129 @@
         ],
         "home": 5,
         "class": "worker",
-        "savings": 10140.42,
+        "savings": 11861.45,
         "debt": 2597.1,
-        "netWorth": 7543.32,
+        "netWorth": 9264.35,
         "income": {
-          "wages": 3342.2,
+          "wages": 3198.17,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 27.82,
+          "interest": 31.97,
           "benefits": 0.0,
-          "taxPaid": 1010.19,
+          "taxPaid": 965.15,
           "rentPaid": 343.02,
           "loanPayments": 17.58,
-          "spending": 2013.14
+          "spending": 2040.75
         },
-        "politicalPower": 0.009977534080763505,
+        "politicalPower": 0.003375218517855845,
         "arrearsMonths": 0,
-        "wellbeing": 0.6960456234106075,
-        "footprintTonnes": 0.8120115,
-        "foodMet": 1.0
+        "wellbeing": 0.7201944109650871,
+        "footprintTonnes": 0.8131124999999999,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "modest",
+          "label": "Modest"
+        }
       },
       {
         "id": 6,
         "label": "Worker C",
         "members": [
           16,
-          17
+          17,
+          18
         ],
         "home": 6,
         "class": "worker",
-        "savings": 5822.39,
+        "savings": 7352.54,
         "debt": 0.0,
-        "netWorth": 5822.39,
+        "netWorth": 7352.54,
         "income": {
-          "wages": 1480.95,
+          "wages": 3159.88,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 13.63,
+          "interest": 18.65,
           "benefits": 800.0,
-          "taxPaid": 447.94,
+          "taxPaid": 948.34,
           "rentPaid": 343.02,
           "loanPayments": 0.0,
-          "spending": 1510.74
+          "spending": 2694.98
         },
-        "politicalPower": 0.007701263456474951,
+        "politicalPower": 0.0026787015992785048,
         "arrearsMonths": 0,
-        "wellbeing": 0.7189634271687093,
-        "footprintTonnes": 0.55383125,
-        "foodMet": 1.0
+        "wellbeing": 0.7075331999654076,
+        "footprintTonnes": 0.8627145,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "modest",
+          "label": "Modest"
+        }
       },
       {
         "id": 7,
         "label": "Destitute household",
         "members": [
-          18,
-          19
+          19,
+          20
         ],
-        "home": null,
-        "class": "dependent",
-        "savings": 1606.0,
-        "debt": 2937.56,
-        "netWorth": -1331.56,
+        "home": 4,
+        "class": "worker",
+        "savings": 2649.77,
+        "debt": 2604.91,
+        "netWorth": 44.86,
         "income": {
-          "wages": 6.0,
+          "wages": 1211.82,
           "dividends": 0.0,
           "rent": 0.0,
-          "interest": 0.0,
-          "benefits": 1600.0,
-          "taxPaid": 0.0,
-          "rentPaid": 0.0,
-          "loanPayments": 0.04,
-          "spending": 1605.96
+          "interest": 5.53,
+          "benefits": 800.0,
+          "taxPaid": 362.21,
+          "rentPaid": 343.02,
+          "loanPayments": 17.64,
+          "spending": 1360.5
         },
-        "politicalPower": 0.0,
+        "politicalPower": 0.000016343543012840967,
         "arrearsMonths": 0,
-        "wellbeing": 0.3362858959242044,
-        "footprintTonnes": 0.560447,
-        "foodMet": 1.0
+        "wellbeing": 0.5136086562900346,
+        "footprintTonnes": 0.5628500000000001,
+        "foodMet": 1.0,
+        "wealthBand": {
+          "id": "modest",
+          "label": "Modest"
+        }
+      },
+      {
+        "id": 8,
+        "label": "Estate owner",
+        "members": [
+          21
+        ],
+        "home": 7,
+        "class": "capitalist",
+        "savings": 1389.58,
+        "debt": 0.0,
+        "netWorth": 2157277.14,
+        "income": {
+          "wages": 0.0,
+          "dividends": 5490.05,
+          "rent": 0.0,
+          "interest": 9.23,
+          "benefits": 0.0,
+          "taxPaid": 2199.71,
+          "rentPaid": 0.0,
+          "loanPayments": 0.0,
+          "spending": 1215.6
+        },
+        "politicalPower": 0.7859863877602927,
+        "arrearsMonths": 0,
+        "wellbeing": 0.7472992085185547,
+        "footprintTonnes": 2.684021,
+        "foodMet": 1.0,
+        "tag": "Estate owner",
+        "wealthBand": {
+          "id": "ultra_rich",
+          "label": "Ultra-rich"
+        }
       }
     ],
     "homes": [
@@ -1758,7 +1882,7 @@
           "y": 4
         },
         "owner": 1,
-        "household": 4,
+        "household": 7,
         "rent": 343.02,
         "value": 45000.0
       },
@@ -1783,6 +1907,17 @@
         "household": 6,
         "rent": 343.02,
         "value": 45000.0
+      },
+      {
+        "id": 7,
+        "tile": {
+          "x": 0,
+          "y": 10
+        },
+        "owner": 8,
+        "household": 8,
+        "rent": 343.02,
+        "value": 1200000.0
       }
     ],
     "plants": [
@@ -1794,8 +1929,8 @@
           "y": 2
         },
         "capacity": 5.0,
-        "output": 3.4175408252005175,
-        "emissionsMonthly": 3.4175408252005175
+        "output": 3.5439629487163264,
+        "emissionsMonthly": 3.5439629487163264
       },
       {
         "id": 1,
@@ -1805,8 +1940,8 @@
           "y": 4
         },
         "capacity": 5.0,
-        "output": 3.4175408252005175,
-        "emissionsMonthly": 3.4175408252005175
+        "output": 3.5439629487163264,
+        "emissionsMonthly": 3.5439629487163264
       }
     ],
     "firms": [
@@ -1823,15 +1958,15 @@
           "x": 9,
           "y": 3
         },
-        "workers": 2.0,
-        "wage": 1606.66,
-        "price": 100.7,
-        "output": 109.56370261860765,
-        "emissions": 1.3147644314232918,
-        "revenue": 11559.26,
-        "profit": 4657.21,
-        "capital": 131.8552812463573,
-        "debt": 45679.01,
+        "workers": 3.0,
+        "wage": 1531.51,
+        "price": 93.79,
+        "output": 108.26506848024593,
+        "emissions": 1.2991808217629512,
+        "revenue": 10360.36,
+        "profit": 4205.83,
+        "capital": 128.92262468374022,
+        "debt": 40875.76,
         "greenTech": 0.0
       },
       {
@@ -1841,20 +1976,20 @@
         "name": "Farm",
         "owner": {
           "kind": "household",
-          "id": 0
+          "id": 8
         },
         "tile": {
           "x": 7,
           "y": 9
         },
         "workers": 3.0,
-        "wage": 1576.03,
-        "price": 25.32,
-        "output": 485.35191362736106,
-        "emissions": 0.9707038272547222,
-        "revenue": 12364.78,
-        "profit": 6635.84,
-        "capital": 58.195712420605844,
+        "wage": 1502.36,
+        "price": 27.2,
+        "output": 563.4730153502456,
+        "emissions": 1.1269460307004913,
+        "revenue": 14473.35,
+        "profit": 7433.26,
+        "capital": 64.30166768485583,
         "debt": 15000.16,
         "greenTech": 0.0
       },
@@ -1871,15 +2006,15 @@
           "x": 5,
           "y": 7
         },
-        "workers": 3.0,
-        "wage": 1576.03,
-        "price": 75.16,
-        "output": 135.34533800568747,
+        "workers": 2.0,
+        "wage": 1502.36,
+        "price": 74.55,
+        "output": 114.67694204386774,
         "emissions": 0.0,
-        "revenue": 8155.88,
-        "profit": 349.8,
-        "capital": 21.06090366698707,
-        "debt": 22072.6,
+        "revenue": 6965.31,
+        "profit": 1060.38,
+        "capital": 22.06549015681158,
+        "debt": 13183.16,
         "greenTech": 0.0
       },
       {
@@ -1908,33 +2043,33 @@
       }
     ],
     "bank": {
-      "equity": 42313.75,
-      "loans": 334042.91,
-      "deposits": 291729.16,
+      "equity": 38304.3,
+      "loans": 300798.35,
+      "deposits": 262494.05,
       "defaultRate": 0.0,
       "failed": false
     },
     "government": {
       "cash": 8000.0,
-      "debt": 95124.64,
-      "debtToGdp": 0.2466419746325857,
+      "debt": 75853.01,
+      "debtToGdp": 0.19797300908911913,
       "legitimacy": 0.7,
-      "receipts": 11748.54,
-      "spending": 4060.0
+      "receipts": 12033.77,
+      "spending": 4130.0
     },
     "nature": {
-      "forest": 0.7089044642190713,
-      "commons": 0.7891981869375089,
-      "forestStock": 1417.8089284381426,
-      "commonsStock": 789.1981869375089,
+      "forest": 0.7057207452115264,
+      "commons": 0.7744417890371043,
+      "forestStock": 1411.4414904230528,
+      "commonsStock": 774.4417890371043,
       "commonsAccess": "open",
       "cumulativeTonnes": 0.0,
-      "netEmissionsMonthly": 10.102933918582615,
-      "grossEmissionsMonthly": 11.52054990907905,
-      "sinkMonthly": 1.417615990496434,
-      "forestHealth": 0.7089044642190713,
-      "commonsHealth": 0.7891981869375089,
-      "farmHealth": 0.74905132557829
+      "netEmissionsMonthly": 13.12260105845356,
+      "grossEmissionsMonthly": 14.534052749896095,
+      "sinkMonthly": 1.411451691442535,
+      "forestHealth": 0.7057207452115264,
+      "commonsHealth": 0.7744417890371043,
+      "farmHealth": 0.7400812671243153
     },
     "weather": {
       "stress": 0.0,
@@ -1951,7 +2086,7 @@
       }
     },
     "housing": {
-      "homes": 7,
+      "homes": 8,
       "rentPrivate": 343.02,
       "rentPublic": 130.0,
       "occupancy": 1.0,
@@ -1978,9 +2113,9 @@
         }
       ],
       "demand": {
-        "firms": 3.2135411504010354,
-        "households": 3.6215404999999996,
-        "total": 6.835081650401035
+        "firms": 3.3050711474326535,
+        "households": 3.7828547500000003,
+        "total": 7.087925897432654
       },
       "served": 1.0,
       "intensity": 1.0,
@@ -1991,14 +2126,14 @@
             "x": 10,
             "y": 2
           },
-          "tonnes": 3.4175408252005175
+          "tonnes": 3.5439629487163264
         },
         {
           "tile": {
             "x": 10,
             "y": 4
           },
-          "tonnes": 3.4175408252005175
+          "tonnes": 3.5439629487163264
         }
       ]
     },
@@ -2025,18 +2160,18 @@
         },
         "balance": 0.0,
         "cash": 8000.0,
-        "debt": 95124.64,
-        "debtToGdp": 0.2466419746325857,
+        "debt": 75853.01,
+        "debtToGdp": 0.19797300908911913,
         "legitimacy": 0.7,
         "basis": "month"
       },
       "bank": {
-        "equity": 42313.75,
-        "loans": 334042.91,
-        "deposits": 291729.16,
-        "capitalRatio": 0.1266716003641568,
+        "equity": 38304.3,
+        "loans": 300798.35,
+        "deposits": 262494.05,
+        "capitalRatio": 0.1273421213912909,
         "capitalRatioLimit": 0.1,
-        "headroom": 89094.59000000003,
+        "headroom": 82244.65000000002,
         "defaultRate": 0.0,
         "interestIncome": 0.0
       },
@@ -2046,30 +2181,31 @@
           "dividends": 0.0,
           "rent": 0.0,
           "interest": 0.0,
-          "benefits": 0.0
+          "benefits": 0.0,
+          "domesticWages": 0.0
         },
         "taxes": 0.0,
         "rentPaid": 0.0,
         "loanPayments": 0.0,
         "spending": 0.0,
         "savingRate": 0.0,
-        "debt": 156166.5,
-        "netWorth": 754698.931997354
+        "debt": 155886.26,
+        "netWorth": 2742923.316722503
       },
       "firms": {
         "revenue": 0.0,
         "wageBill": 0.0,
         "profit": 0.0,
         "investment": 0.0,
-        "debt": 82751.77,
-        "cash": 60196.68
+        "debt": 69059.08,
+        "cash": 65116.28
       },
       "money": {
-        "supply": 291729.16,
+        "supply": 262494.05,
         "createdThisTurn": 0.0,
         "destroyedThisTurn": 0.0
       },
-      "priceIndex": 1.0435262982315547,
+      "priceIndex": 1.0343659361031223,
       "wageShare": 0.0,
       "profitShare": 0.0,
       "quarter": {
@@ -2097,7 +2233,8 @@
           "dividends": 0.0,
           "rent": 0.0,
           "interest": 0.0,
-          "benefits": 0.0
+          "benefits": 0.0,
+          "domesticWages": 0.0
         },
         "householdTaxes": 0.0,
         "rentPaid": 0.0,
@@ -2118,7 +2255,7 @@
         "inputs": [
           {
             "label": "Firm sales (month)",
-            "value": 32079.92,
+            "value": 31799.02,
             "unit": "$",
             "source": "finance"
           },
@@ -2129,36 +2266,36 @@
           },
           {
             "label": "Government services (month)",
-            "value": 60.0,
+            "value": 130.0,
             "unit": "$"
           },
           {
             "label": "Price index",
-            "value": 1.0435262982315547,
+            "value": 1.0343659361031223,
             "unit": "index",
             "source": "prices"
           }
         ],
         "result": {
-          "value": 369592.06553165294,
+          "value": 370418.46277679584,
           "unit": "$/year"
         },
         "parts": [
           {
             "label": "Factory sales",
-            "value": 138711.12,
+            "value": 124324.32,
             "unit": "$/year",
             "note": "firm sales this month x 12"
           },
           {
             "label": "Farm sales",
-            "value": 148377.36000000002,
+            "value": 173680.2,
             "unit": "$/year",
             "note": "firm sales this month x 12"
           },
           {
             "label": "Shop sales",
-            "value": 97870.56,
+            "value": 83583.72,
             "unit": "$/year",
             "note": "firm sales this month x 12"
           },
@@ -2170,13 +2307,13 @@
           },
           {
             "label": "Government services",
-            "value": 720.0,
+            "value": 1560.0,
             "unit": "$/year",
             "note": "public works, upkeep and job guarantee pay x 12"
           },
           {
             "label": "Price adjustment",
-            "value": -16086.974468347034,
+            "value": -12729.777223204146,
             "unit": "$/year",
             "note": "converts to constant base-year prices"
           }
@@ -2190,19 +2327,19 @@
         "inputs": [
           {
             "label": "GDP (nominal, annual)",
-            "value": 385679.04,
+            "value": 383148.24,
             "unit": "$/year",
             "source": "gdp"
           },
           {
             "label": "Gini",
-            "value": 0.7212783787112409,
+            "value": 0.8822686155546975,
             "unit": "0..1",
             "source": "gini"
           },
           {
             "label": "Gross emissions (month)",
-            "value": 11.52054990907905,
+            "value": 14.534052749896095,
             "unit": "t CO2",
             "source": "emissions"
           },
@@ -2213,7 +2350,7 @@
           },
           {
             "label": "Natural capital lost (month)",
-            "value": 0.0,
+            "value": 0.4658845352532808,
             "unit": "units"
           },
           {
@@ -2223,30 +2360,30 @@
           }
         ],
         "result": {
-          "value": 79847.76754410245,
+          "value": 10198.893071115213,
           "unit": "$/year"
         },
         "parts": [
           {
             "label": "GDP (nominal)",
-            "value": 385679.04,
+            "value": 383148.24,
             "unit": "$/year"
           },
           {
             "label": "Inequality discount",
-            "value": -278181.9526741078,
+            "value": -338039.66725701897,
             "unit": "$/year",
             "note": "GDP x (1 - Gini) takes the Gini share of GDP away"
           },
           {
             "label": "Social cost of carbon",
-            "value": -27649.31978178972,
+            "value": -34881.726599750626,
             "unit": "$/year",
             "note": "cost per tonne x 12 x gross emissions this month"
           },
           {
             "label": "Depletion of forest and commons",
-            "value": -0.0,
+            "value": -27.953072115196846,
             "unit": "$/year",
             "note": "cost per unit x 12 x natural capital lost this month"
           }
@@ -2260,18 +2397,18 @@
         "inputs": [
           {
             "label": "Total wages (month)",
-            "value": 18856.23,
+            "value": 19348.23,
             "unit": "$"
           },
           {
             "label": "GDP (month)",
-            "value": 32139.92,
+            "value": 31929.02,
             "unit": "$",
             "source": "gdp"
           }
         ],
         "result": {
-          "value": 0.5866918772666516,
+          "value": 0.6059763187219651,
           "unit": "share"
         },
         "parts": [
@@ -2287,32 +2424,37 @@
           },
           {
             "label": "Manager A wages",
-            "value": 0.19562680927643877,
+            "value": 0.1885075082166631,
             "unit": "share"
           },
           {
             "label": "Manager B wages",
-            "value": 0.1886299032480479,
+            "value": 0.17964409806502046,
             "unit": "share"
           },
           {
             "label": "Worker A wages",
-            "value": 0.05218121264769794,
+            "value": 0.0007403922826319129,
             "unit": "share"
           },
           {
             "label": "Worker B wages",
-            "value": 0.1039890578445746,
+            "value": 0.10016499097059665,
             "unit": "share"
           },
           {
             "label": "Worker C wages",
-            "value": 0.0460782105244817,
+            "value": 0.09896576844513236,
             "unit": "share"
           },
           {
             "label": "Destitute household wages",
-            "value": 0.00018668372541064197,
+            "value": 0.037953560741920675,
+            "unit": "share"
+          },
+          {
+            "label": "Estate owner wages",
+            "value": 0.0,
             "unit": "share"
           }
         ],
@@ -2325,34 +2467,34 @@
         "inputs": [
           {
             "label": "Total profit (month)",
-            "value": 11642.85,
+            "value": 12699.47,
             "unit": "$"
           },
           {
             "label": "GDP (month)",
-            "value": 32139.92,
+            "value": 31929.02,
             "unit": "$",
             "source": "gdp"
           }
         ],
         "result": {
-          "value": 0.3622551020662155,
+          "value": 0.39774067603703467,
           "unit": "share"
         },
         "parts": [
           {
             "label": "Factory profit",
-            "value": 0.14490421880328264,
+            "value": 0.13172436861513445,
             "unit": "share"
           },
           {
             "label": "Farm profit",
-            "value": 0.2064672220714924,
+            "value": 0.23280576729257585,
             "unit": "share"
           },
           {
             "label": "Shop profit",
-            "value": 0.010883661191440427,
+            "value": 0.03321054012932436,
             "unit": "share"
           }
         ],
@@ -2365,18 +2507,18 @@
         "inputs": [
           {
             "label": "Government debt",
-            "value": 95124.64,
+            "value": 75853.01,
             "unit": "$"
           },
           {
             "label": "GDP (annual, nominal)",
-            "value": 385679.04,
+            "value": 383148.24,
             "unit": "$/year",
             "source": "gdp"
           }
         ],
         "result": {
-          "value": 0.2466419746325857,
+          "value": 0.19797300908911913,
           "unit": "share"
         }
       },
@@ -2387,23 +2529,23 @@
         "inputs": [
           {
             "label": "People",
-            "value": 20.0,
+            "value": 22.0,
             "unit": "people"
           },
           {
             "label": "Total household net worth",
-            "value": 754698.931997354,
+            "value": 2742923.316722503,
             "unit": "$"
           },
           {
             "label": "Richest household's share",
-            "value": 0.6063893266115038,
+            "value": 0.7859463158410778,
             "unit": "share",
             "source": "top_wealth_share"
           }
         ],
         "result": {
-          "value": 0.7212783787112409,
+          "value": 0.8822686155546975,
           "unit": "0..1"
         },
         "lorenz": [
@@ -2412,80 +2554,88 @@
             "wealthShare": 0.0
           },
           {
-            "populationShare": 0.05,
-            "wealthShare": -0.000882179597416383
+            "populationShare": 0.045454545454545456,
+            "wealthShare": -0.00022987153747827094
           },
           {
-            "populationShare": 0.1,
-            "wealthShare": -0.001764359194832766
+            "populationShare": 0.09090909090909091,
+            "wealthShare": -0.0004597430749565419
           },
           {
-            "populationShare": 0.15,
-            "wealthShare": 0.0015673534834207863
+            "populationShare": 0.13636363636363635,
+            "wealthShare": -0.0006896146124348128
           },
           {
-            "populationShare": 0.2,
-            "wealthShare": 0.0048990661616743385
+            "populationShare": 0.18181818181818182,
+            "wealthShare": -0.000681437205555352
           },
           {
-            "populationShare": 0.25,
-            "wealthShare": 0.00823077883992789
+            "populationShare": 0.22727272727272727,
+            "wealthShare": -0.0006732597986758912
           },
           {
-            "populationShare": 0.3,
-            "wealthShare": 0.01188699177863876
+            "populationShare": 0.2727272727272727,
+            "wealthShare": 0.00022025649167201533
           },
           {
-            "populationShare": 0.35,
-            "wealthShare": 0.015543204717349629
+            "populationShare": 0.3181818181818182,
+            "wealthShare": 0.001113772782019922
           },
           {
-            "populationShare": 0.4,
-            "wealthShare": 0.019199417656060497
+            "populationShare": 0.36363636363636365,
+            "wealthShare": 0.0020072890723678285
           },
           {
-            "populationShare": 0.45,
-            "wealthShare": 0.023056843281793603
+            "populationShare": 0.4090909090909091,
+            "wealthShare": 0.0031331377783231354
+          },
+          {
+            "populationShare": 0.45454545454545453,
+            "wealthShare": 0.004258986484278442
           },
           {
             "populationShare": 0.5,
-            "wealthShare": 0.026914268907526708
+            "wealthShare": 0.005384835190233748
           },
           {
-            "populationShare": 0.55,
-            "wealthShare": 0.05418274086918946
+            "populationShare": 0.5454545454545454,
+            "wealthShare": 0.01312746627432464
           },
           {
-            "populationShare": 0.6,
-            "wealthShare": 0.0814512128308522
+            "populationShare": 0.5909090909090909,
+            "wealthShare": 0.020870097358415534
           },
           {
-            "populationShare": 0.65,
-            "wealthShare": 0.10871968479251495
+            "populationShare": 0.6363636363636364,
+            "wealthShare": 0.028612728442506428
           },
           {
-            "populationShare": 0.7,
-            "wealthShare": 0.14453444772294413
+            "populationShare": 0.6818181818181818,
+            "wealthShare": 0.038731514178922
           },
           {
-            "populationShare": 0.75,
-            "wealthShare": 0.18034921065337334
+            "populationShare": 0.7272727272727273,
+            "wealthShare": 0.04885029991533756
           },
           {
-            "populationShare": 0.8,
-            "wealthShare": 0.21616397358380254
+            "populationShare": 0.7727272727272727,
+            "wealthShare": 0.05896908565175313
           },
           {
-            "populationShare": 0.85,
-            "wealthShare": 0.3043523791941216
+            "populationShare": 0.8181818181818182,
+            "wealthShare": 0.0851714469606293
           },
           {
-            "populationShare": 0.9,
-            "wealthShare": 0.3925407848044407
+            "populationShare": 0.8636363636363636,
+            "wealthShare": 0.11137380826950546
           },
           {
-            "populationShare": 0.95,
-            "wealthShare": 0.6962703924022203
+            "populationShare": 0.9090909090909091,
+            "wealthShare": 0.16244274618221718
+          },
+          {
+            "populationShare": 0.9545454545454546,
+            "wealthShare": 0.21351168409492888
           },
           {
             "populationShare": 1.0,
@@ -2496,42 +2646,137 @@
           {
             "household": 0,
             "people": 2,
-            "netWorth": 458448.82094003935
+            "netWorth": 280156.36112206144,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 26627.83
+              },
+              {
+                "id": "homes",
+                "value": 45000.0
+              },
+              {
+                "id": "bank",
+                "value": 38304.3
+              },
+              {
+                "id": "firms",
+                "value": 170224.23112206146
+              }
+            ]
           },
           {
             "household": 1,
             "people": 2,
-            "netWorth": 133111.39105731455
+            "netWorth": 143742.135574608,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": -111273.58
+              },
+              {
+                "id": "homes",
+                "value": 225000.0
+              },
+              {
+                "id": "firms",
+                "value": 30015.715574607988
+              }
+            ]
           },
           {
             "household": 2,
             "people": 3,
-            "netWorth": 81088.09
+            "netWorth": 83265.16,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 38265.16
+              },
+              {
+                "id": "homes",
+                "value": 45000.0
+              }
+            ]
           },
           {
             "household": 3,
             "people": 3,
-            "netWorth": 61738.46
+            "netWorth": 63712.33,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 63712.33
+              }
+            ]
           },
           {
             "household": 4,
             "people": 3,
-            "netWorth": 8278.02
+            "netWorth": -1891.56,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": -1891.56
+              }
+            ]
           },
           {
             "household": 5,
             "people": 3,
-            "netWorth": 7543.32
+            "netWorth": 9264.35,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 9264.35
+              }
+            ]
           },
           {
             "household": 6,
-            "people": 2,
-            "netWorth": 5822.39
+            "people": 3,
+            "netWorth": 7352.54,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 7352.54
+              }
+            ]
           },
           {
             "household": 7,
             "people": 2,
-            "netWorth": -1331.56
+            "netWorth": 44.86,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 44.86
+              }
+            ]
+          },
+          {
+            "household": 8,
+            "people": 1,
+            "netWorth": 2157277.140025833,
+            "parts": [
+              {
+                "id": "net_cash",
+                "value": 1389.58
+              },
+              {
+                "id": "homes",
+                "value": 1200000.0
+              },
+              {
+                "id": "jet",
+                "value": 800000.0
+              },
+              {
+                "id": "firms",
+                "value": 155887.56002583285
+              }
+            ]
           }
         ]
       },
@@ -2542,25 +2787,25 @@
         "inputs": [
           {
             "label": "Average wellbeing",
-            "value": 0.7155360782941905,
+            "value": 0.6947775461744612,
             "unit": "0..1",
             "source": "wellbeing"
           },
           {
             "label": "Unemployment (smoothed)",
-            "value": 0.1797087657609853,
+            "value": 0.19297039520204315,
             "unit": "share",
             "source": "unemployment"
           },
           {
             "label": "Gini",
-            "value": 0.7212783787112409,
+            "value": 0.8822686155546975,
             "unit": "0..1",
             "source": "gini"
           },
           {
             "label": "Public debt / GDP",
-            "value": 0.2466419746325857,
+            "value": 0.19797300908911913,
             "unit": "ratio",
             "source": "debt"
           },
@@ -2586,31 +2831,31 @@
           {
             "id": "wellbeing",
             "label": "Wellbeing above or below 0.5",
-            "input": 0.7155360782941905,
+            "input": 0.6947775461744612,
             "threshold": 0.5,
             "weight": 0.01,
-            "contribution": 0.002155360782941905
+            "contribution": 0.001947775461744612
           },
           {
             "id": "unemployment",
             "label": "Unemployment above its threshold",
-            "input": 0.1797087657609853,
+            "input": 0.19297039520204315,
             "threshold": 0.1,
             "weight": 0.02,
-            "contribution": -0.0015941753152197058
+            "contribution": -0.001859407904040863
           },
           {
             "id": "inequality",
             "label": "Inequality above its threshold",
-            "input": 0.7212783787112409,
+            "input": 0.8822686155546975,
             "threshold": 0.45,
             "weight": 0.012,
-            "contribution": -0.0032553405445348905
+            "contribution": -0.00518722338665637
           },
           {
             "id": "debt",
             "label": "Public debt above one year of GDP",
-            "input": 0.2466419746325857,
+            "input": 0.19797300908911913,
             "threshold": 1.0,
             "weight": 0.008,
             "contribution": -0.0
@@ -2632,12 +2877,12 @@
         "inputs": [
           {
             "label": "Bank equity",
-            "value": 42313.75,
+            "value": 38304.3,
             "unit": "$"
           },
           {
             "label": "Loans outstanding",
-            "value": 334042.91,
+            "value": 300798.35,
             "unit": "$"
           },
           {
@@ -2648,30 +2893,31 @@
           },
           {
             "label": "Lending limit (equity / limit)",
-            "value": 423137.5,
+            "value": 383043.0,
             "unit": "$"
           },
           {
             "label": "Headroom (room to lend)",
-            "value": 89094.59000000003,
+            "value": 82244.65000000002,
             "unit": "$"
           }
         ],
         "result": {
-          "value": 0.1266716003641568,
+          "value": 0.1273421213912909,
           "unit": "share"
         }
       },
       "emissions": {
         "runway": {
-          "perTurn": 30.308801755747844,
-          "runOutTurn": 30.694344476330926,
+          "perTurn": 39.36780317536068,
+          "runOutTurn": 23.861321369420164,
           "runsOutBeforeEnd": true
         },
         "month": {
           "firms": 0.0,
           "households": 0.0,
           "plants": 0.0,
+          "aviation": 0.0,
           "grossTotal": 0.0,
           "sink": 0.0,
           "net": 0.0,
@@ -2681,6 +2927,7 @@
           "firms": 0.0,
           "households": 0.0,
           "plants": 0.0,
+          "aviation": 0.0,
           "grossTotal": 0.0,
           "sink": 0.0,
           "net": 0.0,
@@ -2693,7 +2940,7 @@
           "share": 0.0
         },
         "reconciles": true,
-        "note": "Gross emissions = firms (direct) + households (direct) + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.",
+        "note": "Gross emissions = firms (direct) + households (direct) + private jet flights + power plants. Electricity used by firms and households is counted once, at the plants that burn the fuel, so it is not added again to firms or households. Net = gross minus the forest sink. The month line is the latest month; the turn line adds the months of the latest turn. The fire line shows sink lost to fire and is not a term of the sum.",
         "monthLines": [],
         "turnNumber": 1,
         "turnMonths": 0
@@ -2709,7 +2956,7 @@
           "revenueQuarter": 0.0,
           "modelled": true,
           "unit": "fraction",
-          "baseMonth": 18856.23,
+          "baseMonth": 19348.23,
           "baseLabel": "household wages this month ($)",
           "realisedRate": 0.0,
           "note": "Lever key tax_wage. Paid only from what the household has in savings."
@@ -2719,12 +2966,12 @@
           "label": "Profit tax",
           "appliesTo": "Firm profit before tax (nothing on a loss), before dividends",
           "rateNominal": 0.25,
-          "rateEffective": 0.11451767013609351,
+          "rateEffective": 0.1125724027398193,
           "revenueMonth": 0.0,
           "revenueQuarter": 0.0,
           "modelled": true,
           "unit": "fraction",
-          "baseMonth": 13158.45,
+          "baseMonth": 14321.990000000002,
           "baseLabel": "firm profit before tax this month ($)",
           "realisedRate": 0.0,
           "note": "Lobbying can weaken it: the rate in force is the effective rate."
@@ -2739,7 +2986,7 @@
           "revenueQuarter": 0.0,
           "modelled": true,
           "unit": "fraction",
-          "baseMonth": 11653.77,
+          "baseMonth": 11785.13,
           "baseLabel": "household capital income this month ($)",
           "realisedRate": 0.0,
           "note": "Lever key tax_capital."
@@ -2754,7 +3001,7 @@
           "revenueQuarter": 0.0,
           "modelled": true,
           "unit": "fraction",
-          "baseMonth": 308448.82094003935,
+          "baseMonth": 2137433.5011478947,
           "baseLabel": "net worth above the threshold ($)",
           "realisedRate": 0.0,
           "note": "Annual rate; the realised rate is revenue x 12 over the taxed wealth. Lobbying can weaken it."
@@ -2769,7 +3016,7 @@
           "revenueQuarter": 0.0,
           "modelled": true,
           "unit": "usd_per_tonne",
-          "baseMonth": 5.499009409079049,
+          "baseMonth": 5.731197999896096,
           "baseLabel": "firm footprints this month (t CO2)",
           "realisedRate": 0.0,
           "note": "A price in dollars per tonne, not a fraction. Lobbying can weaken it."
@@ -2825,10 +3072,10 @@
           "group": "Taxes",
           "initial": 0.25,
           "active": 0.25,
-          "effective": 0.11451767013609351,
+          "effective": 0.1125724027398193,
           "pending": null,
           "lastChangeTurn": null,
-          "weakenedBy": 0.541929319455626
+          "weakenedBy": 0.5497103890407228
         },
         {
           "lever": "tax_capital",
@@ -3044,13 +3291,13 @@
           "firm": 0,
           "name": "Factory",
           "sector": "goods",
-          "output": 109.56370261860765,
-          "price": 100.7,
-          "workers": 2.0,
-          "wage": 1606.66,
-          "revenue": 11559.26,
-          "profit": 4657.21,
-          "emissions": 1.3147644314232918,
+          "output": 108.26506848024593,
+          "price": 93.79,
+          "workers": 3.0,
+          "wage": 1531.51,
+          "revenue": 10360.36,
+          "profit": 4205.83,
+          "emissions": 1.2991808217629512,
           "ownership": [
             {
               "owner": "household",
@@ -3065,17 +3312,17 @@
           "firm": 1,
           "name": "Farm",
           "sector": "food",
-          "output": 485.35191362736106,
-          "price": 25.32,
+          "output": 563.4730153502456,
+          "price": 27.2,
           "workers": 3.0,
-          "wage": 1576.03,
-          "revenue": 12364.78,
-          "profit": 6635.84,
-          "emissions": 0.9707038272547222,
+          "wage": 1502.36,
+          "revenue": 14473.35,
+          "profit": 7433.26,
+          "emissions": 1.1269460307004913,
           "ownership": [
             {
               "owner": "household",
-              "household": 0,
+              "household": 8,
               "share": 1.0
             }
           ],
@@ -3086,12 +3333,12 @@
           "firm": 2,
           "name": "Shop",
           "sector": "services",
-          "output": 135.34533800568747,
-          "price": 75.16,
-          "workers": 3.0,
-          "wage": 1576.03,
-          "revenue": 8155.88,
-          "profit": 349.8,
+          "output": 114.67694204386774,
+          "price": 74.55,
+          "workers": 2.0,
+          "wage": 1502.36,
+          "revenue": 6965.31,
+          "profit": 1060.38,
           "emissions": 0.0,
           "ownership": [
             {
@@ -3128,9 +3375,9 @@
       "infrastructure": [
         {
           "kind": "road",
-          "count": 4,
+          "count": 11,
           "buildCost": 2500.0,
-          "upkeepMonthly": 40.0,
+          "upkeepMonthly": 110.0,
           "upkeepEachMonthly": 10.0
         },
         {
@@ -3208,6 +3455,73 @@
       ],
       "note": "No state shareholding in the current economic systems (Market, Regulated, Co-op): the state's ownership share is 0% for every firm. The state-owned variant exists in the model but no system uses it yet."
     },
-    "history": []
+    "history": [],
+    "estate": {
+      "household": 8,
+      "home": 7,
+      "groundsTiles": [
+        {
+          "x": 1,
+          "y": 10
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 1,
+          "y": 11
+        }
+      ],
+      "runwayTiles": [
+        {
+          "x": 2,
+          "y": 11
+        },
+        {
+          "x": 3,
+          "y": 11
+        },
+        {
+          "x": 4,
+          "y": 11
+        }
+      ],
+      "hangarTile": {
+        "x": 2,
+        "y": 11
+      },
+      "jetName": "Gulfstream",
+      "jet": {
+        "value": 800000.0,
+        "flyingThisMonth": false
+      },
+      "flightsTotal": 0,
+      "tonnesTotal": 0.0,
+      "flightTonnes": 2.0,
+      "householdEmissionsT": 0.5,
+      "pilot": {
+        "person": 18,
+        "wage": 1800.0,
+        "status": "employed",
+        "unpaidMonths": 0,
+        "unpaidMonthsMax": 3
+      },
+      "finance": {
+        "month": {
+          "dividends": 0.0,
+          "wagePaid": 0.0,
+          "wealthTax": 0.0,
+          "carbonCharge": 0.0
+        },
+        "last12": {
+          "dividends": 0.0,
+          "wagePaid": 0.0,
+          "wealthTax": 0.0,
+          "carbonCharge": 0.0
+        },
+        "months": 0
+      }
+    }
   }
 }

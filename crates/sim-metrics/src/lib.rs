@@ -19,6 +19,10 @@ pub fn household_wealth(s: &State, p: &Params) -> Vec<f64> {
         }
     }
     w[s.bank.owner.idx()] += s.bank.equity.as_f64();
+    // Town v7: the estate's jet is an asset of its owner.
+    if let Some(e) = &s.estate {
+        w[e.jet.owner.idx()] += e.jet.value.as_f64();
+    }
     let kp = p.invest.capital_price_usd * 100.0;
     for f in s.firms.iter().filter(|f| f.active) {
         let equity =
@@ -32,6 +36,65 @@ pub fn household_wealth(s: &State, p: &Params) -> Vec<f64> {
                 if total > 0.0 {
                     for x in s.persons.iter().filter(|x| x.job == Some(f.id)) {
                         w[x.household.idx()] += equity / total;
+                    }
+                }
+            }
+        }
+    }
+    w
+}
+
+/// What a household's net worth is made of, in cents as f64 (Town v7: the wire's wealth
+/// breakdown). `net_cash + homes + bank + jet + firms` equals `household_wealth` up to float
+/// rounding (a test checks it).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct WealthParts {
+    /// Savings minus debt.
+    pub net_cash: f64,
+    /// Homes owned (the occupied one included).
+    pub homes: f64,
+    /// Bank equity (the bank's owner).
+    pub bank: f64,
+    /// The estate's jet.
+    pub jet: f64,
+    /// Equity of the firms the household owns or shares in.
+    pub firms: f64,
+}
+
+impl WealthParts {
+    pub fn total(&self) -> f64 {
+        self.net_cash + self.homes + self.bank + self.jet + self.firms
+    }
+}
+
+/// The parts of every household's net worth (same rules as [`household_wealth`]).
+pub fn household_wealth_parts(s: &State, p: &Params) -> Vec<WealthParts> {
+    let mut w = vec![WealthParts::default(); s.households.len()];
+    for (i, h) in s.households.iter().enumerate() {
+        w[i].net_cash = (h.savings - h.debt).as_f64();
+    }
+    for home in &s.homes {
+        if let HomeOwner::Household(o) = home.owner {
+            w[o.idx()].homes += home.value.as_f64();
+        }
+    }
+    w[s.bank.owner.idx()].bank += s.bank.equity.as_f64();
+    if let Some(e) = &s.estate {
+        w[e.jet.owner.idx()].jet += e.jet.value.as_f64();
+    }
+    let kp = p.invest.capital_price_usd * 100.0;
+    for f in s.firms.iter().filter(|f| f.active) {
+        let equity =
+            f.capital.0 * kp + f.cash.as_f64() + f.inventory.0 * f.price.as_f64() - f.debt.as_f64();
+        match f.owner {
+            Owner::Household(h) => w[h.idx()].firms += equity,
+            Owner::Bank => w[s.bank.owner.idx()].firms += equity,
+            Owner::State => {}
+            Owner::Workers => {
+                let total = s.persons.iter().filter(|x| x.job == Some(f.id)).count() as f64;
+                if total > 0.0 {
+                    for x in s.persons.iter().filter(|x| x.job == Some(f.id)) {
+                        w[x.household.idx()].firms += equity / total;
                     }
                 }
             }

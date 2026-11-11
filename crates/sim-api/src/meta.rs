@@ -194,6 +194,10 @@ pub struct Meta {
     pub ledger_detail_turns: u32,
     /// Label of the energy unit, shown per month ("MWh").
     pub energy_unit: String,
+    /// Contract v1.9: `content/ui.json` `tags.estate_owner`.
+    pub estate_tag: String,
+    /// Contract v1.9: `content/ui.json` `wealth_bands`, richest first.
+    pub wealth_bands: Vec<crate::catalog::WealthBand>,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -328,7 +332,10 @@ impl Meta {
         if file.energy.unit_label.trim().is_empty() {
             return Err(bad("levers.json: energy.unit_label is empty".into()));
         }
+        let ui = crate::catalog::resolve(params)?;
         Ok(Meta {
+            estate_tag: ui.tags.get("estate_owner").cloned().unwrap_or_default(),
+            wealth_bands: ui.wealth_bands,
             levers,
             actions,
             ledger_detail_turns: file.ledger.detail_turns,

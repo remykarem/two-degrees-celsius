@@ -4,7 +4,7 @@
       "id": "households",
       "title": "Households and people",
       "actor": "agent",
-      "summary": "Eight households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
+      "summary": "Nine households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
       "decides": [
         "How much to spend on food, goods and services this month",
         "Which firm in each sector gets that spending",
@@ -423,6 +423,45 @@
       "code": [
         "crates/sim-model/src/weather.rs"
       ]
+    },
+    {
+      "id": "estate",
+      "title": "The estate and its pilot",
+      "actor": "agent",
+      "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
+      "decides": [
+        "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)",
+        "Whether to let the pilot go after months of short pay, and to rehire once it can afford wages again"
+      ],
+      "observes": [
+        "Its savings, the carbon price after lobbying, whether the pilot is employed"
+      ],
+      "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
+      "params": [
+        {
+          "path": "estate.flight_prob_monthly",
+          "label": "Chance the jet flies in a month",
+          "value": 0.4,
+          "unit": "probability per month"
+        },
+        {
+          "path": "estate.flight_tonnes",
+          "label": "Emissions of one flight",
+          "value": 2.0,
+          "unit": "t CO2 per flight"
+        },
+        {
+          "path": "estate.pilot_wage_usd",
+          "label": "Pilot's wage",
+          "value": 1800.0,
+          "unit": "$ per month"
+        }
+      ],
+      "variants": [],
+      "classParams": [],
+      "code": [
+        "crates/sim-model/src/estate.rs"
+      ]
     }
   ],
   "randomness": [
@@ -620,11 +659,28 @@
         }
       ],
       "code": "crates/sim-model/src/class.rs"
+    },
+    {
+      "id": "estate_flight",
+      "event": "The estate's jet flies",
+      "system": "estate",
+      "distribution": "bernoulli",
+      "probability": "the fixed monthly flight chance; the flight happens only if the pilot is employed (the draw is taken either way, so a dismissal never shifts the random stream)",
+      "when": "each month while the estate exists",
+      "params": [
+        {
+          "path": "estate.flight_prob_monthly",
+          "label": "Chance the jet flies in a month",
+          "value": 0.4,
+          "unit": "probability per month"
+        }
+      ],
+      "code": "crates/sim-model/src/estate.rs"
     }
   ],
   "deterministic": [
     "Everything else is deterministic: spending, shop choice, hiring, wages, prices, credit, taxes, lobbying and legitimacy use no random draws.",
-    "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off and whether a household founds a firm; it does not change the starting town.",
+    "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off, whether a household founds a firm and when the estate's jet flies; it does not change the starting town.",
     "The starting differences between households (income, savings, skill, who owns what) are written in content/initial_town.json, not drawn."
   ]
 }

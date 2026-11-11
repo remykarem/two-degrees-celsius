@@ -92,7 +92,11 @@ pub fn validate(s: &State, pending: &[PendingCommand], c: &Command) -> Option<Bl
 pub fn tile_problem(s: &State, pending: &[PendingCommand], c: &Command) -> Option<BlockReason> {
     match *c {
         Command::Place { tile, .. } => match s.map.kind_at(tile) {
-            None | Some(TileKind::Forest | TileKind::Commons) => Some(BlockReason::TileInvalid),
+            // The estate's grounds and runway are fixed scenery, like forest (Town v7).
+            None
+            | Some(
+                TileKind::Forest | TileKind::Commons | TileKind::EstateGrounds | TileKind::Runway,
+            ) => Some(BlockReason::TileInvalid),
             Some(TileKind::Empty) => pending
                 .iter()
                 .any(|x| matches!(x.command, Command::Place { tile: t, .. } if t == tile))

@@ -168,10 +168,19 @@ fn validate_shape(s: &State, p: &Params) -> ApiResult<()> {
     let tile_ok = |t: Tile| s.map.in_bounds(t);
     let home_exists = |id: u32| s.homes.iter().any(|x| x.id.0 == id);
     let plant_exists = |id: u32| s.plants.iter().any(|x| x.id.0 == id);
-    let people_ok = s
-        .persons
-        .iter()
-        .all(|x| hh(x.household.idx()) && x.job.is_none_or(|f| f.idx() < nf));
+    let people_ok = s.persons.iter().all(|x| {
+        hh(x.household.idx())
+            && x.job.is_none_or(|f| f.idx() < nf)
+            && x.staff_of.is_none_or(|o| hh(o.idx()))
+    });
+    let estate_ok = s.estate.as_ref().is_none_or(|e| {
+        hh(e.household.idx())
+            && home_exists(e.home.0)
+            && tile_ok(e.hangar)
+            && e.grounds.iter().chain(&e.runway).all(|t| tile_ok(*t))
+            && e.pilot.is_none_or(|x| x.idx() < np)
+            && e.jet.owner.idx() < nh
+    });
     let households_ok = s.households.iter().all(|x| {
         x.members.iter().all(|m| m.idx() < np) && x.home.is_none_or(|id| home_exists(id.0))
     });
@@ -211,6 +220,7 @@ fn validate_shape(s: &State, p: &Params) -> ApiResult<()> {
             _ => true,
         };
     if !(people_ok
+        && estate_ok
         && households_ok
         && homes_ok
         && plants_ok

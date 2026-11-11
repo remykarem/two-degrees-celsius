@@ -272,6 +272,9 @@ fn burning_lowers_forest_and_the_sink_and_raises_net_emissions_once() {
     for sim in [&mut a, &mut b] {
         set_remaining(&mut sim.state, &p, 1.0);
         sim.params.weather.spread_p = 0.0;
+        // A fire shifts the random stream, so the estate's flight draw would differ between the
+        // two runs; no flights keeps the emissions comparison about the fire only.
+        sim.params.estate.flight_prob_monthly = 0.0;
     }
     let t = inner_forest_tile(&b.state);
     b.state.weather.fires.push(Fire {
@@ -286,7 +289,10 @@ fn burning_lowers_forest_and_the_sink_and_raises_net_emissions_once() {
         b.state.nature.sink.0 < a.state.nature.sink.0,
         "the sink shrinks"
     );
-    assert!(b.state.nature.net_emissions.0 > a.state.nature.net_emissions.0);
+    // Net is gross minus the sink: the fire adds the lost sink to net emissions (gross itself
+    // moves a little because the burning farm produces less, so compare the sink term).
+    let (na, nb) = (&a.state.nature, &b.state.nature);
+    assert!(nb.net_emissions.0 - nb.gross_emissions.0 > na.net_emissions.0 - na.gross_emissions.0);
     // Sink loss is counted once: the sink is sigma x the forest left, and the trace record is
     // informational (it is not an extra term of net emissions).
     let sigma = p.nature.sink_sigma;
@@ -674,7 +680,7 @@ fn invariants_hold_over_full_runs_with_weather_and_every_system_check_passes() {
         })
         .unwrap_or_else(|e| panic!("seed {seed}: {e}"));
         println!("seed {seed}: {fire_ticks} burning ticks");
-        assert_eq!(sim.state.schema_version, 3);
+        assert_eq!(sim.state.schema_version, SCHEMA_VERSION);
     }
 }
 

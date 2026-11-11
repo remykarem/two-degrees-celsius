@@ -32,7 +32,7 @@ fn fixtures_have_the_documented_content() {
     assert_eq!(accepted.len(), 3);
     assert_eq!(accepted[1]["command"]["type"], "place");
     assert_eq!(accepted[1]["command"]["kind"], "road");
-    assert_eq!(accepted[1]["command"]["tile"]["x"], 4);
+    assert_eq!(accepted[1]["command"]["tile"]["x"], 6);
     assert_eq!(accepted[2]["command"]["kind"], "renewable_plant");
     assert_eq!(turn["rejected"][0]["reason"], "lever_unavailable");
     assert_eq!(turn["months"].as_array().unwrap().len(), 3);
@@ -53,9 +53,14 @@ fn fixtures_have_the_documented_content() {
     }
     assert_eq!(read("finance.json")["government"]["basis"], "month");
     assert_eq!(read("energy.json")["unit"], "MWh");
-    assert_eq!(snap["people"].as_array().unwrap().len(), 20);
-    assert_eq!(snap["households"].as_array().unwrap().len(), 8);
-    assert_eq!(snap["homes"].as_array().unwrap().len(), 7);
+    assert_eq!(snap["people"].as_array().unwrap().len(), 22);
+    assert_eq!(snap["households"].as_array().unwrap().len(), 9);
+    assert_eq!(snap["homes"].as_array().unwrap().len(), 8);
+    // Contract v1.9: the estate, its tag and wealth band, the pilot's employer.
+    assert_eq!(snap["estate"]["household"], 8);
+    assert_eq!(snap["households"][8]["tag"], "Estate owner");
+    assert_eq!(snap["households"][8]["wealthBand"]["id"], "ultra_rich");
+    assert_eq!(snap["people"][18]["employer"]["household"], 8);
     assert_eq!(snap["map"]["tiles"].as_array().unwrap().len(), 144);
     assert_eq!(read("levers.json").as_array().unwrap().len(), 20);
     assert_eq!(read("actions.json").as_array().unwrap().len(), 11);

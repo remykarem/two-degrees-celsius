@@ -398,6 +398,12 @@ fn randomness_table_matches_the_draw_sites_in_the_model() {
         sites, documented,
         "a draw was added or removed: update the table"
     );
+    // Town v7 added one draw site (the estate's monthly flight, `estate.rs`): 10 in all (9 before).
+    assert_eq!(sites, 10, "draw sites in sim-model");
+    assert!(
+        a.randomness.iter().any(|d| d.id == "estate_flight"),
+        "the estate flight draw is documented"
+    );
     for d in &a.randomness {
         assert!(root.join(&d.code).exists(), "{}: {}", d.id, d.code);
         assert!(

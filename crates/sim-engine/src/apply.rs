@@ -330,22 +330,26 @@ fn apply_money(
             );
         }
         MoneyOp::Haircut { rate } => {
+            // Losses round up to a whole cent (never beyond the balance), so rounding can never
+            // leave the bank a few cents short of the equity the haircut was sized to restore.
             let r = rate.0.clamp(0.0, 1.0);
             let mut total = Cents::ZERO;
             let mut losses: Vec<(LedgerAccount, Cents)> = Vec::new();
             for h in &mut s.households {
-                let loss = Cents((h.savings.0 as f64 * r).floor() as i64);
+                let loss =
+                    Cents(((h.savings.0 as f64 * r).ceil() as i64).clamp(0, h.savings.0.max(0)));
                 h.savings -= loss;
                 total += loss;
                 losses.push((A::Household(h.id), loss));
             }
             for f in &mut s.firms {
-                let loss = Cents((f.cash.0 as f64 * r).floor() as i64);
+                let loss = Cents(((f.cash.0 as f64 * r).ceil() as i64).clamp(0, f.cash.0.max(0)));
                 f.cash -= loss;
                 total += loss;
                 losses.push((A::Firm(f.id), loss));
             }
-            let loss = Cents((s.gov.cash.0 as f64 * r).floor() as i64);
+            let loss =
+                Cents(((s.gov.cash.0 as f64 * r).ceil() as i64).clamp(0, s.gov.cash.0.max(0)));
             s.gov.cash -= loss;
             total += loss;
             losses.push((A::Government, loss));
@@ -408,7 +412,7 @@ fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
     match c {
         Delta::Person(id, p) => {
             let x = &mut s.persons[id.idx()];
-            set_fields!(x, p; skill, job, jg, wage, commute_tiles, commute_minutes,
+            set_fields!(x, p; skill, job, jg, staff_of, wage, commute_tiles, commute_minutes,
                 effective_hours, wellbeing);
         }
         Delta::Firm(id, p) => {
@@ -466,6 +470,7 @@ fn apply_change(s: &mut State, c: Delta, hist_len: usize) {
         }
         Delta::Nature(n) => s.nature = n,
         Delta::Weather(w) => s.weather = w,
+        Delta::Estate(e) => s.estate = Some(e),
         Delta::Housing(h) => s.housing = h,
         Delta::Energy(e) => s.energy = e,
         Delta::Effective(e) => s.effective = e,

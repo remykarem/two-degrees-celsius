@@ -145,6 +145,8 @@ pub enum Purpose {
     Purchase(Sector),
     CapitalGoods,
     PublicPurchases,
+    /// Town v7: the estate pays its pilot (household to household).
+    DomesticWages,
 }
 
 impl Purpose {
@@ -190,6 +192,7 @@ impl Purpose {
             Purpose::Purchase(Sector::Services) => (K::Purchase, "services"),
             Purpose::CapitalGoods => (K::Purchase, "capital goods"),
             Purpose::PublicPurchases => (K::Purchase, "public spending"),
+            Purpose::DomesticWages => (K::Wage, "domestic wages"),
         }
     }
 }

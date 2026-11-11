@@ -4,13 +4,13 @@
       "firm": 0,
       "name": "Factory",
       "sector": "goods",
-      "output": 126.2422031926277,
-      "price": 97.65,
-      "workers": 3.0,
-      "wage": 1514.61,
-      "revenue": 11666.77,
-      "profit": 3889.42,
-      "emissions": 1.5149064383115325,
+      "output": 132.26616249821913,
+      "price": 91.14,
+      "workers": 4.0,
+      "wage": 1427.36,
+      "revenue": 12205.26,
+      "profit": 4681.66,
+      "emissions": 1.5871939499786296,
       "ownership": [
         {
           "owner": "household",
@@ -25,17 +25,17 @@
       "firm": 1,
       "name": "Farm",
       "sector": "food",
-      "output": 541.9489551067059,
-      "price": 24.06,
-      "workers": 3.0,
-      "wage": 1480.36,
-      "revenue": 12100.0,
-      "profit": 6623.41,
-      "emissions": 1.0838979102134116,
+      "output": 513.6116424549489,
+      "price": 25.06,
+      "workers": 2.0,
+      "wage": 1395.13,
+      "revenue": 13638.21,
+      "profit": 8367.39,
+      "emissions": 1.0272232849098977,
       "ownership": [
         {
           "owner": "household",
-          "household": 0,
+          "household": 8,
           "share": 1.0
         }
       ],
@@ -46,12 +46,12 @@
       "firm": 2,
       "name": "Shop",
       "sector": "services",
-      "output": 137.42266192518943,
-      "price": 73.38,
-      "workers": 3.0,
-      "wage": 1480.36,
-      "revenue": 8366.98,
-      "profit": 885.48,
+      "output": 115.51468810743124,
+      "price": 71.4,
+      "workers": 2.0,
+      "wage": 1395.13,
+      "revenue": 8011.02,
+      "profit": 2321.02,
       "emissions": 0.0,
       "ownership": [
         {
@@ -88,9 +88,9 @@
   "infrastructure": [
     {
       "kind": "road",
-      "count": 5,
+      "count": 12,
       "buildCost": 2500.0,
-      "upkeepMonthly": 50.0,
+      "upkeepMonthly": 120.0,
       "upkeepEachMonthly": 10.0
     },
     {
@@ -138,7 +138,7 @@
     {
       "id": "public_works",
       "label": "Public works (upkeep and construction)",
-      "spendingMonthly": 70.0,
+      "spendingMonthly": 140.0,
       "buys": "Upkeep of roads, public housing, power plants and fire stations, resilience spending and new builds; paid out as wages to households."
     },
     {
@@ -150,7 +150,7 @@
     {
       "id": "benefits",
       "label": "Benefits",
-      "spendingMonthly": 3200.0,
+      "spendingMonthly": 4000.0,
       "buys": "Payments to unemployed adults and retired people."
     },
     {

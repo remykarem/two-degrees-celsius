@@ -79,15 +79,35 @@ pub fn effective_hours(sp: &SpaceParams, minutes: u32) -> f64 {
     (1.0 - sp.k_commute * (minutes as f64 - sp.free_minutes).max(0.0)).max(sp.min_effective_hours)
 }
 
-/// Commute of every person for the given jobs: (tiles, minutes). People without a firm job
-/// (and the job guarantee, which has no workplace) travel nowhere. A worker whose household has
+/// Commute of every person for the given jobs: (tiles, minutes). Domestic staff (the estate's
+/// pilot) commute to the hangar tile. People without a job (and the job guarantee, which has
+/// no workplace) travel nowhere. A worker whose household has
 /// no home is assumed to commute the unhoused default.
 pub fn commutes(s: &State, p: &Params, job: &[Option<FirmId>]) -> Vec<(u32, u32)> {
     let sp = &p.space;
     let mut routes: Vec<Option<Vec<Option<Route>>>> = vec![None; s.firms.len()];
+    let mut hangar_routes: Option<Vec<Option<Route>>> = None;
     let mut out = vec![(0u32, 0u32); s.persons.len()];
     for x in &s.persons {
-        let Some(f) = job[x.id.idx()] else { continue };
+        let Some(f) = job[x.id.idx()] else {
+            if let (Some(_), Some(e)) = (x.staff_of, s.estate.as_ref()) {
+                let route = match s.households[x.household.idx()]
+                    .home
+                    .and_then(|h| s.home(h))
+                    .map(|h| h.tile)
+                {
+                    Some(t) => hangar_routes.get_or_insert_with(|| routes_to(&s.map, sp, e.hangar))
+                        [s.map.idx(t)],
+                    None => None,
+                };
+                let r = route.unwrap_or(Route {
+                    minutes: sp.unhoused_commute_minutes,
+                    tiles: sp.unhoused_commute_tiles,
+                });
+                out[x.id.idx()] = (r.tiles, r.minutes);
+            }
+            continue;
+        };
         let home = s.households[x.household.idx()]
             .home
             .and_then(|h| s.home(h))

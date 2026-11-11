@@ -45,6 +45,8 @@ pub struct Person {
     pub job: Option<FirmId>,
     /// In the government job guarantee (employed, paid the minimum wage).
     pub jg: bool,
+    /// Town v7: paid by this household as domestic staff (the estate's pilot).
+    pub staff_of: Option<HouseholdId>,
     /// Monthly pay actually received this tick.
     pub wage: Cents,
     pub commute_tiles: u32,
@@ -55,16 +57,16 @@ pub struct Person {
 }
 
 impl Person {
-    /// In work: a firm job or the job guarantee.
+    /// In work: a firm job, the job guarantee or domestic staff of a household.
     pub fn employed(&self) -> bool {
-        self.job.is_some() || self.jg
+        self.job.is_some() || self.jg || self.staff_of.is_some()
     }
     pub fn unemployed(&self) -> bool {
         self.in_labour_force && !self.employed()
     }
 }
 
-/// A household of 2 to 4 people. Money, spending, saving, rent and loans live here.
+/// A household of 1 to 4 people. Money, spending, saving, rent and loans live here.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Household {
     pub id: HouseholdId,
@@ -435,6 +437,46 @@ pub struct PendingCommand {
     pub money_cost: Cents,
 }
 
+/// Town v7: the estate's private jet.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Jet {
+    pub owner: HouseholdId,
+    pub value: Cents,
+    /// The jet flew this month (reset by the estate system each tick).
+    pub flying_this_month: bool,
+}
+
+/// The last flight, for the wire.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LastFlight {
+    pub tick: u32,
+    pub tonnes: Tonnes,
+}
+
+/// Town v7: the elite estate. `None` in `State` when the content has no estate.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Estate {
+    pub household: HouseholdId,
+    pub home: HomeId,
+    pub grounds: Vec<Tile>,
+    pub runway: Vec<Tile>,
+    pub hangar: Tile,
+    /// The jet's pilot (domestic staff of the household), if the content has one.
+    pub pilot: Option<PersonId>,
+    pub jet: Jet,
+    pub jet_name: String,
+    pub flights_total: u32,
+    pub tonnes_total: Tonnes,
+    pub last_flight: Option<LastFlight>,
+    /// Consecutive months the pilot's wage could not be paid in full.
+    pub unpaid_months: u32,
+    /// Wage paid to the pilot this month.
+    pub wage_paid: Cents,
+    /// Carbon charge paid for flights, last twelve months' total is derived by the wire from
+    /// the ledger; this is the running total.
+    pub carbon_paid_total: Cents,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct State {
     pub schema_version: u32,
@@ -471,6 +513,7 @@ pub struct State {
     pub indicators: Indicators,
     pub gdp_parts: GdpParts,
     pub outcome: Option<(u32, Outcome)>,
+    pub estate: Option<Estate>,
 }
 
 impl State {

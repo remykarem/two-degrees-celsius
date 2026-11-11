@@ -43,6 +43,10 @@ pub enum TileKind {
     Commons,
     /// Town v4: reduces fire spread and duration within the coverage radius.
     FireStation,
+    /// Town v7: the estate's pool, garden and drive. Fixed scenery, not buildable.
+    EstateGrounds,
+    /// Town v7: the estate's private runway. Fixed scenery, not buildable.
+    Runway,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -302,6 +306,8 @@ pub enum SystemId {
     Lobbying,
     Wellbeing,
     Weather,
+    /// Town v7: the estate's jet, pilot and flights.
+    Estate,
     Metrics,
     Commands,
     /// The per-tick reconciliation of balances against the transaction ledger.
@@ -324,6 +330,7 @@ impl SystemId {
             SystemId::Lobbying => "S9b lobbying",
             SystemId::Wellbeing => "S10 wellbeing",
             SystemId::Weather => "S11 weather",
+            SystemId::Estate => "S12 estate",
             SystemId::Metrics => "metrics",
             SystemId::Commands => "commands",
             SystemId::Ledger => "ledger reconciliation",
@@ -343,6 +350,8 @@ pub enum EmissionSource {
     /// Sink capacity lost to fire this month (tonnes per month of sink; informational: the
     /// sink itself is `sigma x forest` in S7 and is not reduced a second time).
     FireSinkLoss,
+    /// Town v7: a private jet flight this month.
+    Aviation,
 }
 
 /// A holder of a deposit.
@@ -486,6 +495,19 @@ pub enum Event {
     DroughtEnded,
     HomeDamaged {
         home: HomeId,
+    },
+    /// Town v7: the estate's jet flew this month.
+    PrivateJetFlight {
+        household: HouseholdId,
+        tonnes: Tonnes,
+    },
+    /// Town v7: the estate could not pay the pilot and let them go.
+    PilotLetGo {
+        person: PersonId,
+    },
+    /// Town v7: the estate hired the pilot back.
+    PilotHired {
+        person: PersonId,
     },
 }
 

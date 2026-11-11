@@ -6,6 +6,8 @@
 //! - `commutes` (real): one entry per person with a firm job, from the end-of-tick state:
 //!   home tile (`from`), workplace tile (`to`), tiles and minutes. The sim does not expose the
 //!   path itself, so there is no `path` field.
+//! - `staff_commutes` (contract v1.9, real): the same for people on a household's payroll (the
+//!   estate's pilot): home tile, hangar tile, tiles, minutes and the wage paid this tick.
 //! - `purchases` (real): the tick's `purchase` events, household to firm, in dollars.
 //! - `wages` (real): each employed person's wage paid this tick, to their firm.
 //! - `rent` (real): rent paid by each household this tick, with its home.
@@ -14,7 +16,7 @@
 use crate::command::Tile;
 use crate::events::{EmissionLine, SimEvent};
 use crate::keys::SectorKey;
-use crate::turn::{Commute, MonthFlows, Purchase, RentFlow, WageFlow};
+use crate::turn::{Commute, MonthFlows, Purchase, RentFlow, StaffCommute, WageFlow};
 use sim_engine::{Sim, StepOutput};
 use sim_types as st;
 
@@ -65,6 +67,31 @@ fn flows(sim: &Sim, out: &StepOutput) -> MonthFlows {
                 household: p.household.0,
                 firm: firm_id.0,
                 amount: p.wage.dollars(),
+            });
+        }
+    }
+    // Town v7: domestic staff (the estate's pilot) commute to the hangar tile and are paid by
+    // their employer household.
+    if let Some(est) = &s.estate {
+        for p in s
+            .persons
+            .iter()
+            .filter(|p| p.staff_of == Some(est.household))
+        {
+            f.staff_commutes.push(StaffCommute {
+                person: p.id.0,
+                household: p.household.0,
+                employer: est.household.0,
+                from: s
+                    .households
+                    .get(p.household.idx())
+                    .and_then(|h| h.home)
+                    .and_then(|id| s.home(id))
+                    .map(|h| Tile::from_sim(h.tile)),
+                to: Tile::from_sim(est.hangar),
+                tiles: p.commute_tiles,
+                minutes: p.commute_minutes,
+                wage: p.wage.dollars(),
             });
         }
     }

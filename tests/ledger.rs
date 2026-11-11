@@ -151,6 +151,7 @@ fn delta_changes_a_balance(d: &Delta) -> bool {
         | Delta::Gov(..)
         | Delta::Nature(..)
         | Delta::Weather(..)
+        | Delta::Estate(..)
         | Delta::Housing(..)
         | Delta::Energy(..)
         | Delta::Effective(..)

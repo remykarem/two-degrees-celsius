@@ -53,6 +53,8 @@ pub fn classify_with(s: &State, p: &Params, h: &Household, hist: &[(Cents, Cents
         .iter()
         .map(|x| match x.job {
             Some(f) => person_pay(s, p, x, s.firms[f.idx()].wage).dollars(),
+            // Domestic staff: what they were actually paid this month.
+            None if x.staff_of.is_some() => x.wage.dollars(),
             None => min_wage,
         })
         .sum::<f64>()

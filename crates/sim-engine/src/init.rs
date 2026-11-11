@@ -45,6 +45,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
                 reservation: Cents::from_dollars(pi.reservation_usd),
                 job: pi.job.map(|f| FirmId(f as u32)),
                 jg: false,
+                staff_of: pi.staff_of.map(|h| HouseholdId(h as u32)),
                 wage: Cents::ZERO,
                 commute_tiles: 0,
                 commute_minutes: 0,
@@ -129,6 +130,10 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
     scenery(&mut map, TileKind::Commons, &t.map.commons);
     scenery(&mut map, TileKind::TownHall, &[t.map.town_hall]);
     scenery(&mut map, TileKind::Bank, &[t.map.bank]);
+    if let Some(e) = &t.estate {
+        scenery(&mut map, TileKind::EstateGrounds, &e.grounds);
+        scenery(&mut map, TileKind::Runway, &e.runway);
+    }
     for h in &homes {
         let kind = match h.owner {
             HomeOwner::Public => TileKind::PublicHousing,
@@ -327,7 +332,35 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         indicators: Indicators::default(),
         gdp_parts: GdpParts::default(),
         outcome: None,
+        estate: None,
     };
+    if let Some(e) = &t.estate {
+        let hid = HouseholdId(e.household as u32);
+        s.estate = Some(Estate {
+            household: hid,
+            home: HomeId(e.home as u32),
+            grounds: e.grounds.iter().map(|q| tile(*q)).collect(),
+            runway: e.runway.iter().map(|q| tile(*q)).collect(),
+            hangar: tile(e.hangar_tile),
+            pilot: s
+                .persons
+                .iter()
+                .find(|x| x.staff_of == Some(hid))
+                .map(|x| x.id),
+            jet: Jet {
+                owner: hid,
+                value: Cents::from_dollars(e.jet_value_usd),
+                flying_this_month: false,
+            },
+            jet_name: e.jet_name.clone(),
+            flights_total: 0,
+            tonnes_total: Tonnes::ZERO,
+            last_flight: None,
+            unpaid_months: 0,
+            wage_paid: Cents::ZERO,
+            carbon_paid_total: Cents::ZERO,
+        });
+    }
     let gi = grid_intensity(&s.plants, p.energy.factor_fossil);
     s.energy.supply = Units(s.plants.iter().map(|x| x.capacity.0).sum());
     s.energy.grid_intensity = Rate(gi);
@@ -340,7 +373,7 @@ pub fn initial_state(p: &Params) -> Result<State, String> {
         .into_iter()
         .enumerate()
     {
-        let hours = if jobs[x].is_some() {
+        let hours = if jobs[x].is_some() || s.persons[x].staff_of.is_some() {
             sim_model::space::effective_hours(&p.space, minutes)
         } else {
             1.0

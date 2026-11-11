@@ -26,6 +26,9 @@ pub struct TickRecord {
     /// `(plant id, tonnes)` of every plant.
     pub plants: Vec<(u32, f64)>,
     pub households: f64,
+    /// Contract v1.9: private jet flight tonnes this tick (zero without a flight).
+    #[serde(default)]
+    pub aviation: f64,
     /// Forest sink, negative (carbon absorbed).
     pub sink: f64,
     /// Informational: sink capacity lost to fire. Not a term of net emissions.
@@ -44,6 +47,7 @@ impl TickRecord {
             firms: Vec::new(),
             plants: Vec::new(),
             households: 0.0,
+            aviation: 0.0,
             sink: 0.0,
             fire_sink_loss: 0.0,
             gross_state: sim.state.nature.gross_emissions.0,
@@ -56,6 +60,7 @@ impl TickRecord {
                     EmissionSource::Firm(f) => r.firms.push((f.0, tonnes.0)),
                     EmissionSource::Plant(p) => r.plants.push((p.0, tonnes.0)),
                     EmissionSource::Households => r.households += tonnes.0,
+                    EmissionSource::Aviation => r.aviation += tonnes.0,
                     EmissionSource::Sink => r.sink += tonnes.0,
                     EmissionSource::FireSinkLoss => r.fire_sink_loss += tonnes.0,
                 },

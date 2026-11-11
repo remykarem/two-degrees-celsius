@@ -349,6 +349,10 @@ pub enum TileKindKey {
     Forest,
     Commons,
     FireStation,
+    /// Contract v1.9: the estate's pool, garden and drive.
+    EstateGrounds,
+    /// Contract v1.9: the estate's runway.
+    Runway,
 }
 
 impl TileKindKey {
@@ -366,6 +370,8 @@ impl TileKindKey {
             st::TileKind::Forest => TileKindKey::Forest,
             st::TileKind::Commons => TileKindKey::Commons,
             st::TileKind::FireStation => TileKindKey::FireStation,
+            st::TileKind::EstateGrounds => TileKindKey::EstateGrounds,
+            st::TileKind::Runway => TileKindKey::Runway,
         }
     }
 }
