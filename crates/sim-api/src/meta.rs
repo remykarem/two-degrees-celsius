@@ -9,6 +9,7 @@ use sim_params::Params;
 use sim_types as st;
 use std::collections::BTreeMap;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LeverUnit {
@@ -21,6 +22,7 @@ pub enum LeverUnit {
     Enum,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
@@ -28,6 +30,7 @@ pub enum Direction {
     Down,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Arrow {
     pub metric: MetricKey,
@@ -35,6 +38,7 @@ pub struct Arrow {
 }
 
 /// `cost = base x max(|change| / unit, minSize) x (1 + opposition)`; a hint only.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CostModel {
@@ -43,6 +47,7 @@ pub struct CostModel {
     pub min_size: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LeverInfo {
@@ -58,17 +63,21 @@ pub struct LeverInfo {
     pub lead_time: u32,
     pub cost_model: CostModel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub zero_means_none: Option<bool>,
     pub lobbied: bool,
     pub arrows: Vec<Arrow>,
     pub available_in: Vec<SystemKey>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub options: Option<Vec<String>>,
     /// Enum options that exist only in some systems (from `content/levers.json`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub option_available_in: Option<BTreeMap<String, Vec<SystemKey>>>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionInfo {
@@ -85,10 +94,12 @@ pub struct ActionInfo {
     pub needs_tile: bool,
     /// What the tile must be (from `content/levers.json`); absent for `switch_system`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub tile_rule: Option<String>,
 }
 
 /// Game calendar (contract section 9, item 8).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameCalendar {

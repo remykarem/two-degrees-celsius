@@ -244,7 +244,7 @@ export function ledgerPage(s: MockState, account: AccountRef, q?: LedgerQuery): 
   const rolledBal = summary.reduce((a, x) => a + x.net, 0), rolledDebt = summary.reduce((a, x) => a + x.debtNet, 0);
   const closing = L.balance[k] ?? 0, closingDebt = L.debt[k] ?? 0;
   const ok = Math.abs(L.opening[k]! + rolledBal + mine.reduce((a, r) => a + bal(r), 0) - closing) < 0.005 && Math.abs((L.openingDebt[k] ?? 0) + rolledDebt + mine.reduce((a, r) => a + dbt(r), 0) - closingDebt) < 0.005;
-  const inRange = (turn: number) => (q?.fromTurn === undefined || turn >= q.fromTurn) && (q?.toTurn === undefined || turn <= q.toTurn);
+  const inRange = (turn: number) => (q?.fromTurn == null || turn >= q.fromTurn) && (q?.toTurn == null || turn <= q.toTurn);
   return {
     ok: true,
     value: {

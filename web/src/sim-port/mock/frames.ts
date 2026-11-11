@@ -71,6 +71,6 @@ export function makeEvents(s: MockState, flows: MonthFlows, carry: SimEvent[]): 
   return ev;
 }
 
-export function frame(month: 0 | 1 | 2, events: SimEvent[], flows: MonthFlows): MonthFrame {
-  return { month, events, flows };
+export function frame(month: 0 | 1 | 2, events: SimEvent[], flows: Partial<MonthFlows>): MonthFrame {
+  return { month, events, flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [], ...flows } };
 }

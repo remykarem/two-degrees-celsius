@@ -5,6 +5,7 @@ use sim_types as st;
 
 /// A tile of the simulation's 12 x 12 map (`x` column, `y` row, from 0). Integers are accepted
 /// on input so that out-of-range values become `tile_invalid` instead of a parse error.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tile {
     pub x: i32,
@@ -27,6 +28,7 @@ impl Tile {
 }
 
 /// Commons rule as the player may send it. `enclosed` only arises from lobbying.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum CommonsAccessWire {
@@ -35,14 +37,17 @@ pub enum CommonsAccessWire {
 }
 
 /// A lever value: number, boolean or a commons rule.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
+#[cfg_attr(feature = "ts", ts(rename = "CommandValue"))]
 pub enum PolicyValue {
     Bool(bool),
     Number(f64),
     Commons(CommonsAccessWire),
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Command {

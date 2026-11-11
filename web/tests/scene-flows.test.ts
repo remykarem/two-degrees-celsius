@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonthFrame } from '../src/contract';
+import type { FrameInput, MonthFrame } from '../src/contract';
 import { createSimPort } from '../src/sim-port';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
@@ -38,7 +38,7 @@ describe('frame planner', () => {
     expect(planFrame(frame, ctx)).toEqual(planFrame(frame, ctx));
   });
   it('respects the caps even for huge flows', () => {
-    const big: MonthFrame = {
+    const big: FrameInput = {
       month: 1, events: [],
       flows: {
         commutes: Array.from({ length: 50 }, (_, i) => ({ person: i, household: (i % 5) + 1, firm: (i % 2) + 1, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 })),
@@ -61,11 +61,11 @@ describe('frame planner', () => {
     }
   });
   it('skips flows that name homes or firms the map does not have', () => {
-    const odd: MonthFrame = { month: 0, events: [], flows: { commutes: [{ person: 99, household: 99, firm: 99, from: null, to: { x: 0, y: 0 }, tiles: 1, minutes: 6 }], purchases: [], rent: [], wages: [], emissions: [] } };
+    const odd: FrameInput = { month: 0, events: [], flows: { commutes: [{ person: 99, household: 99, firm: 99, from: null, to: { x: 0, y: 0 }, tiles: 1, minutes: 6 }], purchases: [], rent: [], wages: [], emissions: [] } };
     expect(planFrame(odd, ctx).tracks).toHaveLength(0);
   });
   it('maps events to effects at the right tile', () => {
-    const f: MonthFrame = { month: 2, flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] },
+    const f: FrameInput = { month: 2, flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] },
       events: [{ type: 'firm_closed', importance: 3, firm: 0 }, { type: 'bank_failed', importance: 3 }, { type: 'policy_blocked', importance: 1, reason: 'invalid_command' }] };
     const fx = planFrame(f, ctx).fx;
     expect(fx.map((x) => x.type).sort()).toEqual(['bank', 'closed']);
@@ -136,7 +136,7 @@ describe('path and timing helpers', () => {
 });
 
 describe('empty and partial flows (contract v0.3 section 10.8)', () => {
-  const empty: MonthFrame = { month: 0, events: [], flows: {} };
+  const empty: FrameInput = { month: 0, events: [], flows: {} };
   it('plans an empty frame without throwing', () => {
     const plan = planFrame(empty, ctx);
     expect(plan.tracks).toEqual([]);
@@ -145,13 +145,13 @@ describe('empty and partial flows (contract v0.3 section 10.8)', () => {
   });
   it('plans a frame with only commutes and emissions', () => {
     const h = ctx.households[0]!.id, f = ctx.firms.find((x) => x.active)!.id;
-    const partial: MonthFrame = { month: 1, events: [], flows: { commutes: [{ person: 4, household: h, firm: f, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
+    const partial: FrameInput = { month: 1, events: [], flows: { commutes: [{ person: 4, household: h, firm: f, from: { x: 3, y: 2 }, to: { x: 9, y: 3 }, tiles: 7, minutes: 30 }], emissions: [{ source: 'firm', id: f, tonnes: 10 }] } };
     const plan = planFrame(partial, ctx);
     expect(plan.tracks).toEqual([]); // commutes are walked by the people layer, not the track planner
     expect(plan.emitters.length).toBeGreaterThan(0);
   });
   it('tolerates empty arrays, no events array, and a loop made only of empty frames', () => {
-    const arrays: MonthFrame = { month: 2, events: [], flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] } };
+    const arrays: FrameInput = { month: 2, events: [], flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] } };
     expect(planFrame(arrays, ctx).tracks).toEqual([]);
     expect(planFrame({ month: 0, flows: {} } as unknown as MonthFrame, ctx).fx).toEqual([]);
     expect(planFlowLoop([empty, empty, empty], ctx)).toEqual([]);

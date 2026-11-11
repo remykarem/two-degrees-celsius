@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use std::collections::BTreeMap;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PendingRef {
@@ -16,6 +17,7 @@ pub struct PendingRef {
     pub effective_turn: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PolicyRow {
@@ -32,6 +34,7 @@ pub struct PolicyRow {
     pub weakened_by: Option<f64>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Policies {

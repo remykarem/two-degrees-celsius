@@ -63,7 +63,7 @@ describe('breakdown popover logic', () => {
   });
   it('finds a breakdown by key and none on an old package', () => {
     expect(breakdownOf(played, 'gdp')?.id).toBe('gdp');
-    expect(breakdownOf({ ...played, breakdowns: undefined }, 'gdp')).toBeNull();
+    expect(breakdownOf({ ...played, breakdowns: undefined as never }, 'gdp')).toBeNull();
   });
   it('the legitimacy terms add up to the trend and each is weight x (input - threshold)', () => {
     const l = bd.legitimacy;

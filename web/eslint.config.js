@@ -46,7 +46,7 @@ export default tseslint.config(
   { plugins: { boundary } },
   // Dynamic import() may not cross the boundaries either.
   { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'], rules: dyn(P(['sim-port/mock']), 'Only sim-port may import sim-port/mock') },
-  { files: ['src/contract/**'], rules: dyn('.*', 'contract must not import anything') },
+  { files: ['src/contract/**'], rules: dyn('^(?!\\./generated$).*', 'contract must not import anything (index.ts may re-export ./generated)') },
   { files: ['src/scene/**'], rules: dyn(`${P(['panels', 'ui-kit', 'app', 'sim-port', 'svelte'])}|\\.svelte$`, 'scene is Three.js only: no Svelte, panels, ui-kit, app or sim-port') },
   { files: ['src/panels/**'], rules: dyn(P(['three', 'scene', 'app', 'sim-port']), 'panels are Svelte only: no Three.js, scene, app or sim-port') },
   { files: ['src/ui-kit/**'], rules: dyn(P(['three', 'scene', 'panels', 'store', 'sim-port', 'app']), 'ui-kit depends on nothing but Svelte') },
@@ -57,8 +57,11 @@ export default tseslint.config(
   // Nothing outside sim-port may import the mock. Applied first; per-folder blocks below add to it.
   { files: ['src/**/*.{ts,svelte}'], ignores: ['src/sim-port/**'],
     rules: forbid([[MOCK, MOCK_DEEP], 'Only sim-port may import sim-port/mock']) },
-  { files: ['src/contract/**'],
+  { files: ['src/contract/**'], ignores: ['src/contract/index.ts'],
     rules: forbid([['*', '../*', './*', '**'], 'contract must not import anything: types only, no dependencies']) },
+  // index.ts re-exports the generated file and may import nothing else.
+  { files: ['src/contract/index.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [{ regex: '^(?!\\./generated$)', message: 'contract/index.ts may import only ./generated' }] }] } },
   { files: ['src/scene/**'],
     rules: forbid([[...SVELTE, '**/panels', '**/panels/*', '**/ui-kit', '**/ui-kit/*', '**/app', '**/app/*', '**/sim-port', '**/sim-port/*'],
       'scene is Three.js only: no Svelte, panels, ui-kit, app or sim-port. Talk through the store']) },

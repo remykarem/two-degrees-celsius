@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonthFrame, SimEvent, Snapshot, TraceRecord, TurnResult } from '../src/contract';
+import type { FrameInput, SimEvent, Snapshot, TraceRecord, TurnResult } from '../src/contract';
 import { deriveCrises } from '../src/panels/crisis';
 import { formatEvent, severityWord } from '../src/panels/format';
 import { METRICS, historyChange, seriesOf } from '../src/panels/metrics';
@@ -204,7 +204,7 @@ describe('metrics, why-bars and the end story', () => {
   it('counts a fire that started in the final turn', () => {
     const snap = structuredClone(base());
     snap.history = hist([[1, 0.3, 0.9, 0.9, 0.9], [2, 0.5, 0.9, 0.9, 0.9]]);
-    const frame: MonthFrame = { month: 0, events: [ev({ type: 'fire_started', importance: 3, tile: { x: 1, y: 1 } })], flows: {} };
+    const frame: FrameInput = { month: 0, events: [ev({ type: 'fire_started', importance: 3, tile: { x: 1, y: 1 } })], flows: {} };
     const last = { months: [frame] } as unknown as TurnResult;
     expect(weatherFacts(snap, last).join(' ')).toMatch(/A fire started in the final turn/);
   });

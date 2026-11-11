@@ -132,7 +132,7 @@ describe('v0.3 component behaviour', () => {
     expect(t).toMatch(/role="log"/);
     const live = t.slice(t.indexOf('role="log"'));
     const result = g.state.get().lastResult!;
-    const minor = result.months.flatMap((m) => m.events).find((e) => e.importance === 1 && e.type === 'hired');
+    const minor = result.months.flatMap((m) => m.events).find((e) => e.importance === 1 && e.type === 'person_hired');
     if (minor) expect(live).not.toContain('hired');
   });
 });

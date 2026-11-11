@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_types::{Cents, HouseholdId, LedgerAccount, LedgerKind, PlantKind, Posting};
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GovRevenue {
@@ -31,6 +32,7 @@ impl GovRevenue {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GovSpending {
@@ -59,8 +61,10 @@ impl GovSpending {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "ts", ts(rename = "FinanceHouseholdIncome"))]
 pub struct HouseholdIncome {
     pub wages: f64,
     pub dividends: f64,
@@ -73,6 +77,7 @@ pub struct HouseholdIncome {
 }
 
 /// The flow values of a period (a month, or the trailing quarter), in dollars.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FinanceFlows {
@@ -90,6 +95,7 @@ pub struct FinanceFlows {
     pub bank_interest_income: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GovernmentFinance {
@@ -106,6 +112,7 @@ pub struct GovernmentFinance {
     pub basis: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BankFinance {
@@ -119,6 +126,7 @@ pub struct BankFinance {
     pub interest_income: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdFinance {
@@ -132,6 +140,7 @@ pub struct HouseholdFinance {
     pub net_worth: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FirmFinance {
@@ -143,6 +152,7 @@ pub struct FirmFinance {
     pub cash: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MoneyFinance {
@@ -151,6 +161,7 @@ pub struct MoneyFinance {
     pub destroyed_this_turn: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Finance {
@@ -504,13 +515,16 @@ pub fn build(sim: &Sim, store: &LedgerStore) -> Finance {
 
 // ---------------------------------------------------------------- energy
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "ts", ts(rename = "EnergyPlantKind"))]
 pub enum PlantKindKey {
     Fossil,
     Renewable,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlantSupply {
     pub tile: Tile,
@@ -518,6 +532,7 @@ pub struct PlantSupply {
     pub capacity: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnergyDemand {
     pub firms: f64,
@@ -525,12 +540,14 @@ pub struct EnergyDemand {
     pub total: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlantEmissions {
     pub tile: Tile,
     pub tonnes: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnergyView {

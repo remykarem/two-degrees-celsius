@@ -77,7 +77,7 @@ export function buildSnapshot(s: MockState): Snapshot {
   const households = householdViews(s);
   const firmOutput = activeFirms.reduce((a, f) => a + (f.output > 0 ? f.output : (GEN.firms.find((x) => x.sector === f.sector && x.output > 0)?.output ?? 0) * 0.5) * idx, 0);
   const wellbeing = people.length ? people.reduce((a, p) => a + p.wellbeing, 0) / people.length : 0;
-  const snapBase: Snapshot = {
+  const snapBase: Omit<Snapshot, 'breakdowns' | 'policies' | 'industry' | 'turnPhase'> = {
     schemaVersion: SCHEMA_VERSION as SchemaVersion, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
     map: { width: 12, height: 12, tiles: mapTiles(s) },
     buildings: { publicHousing: counts.public_housing, fossilPlant: counts.fossil_plant, renewablePlant: counts.renewable_plant, road: counts.road },
@@ -127,6 +127,7 @@ export function buildSnapshot(s: MockState): Snapshot {
   const nominalOf = (k: LeverKey) => s.policy[k]!;
   return {
     ...snapBase,
+    turnPhase: { open: false, monthsDone: 0 },
     breakdowns: buildBreakdowns(s, snapBase, households, e.monthlyOutput, e.wageBill),
     policies: buildPolicies(s, nominalOf),
     industry: buildIndustry(snapBase, counts),

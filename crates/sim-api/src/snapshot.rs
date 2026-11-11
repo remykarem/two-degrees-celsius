@@ -13,6 +13,7 @@ use sim_engine::Sim;
 use sim_types as st;
 use std::collections::BTreeMap;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameOver {
@@ -20,6 +21,7 @@ pub struct GameOver {
     pub outcome: GameOutcome,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PcView {
@@ -28,6 +30,7 @@ pub struct PcView {
     pub regen_next_turn: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransitionView {
@@ -36,6 +39,7 @@ pub struct TransitionView {
     pub total: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemView {
     pub current: SystemKey,
@@ -43,6 +47,7 @@ pub struct SystemView {
 }
 
 /// A lever value: number, boolean or a mode name.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PolicyScalar {
@@ -51,6 +56,7 @@ pub enum PolicyScalar {
     Mode(String),
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyEntry {
     pub nominal: PolicyScalar,
@@ -58,6 +64,7 @@ pub struct PolicyEntry {
     pub effective: Option<f64>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Buildings {
@@ -67,6 +74,7 @@ pub struct Buildings {
     pub road: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Indicators {
@@ -92,6 +100,7 @@ pub struct Indicators {
     pub price_index: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdIncome {
@@ -106,6 +115,7 @@ pub struct HouseholdIncome {
     pub spending: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HouseholdView {
@@ -128,14 +138,17 @@ pub struct HouseholdView {
     /// Contract v1.9: a short tag from `content/ui.json` `tags` ("Estate owner"); present for the
     /// estate household only.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub tag: Option<String>,
     /// Contract v1.9: the wealth band of the household's net worth (`content/ui.json`
     /// `wealth_bands`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub wealth_band: Option<WealthBandView>,
 }
 
 /// Contract v1.9.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WealthBandView {
     pub id: String,
@@ -143,6 +156,7 @@ pub struct WealthBandView {
 }
 
 /// Contract v1.9: who employs a person who has no firm job.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EmployerKind {
@@ -150,6 +164,7 @@ pub enum EmployerKind {
 }
 
 /// Contract v1.9: the employer of a person on a household's payroll (the jet's pilot).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmployerView {
     pub kind: EmployerKind,
@@ -158,12 +173,14 @@ pub struct EmployerView {
     pub label: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JobView {
     pub firm: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonView {
@@ -184,9 +201,11 @@ pub struct PersonView {
     pub effective_hours: f64,
     /// Contract v1.9: set for domestic staff (`job` stays `null`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub employer: Option<EmployerView>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PublicOwner {
@@ -194,6 +213,7 @@ pub enum PublicOwner {
 }
 
 /// Owner of a home: a household id, or the string `"public"`.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum HomeOwnerView {
@@ -201,6 +221,7 @@ pub enum HomeOwnerView {
     Public(PublicOwner),
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeView {
@@ -213,6 +234,7 @@ pub struct HomeView {
 }
 
 /// One cell of the map.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TileView {
@@ -221,22 +243,27 @@ pub struct TileView {
     pub kind: TileKindKey,
     /// Home, firm or plant id for those kinds.
     #[serde(default, skip_serializing_if = "Option::is_none", rename = "ref")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub reference: Option<u32>,
     /// True if the tile is empty (a building could stand there, queued builds aside; use
     /// `validTiles(kind)` for the exact answer).
     pub buildable: bool,
     /// Plant tiles only: tonnes of CO2 emitted per month.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub emissions_monthly: Option<f64>,
     /// Forest tiles only (contract v1.2): standing, burning or regrowing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub state: Option<ForestTileState>,
     /// Standing forest tiles only (contract v1.8): the odds that a fire reaches this tile next
     /// month, from the model's ignition and spread rules (`sim_model::weather::tile_fire_risk`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub fire_risk: Option<f64>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ForestTileState {
@@ -245,6 +272,7 @@ pub enum ForestTileState {
     Regrowing,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RiskKey {
@@ -263,6 +291,7 @@ impl RiskKey {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DroughtView {
@@ -270,6 +299,7 @@ pub struct DroughtView {
     pub months_left: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FireView {
@@ -277,6 +307,7 @@ pub struct FireView {
     pub months_left: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ForecastView {
@@ -285,6 +316,7 @@ pub struct ForecastView {
 }
 
 /// Contract v1.2: climate stress (0..1), the active drought, burning tiles and the forecast.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WeatherView {
@@ -304,6 +336,7 @@ pub struct WeatherView {
     pub forecast: ForecastView,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MapView {
@@ -313,6 +346,7 @@ pub struct MapView {
     pub tiles: Vec<TileView>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PlantKindKey {
@@ -320,6 +354,7 @@ pub enum PlantKindKey {
     Renewable,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlantView {
@@ -331,6 +366,7 @@ pub struct PlantView {
     pub emissions_monthly: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FirmOwner {
@@ -340,6 +376,7 @@ pub enum FirmOwner {
     Bank,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FirmView {
@@ -361,6 +398,7 @@ pub struct FirmView {
     pub green_tech: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BankView {
@@ -371,6 +409,7 @@ pub struct BankView {
     pub failed: bool,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GovernmentView {
@@ -382,6 +421,7 @@ pub struct GovernmentView {
     pub spending: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonsAccessKey {
@@ -399,6 +439,7 @@ fn share(stock: f64, max: f64) -> f64 {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NatureView {
@@ -421,6 +462,7 @@ pub struct NatureView {
     pub farm_health: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HousingView {
@@ -432,6 +474,7 @@ pub struct HousingView {
 }
 
 /// Progress inside the current turn (contract v1.1).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurnPhaseView {
@@ -439,6 +482,7 @@ pub struct TurnPhaseView {
     pub months_done: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
@@ -453,6 +497,7 @@ pub struct Snapshot {
     pub map: MapView,
     pub buildings: Buildings,
     pub pending: Vec<PendingItem>,
+    #[cfg_attr(feature = "ts", ts(type = "Record<LeverKey, PolicyEntry>"))]
     pub policy: BTreeMap<LeverKey, PolicyEntry>,
     pub net_lobby: f64,
     pub union_density: f64,
@@ -477,10 +522,12 @@ pub struct Snapshot {
     pub history: Vec<HistoryPoint>,
     /// Contract v1.9: the elite estate; absent when the town has none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub estate: Option<EstateView>,
 }
 
 /// Contract v1.9: the jet.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JetView {
@@ -490,15 +537,18 @@ pub struct JetView {
     pub flying_this_month: bool,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LastFlightView {
     pub turn: u32,
     /// 0..=2 within the turn.
+    #[cfg_attr(feature = "ts", ts(type = "0 | 1 | 2"))]
     pub month: u8,
     pub tonnes: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PilotStatus {
@@ -506,6 +556,7 @@ pub enum PilotStatus {
     LetGo,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PilotView {
@@ -521,6 +572,7 @@ pub struct PilotView {
 
 /// The estate's money, from the ledger: the latest month and the trailing twelve months, in
 /// dollars. `months` says how many months the second set covers (fewer early in the game).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EstateMoney {
@@ -530,6 +582,7 @@ pub struct EstateMoney {
     pub carbon_charge: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EstateFinance {
@@ -544,6 +597,7 @@ pub struct EstateFinance {
 
 /// Contract v1.9 (Town v7): the elite estate. Tiles come from `content/initial_town.json`; the
 /// scene draws what this says.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EstateView {
@@ -557,6 +611,7 @@ pub struct EstateView {
     pub jet_name: String,
     pub jet: JetView,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub last_flight: Option<LastFlightView>,
     pub flights_total: u32,
     pub tonnes_total: f64,
@@ -565,6 +620,7 @@ pub struct EstateView {
     /// Direct monthly emissions of the estate household (`params.estate.household_emissions_t`).
     pub household_emissions_t: f64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub pilot: Option<PilotView>,
     pub finance: EstateFinance,
 }

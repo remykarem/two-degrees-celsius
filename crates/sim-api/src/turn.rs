@@ -6,6 +6,7 @@ use crate::snapshot::Snapshot;
 use serde::{Deserialize, Serialize};
 use sim_types as st;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PendingItem {
@@ -31,6 +32,7 @@ impl PendingItem {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandPreview {
@@ -44,15 +46,18 @@ pub struct CommandPreview {
     /// the value the model would have in force at today's net lobbying (`sim_model::lobbying::
     /// expected_effective`); absent for other commands. Lobbying can still move before it applies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub expected_effective: Option<f64>,
     pub blocked: Option<BlockReason>,
     /// For place and remove: can the tile take the command? `true` for other commands.
     pub tile_valid: bool,
     /// `tile_occupied`, `tile_invalid` or `nothing_to_remove` when `tileValid` is false.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub tile_reason: Option<BlockReason>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RejectedCommand {
     pub index: usize,
@@ -60,6 +65,7 @@ pub struct RejectedCommand {
     pub reason: BlockReason,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyGap {
     pub lever: LeverKey,
@@ -69,6 +75,7 @@ pub struct PolicyGap {
 
 /// One person's commute this month. The sim exposes distance and time, not the path, so the
 /// tiles are the two ends (`from` is `null` for an unhoused household).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Commute {
     pub person: u32,
@@ -82,6 +89,7 @@ pub struct Commute {
 
 /// Contract v1.9: a person on a household's payroll (the estate's pilot) commuting to the
 /// employer's workplace (the hangar tile). `wage` is what the employer paid this tick.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaffCommute {
     pub person: u32,
@@ -96,6 +104,7 @@ pub struct StaffCommute {
 }
 
 /// A household buying from a firm this month.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Purchase {
     pub household: u32,
@@ -104,6 +113,7 @@ pub struct Purchase {
     pub amount: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RentFlow {
     pub household: u32,
@@ -112,6 +122,7 @@ pub struct RentFlow {
     pub amount: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WageFlow {
     pub person: u32,
@@ -120,6 +131,7 @@ pub struct WageFlow {
     pub amount: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthFlows {
@@ -130,16 +142,20 @@ pub struct MonthFlows {
     pub emissions: Vec<EmissionLine>,
     /// Contract v1.9; omitted when empty.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(feature = "ts", ts(type = "Array<StaffCommute>", optional))]
     pub staff_commutes: Vec<StaffCommute>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonthFrame {
+    #[cfg_attr(feature = "ts", ts(type = "0 | 1 | 2"))]
     pub month: u8,
     pub events: Vec<SimEvent>,
     pub flows: MonthFlows,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurnResult {
@@ -156,6 +172,7 @@ pub struct TurnResult {
 }
 
 /// Result of `beginTurn` (contract v1.1).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurnStart {
@@ -168,15 +185,18 @@ pub struct TurnStart {
 }
 
 /// Result of `advanceMonth` (contract v1.1).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthResult {
+    #[cfg_attr(feature = "ts", ts(type = "0 | 1 | 2"))]
     pub month: u8,
     pub frame: MonthFrame,
     pub snapshot: Snapshot,
 }
 
 /// Result of `cancel_pending`.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CancelResult {

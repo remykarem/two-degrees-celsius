@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
 use sim_types::PlantKind;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmissionsLine {
@@ -34,6 +35,7 @@ pub struct EmissionsLine {
     pub headline: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Cumulative {
@@ -44,6 +46,7 @@ pub struct Cumulative {
     pub share: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SourceKind {
@@ -57,11 +60,13 @@ pub enum SourceKind {
 }
 
 /// One by-source line of the latest month.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceLine {
     pub kind: SourceKind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub id: Option<u32>,
     pub label: String,
     /// Tonnes this month. The sink is negative; `fire_sink_loss` is positive but informational.
@@ -73,11 +78,13 @@ pub struct SourceLine {
 /// Contract v1.8: where the budget goes at the current net rate. `per_turn` is the latest month's
 /// net emissions (never below zero) times `run.ticks_per_turn`; `run_out_turn` is the turn on
 /// which the remaining budget would be used up at that rate (`None` when nothing is emitted).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Runway {
     pub per_turn: f64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub run_out_turn: Option<f64>,
     /// True when the run-out turn falls on or before the turn after the last one.
     pub runs_out_before_end: bool,
@@ -97,6 +104,7 @@ fn runway(sim: &Sim) -> Runway {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmissionsBreakdown {

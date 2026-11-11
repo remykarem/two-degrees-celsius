@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use sim_params::Params;
 use sim_types::State;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryPoint {

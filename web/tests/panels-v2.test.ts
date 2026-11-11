@@ -74,7 +74,7 @@ describe('metrics derivation', () => {
 });
 
 describe('cost display', () => {
-  const action: ActionInfo = { key: 'place:fossil_plant', label: 'Fossil plant', baseCostPc: 12, leadTime: 4, moneyCost: 40000, availableIn: ['market'] };
+  const action: ActionInfo = { key: 'place:fossil_plant', label: 'Fossil plant', baseCostPc: 12, leadTime: 4, moneyCost: 40000, availableIn: ['market'], costModel: { base: 12, unit: 1, minSize: 1 }, needsTile: true };
   it('prefers the preview over the action table and marks estimates', () => {
     expect(costLine(action, { pc: 12, money: 2_000_000, leadTime: 4 })).toEqual({ pc: 12, money: 2_000_000, leadTime: 4, exact: true });
     expect(costLine(action, null)).toMatchObject({ money: 40000, exact: false });
@@ -148,7 +148,7 @@ describe('Town v2 story facts', () => {
     const g = played(3);
     const s = g.state.get().snapshot!;
     const hh = s.households[0]!;
-    const r = { ...g.state.get().lastResult!, months: [{ month: 0 as const, events: [{ type: 'household_evicted' as const, household: hh.id, importance: 3 as const }], flows: {} }] };
+    const r = { ...g.state.get().lastResult!, months: [{ month: 0 as const, events: [{ type: 'household_evicted' as const, household: hh.id, importance: 3 as const }], flows: { commutes: [], purchases: [], rent: [], wages: [], emissions: [] } }] };
     expect(townFacts({ ...s, housing: { ...s.housing, unhousedHouseholds: 2 } }, r).join(' ')).toMatch(/2 households were without a home, 1 of them evicted/);
   });
 });

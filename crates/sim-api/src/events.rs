@@ -5,6 +5,7 @@ use crate::keys::{BlockReason, ClassKey, CollapseReason, InfraKind, LeverKey, Sy
 use serde::{Deserialize, Serialize};
 use sim_types as st;
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SimEventKind {
@@ -129,8 +130,10 @@ pub enum SimEventKind {
     },
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimEvent {
+    #[cfg_attr(feature = "ts", ts(type = "1 | 2 | 3"))]
     pub importance: u8,
     #[serde(flatten)]
     pub kind: SimEventKind,
@@ -300,6 +303,7 @@ pub fn importance(k: &SimEventKind) -> u8 {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EmissionSourceKind {
@@ -315,13 +319,16 @@ pub enum EmissionSourceKind {
 
 /// One emissions line, used by both `TraceRecord::Emissions` and `MonthFlows.emissions`.
 /// The sink reports a negative tonnage (carbon absorbed), exactly as the sim does.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmissionLine {
     pub source: EmissionSourceKind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub id: Option<u32>,
     /// Set for `plant` sources: the tile the plant stands on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub tile: Option<Tile>,
     pub tonnes: f64,
 }
@@ -357,6 +364,7 @@ impl EmissionLine {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum IncomeKindKey {
@@ -367,14 +375,17 @@ pub enum IncomeKindKey {
     Benefits,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TraceRecord {
     Emissions {
         source: EmissionSourceKind,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         id: Option<u32>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         tile: Option<Tile>,
         tonnes: f64,
     },

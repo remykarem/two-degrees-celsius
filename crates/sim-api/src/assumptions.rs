@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 /// The catalog, embedded at build time.
 pub const CATALOG: &str = include_str!("../../../content/assumptions.json");
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Group {
@@ -26,6 +27,7 @@ pub enum Group {
     LeavesOut,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Status {
@@ -82,6 +84,7 @@ struct CatalogFile {
 
 // ---- the agents section (contract v1.7) ----
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Actor {
@@ -89,6 +92,7 @@ pub enum Actor {
     NonAgent,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Distribution {
@@ -138,6 +142,7 @@ pub struct AgentsDef {
 
 /// A household class: the derived label, a one-line account of how such households decide, and
 /// the rule that makes the label.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentVariant {
     /// The wire class key (`capitalist`, `rentier`, `manager`, `worker`, `dependent`).
@@ -147,6 +152,7 @@ pub struct AgentVariant {
     pub rule: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentKindInfo {
@@ -163,6 +169,7 @@ pub struct AgentKindInfo {
     pub code: Vec<String>,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RandomDraw {
     pub id: String,
@@ -176,6 +183,7 @@ pub struct RandomDraw {
 }
 
 /// The agents catalog (contract v1.7): who decides what, how, and where chance enters.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentsCatalog {
     pub kinds: Vec<AgentKindInfo>,
@@ -265,6 +273,7 @@ pub fn load() -> ApiResult<Vec<TopicDef>> {
 
 // ---- the wire ----
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ParamValue {
@@ -273,6 +282,7 @@ pub enum ParamValue {
     Text(String),
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssumptionParam {
     pub path: String,
@@ -281,23 +291,27 @@ pub struct AssumptionParam {
     pub unit: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExampleResult {
     pub value: f64,
     pub unit: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssumptionExample {
     pub label: String,
     pub inputs: BTreeMap<String, f64>,
     pub result: ExampleResult,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub note: Option<String>,
     /// Additive: the registry name of the model function that computed the result.
     pub function: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssumptionTopic {

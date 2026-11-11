@@ -9,6 +9,8 @@
     "test": "vitest run",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint src tests",
+    "gen:contract": "cargo run -q -p sim-api --features ts --example contract_ts",
+    "check:contract": "cargo test -q -p sim-api --test contract_ts",
     "sync-mock": "node scripts/sync-mock.mjs",
     "build:wasm": "node scripts/build-wasm.mjs"
   },

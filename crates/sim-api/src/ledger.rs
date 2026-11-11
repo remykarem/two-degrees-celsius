@@ -17,6 +17,7 @@ use sim_types::{
 
 // ---------------------------------------------------------------- wire shapes
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AccountRef {
@@ -61,6 +62,7 @@ impl AccountRef {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LedgerKindKey {
@@ -129,14 +131,18 @@ impl LedgerKindKey {
 }
 
 /// `query` of `ledger(account, query)`: all fields optional (turns inclusive).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LedgerQuery {
     #[serde(default)]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub from_turn: Option<u32>,
     #[serde(default)]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub to_turn: Option<u32>,
     #[serde(default)]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub kind: Option<LedgerKindKey>,
 }
 
@@ -149,10 +155,12 @@ impl LedgerQuery {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LedgerEntry {
     pub turn: u32,
+    #[cfg_attr(feature = "ts", ts(type = "0 | 1 | 2"))]
     pub month: u8,
     pub tick: u32,
     pub from: AccountRef,
@@ -160,6 +168,7 @@ pub struct LedgerEntry {
     pub amount: f64,
     pub kind: LedgerKindKey,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub detail: Option<String>,
     pub memo: String,
     /// The queried account's balance (savings, cash, bank equity) after this entry.
@@ -168,10 +177,12 @@ pub struct LedgerEntry {
     pub debt_after: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LedgerSummaryRow {
     pub turn: u32,
+    #[cfg_attr(feature = "ts", ts(type = "0 | 1 | 2"))]
     pub month: u8,
     pub counterparty: AccountRef,
     pub kind: LedgerKindKey,
@@ -183,6 +194,7 @@ pub struct LedgerSummaryRow {
     pub debt_net: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LedgerPage {
@@ -198,6 +210,7 @@ pub struct LedgerPage {
     pub detail_from_turn: u32,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonLedger {

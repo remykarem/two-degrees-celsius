@@ -17,6 +17,7 @@ describe('module boundaries (ESLint no-restricted-imports)', () => {
     ['src/panels/x.ts', "import * as T from 'three';", 'panels -> three'],
     ['src/panels/x.ts', "import { createScene } from '../scene';", 'panels -> scene'],
     ['src/contract/x.ts', "import type { A } from './index';", 'contract imports something'],
+    ['src/contract/index.ts', "import type { A } from './elsewhere';", 'contract/index imports something other than generated'],
     ['src/contract/x.ts', "import type { B } from '../store';", 'contract -> store'],
     ['src/store/x.ts', "import * as T from 'three';", 'store -> three'],
     ['src/store/x.ts', "import { createSimPort } from '../sim-port';", 'store -> sim-port factory'],

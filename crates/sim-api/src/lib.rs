@@ -12,6 +12,8 @@ pub mod breakdowns;
 pub mod catalog;
 pub mod command;
 pub mod content;
+#[cfg(feature = "ts")]
+pub mod contract_ts;
 pub mod emissions;
 pub mod error;
 pub mod events;

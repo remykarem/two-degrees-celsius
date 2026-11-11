@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonthFrame } from '../src/contract';
+import type { FrameInput } from '../src/contract';
 import { createSimPort } from '../src/sim-port';
 import { layoutOf } from '../src/store';
 import { ok } from './helpers';
@@ -22,7 +22,7 @@ describe('flow planner, Town v2', () => {
 
   it('purchases go household -> firm as coins, firm -> household as goods (service tickets for a shop)', () => {
     const firm = shop ?? snap.firms.find((f) => f.active)!;
-    const frame: MonthFrame = { month: 0, events: [], flows: { purchases: [{ household: buyer.id, firm: firm.id, sector: firm.sector, amount: 300 }] } };
+    const frame: FrameInput = { month: 0, events: [], flows: { purchases: [{ household: buyer.id, firm: firm.id, sector: firm.sector, amount: 300 }] } };
     const plan = planFrame(frame, ctx);
     const coin = plan.tracks.find((t) => t.kind === 'token' && t.style === 2)!;
     const good = plan.tracks.find((t) => t.kind === 'good')!;

@@ -88,6 +88,7 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
   const emissions = {
     runway: { perTurn, ...(runOut !== undefined ? { runOutTurn: runOut } : {}), runsOutBeforeEnd: runOut !== undefined && runOut <= GEN.game.lastTurn + 1 },
     month, turn: tl, cumulative: { tonnes: s.cumulativeTonnes, budget: GEN.carbon.budget, remaining: rem, share: GEN.carbon.budget ? s.cumulativeTonnes / GEN.carbon.budget : 0 },
+    monthLines: [], turnNumber: s.turn, turnMonths: GEN.game.ticksPerTurn,
     reconciles: ok(month) && ok(tl), note: 'Mock data: sources are split by invented shares; the mock cumulative counts gross emissions.',
   };
 
@@ -96,6 +97,7 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
   const eff = (k: LeverKey) => (LEVERS.find((l) => l.key === k)?.lobbied ? effectiveValue(s, k) : null);
   const tax = (id: TaxRow['id'], label: string, appliesTo: string, k: LeverKey | null, key: keyof typeof rev | null): TaxRow => ({
     id, label, appliesTo, rateNominal: k ? pol(k) : null, rateEffective: k ? eff(k) : null, revenueMonth: key ? rev[key] : 0, revenueQuarter: key && q ? q[key] : 0, modelled: id !== 'gst',
+    unit: id === 'carbon' ? 'usd_per_tonne' : 'fraction', baseMonth: null, baseLabel: '', realisedRate: null, note: '',
   });
   const taxes: TaxRow[] = [
     tax('income', 'Income tax', 'Wages, per month, on each household\'s wage income', 'tax_wage', 'wageTax'),
@@ -123,7 +125,7 @@ export function buildPolicies(s: MockState, nominalOf: (k: LeverKey) => number |
       lastChangeTurn: s.policyLast?.[l.key] ?? null, weakenedBy,
     };
   });
-  return { rows, timeline: (s.policyLog ?? []).map((e) => ({ ...e })) };
+  return { rows, timeline: (s.policyLog ?? []).map((e) => ({ ...e })), cancelRefund: 0 };
 }
 
 export function buildIndustry(snap: Pick<Snapshot, 'firms' | 'finance' | 'buildings'>, counts: Record<string, number>): Industry {
@@ -132,11 +134,12 @@ export function buildIndustry(snap: Pick<Snapshot, 'firms' | 'finance' | 'buildi
     firms: snap.firms.filter((f) => f.active).map((f) => ({
       firm: f.id, name: f.name, sector: f.sector, output: f.output, price: f.price, workers: f.workers, wage: f.wage, revenue: f.revenue, profit: f.profit, emissions: f.emissions,
       ownership: [{ owner: 'household' as const, household: f.owner.kind === 'household' ? f.owner.id : undefined, share: 0.8 }, { owner: 'bank' as const, share: 0.2 }].map((o) => (o.household === undefined ? { owner: o.owner, share: o.share } : o)),
-      stateShare: 0,
+      stateShare: 0, active: true,
     })),
     infrastructure: INFRA_KINDS.map((kind) => ({
       kind, count: counts[kind] ?? 0,
       buildCost: kind === 'public_housing' ? GEN.build.publicHousingCostUsd : kind === 'road' ? GEN.build.roadCostUsd : kind === 'fire_station' ? WX.fireStationCostUsd : GEN.build.plantCostUsd,
+      upkeepEachMonthly: 0,
       upkeepMonthly: kind === 'road' ? GEN.build.roadUpkeepUsd : kind === 'fire_station' ? WX.fireStationUpkeepUsd : 0,
     })),
     publicGoods: [

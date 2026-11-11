@@ -1,6 +1,6 @@
-import type { AccountRef, PolicyEvent, Command, LedgerQuery, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, PolicyEvent, PolicyScalar, Command, LedgerQuery, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
-import { actionList, GEN, LEVERS, MOCK } from './data';
+import { actionList, GEN, LEVERS, MOCK, type PolicyValue } from './data';
 import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
 import { mockAgents, mockAssumptions } from './assumptions';
 import { ledgerPage, personLedger, rollUp } from './ledger';
@@ -20,7 +20,8 @@ export function createMockSim(): SimPort {
   let s: MockState = initialState(1);
   /** The turn in progress (contract section 12). Lives outside MockState: a save is only legal at a turn boundary, so it is never serialised. */
   let open: { turn: number; pcBefore: number; accepted: PendingItem[]; rejected: TurnResult['rejected']; activated: PendingItem[]; month0: SimEvent[]; months: MonthFrame[]; halted: boolean } | null = null;
-  const snap = () => ({ ...buildSnapshot(s), turnPhase: { open: open !== null, monthsDone: (open ? open.months.length : 0) as 0 | 1 | 2 | 3 } });
+  const snap = () => ({ ...buildSnapshot(s), turnPhase: { open: open !== null, monthsDone: open ? open.months.length : 0 } });
+  const scalar = (v: PolicyValue | { mode: string } | undefined): PolicyScalar => (v === undefined ? 0 : typeof v === 'object' ? v.mode : v);
   const logPolicy = (e: PolicyEvent) => { (s.policyLog ??= []).push(e); };
   const turnState = (message: string) => fail('turn_state', message);
 
@@ -34,12 +35,12 @@ export function createMockSim(): SimPort {
       out.push(p);
       if (p.command.type === 'set_policy') {
         const lever = p.command.lever;
-        if (blocked) logPolicy({ turn: s.turn, lever, kind: 'rejected', from: before, to: p.command.value, reason: blocked });
+        if (blocked) logPolicy({ turn: s.turn, lever, kind: 'rejected', from: scalar(before), to: scalar(p.command.value), reason: blocked });
         else {
-          logPolicy({ turn: s.turn, lever, kind: 'activated', from: before, to: s.policy[lever] });
+          logPolicy({ turn: s.turn, lever, kind: 'activated', from: scalar(before), to: scalar(s.policy[lever]) });
           (s.policyLast ??= {})[lever] = s.turn;
           const eff = LEVERS.find((l) => l.key === lever)?.lobbied ? effectiveValue(s, lever) : null;
-          if (eff !== null && Math.abs(eff - Number(s.policy[lever])) > 1e-9) logPolicy({ turn: s.turn, lever, kind: 'weakened', from: s.policy[lever], to: eff, reason: 'lobbying' });
+          if (eff !== null && Math.abs(eff - Number(s.policy[lever])) > 1e-9) logPolicy({ turn: s.turn, lever, kind: 'weakened', from: scalar(s.policy[lever]), to: eff, reason: 'lobbying' });
         }
       }
       if (blocked) events.push({ type: 'policy_blocked', importance: 2, reason: blocked });
@@ -59,7 +60,7 @@ export function createMockSim(): SimPort {
       turn: s.turn, gdpRealAnnual: s.gdp / s.prices, unemployment: s.unemployment, gini: s.gini,
       // net monthly tonnes at the end of the turn, as the real wire (docs/sim-api-notes.md)
       emissions: s.lastMonthlyEmissions * (1 - 0.1 * s.forest), budgetShare: remainingBudget(s) / GEN.carbon.budget,
-      legitimacy: s.legitimacy, avgWellbeing: ind.avgWellbeing, gpiAnnual: ind.gpiAnnual, debtToGdp: s.debt / s.gdp,
+      legitimacy: s.legitimacy, avgWellbeing: ind.avgWellbeing, gpiAnnual: ind.gpiAnnual, debtToGdp: s.debt / s.gdp, grossEmissions: s.lastMonthlyEmissions, cumulativeEmissions: s.cumulativeTonnes,
       avgIncomePerPerson: ind.avgIncomePerPerson, medianIncomePerPerson: ind.medianIncomePerPerson, topHouseholdWealthShare: ind.topHouseholdWealthShare,
       govRevenue: gov.revenue, govSpending: gov.spending, bankCapitalRatio: s.bank.loans > 0 ? s.bank.equity / s.bank.loans : 0, renewableShare: sn.energy.renewableShare, gridServed: sn.energy.served,
       climateStress: stressNow(s), forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm,
@@ -103,13 +104,13 @@ export function createMockSim(): SimPort {
       const month0: SimEvent[] = [];
       ev.previews.forEach((p, index) => {
         if (p.blocked) {
-          if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'rejected', from: s.policy[p.command.lever], to: p.command.value, reason: p.blocked });
+          if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'rejected', from: scalar(s.policy[p.command.lever]), to: scalar(p.command.value), reason: p.blocked });
           rejected.push({ index, command: p.command, reason: p.blocked });
           month0.push({ type: 'policy_blocked', importance: 2, reason: p.blocked });
         }
       });
       const pcBefore = s.pc;
-      for (const a of accepted) if (a.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: a.command.lever, kind: 'queued', from: s.policy[a.command.lever], to: a.command.value });
+      for (const a of accepted) if (a.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: a.command.lever, kind: 'queued', from: scalar(s.policy[a.command.lever]), to: scalar(a.command.value) });
       s.pending.push(...accepted);
       s.nextPendingId += accepted.length;
       s.pc = ev.pcLeft;
@@ -196,7 +197,7 @@ export function createMockSim(): SimPort {
       const p = s.pending.find((x) => x.id === id);
       if (!p) return fail('unknown_pending', `There is no pending item #${id}.`);
       s.pending = s.pending.filter((x) => x.id !== id);
-      if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'cancelled', from: s.policy[p.command.lever], to: p.command.value });
+      if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'cancelled', from: scalar(s.policy[p.command.lever]), to: scalar(p.command.value) });
       const refundPc = p.pcCost * GEN.pc.cancelRefund; // PC only: money is charged when the item takes effect
       s.pc = Math.min(GEN.pc.cap, s.pc + refundPc);
       return ok({ refundPc, snapshot: snap() });

@@ -6,26 +6,9 @@ import { describeCommand, formatEvent, formatLever, pct, REASON_TEXT } from './f
 /** Events that are noise on the results screen (covered by other sections or by the animation). */
 const HIDDEN: SimEvent['type'][] = ['command_activated', 'policy_blocked', 'commuted'];
 
-/** Folds repeated hired/fired events for the same firm into one with the summed head count. */
-export function mergeEvents(events: SimEvent[]): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (const e of events) {
-    if (e.type === 'hired' || e.type === 'fired') {
-      const prev = out.find((x) => x.type === e.type && (x as typeof e).firm === e.firm);
-      if (prev && (prev.type === 'hired' || prev.type === 'fired')) {
-        prev.people += e.people;
-        prev.importance = Math.max(prev.importance, e.importance) as 1 | 2 | 3;
-        continue;
-      }
-      out.push({ ...e });
-    } else out.push(e);
-  }
-  return out;
-}
-
 /** Highest importance first; equal importance keeps the order the events happened in. */
 export function rankEvents(events: SimEvent[], limit = Infinity): SimEvent[] {
-  return mergeEvents(events.filter((e) => !HIDDEN.includes(e.type)))
+  return events.filter((e) => !HIDDEN.includes(e.type))
     .map((e, i) => ({ e, i }))
     .sort((a, b) => b.e.importance - a.e.importance || a.i - b.i)
     .map((x) => x.e)

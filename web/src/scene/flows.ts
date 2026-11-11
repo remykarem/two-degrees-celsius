@@ -1,4 +1,4 @@
-import type { ClassKey, MonthFlows, MonthFrame, PlantView, Sector, SimEvent, Snapshot } from '../contract';
+import type { ClassKey, FrameInput, MonthFlows, PlantView, Sector, SimEvent, Snapshot } from '../contract';
 import { fossilShareOf, type MapLayout, type Tile } from '../store';
 import { centreOf, hash01, tileKey, type Pt } from './coords';
 import { route } from './paths';
@@ -153,13 +153,13 @@ export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emis
 }
 
 const FX_OF: Partial<Record<SimEvent['type'], FxType>> = {
-  firm_closed: 'closed', firm_founded: 'founded', hired: 'hired', fired: 'fired', person_hired: 'hired', person_fired: 'fired', household_evicted: 'shortfall', forest_shrank: 'forest', commons_collapsed: 'commons',
+  firm_closed: 'closed', firm_founded: 'founded', person_hired: 'hired', person_fired: 'fired', household_evicted: 'shortfall', forest_shrank: 'forest', commons_collapsed: 'commons',
   commons_enclosed: 'enclosed', bank_failed: 'bank', class_changed: 'class', rent_shortfall: 'shortfall', loan_defaulted: 'default',
 };
 
 function fxTile(e: SimEvent, c: PlanCtx): Tile | undefined {
   switch (e.type) {
-    case 'firm_closed': case 'firm_founded': case 'hired': case 'fired': case 'person_hired': case 'person_fired': case 'loan_defaulted': return firmTile(c, e.firm);
+    case 'firm_closed': case 'firm_founded': case 'person_hired': case 'person_fired': case 'loan_defaulted': return firmTile(c, e.firm);
     case 'class_changed': case 'rent_shortfall': case 'household_evicted': return homeTile(c, e.household);
     case 'bank_failed': return firstOf(c, 'bank');
     case 'forest_shrank': return c.layout.scenery.find((s) => s.kind === 'forest');
@@ -179,9 +179,9 @@ export function planFx(events: SimEvent[], c: PlanCtx): Fx[] {
 }
 
 /** One month of flows -> tracks (figures, goods, tokens) + emitters + effects. Pure and deterministic. */
-export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
+export function planFrame(frame: FrameInput, c: PlanCtx): FramePlan {
   // Contract v0.3 section 10.8: every flow list may be missing or empty.
-  const f = { commutes: [], purchases: [], rent: [], wages: [], emissions: [], ...frame.flows } as Required<MonthFrame['flows']>;
+  const f: Required<MonthFlows> = { commutes: [], purchases: [], rent: [], wages: [], emissions: [], staffCommutes: [], ...frame.flows };
   const tracks: Track[] = [];
   const seed0 = frame.month * 1009 + c.turn * 31;
   const bank = firstOf(c, 'bank'), gov = firstOf(c, 'government');
@@ -230,9 +230,9 @@ export function planFrame(frame: MonthFrame, c: PlanCtx): FramePlan {
 }
 
 /** Looping token streams for the money-flow lens: all three months of the last turn merged into one repeating loop. */
-export function planFlowLoop(frames: MonthFrame[], c: PlanCtx): Track[] {
+export function planFlowLoop(frames: FrameInput[], c: PlanCtx): Track[] {
   if (frames.length === 0) return [];
-  const hasFlows = (m: MonthFrame) => Object.values(m.flows ?? {}).some((a) => (a?.length ?? 0) > 0);
+  const hasFlows = (m: FrameInput) => Object.values(m.flows ?? {}).some((a) => (a?.length ?? 0) > 0);
   const first = [...frames].reverse().find(hasFlows) ?? frames[frames.length - 1]!;
   return planFrame({ ...first, events: [] }, c).tracks.filter((t) => t.kind === 'token');
 }

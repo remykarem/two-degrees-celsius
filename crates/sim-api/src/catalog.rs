@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 /// The file, embedded at build time.
 pub const UI: &str = include_str!("../../../content/ui.json");
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct CrisisBands {
@@ -18,6 +19,7 @@ pub struct CrisisBands {
     pub budget_below: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HealthBand {
@@ -27,6 +29,7 @@ pub struct HealthBand {
     pub word: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WordBand {
@@ -35,6 +38,7 @@ pub struct WordBand {
 }
 
 /// A value below `bands[i].below` gets that band's word (first match); otherwise `top`.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WordBands {
@@ -42,6 +46,7 @@ pub struct WordBands {
     pub top: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MeterBands {
@@ -49,6 +54,7 @@ pub struct MeterBands {
     pub high: f64,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Bands {
@@ -63,6 +69,7 @@ pub struct Bands {
     pub budget_meter: MeterBands,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LeverGroupInfo {
@@ -70,12 +77,14 @@ pub struct LeverGroupInfo {
     pub blurb: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Fact {
     pub label: String,
     pub value: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemParam {
@@ -86,9 +95,11 @@ pub struct SystemParam {
     pub unit: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemCard {
+    #[cfg_attr(feature = "ts", ts(type = "SystemKey"))]
     pub key: String,
     /// `params.systems.<key>.name`.
     pub name: String,
@@ -105,6 +116,7 @@ pub struct SystemCard {
 
 /// A wealth band (contract v1.9): a household whose net worth is at or above `min` (the first
 /// match, from the highest `min` down) is in it; `min: null` catches everything below.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WealthBand {
@@ -113,6 +125,7 @@ pub struct WealthBand {
     pub label: String,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Catalog {

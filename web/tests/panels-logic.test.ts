@@ -6,7 +6,7 @@ const LEGITIMACY_WARNING = bands().crisis.legitimacyBelow, BUDGET_WARNING = band
 import { arrowFlip, estimatePc, leverCostHint } from '../src/panels/costs';
 import { leadRangeText, turnsUntil } from '../src/panels/format';
 import { arrowsShown, groupLevers, leverStatus, lobbyNote, toCommandValue, toNum } from '../src/panels/policy';
-import { comingNextTurn, eventLines, lobbyLines, mergeEvents, metricDeltas, rankEvents } from '../src/panels/results';
+import { comingNextTurn, eventLines, lobbyLines, metricDeltas, rankEvents } from '../src/panels/results';
 import { generateStory } from '../src/panels/story';
 import { emissionsBars, incomeByType, lobbyingBars, whyData } from '../src/panels/why';
 import { resolveSelection, resolveTile, builtCount } from '../src/panels/inspect';
@@ -62,13 +62,11 @@ describe('crisis derivation', () => {
 });
 
 describe('event ranking', () => {
-  it('ranks by importance then order, hides noise and merges hires', () => {
-    const events = [ev({ type: 'commuted', person: 1, firm: 1, tiles: 3, minutes: 18 }), ev({ type: 'hired', firm: 1, people: 2 }, 1), ev({ type: 'bank_failed' }, 3),
-      ev({ type: 'hired', firm: 1, people: 5 }, 2), ev({ type: 'command_activated', id: 1 }, 2), ev({ type: 'firm_closed', firm: 2 }, 2)];
+  it('ranks by importance then order and hides noise', () => {
+    const events = [ev({ type: 'commuted', person: 1, firm: 1, tiles: 3, minutes: 18 }), ev({ type: 'person_hired', person: 1, firm: 1 }, 1), ev({ type: 'bank_failed' }, 3),
+      ev({ type: 'command_activated', id: 1 }, 2), ev({ type: 'firm_closed', firm: 2 }, 2)];
     const ranked = rankEvents(events);
-    expect(ranked.map((e) => e.type)).toEqual(['bank_failed', 'hired', 'firm_closed']);
-    expect(ranked[1]).toMatchObject({ people: 7, importance: 2 });
-    expect(mergeEvents(events).filter((e) => e.type === 'hired')).toHaveLength(1);
+    expect(ranked.map((e) => e.type)).toEqual(['bank_failed', 'firm_closed', 'person_hired']);
   });
   it('limits and counts the rest, wording from the payload', () => {
     const many = Array.from({ length: 12 }, (_, i) => ev({ type: 'firm_closed', firm: i }, 2));

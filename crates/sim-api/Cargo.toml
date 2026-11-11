@@ -7,7 +7,12 @@ license.workspace = true
 [lints]
 workspace = true
 
+[features]
+# TypeScript contract generation (docs/how-to.md, "Regenerate the TS contract"). Off for wasm builds.
+ts = ["dep:ts-rs"]
+
 [dependencies]
+ts-rs = { version = "12", optional = true, default-features = false, features = ["serde-compat"] }
 serde.workspace = true
 # float_roundtrip: exported saves must restore every f64 bit-for-bit.
 serde_json = { workspace = true, features = ["float_roundtrip"] }
@@ -20,3 +25,9 @@ sim-checks.workspace = true
 sim-engine.workspace = true
 
 [dev-dependencies]
+# Enables the `ts` feature for this crate's own tests, so `cargo test --workspace` checks the generated TS contract.
+sim-api = { path = ".", features = ["ts"] }
+
+[[example]]
+name = "contract_ts"
+required-features = ["ts"]

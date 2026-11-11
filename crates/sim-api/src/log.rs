@@ -79,6 +79,7 @@ impl TickRecord {
     }
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PolicyEventKind {
@@ -89,6 +90,7 @@ pub enum PolicyEventKind {
     Weakened,
 }
 
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PolicyEvent {
@@ -98,6 +100,7 @@ pub struct PolicyEvent {
     pub from: PolicyScalar,
     pub to: PolicyScalar,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub reason: Option<String>,
 }
 

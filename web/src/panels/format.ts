@@ -98,8 +98,6 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
     case 'removed': return `A building or road was removed at (${e.tile.x},${e.tile.y})`;
     case 'electricity_rationed': return `Electricity was rationed (${pct(e.served)} of demand served)`;
     case 'purchase': return `${hh(e.household)} spent ${money(e.amount)} at ${firm(e.firm)}`;
-    case 'hired': return `${firm(e.firm)} hired ${n(e.people)}`;
-    case 'fired': return `${firm(e.firm)} laid off ${n(e.people)}`;
     case 'loan_defaulted': return `${firm(e.firm)} defaulted on a loan`;
     case 'firm_founded': return `${firm(e.firm)} opened`;
     case 'firm_closed': return `${firm(e.firm)} closed`;

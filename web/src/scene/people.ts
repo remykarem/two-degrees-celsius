@@ -1,4 +1,4 @@
-import type { AgeBand, MonthFrame, PersonView, Snapshot } from '../contract';
+import type { AgeBand, FrameInput, PersonView, Snapshot } from '../contract';
 import type { MapLayout, Tile } from '../store';
 import { centreOf, hash01, type Pt } from './coords';
 import { commuteFraction, pointAt, trackProgress } from './flows';
@@ -74,7 +74,7 @@ const toward = (p: Pt, to: Pt, d: number): Pt => { const l = Math.hypot(to[0] - 
  * One commute plan per commuting person in the frame (the wire has no path, so the scene routes itself, preferring roads).
  * Longer commutes take a longer share of the month, so the pace is the same and the minutes show.
  */
-export function planCommutes(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
+export function planCommutes(frame: FrameInput, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
   const list = [...(frame.flows?.commutes ?? []), ...staffCommutesOf(frame)]; // Town v7: the pilot's commute to the hangar
   if (!list.length) return [];
   const n = layout.gridSize;
@@ -110,7 +110,7 @@ export const MAX_SHOPPING_TRIPS = 5;
  * walking to work goes to that firm's tile and back, along the same road-preferring router as a commute. At most `cap` trips, one per
  * household, at most one per firm per sector first so the Shop, the Farm and the Factory all see visitors. Empty or missing purchases give no trips.
  */
-export function planShopping(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], busy: ReadonlySet<number>, turn: number, cap = MAX_SHOPPING_TRIPS): CommutePlan[] {
+export function planShopping(frame: FrameInput, layout: MapLayout, stands: PersonStand[], busy: ReadonlySet<number>, turn: number, cap = MAX_SHOPPING_TRIPS): CommutePlan[] {
   const buys = (frame.flows?.purchases ?? []).filter((p) => p.amount > 0);
   if (!buys.length || cap <= 0) return [];
   const n = layout.gridSize;
@@ -148,7 +148,7 @@ export function planShopping(frame: Pick<MonthFrame, 'month' | 'flows'>, layout:
 }
 
 /** Commutes first, then shopping trips for people who are not commuting this month. */
-export function planTrips(frame: Pick<MonthFrame, 'month' | 'flows'>, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
+export function planTrips(frame: FrameInput, layout: MapLayout, stands: PersonStand[], turn: number): CommutePlan[] {
   const commutes = planCommutes(frame, layout, stands, turn);
   return [...commutes, ...planShopping(frame, layout, stands, new Set(commutes.map((c) => c.person)), turn)];
 }

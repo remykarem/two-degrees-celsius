@@ -1,4 +1,4 @@
-import type { Estate, MonthFlows, MonthFrame, PersonView, SimEvent, Snapshot, TileRef } from '../contract';
+import type { Estate, FrameInput, MonthFlows, PersonView, SimEvent, Snapshot, TileRef } from '../contract';
 
 /**
  * Scene-facing selectors for the Town v7 estate (contract v1.9). Pure functions over wire data: no Three.js, no clock, no numbers
@@ -64,7 +64,7 @@ export function jetFlightIn(events: readonly SimEvent[] | undefined): { tonnes: 
 }
 
 /** Tonnes of aviation emissions in a month's flows (0 when none). */
-export function aviationTonnes(flows: MonthFlows | undefined): number {
+export function aviationTonnes(flows: Partial<MonthFlows> | undefined): number {
   return (flows?.emissions ?? []).filter((e) => e.source === 'aviation').reduce((a, e) => a + Math.max(0, e.tonnes), 0);
 }
 
@@ -72,7 +72,7 @@ export function aviationTonnes(flows: MonthFlows | undefined): number {
 export const aviationOfSnapshot = (snap: Snapshot | null): number => Math.max(0, snap?.breakdowns?.emissions.month.aviation ?? 0);
 
 /** Staff commutes of a frame, shaped like ordinary commutes so the people layer can walk them. Empty when none. */
-export function staffCommutesOf(frame: Pick<MonthFrame, 'flows'>): { person: number; from: TileRef | null; to: TileRef; minutes: number }[] {
+export function staffCommutesOf(frame: Pick<FrameInput, 'flows'>): { person: number; from: TileRef | null; to: TileRef; minutes: number }[] {
   const flows = frame.flows;
   return (flows?.staffCommutes ?? []).map((c) => ({ person: c.person, from: c.from ? { ...c.from } : null, to: { ...c.to }, minutes: c.minutes }));
 }
