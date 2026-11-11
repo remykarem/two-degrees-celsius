@@ -14,6 +14,8 @@ Two rules of thumb: (1) the Rust compiler and `web/tests/*` tell you most of wha
 | Anything that changes seed-42 market output | insta snapshot | `INSTA_UPDATE=always cargo test -p sim-engine --test scenarios golden_snapshot_seed_42` (unverified: not run) |
 | `content/levers.json` | fixtures (`levers.json`, `actions.json`) and golden | as above |
 | Rust sim (for the web wasm test) | wasm package | `cd web && npm run build:wasm` |
+| Any wire type in `crates/sim-api` (field, type, rename) | generated TS contract | `cd web && npm run gen:contract` (`cargo test --workspace` fails until you do) |
+| `content/ui.json` (labels, `emission_sources`, `income_sources`) | fixtures (`catalog.json`), golden, mock data | `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice); `cd web && npm run sync-mock` |
 | `content/` at all | invalidates old saves (`paramsHash`) | nothing to run; say so in the commit message |
 
 Then run all tests. Baseline tests A-D in `tests/scenarios.rs` (20 seeds each) can fail after a parameter change; that is information about balance, not necessarily a bug. Do not tune to make them pass (see `AGENTS.md`).
@@ -126,8 +128,8 @@ Tests: `web/tests/scene-lenses.test.ts`, `scene-lenses2.test.ts`. Commands: `npm
 ## 10. Change the contract (the wire)
 
 1. Decide if it is breaking (a removed or reshaped field, a changed meaning, a changed `State`): then bump `SCHEMA_VERSION` in `crates/sim-types/src/lib.rs` (the api re-exports it) and `SAVE_VERSION` only if the browser save wrapper changed. Old saves are refused with `schema_mismatch`; the mock's constant follows (`mock/snapshot.ts`).
-2. Rust: shapes in `crates/sim-api/src/{snapshot,turn,events,command,keys,meta,history}.rs`. Keep camelCase fields and snake_case tags. No logic: convert and validate only.
-3. TypeScript: `web/src/contract/index.ts` (types only; imports nothing). Then the mock (`web/src/sim-port/mock/*`) and `sim-port/wasm/index.ts` if the call surface changed (`SimPort` in `port.ts`, and `crates/sim-wasm/src/lib.rs` for a new method).
+2. Rust: shapes in `crates/sim-api/src/{snapshot,turn,events,command,keys,meta,history}.rs`. Keep camelCase fields and snake_case tags. No logic: convert and validate only. Put `#[cfg_attr(feature = "ts", derive(ts_rs::TS))]` on every wire type (see section 19 for the attributes that matter).
+3. TypeScript: do not edit `web/src/contract/generated.ts`; derive `TS` on the new Rust type, list it in `crates/sim-api/src/contract_ts.rs` and run `cd web && npm run gen:contract` (section 19). Add an alias in `web/src/contract/index.ts` only if the web wants another name. Then the mock (`web/src/sim-port/mock/*`) and `sim-port/wasm/index.ts` if the call surface changed (`SimPort` in `port.ts`, and `crates/sim-wasm/src/lib.rs` for a new method).
 4. Fixtures: `cargo run -p sim-api --example fixtures`; `web/tests/fixtures.test.ts` pins key sets against the TS types, so it fails until the type and fixture agree. Golden: `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`.
 5. Docs: add a section to `docs/snapshot-contract.md` (next number after 11, saying which sections it supersedes) and a "Town v2" style entry in `docs/sim-api-notes.md` for details; update `docs/known-issues.md` if you leave a wart.
 6. Run the whole checklist, including `npm run build:wasm` before `npm test` (otherwise the wasm golden test is skipped, not run).
@@ -207,3 +209,23 @@ What stays in the web: layout, formatting, animation, chart scaling, onboarding/
 - **Measure the estate:** `cargo run --release -p sim-cli --example estate_probe` (dismissals, flights, Gini for baselines A to F, 20 seeds); `cargo run --release -p sim-cli --example tune_probe -- estate.flight_prob_monthly=0.2` (A exhaustion, B survival and margins under overrides of any `section.field`). The pilot is dismissed when the estate's pay is short for `estate.pilot_unpaid_months_max` months: lower `pilot_wage_usd` or raise the Farm's profit to avoid it.
 - **Wire:** `docs/snapshot-contract.md` section 19. The mock's copy of the rules is `web/src/sim-port/mock/estate.ts` (flights use their own seeded stream).
 - **Bank identity:** the estate's savings are deposits, so they reduce bank equity (`equity = loans - deposits`) and the government's lending headroom (`equity / capital ratio - loans`). Check `init` still passes and the first-turn headroom is not below the cost of one plant.
+
+## 19. Regenerate the TS contract (platform cleanup)
+
+`web/src/contract/generated.ts` is generated from the Rust wire types; never hand-edit it. `web/src/contract/index.ts` re-exports it plus aliases.
+
+- **Regenerate:** `cd web && npm run gen:contract` (runs `cargo run -p sim-api --features ts --example contract_ts`). Needs network the first time (ts-rs 12). The `ts` feature is off for the wasm build, so the browser package does not carry ts-rs.
+- **Check:** `npm run check:contract`, or any `cargo test --workspace` (sim-api enables its own `ts` feature for its tests): `crates/sim-api/tests/contract_ts.rs` fails when the committed file differs from what the Rust types generate, when a type derives `TS` but is not listed in `crates/sim-api/src/contract_ts.rs`, or when the generated text names a type it does not define. The web fixture tests (`web/tests/fixtures.test.ts`) and `npm run typecheck` are the second gate.
+- **Add or change a wire type:** put `#[cfg_attr(feature = "ts", derive(ts_rs::TS))]` above its `#[derive(...)]`, add one line to the list in `contract_ts.rs` (`("module", <crate::module::Name as TS>::decl(&cfg))`), regenerate, then fix the web until `npm run typecheck` passes. Derive `TS` only in `sim-api`, never in `sim-types` (so money stays dollars as `f64` -> `number`; `Cents(i64)` never reaches the generator).
+- **Attributes that matter:** `#[cfg_attr(feature = "ts", ts(optional))]` on an `Option` field that is omitted when `None` (`skip_serializing_if`) or defaulted when sent by the caller (gives `field?: T`, not `T | null`); `ts(type = "...")` to narrow a type (`month: 0 | 1 | 2`, `importance: 1 | 2 | 3`, `policy: Record<LeverKey, PolicyEntry>`, `SystemCard.key`); `ts(rename = "...")` when two modules use the same Rust name (`EnergyPlantKind`); `ts(skip)` for a field that is never serialized.
+- **Names:** the TS name is the Rust name (`TileView`, `MapView`, `WeatherView`, `Finance`, `EstateView`). `index.ts` keeps the names the web already used (`Tile` = `TileView`, `TileRef` = the wire `{x, y}`, `GameMap`, `Weather`, `Estate`, `FinanceView`, `PolicyValue` = the displayed scalar, `Snapshot` = generated plus the mock-only `mock?`). Prefer the Rust name in new code.
+- Do not write branded ids: ids are plain `number` on the wire.
+
+## 20. Add an emission or income source (contract v2.0)
+
+1. Model side: a new emitter adds an `EmissionSource` arm (sim-types, nature tally, trace) as before; the wire only needs the total.
+2. `crates/sim-api/src/sources.rs`: add the id to `EMISSION_IDS` (or `INCOME_IDS`), and a category variant if none fits (`EmissionCategory`, `IncomeCategory`).
+3. `crates/sim-api/src/emissions.rs` (`Acc` field and `Acc::tonnes` arm, tallied in `acc()`), or `snapshot.rs` / `finance.rs` for income (the `match id` closures). A missing arm reads as 0, so the test in step 5 is what catches it.
+4. `content/ui.json`: one entry in `emission_sources` (`id`, `label`, `category`, `showWhenZero`) or `income_sources` (`id`, `label`, `category`, `partOf`, `views`). Load-time validation refuses a missing or unknown id.
+5. Regenerate: `npm run gen:contract`, fixtures, golden, `npm run sync-mock`. Tests: `crates/sim-api/tests/transparency.rs` (sources sum to gross), `web/tests/sources.test.ts`. The web needs no change: panels iterate the list and read labels from it.
+6. The mock builds its lists from the catalog fixture (`web/src/sim-port/mock/sources.ts`); add the id to its field maps only if the mock should produce it.

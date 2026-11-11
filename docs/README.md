@@ -11,7 +11,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | The rules of each system and sign tests | `docs/causal-model.md` section 10 (Town v2), then sections 7 and 8 (turn layer, demand side); sections 0-3 are cohort-era |
 | What the code deliberately does differently from the design | `docs/deviations.md`, the "Town v2" table (T1-T23) |
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
-| The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
+| The wire (JSON shapes) | `crates/sim-api` (Rust types) and the TS generated from them, `web/src/contract/generated.ts` (do not edit; `index.ts` holds aliases), then `docs/snapshot-contract.md` section 20 (v2.0, sources as lists), then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
 | Where UI text, thresholds and bands live | `docs/town-v6.md`, `content/ui.json`, `docs/how-to.md` section 17 |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
 | How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
@@ -57,7 +57,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, mock and web panels implemented, web scene see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
 | `docs/town-v8.md` | DRAFT (GST and state ownership; was v7) | Planning fiscal and ownership work |
 | `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
-| `docs/taxonomy.md` | PROPOSAL (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Nothing implemented | Planning shared abstractions, the entity registry, or vocabulary renames |
+| `docs/taxonomy.md` | APPROVED (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Phase 1 of the platform cleanup is implemented (section 12 has the status per step); the entity registry and the mock replacement are phase 2 | Planning shared abstractions, the entity registry, or vocabulary renames |
 | `docs/web-notes-v7.md` | CURRENT (Town v7 web notes: Panels and Scene sections) | Working on the estate in `web/src` |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |
 | `docs/how-to.md` | CURRENT | Making a change |
@@ -70,3 +70,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 1. `AGENTS.md` 2. `docs/architecture.md` 3. `docs/town-v2.md` 4. `docs/how-to.md` for your change 5. `docs/known-issues.md` 6. The code you will touch.
 
 Historical docs are kept as a record, not rewritten. Each has a status banner at the top pointing to its replacement.
+
+## Platform cleanup (no Town version; status per step in `docs/taxonomy.md` section 12)
+
+Phase 1, done: (A) the TS contract is generated from the Rust wire types (`web/src/contract/generated.ts`; recipe `docs/how-to.md` section 19); (B) emissions and income sources are lists on the wire (contract v2.0, `docs/snapshot-contract.md` section 20; `SCHEMA_VERSION` 6); (C) the display-only vocabulary renames that were low risk (skipped ones: `docs/known-issues.md` PC-3). State hash unchanged. Phase 2, open: the entity registry (`content/entities.json`, taxonomy section 5.5), role-driven inspector sections, `Purpose` categories, and replacing the hand-written mock with recorded real-sim output (section 8.3).

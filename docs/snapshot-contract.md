@@ -458,3 +458,26 @@ interface Catalog { /* ... */ tags: Record<string, string>; wealthBands: { min: 
 - Ledger: a domestic wage is a household to household `wage` entry, so it appears in both ledgers; `finance.households.income.wages` counts it once as income. `ledger_kind` text and the Finance rows are unchanged; the web shows `domesticWages` as its own row.
 - Also in this version: `catalog().text.estate` (group `estate`) holds the wording for the employer line, the three events and the pilot status; `assumptions()` has the topic `private_jet`; `agents()` has the kind `estate` and the draw `estate_flight` (10 draw sites in `sim-model`).
 - Fixtures: `docs/fixtures/*` regenerated. The mock carries the same fields from `content/` (`npm run sync-mock`; its flights and dismissal are a labelled copy in `web/src/sim-port/mock/estate.ts`).
+
+## 20. Contract v2.0: sources as lists and a generated TS contract (Platform cleanup; BREAKING; `SCHEMA_VERSION` 5 to 6)
+
+Design: `docs/taxonomy.md` (approved), sections 5.1, 5.2, 7 steps 1, 2 and 6, 8.1 and 8.2. No Town version number: this is the "Platform cleanup" track. No model change: the state hash is unchanged (`cargo run -p sim-cli --example statehash` byte-identical before and after). The saved blob did not change shape; the wire version is bumped because snapshot shapes broke (AGENTS.md rule), so a save made by an older web is refused with `schema_mismatch`. This section supersedes the `EmissionsLine` of section 16 and 19, the `householdIncome` of sections 14 and 19, and `HouseholdView.income` of section 9.
+
+```ts
+interface EmissionSourceTotal { id: string; label: string; category: 'industry'|'homes'|'energy'|'aviation'|'waste'; tonnes: number }
+interface EmissionsLine {                      // breakdowns.emissions.month / .turn
+  sources: EmissionSourceTotal[];              // ids: firms, households, plants, aviation (closed set in Rust); content order
+  grossTotal: number; sink: number; net: number; headline: number }   // grossTotal = sum of sources.tonnes; net = grossTotal + sink
+interface IncomeSource { id: string; label: string; category: 'labour'|'capital'|'transfer'; partOf?: string; amount: number }
+interface HouseholdView { income: { sources: IncomeSource[]; taxPaid; rentPaid; loanPayments; spending } }   // five sources: wages, dividends, rent, interest, benefits
+interface FinanceFlows { householdIncome: IncomeSource[] }          // also finance.households.income; adds domestic_wages (partOf wages, not added to a total)
+interface SourceLine { /* ... */ category?: EmissionCategory }      // breakdowns.emissions.monthLines; none for the sink and the fire line
+interface Catalog { /* ... */ emissionSources: EmissionSourceDef[]; incomeSources: IncomeSourceDef[] }   // id, label, category, showWhenZero / partOf
+```
+- Where the words live: `content/ui.json` `emission_sources` (`id`, `label`, `category`, `showWhenZero`) and `income_sources` (`id`, `label`, `category`, `partOf`, `views`). `crates/sim-api/src/sources.rs` checks them at load (every model id listed once, no unknown id, a part comes after its parent) and builds the lists; `Meta.sources` carries them. A source equal to 0 is left out of a line unless `showWhenZero` (firms, households and plants always show; aviation shows only when it flew).
+- Totals reconcile: `sources` add up to `grossTotal` (`breakdowns.emissions.reconciles` now also checks this, and a Rust test and `web/tests/sources.test.ts` pin it). Income totals are the entries without `partOf`.
+- Removed fields: `EmissionsLine.{firms,households,plants,aviation}`, `HouseholdView.income.{wages,dividends,rent,interest,benefits}`, `FinanceFlows.householdIncome.{wages,dividends,rent,interest,benefits,domesticWages}`. The web reads lists by id through `web/src/store/sources.ts`; the per-source named fields are gone from `web/src` (the mock keeps named fields internally and converts at the boundary, `mock/sources.ts`; it is replaced in phase 2).
+- Internal types are unchanged (`IncomeFlows`, `EmissionSource`, `TickRecord`): the lists are built at the wire, so nothing hashed or saved moved.
+- Vocabulary (display only): the households emission source reads "Homes (heating, transport)", the income source "Rent received".
+- Also in this version: the TypeScript contract is **generated** from the Rust wire types (`web/src/contract/generated.ts`, ts-rs behind the `ts` feature of `sim-api`, see `docs/how-to.md` "Regenerate the TS contract"). `web/src/contract/index.ts` is now a thin file of aliases and the few non-wire types. Shape changes of the generator: dropped types and renamed ones are listed in `docs/known-issues.md` (PC-2). Dead wire in the web removed: the aggregate `hired` and `fired` events (never sent by the real wire).
+- Fixtures, wasm goldens, `catalog.json` and the mock data were re-blessed (intended). The mock's `schemaVersion` is 6; the wasm loader refuses a package that does not say 6.

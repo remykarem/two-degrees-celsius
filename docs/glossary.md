@@ -9,9 +9,10 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Turn** | One player decision round = one quarter = 3 ticks. 40 turns per game (`run.turns`; was 160). `State.turn` starts at 1 |
 | **Tick** | One simulated month. `step()` runs every system once. `ticks_per_turn` = 3. 48 extra warm-up ticks run before the game starts |
 | **Month frame** | The per-tick slice of a `TurnResult` (`months[0..2]`): events plus flows, used for playback animation |
-| **PC (political capital)** | The per-turn currency for player actions. Start 60, cap 100, regenerates `pc_base x legitimacy` (8 x legitimacy) each turn |
-| **Lever** | A global policy setting the player can change (19 of them: taxes, minimum wage, carbon price, caps, ...). Listed in `content/levers.json` |
-| **Command** | A player action: set a policy lever, switch system, place or remove a building on a tile |
+| **PC (political capital)** | The per-turn currency for player actions. Start 60, cap 100, regenerates `pc_base x legitimacy` (8 x legitimacy) each turn. Spell out "political capital" on first use in player text: "capital" alone is ambiguous (owner class, capital income, capital tax, capital goods, bank capital ratio) |
+| **Lever** | A numeric (or on/off, or enum) policy setting the player can change (20 of them: taxes, minimum wage, carbon price, caps, ...). Listed in `content/levers.json`. "Policy" means the set of lever values |
+| **Action** | A build or switch the player can queue: `switch_system`, `place:<kind>`, `remove:<kind>` (the `actions()` wire) |
+| **Command** | What is submitted: a lever change or an action. Each has a PC cost and a lead time |
 | **Pending (queue)** | Commands accepted but not yet in force. Each has `effectiveTurn = submitted turn + lead time` |
 | **Lead time** | Turns between queueing and effect (per command kind, `params.turn.levers.<key>.lead_time`; carbon price 2, most policies 1) |
 | **Cancel refund** | Cancelling a pending item returns 50% of its PC (never money) |
@@ -25,12 +26,12 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Labour force** | Adults who look for work. 11 of the 15 adults (owners and the estate owner are outside it; the jet's pilot is in it). Unemployment is shown "N of 11" |
 | **Unemployment (smoothed)** | `unemployment_smooth` is an exponential average (weight 0.05) used for wages, legitimacy and the collapse test, because one job is 10 points |
 | **Class** | Derived per household every tick: Capitalist, Rentier, Manager, Worker, Dependent. Based on ownership, income source, skill and pay |
-| **Home** | A tile holding at most one household. Private homes pay rent to an owner household; public housing pays a fixed rent. 8 homes for 9 households |
+| **Home** | A tile holding at most one household (public housing is a home whose owner is the public, not a separate kind). Private homes pay rent to an owner household; public housing pays a fixed rent. 8 homes for 9 households |
 | **Unhoused** | A household with no home (starts with one). Pays no rent, suffers wellbeing and security penalties. Evicted after 3 months of unpaid rent |
-| **Tile** | One cell of the 12 x 12 map owned by the sim. Holds at most one thing: home, firm, plant, bank, town hall, forest, commons, road, estate grounds, runway or nothing |
+| **Tile** | One cell of the 12 x 12 map owned by the sim. Holds at most one facility or stock (the estate is a bundle of several tiles, see Estate): home, firm, plant, bank, town hall, forest, commons, road, estate grounds, runway or nothing |
 | **Road** | A tile that makes commutes faster (`fast_minutes` 2 vs `slow_minutes` 6 per tile). Costs $2,500 and $10 a month upkeep |
 | **Commute** | Tiles and minutes from a person's home to their firm along the cheapest route. Long commutes cut effective hours and wellbeing |
-| **Plant** | A power plant tile: fossil (emits `delivered x factor_fossil`) or renewable (emits 0). $40,000 each. Capacity 5 per plant |
+| **Plant (power plant)** | Say "power plant" in player text. A power plant tile: fossil (emits `delivered x factor_fossil`) or renewable (emits 0). $40,000 each. Capacity 5 per plant |
 | **Electricity rationing** | If demand exceeds total plant capacity, all output is scaled by `supply / demand` (`electricity_rationed` event) |
 | **Firm slots** | Factory (goods), Farm (food), Shop (services), plus one dormant slot a household may found a firm in (`MAX_FIRMS` = 4) |
 | **Forest, commons** | Natural stocks. Commons access is `open` or `community`; can be enclosed or collapse |
@@ -53,7 +54,10 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Cents** | `Cents(i64)` money type. Dollars only at the edges (wire, params) |
 | **Trace** | Per-tick records explaining where numbers came from (emissions by source, income by type, policy gaps); feeds the "Why?" views |
 | **Event** | Something notable that happened (hired, evicted, built, ...). Has an importance 1-3 on the wire |
-| **Frame / flow** | Per-month animation data: commutes, purchases, wages, rent, emissions |
+| **Flow** | A movement of money, energy or emissions between places (commutes, purchases, wages, rent, emissions in a month frame) |
+| **Frame** | Only the per-month animation record (`MonthFrame`), which carries the month's flows and events |
+| **Emission source** | One entry of an emissions line (`breakdowns.emissions.month.sources`): firms, homes, power plants, private jet flights. Ids are a closed set in `crates/sim-api/src/sources.rs`; labels and categories (`industry`, `homes`, `energy`, `aviation`) are in `content/ui.json` `emission_sources`. Not the same as an income source |
+| **Income source** | One entry of a household income list (`HouseholdView.income.sources`, `finance.households.income`): wages, dividends, rent received, interest, benefits, and domestic wages as a part of wages. Labels and categories (`labour`, `capital`, `transfer`) are in `content/ui.json` `income_sources` |
 | **Contract** | The wire format between sim and UI: `docs/snapshot-contract.md` + `web/src/contract/index.ts`. Versions v0.1, v0.2, v0.3, v1.0 (Town v2) |
 | **Schema version** | `SCHEMA_VERSION` = 2. Layout of state/wire; mismatching saves are refused |
 | **Snapshot** | The full current view of the game sent to the UI (`Snapshot`) |
@@ -77,8 +81,8 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **UI catalog (`catalog()`, contract v1.8)** | `content/ui.json` resolved against the live params: UI bands (crisis, health, word bands), lever group order and blurbs, authored text by group and key, and the economic-system cards. The web renders it and keeps no thresholds or model text of its own (`docs/town-v6.md`) |
 | **Thin renderer** | The rule for `web/`: layout, formatting, animation, chart scaling, onboarding copy and the wording of wire ids stay in the web; simulation rules, assumptions, model descriptions, thresholds and explanatory text come over the wire |
 | **Tile fire risk** | `Tile.fireRisk` on standing forest tiles: the model's monthly odds that a fire reaches the tile. The "Fire and drought risk" lens colours tiles by it, scaled to the riskiest tile |
-| **Estate (Town v7)** | One very rich household (label "Estate owner", tag from `catalog.tags.estate_owner`) that does not work, owns the Farm, a 2-storey house, a private jet and a runway, in the south-west corner. `State.estate`; layout in `content/initial_town.json` `estate`; rules in `crates/sim-model/src/estate.rs`. Class is derived: Capitalist |
+| **Estate (Town v7)** | The bundle: the estate household plus its home, grounds, runway, hangar and jet (the household alone is "the estate household"). One very rich household (label "Estate owner", tag from `catalog.tags.estate_owner`) that does not work, owns the Farm, a 2-storey house, a private jet and a runway, in the south-west corner. `State.estate`; layout in `content/initial_town.json` `estate`; rules in `crates/sim-model/src/estate.rs`. Class is derived: Capitalist |
 | **Jet / flight** | The estate's private jet. Each month one random draw (`estate.flight_prob_monthly`, 0.4) decides whether it flies, only if the pilot is employed. A flight emits `estate.flight_tonnes` (2 t) and costs the estate `carbon price x tonnes`. Event `private_jet_flight` |
-| **Aviation** | The emissions source for jet flights (`EmissionSource::Aviation`, wire source `aviation`): a fourth line in gross emissions beside firms, households and plants |
+| **Aviation** | The emission source for jet flights (`EmissionSource::Aviation`, source id `aviation`, category `aviation`): listed in an emissions line only when it is not zero |
 | **Pilot / domestic wages** | The jet's pilot is a worker in Worker C's household, employed by the estate household (`Person.staff_of`). The estate pays `estate.pilot_wage_usd` (1,800) a month, household to household (`Purpose::DomesticWages`). Three months of short pay and the pilot is let go (`pilot_let_go`, the jet is grounded); rehired when the estate holds three months of wages |
 | **Wealth band** | A word for a household's net worth ("Ultra-rich" from $1M), from `content/ui.json` `wealth_bands`, evaluated by the wire (`HouseholdView.wealthBand`) |

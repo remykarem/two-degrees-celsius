@@ -38,7 +38,7 @@ content/*.json ──include_str!──> sim-api (content.rs)
  web/src/app           composes store + scene + panels (App.svelte, SceneHost.svelte, keys, playback)
 ```
 
-Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the TypeScript mirror of the wire and is imported by sim-port, store, scene and panels; it imports nothing.
+Boundaries are enforced (see `AGENTS.md`). `web/src/contract/` holds the TypeScript types of the wire and is imported by sim-port, store, scene and panels. `generated.ts` is produced from the Rust wire types in `crates/sim-api` (ts-rs behind the `ts` feature; `npm run gen:contract`; a test fails when it is stale); `index.ts` re-exports it and adds only aliases for names the web uses and the few non-wire types (`Result`, `SimError`, `FrameInput`). Only `index.ts` may import, and only `./generated`.
 
 ## 2. Crate responsibilities
 
@@ -136,7 +136,7 @@ The UI must never compute economy numbers. The mock is the one exception by desi
 | Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history, ledger, log }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 
-`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the wire one (5). Town v7 left the wire version at 5 (contract v1.9 is additive) and raised the state version to 4.
+`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the wire one (6). Town v7 left the wire version at 5 (contract v1.9 is additive) and raised the state version to 4; the platform cleanup (contract v2.0, sources as lists) raised the wire version to 6 without changing the saved blob.
 
 ## 8. Wrapper log, breakdowns and the explorer (Town v5.1/v5.2)
 

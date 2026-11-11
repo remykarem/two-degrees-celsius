@@ -1,6 +1,6 @@
 # Taxonomy: a classification of every entity and concept in the game
 
-Status: **PROPOSAL (docs only, nothing implemented).** Written from the code at commit `8f4d565`. Where this doc and code disagree, code wins (`docs/README.md`). No code, content or wire change is made by this doc; every proposal below says what it would touch.
+Status: **APPROVED by the user with every open-question default (section 11).** Phase 1 of the platform cleanup is implemented (see "Platform cleanup: status" at the end); the entity registry and the mock replacement are phase 2. Written from the code at commit `8f4d565`. Where this doc and code disagree, code wins (`docs/README.md`). This doc itself changes no code; every proposal below says what it would touch.
 
 ## 1. Why
 
@@ -221,3 +221,17 @@ The model rules (labour, goods, credit, weather, lobbying formulas); the estate'
 7. Do hazards get registry entries? Default: yes, labels only; their rules stay in `weather.rs`.
 8. Does generating the contract replace `docs/snapshot-contract.md`? Default: no; the doc keeps the semantics, the generated file the shapes.
 9. Rename text now (step 0) before the structural work? Default: yes; it is free and reduces review noise.
+
+## 12. Platform cleanup: status
+
+Tracked here and in `docs/README.md`, not as a Town version. Rule for every step: no sim behaviour change (state hash byte-identical), additive or version-bumped contract, small commits.
+
+| Step | What | Status |
+|---|---|---|
+| A. TS contract generation (section 8.1) | ts-rs in `sim-api` behind feature `ts`; `web/src/contract/generated.ts`; `npm run gen:contract` / `check:contract`; `cargo test --workspace` fails when it is stale; hand-written duplicates deleted | DONE (commit `e731406`) |
+| B. Emissions and income as lists (sections 5.1, 5.2, 7 steps 1, 2 and 6) | `EmissionsLine.sources`, `income.sources`, content-driven labels and categories, fixed fields removed, contract v2.0, `SCHEMA_VERSION` 6 (`docs/snapshot-contract.md` section 20) | DONE for emissions, household income and finance household income (commit `472afd6`). Not done: `TraceRecord::Income` kinds and `TraceRecord::Emissions` sources still use their own closed enums; government revenue and spending are still fixed records (not in scope) |
+| C. Vocabulary renames (section 6), display only | Done: households source "Homes (heating, transport)", income "Rent received", explorer text says homes, glossary (lever / action / command, emission and income source, flow vs frame, home vs public housing, estate, PC spelled out, "power plant" in player text, tile = one facility or stock). Skipped, with reasons: see `docs/known-issues.md` PC-3 | PARTLY DONE |
+| Phase 2, step 3: entity registry v0 (`content/entities.json`) | not started | OPEN (phase 2) |
+| Phase 2, steps 4 and 5: role-driven inspector, `Purpose` categories | not started | OPEN (phase 2) |
+| Phase 2, section 8.3: replace the hand-written mock with recorded real-sim output (`ReplayPort`) | not started; the mock is now typed against the generated contract (it had drifted, see `docs/known-issues.md` V6-2) | OPEN (phase 2) |
+| Step 7: Rust `OwnerRef`, `TileKind` split | not started, optional | OPEN |

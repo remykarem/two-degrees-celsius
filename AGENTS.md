@@ -21,7 +21,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `crates/sim-model` | The rules: one pure system per module, `TICK_ORDER` in `lib.rs` | sim-types, sim-rng, sim-params, sim-metrics, libm, serde |
 | `crates/sim-checks` | Invariants run after every system (money, finite numbers, structure) | sim-types |
 | `crates/sim-engine` | Tick loop, delta application, turn layer (commands, PC, pending queue), `Plan`, init | all of the above (not sim-api) |
-| `crates/sim-api` | Wire layer: contract JSON shapes, validation, frames, history, save/load, fixtures | engine and below. No model logic, no I/O |
+| `crates/sim-api` | Wire layer: contract JSON shapes, validation, frames, history, save/load, fixtures; source of the generated TS contract (feature `ts`, ts-rs) | engine and below. No model logic, no I/O |
 | `crates/sim-wasm` | wasm-bindgen shell over `sim_api::Api` (`WasmSim`). `unsafe_code = "deny"` (macro output) | sim-api, sim-params |
 | `crates/sim-cli` | Headless runner (`sim`) and `examples/debug.rs` | engine, params, metrics, types |
 | `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `ui.json` (UI bands, authored UI text, system cards; Town v6), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
@@ -35,7 +35,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 
 | Folder | Purpose | May import |
 |---|---|---|
-| `contract/` | TypeScript types of the wire. Types only | nothing |
+| `contract/` | TypeScript types of the wire. `generated.ts` is generated from the Rust wire types (never hand-edit); `index.ts` holds aliases. Types only | nothing (`index.ts` may import only `./generated`) |
 | `sim-port/` | `SimPort` interface (`port.ts`), mock sim (`mock/`), wasm wrapper (`wasm/`), `selectSimPort()` | contract (mock also `sim-port/port`) |
 | `store/` | Framework-agnostic game state, phases, drafts, selection, save/load, `sceneBus` | contract, `sim-port/port` only |
 | `scene/` | Three.js 3D map, camera, lenses, flows, people | three, store, contract |
@@ -62,7 +62,7 @@ Enforced by `Cargo.toml` workspace lints, `clippy.toml`, or tests unless marked 
 
 Enforced by ESLint (`web/eslint.config.js`, `no-restricted-imports` plus a local dynamic-import rule) and `web/tests/boundaries.test.ts` (lints the real tree and proves deliberate violations are caught).
 
-1. `contract/` imports nothing. It is types only (that it holds no logic is a convention; do not add functions).
+1. `contract/` imports nothing (except `index.ts` re-exporting `./generated`). It is types only (that it holds no logic is a convention; do not add functions).
 2. Only `sim-port/` knows the mock and the wasm package exist. Nothing else may import `sim-port/mock`.
 3. `store/` may import only `sim-port/port` (the type), never the factory, mock or wasm. No Svelte, no Three.js in the store.
 4. `scene/` is Three.js only: it must not import `panels`, `ui-kit`, `app`, `sim-port` or Svelte. `panels/` must not import `scene`, `three`, `app` or `sim-port`. They talk through the store (`sceneBus` is the channel).
@@ -88,10 +88,12 @@ Web (in `web/`; needs Node 22+ and `npm install` once):
 
 ```
 npm run dev                # http://localhost:5173 ; ?sim=mock|wasm picks the sim, ?seed=42
-npm test                   # vitest (41 files, 504 tests incl. 12 skipped at last count)
+npm test                   # vitest (44 files, 530 tests plus 12 skipped at last count)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)
+npm run gen:contract       # regenerate web/src/contract/generated.ts from the Rust wire types (after ANY change to a wire type in crates/sim-api)
+npm run check:contract     # fails if generated.ts is stale (cargo test --workspace also does)
 npm run build:wasm         # REBUILD WITH THIS AFTER ANY RUST CHANGE (else the browser runs an old package or the mock); builds sim-wasm into web/src/sim-port/wasm/pkg (gitignored)
 npm run sync-mock          # regenerate mock/data.generated.json from content/
 ```
@@ -105,6 +107,7 @@ Regenerating generated files (only after an intended change):
 | `docs/fixtures/*.json` | `cargo run -p sim-api --example fixtures` | `crates/sim-api/tests/fixtures.rs`, `web/tests/fixtures.test.ts` |
 | `tests/golden/seed7.json` | `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` | same test natively; `web/tests/wasm-golden.test.ts` in wasm (skipped when `pkg/` is absent) |
 | `web/src/sim-port/mock/data.generated.json` | `cd web && npm run sync-mock` | `web/tests/mock-sync.test.ts` |
+| `web/src/contract/generated.ts` | `cd web && npm run gen:contract` | `crates/sim-api/tests/contract_ts.rs` (runs in `cargo test --workspace`), `npm run typecheck` |
 | `tests/snapshots/scenarios__market_seed_42.snap` | `INSTA_UPDATE=always cargo test -p sim-engine --test scenarios golden_snapshot_seed_42` (standard insta behaviour; not run here, `cargo-insta` is not installed) | `golden_snapshot_seed_42` in `tests/scenarios.rs` |
 
 Playwright scripts in `web/playwright/*.mjs` are manual screenshot and check tools (need `npm run dev` running and `npx playwright install chromium`). They are not part of `npm test` and were not re-run when this file was written.
@@ -113,7 +116,7 @@ Playwright scripts in `web/playwright/*.mjs` are manual screenshot and check too
 
 1. Rust touched: `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`.
 2. `content/` or Rust sim touched: regenerate in this order, then re-run tests. `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `cd web && npm run sync-mock`; insta snapshot if the scenario output changed. Read the diff of each generated file and be able to explain every change.
-3. Wire or contract touched: also update `web/src/contract/index.ts`, the mock, `docs/snapshot-contract.md`, `docs/fixtures/` (see `docs/how-to.md`, "Change the contract").
+3. Wire or contract touched: derive `TS` on the type and run `npm run gen:contract` (see `docs/how-to.md` section 19), update the mock, `docs/snapshot-contract.md`, `docs/fixtures/` (see `docs/how-to.md`, "Change the contract").
 4. Web touched or Rust sim touched: `cd web && npm run build:wasm` (so the wasm golden test actually runs), then `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 5. `git status` shows only files you meant to change; no `.idea/`, no `pkg/`, no `target/`, no `dist/`.
 6. CI (`deploy.yml`) runs tests, typecheck, lint and build, but not `cargo fmt` or `clippy`. Run those yourself.
@@ -128,8 +131,8 @@ Playwright scripts in `web/playwright/*.mjs` are manual screenshot and check too
 ## Do not
 
 - Do not tune balance to hit a number. Report what the baselines show (`docs/known-issues.md`). Balance changes are design decisions; test across seeds and baselines A to D, not one run.
-- Do not change the contract (Rust wire or `web/src/contract/index.ts`) without updating `docs/snapshot-contract.md`, the fixtures, the mock, and bumping `SCHEMA_VERSION` when saves or shapes break.
-- Do not hand-edit generated files: `web/src/sim-port/mock/data.generated.json`, `docs/fixtures/*`, `tests/golden/seed7.json`, `tests/snapshots/*`.
+- Do not change the contract (the Rust wire types) without updating `docs/snapshot-contract.md`, the fixtures, the mock, and bumping `SCHEMA_VERSION` when saves or shapes break.
+- Do not hand-edit generated files: `web/src/contract/generated.ts`, `web/src/sim-port/mock/data.generated.json`, `docs/fixtures/*`, `tests/golden/seed7.json`, `tests/snapshots/*`.
 - Do not commit `web/src/sim-port/wasm/pkg/`, `target/`, `web/dist/`.
 - Do not put numbers in code that belong in `content/`. Do not add `HashMap`, `f32`, wall-clock time or unseeded randomness to sim crates.
 - Do not rewrite historical docs; add a status banner and fix verified errors only. Update the current docs listed in `docs/README.md` instead.
