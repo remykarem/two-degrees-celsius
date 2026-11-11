@@ -21,8 +21,8 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
 | `docs/town-v6.md` | APPROVED (DRY cleanup: the web is a thin renderer; model text, thresholds and UI bands move to `content/` and the wire; contract v1.8) | Changing where text or thresholds live |
 | `docs/town-v7.md` | APPROVED, Rust/content/wire/mock IMPLEMENTED (the elite estate and its pilot; contract v1.9, `docs/snapshot-contract.md` section 19). The web panels are DONE (`docs/web-notes-v7.md`, section Panels); the scene is in progress | Working on the estate in the web, or its rules |
-| `docs/town-v8.md` | DRAFT (GST/VAT and state ownership; was v7). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
-| `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
+| `docs/town-v9.md` | DRAFT (GST/VAT and state ownership; was v7, then v8). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
+| `docs/town-v10.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
 | How to make a change | `docs/how-to.md` |
 | Vocabulary | `docs/glossary.md` |
 | Open problems and debt | `docs/known-issues.md` |
@@ -55,8 +55,8 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
 | `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
 | `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, mock and web panels implemented, web scene see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
-| `docs/town-v8.md` | DRAFT (GST and state ownership; was v7) | Planning fiscal and ownership work |
-| `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
+| `docs/town-v9.md` | DRAFT (GST and state ownership; was v7, then v8) | Planning fiscal and ownership work |
+| `docs/town-v10.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
 | `docs/taxonomy.md` | APPROVED (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Phases 1 and 2 of the platform cleanup are implemented (section 12 has the status per step) | Planning shared abstractions, the entity registry, or vocabulary renames |
 | `docs/web-notes-v7.md` | CURRENT (Town v7 web notes: Panels and Scene sections) | Working on the estate in `web/src` |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |

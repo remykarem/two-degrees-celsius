@@ -1,6 +1,6 @@
 # Town v6: DRY cleanup, the web is a thin renderer
 
-Status: **APPROVED (user: "go ahead, call it v6, move UI bands to content"). IMPLEMENTED.** No new features and no simulation change: the state hash (`cargo run -p sim-cli --example statehash`) is byte-identical before and after. The contract grows additively to v1.8 (`docs/snapshot-contract.md` section 18). The previous v6 draft (daily ticks) is now `docs/town-v8.md`.
+Status: **APPROVED (user: "go ahead, call it v6, move UI bands to content"). IMPLEMENTED.** No new features and no simulation change: the state hash (`cargo run -p sim-cli --example statehash`) is byte-identical before and after. The contract grows additively to v1.8 (`docs/snapshot-contract.md` section 18). The previous v6 draft (daily ticks) is now `docs/town-v10.md`.
 
 ## 1. Principle [DECIDED]
 The web UI is a thin renderer. Simulation rules, assumptions, model descriptions, thresholds and explanatory text live on the Rust and content side (`content/*.json`, `sim-api` catalogs) and reach the web over the wire. The web keeps layout, formatting, animation, chart scaling, onboarding copy and the wording of wire ids (event sentences, block-reason text).

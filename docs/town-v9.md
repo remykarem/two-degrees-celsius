@@ -1,66 +1,68 @@
-# Town v9 design: daily ticks (draft, deferred)
+# Town v9 design: GST and state ownership (draft for review)
 
-Status: **DRAFT, DEFERRED, nothing implemented.** Renumbered from v5 to v6, to v8, then to v9 (v6 became the DRY/thin-renderer cleanup, `docs/town-v6.md`), when the user chose to make v5 an information release (`docs/town-v5.md`) first. Start only after v5 and a playtest. Numbers are placeholders. **[DECIDED]** = from the user; **[PROPOSED]** = my choices.
+Status: **DRAFT, nothing implemented.** Renumbered from v8 to v9 when Town v8 became the net worth breakdown (`docs/town-v8.md`). The user answered **yes to both** (model a GST/VAT; model state shareholding) **and yes to a separate release**. Starts after the v5.1/v5.2 transparency pass (`docs/town-v5.md` sections 10 and 11) and a playtest. Numbers are placeholders. **[PROPOSED]** items are my defaults for the user to change.
 
-## 1. Goal [DECIDED]
-All the displayed numbers should change continuously with the game clock instead of jumping once a month or a quarter. The user chose a **truly finer simulation** (not just visual smoothing): **daily ticks**, by dividing the monthly deltas proportionately.
+## 1. Why these two belong together
+Both are **fiscal and ownership levers on the same circular flow**: GST raises revenue at the point of purchase; state ownership routes firm profit to the treasury. Together they let the player build a very different economy (consumption-tax-funded state with public firms) and finally make the "economic system" choice (Market, Regulated, Coop) include a **State** option. Both need new ledger kinds, finance lines, breakdowns and explorer topics, so the v5 transparency layer is the foundation.
 
-## 2. The idea, and where "just divide the deltas" is enough and where it is not
-Dividing a monthly delta by 30 is the right basic move (it is Euler time-stepping with `dt = 1/30` month). It is exact enough for **flows** (production, emissions, income and spending accruing, nature stocks, interest). It is **not** enough for four kinds of rules the model has today:
+## 2. Facts about today's model (checked)
+- Taxes: income (`tax_wage`), profit (`tax_profit`, applied to firm profit before dividends), capital (`tax_capital`, on dividends, rent, interest), wealth, carbon. **No sales tax.**
+- `Owner` is a single value per firm: `Household(id) | Workers | State | Bank`. `Owner::State` already routes dividends to the government (`Purpose::StateFirmDividend`), but no system sets it, and **a firm cannot be partly owned** (no shares).
+- `EconomicSystem` is `Market | Regulated | Coop`; system files are `content/systems/{market,regulated,coop}.json` with a `dividend_rule` (`Owner` or `Employees`).
+- Households buy food, goods and services from firms each month with their budget (`goods.rs`); firm prices adjust with demand; purchases already generate ledger entries and `Purchase` events.
 
-| Kind of rule | Example | Right treatment |
-|---|---|---|
-| **Compounding or rates per month** | wage up 2% a month, depreciation, regrowth | use `(1+r)^dt`, or `r x dt` for small rates |
-| **Probabilities per month** | fire ignition, drought onset, firm founding | `p_day = 1 - (1 - p_month)^(1/30)` |
-| **Counters in months** | 3 months of rent arrears, `fire_after_months`, drought `months_left` | count in days (x30) or in `dt` units |
-| **Discrete decisions** | hire/fire, set prices, invest, move house, lobby, class change | **do not slice**: run on a cadence |
+## 3. GST / VAT
 
-Also **money is integer cents** and conservation checks are exact, so slicing needs a remainder-carrying helper (`slice(total, day)`: day 30 gets the remainder), never plain division.
+### 3.1 Design
+- **A new lever `gst_rate`** (share, 0..0.30; default 0 in Market, so v6 behaviour is unchanged until the player raises it). Lead time 1 turn, PC cost per the lever table, lobbying applies like other taxes (capital-owning classes oppose a rise less than a profit tax, but firms lobby against it: opposition factor from `net_lobby` scaled by a param) [PROPOSED].
+- **Applied at the point of sale** on **goods and services** by default; **food is zero-rated** by default [PROPOSED] (so the regressive effect on the poor is a real choice: a second lever `gst_food_rate`, default 0, lets the player tax food, and an `gst_exempt` list in params for later).
+- **Tax-inclusive pricing [PROPOSED]:** the shelf price the household pays is `price x (1 + gst)`; the firm receives `price` and the government receives the tax. The household's budget is unchanged, so a rise in GST reduces the **real** quantity bought (the budget buys fewer units); no separate price adjustment rule is needed.
+- **Who pays [PROPOSED]:** households and the government (public purchases are GST-exempt to avoid circularity). Firms buying capital goods are **exempt** (input credit), so GST does not tax investment.
+- **Collection:** a monthly transfer household -> government at the moment of each purchase, with ledger kind `tax`, detail `gst`, purpose `Gst` (a new `Purpose`); conservation and reconciliation stay exact (integer cents, remainder carried by the existing apportion helper).
+- **Effects:** revenue line "GST" in the government finance section; regressive incidence (poorer households spend a larger share of income); lower real consumption -> lower sales and employment (existing demand loop); a small **price-level effect** is not modelled (stated in the explorer). A **GST breakdown** shows base (taxable spending by sector), rate, revenue, and incidence by household (tax paid as a share of income).
+- **Interactions:** replaces the "GST: not modelled" row in the Taxes table; legitimacy is unchanged except through its existing terms (wellbeing, unemployment, inequality, debt); political power and lobbying apply as for other tax levers.
 
-## 3. Proposed design: continuous processes daily, decisions on a staggered monthly cadence [PROPOSED]
-- **Time:** 1 month = **30 ticks (days)**; a turn (quarter) = **90 ticks**. Calendar simplification: 12 x 30 = 360-day years in the sim; the UI date display may still use real dates.
-- **Daily (scaled by `dt`):** production and output, all emissions, nature stocks and the sink, weather (hazard draws per day), income accrual (wages, dividends, benefits, interest, taxes), spending and rent accrual, loan interest, inventories, wellbeing, commute time effects.
-- **Decisions run once every 30 days, staggered:** each firm, household or person has a decision day = `id mod 30`, so layoffs, price changes, moves, investments and class changes are spread across the month. That is what makes aggregate numbers such as unemployment, prices and Gini move almost continuously instead of in monthly steps, while each rule keeps the calibrated monthly logic the Phase 2 tuning was based on.
-- **Player commands** still apply at the turn boundary (`begin_turn`); lead times stay in turns. Political capital regenerates per turn.
-- **Safety net:** a param `time.ticks_per_month` (default 30). With **1** the new engine must reproduce today's behaviour **bit for bit** (the current golden files must still pass). That is the regression test for the whole refactor.
+### 3.2 Tests and checks
+Sign tests (higher GST lowers real consumption and raises revenue up to a point; GST on food hits low-income households harder than on services); money conservation and per-account ledger reconciliation with GST on; the Laffer-like shape is not asserted, only monotone revenue at low rates; State hashes **unchanged when `gst_rate = 0`** (regression: the existing golden must still pass).
 
-## 4. What changes in the code
-- **`sim-types` / `sim-params`:** a `Clock { day_in_month, ticks_per_month, dt }` passed to every system; `time` block in params. `run.ticks_per_turn` becomes derived (`3 x ticks_per_month`).
-- **`sim-model`:** every system classified into the table above and updated (an audit table of all rules goes into `docs/deviations.md`). Systems stay pure and return deltas; money deltas go through the slicer.
-- **`sim-engine`:** the turn runs `ticks_per_turn` daily ticks; `advance_month` becomes `advance_days(n)` (with `advance_month = advance_days(30)` kept for Relaxed mode and tests). Events and trace are collected per day.
-- **`sim-metrics`:** indicators computed per day. Flow indicators (GDP, income per person, emissions) are **annualised from a trailing 30-day window** so the numbers do not look jittery; stocks (savings, forest, budget) are read directly.
-- **`sim-checks`:** the exact money-conservation and sector-balance checks run **every day**; add a check that daily slices sum to the monthly total.
-- **Weather:** probabilities per day; `months_left` counters in days.
-- **RNG draw order changes**, so goldens and fixtures regenerate. Behaviour will shift (an Euler step is not the old monthly map), so **balance and `budget_b0` need re-calibration** and the baselines A to D are re-run.
+## 4. State ownership
 
-## 5. Wire and web
-- **Contract v2.0 (additive where possible):** `advanceDays(n) -> DaysResult` returning the new day number, a light snapshot (indicators, date, PC, weather, turnPhase) and the events of those days; a full snapshot at month ends and turn ends. `MonthFrame` (the animation frame) stays one per month, **aggregated** from the 30 daily ticks, so the scene's animations keep working. `turnPhase` gains `dayInMonth` and `daysDone`. `advanceMonth` stays as a convenience.
-- **Pressure mode:** at the default pace (1 s = 7 game days) the clock asks for 7 daily ticks a second; the web calls `advanceDays(k)` per animation frame and **every metric** updates from each result. Pause, speeds and the quarter boundary behave as in v3.
-- **Relaxed mode:** `submitTurn` runs 90 ticks at once, as it runs 3 today; the end-of-turn playback is built from the 3 aggregated month frames.
-- **UI:** all metrics tick (GDP, GPI, unemployment, income per person, median income, wealth share, emissions, budget, forest/commons/farm health, stress, money, debt); a day counter in the clock strip; sparklines sample monthly points (not daily); a subtle "live" cue on changing numbers. Respect reduced motion by throttling updates.
-- **Performance estimate:** the sim costs about 0.5 ms per 3-month turn today, so about 15 ms per 90-day turn (30x). The JSON snapshot per tick is the cost to watch: hence the light per-day result.
+### 4.1 Ownership shares (the real change)
+- Replace `owner: Owner` on a firm with **`ownership: Vec<Stake>`** where `Stake { holder: Holder, share: Rate }` and shares sum to 1.0 (a check in `sim-checks`). `Holder = Household(id) | State | Bank | Workers`. A single-owner firm is a one-element vector, so **all current runs are unchanged** (golden hashes must pass after a migration that maps today's `owner` to one 100% stake).
+- **Dividends, wealth and class** use shares: dividends are apportioned by share (existing `apportion` helper); `cohort_wealth`/net worth credits each holder its share of equity; class derivation counts owning households by share; lobbying power and the wealth tax follow net worth. The state's holding is a **public asset** shown in the government finance section ("state equity in firms") and in the Industry tab (the ownership split, already specced).
 
-## 6. Tests
-- **Bit-for-bit regression:** `ticks_per_month = 1` equals today's output (all existing goldens).
-- **Convergence:** with `ticks_per_month` 30 vs 15 vs 60, aggregate quarterly outcomes agree within tolerance (a sign that the Euler step is stable, not a precise proof).
-- **Conservation every day**; slicing sums to monthly totals; staggered decisions touch each agent exactly once a month; weather rates match monthly probabilities in expectation over many seeds; determinism; native-vs-wasm bit-identical.
-- Web: clock and live loop with day ticks (fake timers), metrics update per day, Relaxed regression.
+### 4.2 A fourth economic system: `State` [PROPOSED]
+`content/systems/state.json`: `dividend_rule` `Stakes` (by share), key sectors **nationalised on transition** (default: the Factory and the Shop-chain's energy side: see 4.4; the Farm and the Shop stay private) [PROPOSED], `payout_ratio` higher for state firms, a **productivity penalty and slower investment** in state firms to represent inefficiency (the design promise "alternatives have real costs"; params `state_firm_tfp_penalty`, `state_firm_invest_hurdle`), no capitalist lobbying power over state firms, a political-capital cost and long transition (24 months, output penalty, resistance from owners) like the other systems, and **compensation** for expropriated owners at book value paid by the government (borrowing from the bank within its limit), logged as ledger entries (kind `neutral`, detail `nationalisation`).
+
+### 4.3 Partial state ownership as a player action [PROPOSED]
+Two new commands, usable in any system: **`BuyStake { firm, share }`** (the government buys a share from the current private holders pro rata at book value, funded from cash and borrowing; lead time 2 turns; PC cost scaled by share and by capitalist opposition) and **`SellStake { firm, share }`** (privatisation: sells to the largest private holder or the bank at book value; revenue to the treasury). This gives a **smooth dial** from 0 to 100% state ownership, the "% state shareholder" the user asked for. UI: a control on the firm in the Industry tab and the inspector, with a cost preview.
+
+### 4.4 Public energy [PROPOSED, optional]
+Plants today are government-built and unowned. Making plants state-owned firms with revenue (selling electricity) is a larger change and is **left out of v9**; the plant ownership question is noted in the explorer.
+
+### 4.5 Effects and tests
+Dividends from state stakes flow to the treasury (already the `StateFirmDividend` path); government revenue and the deficit change; state firms behave per `state.json`. Tests: shares sum to 1; apportionment exact (cents); ledger reconciliation with partial stakes, buy/sell and nationalisation; class and wealth derivations by share; the old single-owner scenarios reproduce today's golden; sign tests (more state share raises treasury dividends and lowers the capitalist class's income and lobbying power; nationalisation lowers private investment in that firm); baselines A to F re-run and reported (this changes nothing when no state ownership is used).
+
+## 5. Wire, UI and docs (additive; contract v2.1)
+- Snapshot: `firms[].ownership` (list of stakes with holder and share), `government.stateEquity`, `finance.government.revenue.gst`, `tax` row `gst` with `modelled: true`, `economicSystem` gains `state`, levers `gst_rate` and `gst_food_rate`, commands `buy_stake` and `sell_stake`, ledger kinds `gst`, `nationalisation`, `stake_purchase`, `stake_sale`, a GST breakdown and an ownership breakdown. Save schema bumps (firm state changes).
+- UI: GST in the policy drawer (with the incidence preview in words, arrows only) and in the Taxes table; **ownership control** and split bar per firm in the Industry tab; system switcher gains **State**; stake purchases in the plan tray; explorer topics for GST, ownership, nationalisation, "what state firms leave out".
+- Docs: `docs/causal-model.md` section 12 (GST rules, ownership shares, State system), `docs/snapshot-contract.md` section 17, `docs/architecture.md`, `docs/how-to.md`, `docs/known-issues.md`.
+
+## 6. Delivery plan
+1. You review this doc.
+2. **Rust agent, staged:** (a) ownership stakes with a migration and the regression that existing goldens pass; (b) GST lever and collection; (c) State system, buy/sell stake commands, nationalisation compensation; (d) breakdowns, explorer topics, wire, fixtures, golden, baselines.
+3. **Web agent (parallel on the mock):** GST UI, ownership UI, State system, stake commands, breakdowns.
+4. Balance pass and independent review.
 
 ## 7. Risks
-- **Biggest:** behaviour shifts, so a re-calibration of baselines, `budget_b0` and weather. The `ticks_per_month = 1` switch lets us compare old and new directly.
-- **Audit size:** every rule must be classified; a missed one gives a quiet bug (for example a monthly constant applied 30 times). The audit table and the convergence test are the defence.
-- **Rounding:** integer cents in slices; remainder carry required.
-- **Data volume:** 30x more events; mitigated by aggregation and light day results.
-- **Feel:** some numbers will still move in small integer steps (one person hired or fired changes unemployment by 10 points with 10 workers). That is the small-population effect of Town v2, not a time-step problem.
+- **The ownership refactor touches class, wealth, dividends, lobbying and checks**; the single-stake migration and the unchanged-golden test are the defence.
+- **Balance:** GST and state ownership give the player powerful fiscal tools (a consumption-tax-funded state could fix the structural deficit), which may make baseline B or others too easy or break known failures; baselines are re-run and the "one tool is not enough" property re-checked.
+- **Small population:** with 3 firms, nationalising one is a 33% change of the economy; the optional dormant slot and class mobility must still work with stakes.
+- **Realism:** state firms' inefficiency is a stated assumption, not calibrated; the explorer says so.
 
-## 8. Delivery plan
-1. You review this doc. I update `docs/causal-model.md` (time-step section), `docs/snapshot-contract.md` (v2.0), `docs/architecture.md`, `docs/how-to.md`.
-2. **Rust agent (staged, one at a time):** (a) clock plumbing and the `ticks_per_month = 1` regression; (b) audit and convert systems; (c) indicators, checks, weather; (d) re-calibration and baselines.
-3. **Wire and web agents:** `advanceDays`, light results, live metrics, day counter, Pressure loop (can start on the mock once the contract exists).
-4. You play; then an independent review.
-5. Start only after the horizon and weather change is committed (same parameter and golden files).
-
-## 9. Open questions
-1. Is **30-day months, 360-day years** acceptable in the sim (UI keeps real calendar dates)? I assume yes.
-2. Should player commands also be able to apply **mid-quarter** (on any day)? I assume no; the turn boundary stays the unit of play.
-3. Daily tick makes the **end-of-turn playback** in Relaxed mode a 3-month replay as today. Is that fine, or should Relaxed mode also play a day-by-day replay?
+## 8. Open questions (defaults taken if you just approve)
+1. Food zero-rated by default, with a separate lever to tax it? (default yes)
+2. Which firm(s) does a transition to the State system nationalise? (default: Factory; Farm and Shop stay private)
+3. Compensation at book value, paid by the government? (default yes)
+4. Should the **bank** be nationalisable too? (default no)
+5. Is the **State system** a fourth option in the system switcher, in addition to the partial buy/sell-stake dial? (default yes to both)
