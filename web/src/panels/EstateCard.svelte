@@ -30,15 +30,15 @@
     <dl>{#each c.jet as r (r.label)}<dt>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
 
     {#if c.pilot}
-      <h4>Pilot: {c.pilot.name}</h4>
+      <h4>{c.pilot.name} (the jet's pilot)</h4>
       <dl>{#each c.pilot.rows as r (r.label)}<dt>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
       {#if c.pilot.warning}<p class="warn" role="alert" data-testid="pilot-warning">{c.pilot.warning}</p>{/if}
       {#if c.pilot.grounded}<p class="warn" role="status" data-testid="pilot-grounded">{c.pilot.grounded}</p>{/if}
     {/if}
 
-    <h4>Estate money ({c.moneyMonths} {c.moneyMonths === 1 ? 'month' : 'months'} in the last-12 column)</h4>
+    <h4>Estate money</h4>
     <table>
-      <thead><tr><th scope="col"><span class="sr-only">Item</span></th><th scope="col" class="n">Last month</th><th scope="col" class="n">Last 12 months</th></tr></thead>
+      <thead><tr><th scope="col"><span class="sr-only">Item</span></th><th scope="col" class="n">Last month</th><th scope="col" class="n">Last {c.moneyMonths} {c.moneyMonths === 1 ? 'month' : 'months'}</th></tr></thead>
       <tbody>{#each c.money as r (r.label)}<tr><th scope="row">{r.label}</th><td class="n">{r.month}</td><td class="n">{r.last12}</td></tr>{/each}</tbody>
     </table>
     {#if c.shortfall}<p class="warn" role="status" data-testid="wealth-tax-short">{c.shortfall}</p>{/if}

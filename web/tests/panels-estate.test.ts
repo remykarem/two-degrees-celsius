@@ -71,7 +71,7 @@ describe('inspector, people and counts', () => {
     const layout = layoutOf(s);
     const pilot = s.people.find((p) => p.id === s.estate!.pilot!.person)!;
     const pm = resolveSelection(s, layout, { kind: 'person', id: pilot.id }, [])!;
-    expect(pm.sections[0]!.rows[0]!.value).toBe('Employer: Estate owner (household)');
+    expect(pm.sections.flatMap((x) => x.rows).find((r) => r.label === 'Job')!.value).toBe('Employer: Estate owner (household)');
     expect(pm.sections.flatMap((x) => x.rows).map((r) => r.label)).toEqual(expect.arrayContaining(['Status', 'Short-paid months', 'Flights flown (estate jet)']));
     const owner = s.people.find((p) => p.household === s.estate!.household)!;
     const om = resolveSelection(s, layout, { kind: 'person', id: owner.id }, [])!;

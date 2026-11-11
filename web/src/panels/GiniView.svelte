@@ -32,7 +32,7 @@
       <caption>Wealth by household, richest first (net worth = savings + property - debt)</caption>
       <thead><tr><th scope="col">Household</th><th scope="col" class="n">People</th><th scope="col" class="n">Net worth</th><th scope="col" class="n">Per person</th><th scope="col" class="n">Share of the town's wealth</th></tr></thead>
       <tbody>{#each rows as h (h.household)}
-        <tr class:estate={!!h.tag}><th scope="row">{h.label}{#if h.tag} <span class="chip">{h.tag}</span>{/if}{#if h.band} <span class="band">{h.band}</span>{/if}
+        <tr class:estate={!!h.tag}><th scope="row">{h.label}{#if h.tag && h.tag !== h.label} <span class="chip">{h.tag}</span>{/if}{#if h.band} <span class="band">{h.band}</span>{/if}
           {#if h.parts}<span class="parts">{h.parts}</span>{/if}</th>
           <td class="n">{h.people}</td><td class="n">{h.netWorth}</td><td class="n">{h.perPerson}</td><td class="n">{h.shareText}</td></tr>{/each}</tbody>
     </table>
@@ -41,12 +41,12 @@
 
 <style>
   .gv { display: flex; flex-direction: column; gap: 10px; }
-  figure { margin: 0; display: flex; gap: 10px; align-items: center; } figcaption { font-size: 12px; color: var(--text-dim); }
+  figure { margin: 0; display: flex; gap: 10px; align-items: center; } figure svg { flex: 0 0 220px; } figcaption { font-size: 12px; color: var(--text-dim); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; } caption { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-dim); }
   th[scope='row'] { text-align: left; font-weight: 400; } thead th { font-size: 10px; text-align: left; color: var(--text-dim); text-transform: uppercase; }
   .top { margin: 0; font-weight: 600; font-size: 13px; }
   .chip { font-size: 10px; font-weight: 700; background: var(--series-2); color: var(--accent-text); border-radius: 8px; padding: 0 6px; }
   .band { font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 0 5px; }
-  .parts { display: block; font-size: 10.5px; color: var(--text-dim); } tr.estate { background: var(--surface-2); }
+  .parts { display: block; font-size: 10.5px; color: var(--text-dim); } tr.estate { background: var(--surface-2); } tr.estate th { font-weight: 700; }
   .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
 </style>

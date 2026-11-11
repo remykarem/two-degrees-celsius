@@ -101,10 +101,10 @@ export function estateCard(s: Snapshot): EstateCardModel | null {
     incomeTotal: money(h.income.wages + h.income.dividends + h.income.rent + h.income.interest + h.income.benefits),
     jet: [
       { label: t('jet_label'), value: money(e.jet.value) },
-      { label: 'In the air this month', value: e.jet.flyingThisMonth ? 'yes' : 'no' },
+      { label: 'Flew this month', value: e.jet.flyingThisMonth ? 'yes' : 'no' },
       { label: 'One flight', value: tonnes(e.flightTonnes) },
       { label: 'Last flight', value: lastFlightText(e) },
-      { label: 'Own footprint (not flying)', value: `${tonnes(e.householdEmissionsT)}/month` },
+      { label: 'Home footprint', value: `${tonnes(e.householdEmissionsT)}/month` },
     ].map((r) => ({ label: r.label, value: r.value })),
     flights: flightsText(s, e),
     pilot: pilotView(s),
@@ -124,8 +124,8 @@ export function estateOwnerSections(s: Snapshot): EstateSection[] {
       { label: 'Tag', value: c.tag }, ...(c.band ? [{ label: 'Wealth band', value: c.band }] : []),
       ...(e.pilot ? [{ label: 'Employs', value: `${personName(s, e.pilot.person)}, ${money(e.pilot.wage)}/month${pilot?.status === 'let_go' ? ' (let go)' : ''}`, hint: t('employs_line', { name: personName(s, e.pilot.person) }) }] : []),
     ] },
-    { heading: t('jet_label'), rows: [{ label: 'Flights this game', value: String(e.flightsTotal) }, { label: 'CO2 from flights', value: tonnes(e.tonnesTotal) }, ...c.jet] },
-    { heading: `Estate money (${plural(Math.max(1, e.finance.months), 'month', 'months')})`, rows: c.money.map((r) => ({ label: r.label, value: `${r.month} (last 12: ${r.last12})` })) },
+    { heading: t('jet_label'), rows: [{ label: 'Flights', value: String(e.flightsTotal) }, { label: 'CO2 flown', value: tonnes(e.tonnesTotal) }, { label: 'Last flight', value: lastFlightText(e) }, { label: 'Jet value', value: money(e.jet.value) }] },
+    { heading: `Estate money, last ${plural(Math.max(1, e.finance.months), 'month', 'months')}`, rows: c.money.map((r) => ({ label: r.label.replace(' paid', '').replace(' received', ''), value: r.last12, hint: `Last month: ${r.month}` })) },
   ];
 }
 
@@ -133,8 +133,7 @@ export function estateOwnerSections(s: Snapshot): EstateSection[] {
 export function pilotSections(s: Snapshot, p: PersonView): EstateSection[] {
   const v = pilotView(s), e = s.estate;
   if (!v || !e || !p.employer) return [];
-  return [{ heading: 'Work', rows: [
-    { label: 'Wage', value: `${money(e.pilot!.wage)}/month` },
+  return [{ heading: 'Pilot for the estate', rows: [
     ...v.rows,
     { label: 'Flights flown (estate jet)', value: String(e.flightsTotal) },
   ] }];
