@@ -38,6 +38,8 @@ export interface CostModel { base: number; unit: number; minSize: number }
 export interface LeverInfo {
   key: LeverKey;
   label: string;
+  /** The group the lever is listed under (content/levers.json); the order and blurb of the groups are in the catalog. */
+  group: string;
   unit: LeverUnit;
   min: number;
   max: number;
@@ -83,6 +85,8 @@ export interface CommandPreview {
   leadTime: number;
   effectiveTurn: number;
   opposition: number;
+  /** Contract v1.8: for a lobbied lever, the value the model would have in force at today's net lobbying. Absent for other commands. */
+  expectedEffective?: number;
   blocked: BlockReason | null;
   /** For place and remove: can the tile take the command? True for other commands. */
   tileValid: boolean;
@@ -125,6 +129,8 @@ export interface Tile {
   emissionsMonthly?: number;
   /** Contract v1.2, forest tiles only. Absent in a package built before v1.2 (read as 'standing'). */
   state?: ForestState;
+  /** Contract v1.8, standing forest tiles only: odds that a fire reaches this tile next month (the model's ignition and spread rules). */
+  fireRisk?: number;
 }
 export interface GameMap { width: 12; height: 12; tiles: Tile[] }
 
@@ -278,20 +284,24 @@ export interface PolicyEntry { nominal: number | boolean | string; effective: nu
 /** Summary counts (the tiles are the truth). */
 export interface Buildings { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number }
 
-export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number }
+/** `ticksPerTurn` (contract v1.8): monthly ticks in a turn, from params run.ticks_per_turn. */
+export interface GameCalendar { startYear: number; firstTurn: number; lastTurn: number; turnsPerYear: number; ticksPerTurn: number }
 
 /** Contract v1.1 (section 12): whether a live turn (beginTurn ... finishTurn) is open, and how many of its 3 months have run. */
-export interface TurnPhase { open: boolean; monthsDone: 0 | 1 | 2 | 3 }
+export interface TurnPhase { open: boolean; monthsDone: number }
 
 /** Contract v1.2 (section 13): climate stress, the drought, the fires and the forecast. */
 export type RiskLevel = 'low' | 'medium' | 'high';
 export interface Weather {
   /** 0..1. */
   stress: number;
-  /** Contract v1.3 (additive, optional: absent in an older package). The stress curve: 0 while the budget share left is above `onset`, 1 at or below `full`, rising along `curve`. */
-  onset?: number;
-  full?: number;
-  curve?: number;
+  /** Contract v1.3. The stress curve: 0 while the budget share left is above `onset`, 1 at or below `full`, rising along `curve`. */
+  onset: number;
+  full: number;
+  curve: number;
+  /** Contract v1.8: tiles a fire station covers, and tiles around a fire that smoke reaches (params weather.coverage_radius, smoke_radius). */
+  coverageRadius: number;
+  smokeRadius: number;
   drought: null | { severity: number; monthsLeft: number };
   fires: { tile: TileRef; monthsLeft: number }[];
   forecast: { fireRisk: RiskLevel; droughtRisk: RiskLevel };
@@ -462,12 +472,14 @@ export interface Breakdown {
 export interface EmissionsLine { firms: number; households: number; plants: number; grossTotal: number; sink: number; net: number; headline: number }
 export interface LegitimacyTerm { id: 'wellbeing' | 'unemployment' | 'inequality' | 'debt' | 'bailout'; label: string; input: number; threshold?: number; weight: number; contribution: number }
 export interface TaxRow { id: 'income' | 'profit' | 'capital' | 'wealth' | 'carbon' | 'gst'; label: string; appliesTo: string; rateNominal: number | null; rateEffective: number | null; revenueMonth: number; revenueQuarter: number; modelled: boolean }
+/** Contract v1.8: the budget at the current net rate (per turn, run-out turn). */
+export interface Runway { perTurn: number; runOutTurn?: number; runsOutBeforeEnd: boolean }
 export interface Breakdowns {
   gdp: Breakdown; gpi: Breakdown; wageShare: Breakdown; profitShare: Breakdown; debtToGdp: Breakdown;
   gini: Breakdown & { lorenz: { populationShare: number; wealthShare: number }[]; byHousehold: { household: number; people: number; netWorth: number }[] };
   legitimacy: Breakdown & { terms: LegitimacyTerm[]; trend: number };
   capitalRatio: Breakdown;
-  emissions: { month: EmissionsLine; turn: EmissionsLine; cumulative: { tonnes: number; budget: number; remaining: number; share: number }; reconciles: boolean; note: string };
+  emissions: { runway: Runway; month: EmissionsLine; turn: EmissionsLine; cumulative: { tonnes: number; budget: number; remaining: number; share: number }; reconciles: boolean; note: string };
   taxes: TaxRow[];
 }
 export type PolicyValue = number | boolean | string;
@@ -485,3 +497,30 @@ export interface IndustryFirm {
 export interface IndustryInfra { kind: InfraKind; count: number; buildCost: number; upkeepMonthly: number }
 export interface IndustryPublicGood { id: string; label: string; spendingMonthly: number; buys: string }
 export interface Industry { firms: IndustryFirm[]; infrastructure: IndustryInfra[]; publicGoods: IndustryPublicGood[]; note: string }
+
+/** Contract v1.8 (section 17): the UI catalog from content/ui.json. Thresholds, labels and explanatory text live there; the web renders them. */
+export interface WordBands { bands: { below: number; word: string }[]; top: string }
+export interface UiBands {
+  crisis: { legitimacyBelow: number; budgetBelow: number };
+  health: { min: number; id: string; word: string }[];
+  stressWords: WordBands;
+  severityWords: WordBands;
+  communityCap: number;
+  capitalTightFactor: number;
+  budgetMeter: { low: number; high: number };
+}
+export interface SystemCard {
+  key: SystemKey; name: string; tagline: string;
+  facts: { label: string; value: string }[];
+  params: { path: string; label: string; value: number; unit: 'fraction' | 'x' | 'months' }[];
+  transitionMonths: number; outputPenalty: number;
+  resistance: string; resistancePlaceholder: boolean;
+  tradeoffs: { label: string; value: string }[];
+}
+export interface Catalog {
+  bands: UiBands;
+  leverGroups: { label: string; blurb: string }[];
+  /** Authored text by group, then key. `{name}` placeholders are filled by the web. */
+  text: Record<string, Record<string, string>>;
+  systems: SystemCard[];
+}

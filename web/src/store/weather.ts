@@ -1,30 +1,22 @@
 import type { ForestState, RiskLevel, Snapshot, TileRef, Weather } from '../contract';
 import { layoutOf, sameTile, type Selection } from './map';
+import { bands, fill, text, wordOf } from './catalog';
 
 /**
  * Weather as the panels read it (Town v4). Everything here is DERIVED from the snapshot; nothing is stored, so the mock and the real sim
  * go through the same code. A package built before contract v1.2 has no `weather`: every function then reports "no weather".
  */
 
-/**
- * Copies of numbers that live in content/params.json `weather` but are NOT on the wire (contract issue, docs/web-notes-v4.md): used only to
- * draw the stress gauge's marks, the fire-station coverage ring and the smoke haze. The real numbers decide the simulation, these only decide pixels.
- */
-export const WEATHER_UI = { onset: 0.5, full: 0.1, curve: 1.5, coverageRadius: 3, smokeRadius: 2 } as const;
-
-/** The documented curve, for the gauge's marks and tests; the snapshot's own `weather.stress` is the authority. */
-export function stressAt(budgetShare: number, p: { onset: number; full: number; curve: number } = WEATHER_UI): number {
-  return Math.min(1, Math.max(0, (p.onset - budgetShare) / (p.onset - p.full))) ** p.curve;
-}
-
 export const weatherOf = (snap: Snapshot | null): Weather | null => {
   const w = (snap as { weather?: Weather } | null)?.weather;
   return w && typeof w.stress === 'number' ? w : null;
 };
 
+/** Health bands (ids and words) come from content/ui.json `bands.health`: a value at or above a band's `min` is in it. */
 export type HealthLevel = 'healthy' | 'strained' | 'poor' | 'failing';
-export const healthLevel = (v: number): HealthLevel => (v >= 0.6 ? 'healthy' : v >= 0.35 ? 'strained' : v >= 0.15 ? 'poor' : 'failing');
-export const HEALTH_WORD: Record<HealthLevel, string> = { healthy: 'Healthy', strained: 'Strained', poor: 'Poor', failing: 'Failing' };
+const bandOf = (v: number) => bands().health.find((b) => v >= b.min) ?? bands().health[bands().health.length - 1]!;
+export const healthLevel = (v: number): HealthLevel => bandOf(v).id as HealthLevel;
+export const healthWord = (v: number): string => bandOf(v).word;
 
 export interface HealthMeter { id: 'forest' | 'commons' | 'farm'; label: string; value: number; level: HealthLevel; word: string; hint: string }
 /** Forest, commons and farm health (0..1). Falls back to the stock shares for the first two when a package has no health fields. */
@@ -36,12 +28,12 @@ export function healthMeters(snap: Snapshot | null): HealthMeter[] {
   const mk = (id: HealthMeter['id'], label: string, value: number, hint: string): HealthMeter => {
     const v = Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0));
     const level = healthLevel(v);
-    return { id, label, value: v, level, word: HEALTH_WORD[level], hint };
+    return { id, label, value: v, level, word: healthWord(v), hint };
   };
   return [
-    mk('forest', 'Forest', forest, 'Share of the forest still standing. Fires burn it and the carbon sink shrinks with it.'),
-    mk('commons', 'Commons', commons, 'Health of the shared land. Droughts and over-harvesting wear it down.'),
-    mk('farm', 'Farm', farm, 'How well the farm can produce: it follows forest and commons health, and falls in a drought.'),
+    mk('forest', 'Forest', forest, text('weather', 'health_forest')),
+    mk('commons', 'Commons', commons, text('weather', 'health_commons')),
+    mk('farm', 'Farm', farm, text('weather', 'health_farm')),
   ];
 }
 
@@ -63,14 +55,12 @@ export function stressGauge(snap: Snapshot | null): StressGauge | null {
   const w = weatherOf(snap);
   if (!snap || !w) return null;
   const s = w.stress;
-  const word = s <= 0 ? 'Calm' : s < 0.25 ? 'Rising' : s < 0.6 ? 'High' : 'Severe';
-  // The wire carries the curve since contract v1.3; an older package falls back to the constants above.
-  const onset = typeof w.onset === 'number' ? w.onset : WEATHER_UI.onset;
-  const full = typeof w.full === 'number' ? w.full : WEATHER_UI.full;
-  const text = s <= 0
-    ? `No climate stress yet: erratic weather begins when ${Math.round(onset * 100)}% of the carbon budget is left.`
-    : `Weather is more erratic and fires and droughts are likelier. Full stress at ${Math.round(full * 100)}% budget left.`;
-  return { stress: s, percent: Math.round(s * 100), remaining: snap.indicators.budgetShare, onset, full, word, text };
+  const word = s <= 0 ? text('weather', 'stress_calm') : wordOf(bands().stressWords, s);
+  const { onset, full } = w;
+  const line = s <= 0
+    ? fill(text('weather', 'stress_none'), { onset: `${Math.round(onset * 100)}%` })
+    : fill(text('weather', 'stress_active'), { full: `${Math.round(full * 100)}%` });
+  return { stress: s, percent: Math.round(s * 100), remaining: snap.indicators.budgetShare, onset, full, word, text: line };
 }
 
 export interface ForecastView {
@@ -101,14 +91,14 @@ export function forecastView(snap: Snapshot | null): ForecastView | null {
   if (dry) parts.push(`Drought under way, ${w.drought!.monthsLeft} ${w.drought!.monthsLeft === 1 ? 'month' : 'months'} left`);
   let headline: string;
   if (parts.length) headline = parts.join('. ');
-  else if (fireRisk === 'high') headline = 'Elevated fire risk';
-  else if (droughtRisk === 'high') headline = 'Dry spell likely';
-  else if (fireRisk === 'medium') headline = 'Fire risk is building';
-  else if (droughtRisk === 'medium') headline = 'A dry spell is possible';
-  else headline = 'Weather calm';
-  const detail = w.stress <= 0 ? 'No climate stress yet, so no fires or droughts are expected.'
-    : level === 'low' ? 'Nothing unusual is expected this quarter.'
-    : 'A fire station near the forest and resilience spending both lower the risk.';
+  else if (fireRisk === 'high') headline = text('weather', 'headline_fire_high');
+  else if (droughtRisk === 'high') headline = text('weather', 'headline_drought_high');
+  else if (fireRisk === 'medium') headline = text('weather', 'headline_fire_medium');
+  else if (droughtRisk === 'medium') headline = text('weather', 'headline_drought_medium');
+  else headline = text('weather', 'headline_calm');
+  const detail = w.stress <= 0 ? text('weather', 'forecast_none')
+    : level === 'low' ? text('weather', 'forecast_quiet')
+    : text('weather', 'forecast_adapt');
   return {
     headline, detail, fireWord: RISK_WORD[fireRisk], droughtWord: RISK_WORD[droughtRisk], fireRisk, droughtRisk, level,
     active: { fire: fires, drought: dry }, calm: level === 'low' && !fires && !dry, adapt: RANK[level] >= 1 || fires > 0 || dry,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { quarterLabel, shownTurn, weatherOf, type Game, type Live } from '../store';
+  import { bands, quarterLabel, shownTurn, weatherOf, type Game, type Live } from '../store';
   import SaveLoad from './SaveLoad.svelte';
   import ClockStrip from './ClockStrip.svelte';
   import HealthMeters from './HealthMeters.svelte';
@@ -24,7 +24,7 @@
     </div>
     <div class="item" data-coach="budget" title="Share of the carbon budget still unspent. Hitting zero ends the game.">
       <label for="cb"><span class="long">Carbon budget</span><span class="short">Carbon</span></label>
-      <meter id="cb" min="0" max="1" low="0.25" high="0.5" optimum="1" value={snap.indicators.budgetShare}></meter>
+      <meter id="cb" min="0" max="1" low={bands().budgetMeter.low} high={bands().budgetMeter.high} optimum="1" value={snap.indicators.budgetShare}></meter>
       <span class="num">{Math.round(snap.indicators.budgetShare * 100)}% left</span><span class="bk">({budgetOf(snap)})</span>
     </div>
     {#if weatherOf(snap)}

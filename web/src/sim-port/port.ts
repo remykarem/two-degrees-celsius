@@ -1,4 +1,4 @@
-import type { AccountRef, AgentsCatalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
 
 /**
  * The UI's only window onto the simulation (contract v1.0, docs/snapshot-contract.md sections 10.7 and 11). Every fallible call returns a Result:
@@ -30,6 +30,8 @@ export interface SimPort {
   assumptions(): Result<AssumptionTopic[]>;
   /** Contract v1.7: who decides what, how, and where chance enters. */
   agents(): Result<AgentsCatalog>;
+  /** Contract v1.8: UI bands, labels, explanatory text and the economic system cards (content/ui.json). */
+  catalog(): Result<Catalog>;
   exportState(): Result<string>;
   importState(blob: string): Result<Snapshot>;
 }

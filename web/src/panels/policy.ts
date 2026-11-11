@@ -2,25 +2,18 @@ import type { CommandPreview, LeverInfo, LeverKey, Snapshot, SystemKey } from '.
 import type { DraftItem } from '../store';
 import { arrowFlip } from './costs';
 import { formatLever, REASON_TEXT, SYSTEM_NAME } from './format';
+import { bands, catalog, fill, text } from '../store/catalog';
 
 export interface LeverGroup { id: string; label: string; blurb: string; keys: LeverKey[] }
 
-export const LEVER_GROUPS: LeverGroup[] = [
-  { id: 'taxes', label: 'Taxes', blurb: 'Who pays, and how much the state collects.', keys: ['tax_wage', 'tax_profit', 'tax_capital', 'wealth_tax', 'wealth_threshold'] },
-  { id: 'money', label: 'Money and credit', blurb: 'The price of credit and the safety of the bank.', keys: ['base_rate', 'bank_capital_ratio', 'bailout'] },
-  { id: 'labour', label: 'Labour and welfare', blurb: 'Wages, benefits and jobs.', keys: ['min_wage', 'benefit', 'ubi', 'job_guarantee'] },
-  { id: 'nature', label: 'Nature and carbon', blurb: 'Pricing and capping emissions, sharing the land, and getting ready for fires and droughts.', keys: ['carbon_price', 'emissions_cap', 'green_subsidy', 'commons_harvest', 'commons_access', 'resilience_spending'] },
-  { id: 'spending', label: 'Government spending', blurb: 'What the state spends, and the rules on political money.', keys: ['public_spending', 'campaign_cap'] },
-];
-
-/** Groups with their LeverInfo, in group order. Levers not named in any group go to a trailing "Other" group so none are lost. */
+/** Groups in the order of content/ui.json `lever_groups` (label and blurb), holding the levers whose wire `group` is that label. Levers in an unlisted group go to a trailing "Other" group so none are lost. */
 export function groupLevers(levers: LeverInfo[]): { group: LeverGroup; levers: LeverInfo[] }[] {
-  const used = new Set<LeverKey>();
-  const out = LEVER_GROUPS.map((group) => ({
-    group,
-    levers: group.keys.flatMap((k) => { const l = levers.find((x) => x.key === k); if (l) used.add(k); return l ? [l] : []; }),
-  })).filter((g) => g.levers.length);
-  const rest = levers.filter((l) => !used.has(l.key));
+  const listed = catalog().leverGroups;
+  const out = listed.map((g) => {
+    const members = levers.filter((l) => l.group === g.label);
+    return { group: { id: g.label, label: g.label, blurb: g.blurb, keys: members.map((l) => l.key) }, levers: members };
+  }).filter((g) => g.levers.length);
+  const rest = levers.filter((l) => !listed.some((g) => g.label === l.group));
   if (rest.length) out.push({ group: { id: 'other', label: 'Other', blurb: '', keys: rest.map((l) => l.key) }, levers: rest });
   return out;
 }
@@ -32,12 +25,9 @@ export function toNum(l: LeverInfo, v: number | boolean | string): number {
   return v;
 }
 
-/** The "community" cap sent with commons_access: the contract gives no default, so the UI chooses. */
-export const COMMUNITY_CAP = 0.5;
-
 export function toCommandValue(l: LeverInfo, n: number) {
   if (l.unit === 'bool') return n === 1;
-  if (l.unit === 'enum') return l.options?.[n] === 'community' ? { mode: 'community' as const, cap: COMMUNITY_CAP } : { mode: 'open' as const };
+  if (l.unit === 'enum') return l.options?.[n] === 'community' ? { mode: 'community' as const, cap: bands().communityCap } : { mode: 'open' as const };
   return n;
 }
 
@@ -69,11 +59,10 @@ export function leverStatus(l: LeverInfo, snap: Snapshot, draft: DraftItem[]): L
   return { disabled, pcFree };
 }
 
-/** "You set X, expect about Y in force" or null when there is no lobbying effect to report. */
+/** "You set X, expect about Y in force", from the simulation's own expectation (preview.expectedEffective); null when the preview carries none or lobbying changes nothing. */
 export function lobbyNote(l: LeverInfo, current: number, drafted: number, preview: CommandPreview | undefined): string | null {
-  if (!l.lobbied || !preview || preview.blocked || preview.opposition <= 0 || drafted === current) return null;
-  const expect = current + (drafted - current) * (1 - Math.min(1, preview.opposition));
-  return `You set ${formatLever(l, drafted)}; expect about ${formatLever(l, expect)} in force (lobbying opposes this).`;
+  if (!l.lobbied || !preview || preview.blocked || preview.opposition <= 0 || drafted === current || preview.expectedEffective === undefined) return null;
+  return fill(text('lobby', 'note'), { set: formatLever(l, drafted), expected: formatLever(l, preview.expectedEffective) });
 }
 
 export const blockText = (r: string) => REASON_TEXT[r] ?? r;

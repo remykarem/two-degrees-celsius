@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compact, formatLever, money, pct, signed, tonnes, trendOf } from '../src/panels/format';
 import type { LeverInfo } from '../src/contract';
 
-const lever = (p: Partial<LeverInfo>): LeverInfo => ({ key: 'tax_wage', label: 'x', unit: 'fraction', min: 0, max: 1, step: 0.01, baseCostPc: 1, costModel: { base: 1, unit: 1, minSize: 0.25 }, leadTime: 1, lobbied: false, arrows: [], availableIn: ['market'], ...p });
+const lever = (p: Partial<LeverInfo>): LeverInfo => ({ key: 'tax_wage', label: 'x', group: 'g', unit: 'fraction', min: 0, max: 1, step: 0.01, baseCostPc: 1, costModel: { base: 1, unit: 1, minSize: 0.25 }, leadTime: 1, lobbied: false, arrows: [], availableIn: ['market'], ...p });
 
 describe('number formatting', () => {
   it('compacts magnitudes', () => {

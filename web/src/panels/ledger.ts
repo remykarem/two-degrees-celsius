@@ -1,14 +1,13 @@
 import type { AccountRef, GameCalendar, LedgerEntry, LedgerKind, LedgerPage, LedgerSummaryRow, Snapshot } from '../contract';
 import type { Selection } from '../store';
 import { money } from './format';
+import { kindLabel, text } from '../store/catalog';
 
 /** Pure logic of the transaction viewer (docs/town-v5.md section 4). Signs are always from the point of view of the account whose ledger is open. */
 
-export const KIND_LABEL: Record<LedgerKind, string> = {
-  wage: 'Wage', dividend: 'Dividend', rent: 'Rent', benefit: 'Benefit', tax: 'Tax', purchase: 'Purchase', lobby: 'Lobbying', interest: 'Interest', loan_new: 'New loan',
-  loan_repay: 'Loan repayment', loan_writeoff: 'Loan write-off', build: 'Building', upkeep: 'Upkeep', subsidy: 'Subsidy', bailout: 'Bailout', wealth_consumption: 'Wealth spent', neutral: 'Other',
-};
-export const KIND_ORDER = Object.keys(KIND_LABEL) as LedgerKind[];
+/** Display order of the ledger kinds (wire ids); the labels come from content/ui.json `text.ledger_kind`. */
+export const KIND_ORDER: LedgerKind[] = ['wage', 'dividend', 'rent', 'benefit', 'tax', 'purchase', 'lobby', 'interest', 'loan_new', 'loan_repay', 'loan_writeoff', 'build', 'upkeep', 'subsidy', 'bailout', 'wealth_consumption', 'neutral'];
+export const KIND_LABEL = kindLabel;
 
 export const sameAccount = (a: AccountRef, b: AccountRef): boolean =>
   a.kind === b.kind && (a.kind === 'household' || a.kind === 'firm' ? a.id === (b as typeof a).id : a.kind === 'external' ? a.label === (b as typeof a).label : true);
@@ -83,12 +82,12 @@ export function positionNames(a: AccountRef): { balance: string; debt: string } 
     case 'external': return { balance: 'Balance', debt: 'Debt' };
   }
 }
-/** Plain words for the accounts that are not in the town (credit creation and destruction are the bank's lending, not a counterparty with a purse). */
-export const EXTERNAL_HINT: Record<string, string> = {
-  'bank credit creation': 'Money the bank creates when it lends: the borrower\'s balance and debt both rise.',
-  'bank credit destruction': 'Money that disappears when a loan is repaid: the payer\'s balance and debt both fall.',
+/** Plain words for the accounts that are not in the town (content/ui.json `text.ledger`; credit creation and destruction are the bank's lending, not a counterparty with a purse). */
+export const externalHint = (a: AccountRef): string => {
+  if (a.kind !== 'external') return '';
+  const t = text('ledger', `external_${a.label}`);
+  return t.startsWith('?') ? text('ledger', 'external_other') : t;
 };
-export const externalHint = (a: AccountRef): string => (a.kind === 'external' ? EXTERNAL_HINT[a.label] ?? 'An account outside the town (no ledger).' : '');
 
 const UNPAID_INTEREST = 'unpaid interest added to debt';
 export interface Effect { balance: number; debt: number }
@@ -126,8 +125,8 @@ export function ledgerRows(page: LedgerPage, snap: Snapshot | null, f: LedgerFil
     const fx = entryEffect(e, page.account);
     rows.push({
       key: `${i}`, turn: e.turn, month: e.month, tick: e.tick, date: snap ? `${monthLabel(e.turn, e.month, snap.game)}` : `T${e.turn}`,
-      counterparty: cp, counterpartyLabel: accountLabel(snap, cp), selectable: accountSelection(cp) !== null, kind: e.kind, kindLabel: KIND_LABEL[e.kind],
-      detail: e.detail ?? '', memo: `${e.detail ?? KIND_LABEL[e.kind]}: ${accountLabel(snap, e.from)} -> ${accountLabel(snap, e.to)}`, amount: fx.balance, amountText: Math.abs(fx.balance) < 0.005 ? 'no cash' : signedExact(fx.balance), balanceAfter: e.balanceAfter, balanceText: exact(e.balanceAfter),
+      counterparty: cp, counterpartyLabel: accountLabel(snap, cp), selectable: accountSelection(cp) !== null, kind: e.kind, kindLabel: kindLabel(e.kind),
+      detail: e.detail ?? '', memo: `${e.detail ?? kindLabel(e.kind)}: ${accountLabel(snap, e.from)} -> ${accountLabel(snap, e.to)}`, amount: fx.balance, amountText: Math.abs(fx.balance) < 0.005 ? 'no cash' : signedExact(fx.balance), balanceAfter: e.balanceAfter, balanceText: exact(e.balanceAfter),
       debtDelta: fx.debt, debtText: debtChangeText(fx.debt), debtAfter: e.debtAfter,
     });
   });
@@ -177,7 +176,7 @@ export function rollupGroups(page: LedgerPage, snap: Snapshot | null, f: LedgerF
   for (const r of page.summary as LedgerSummaryRow[]) {
     if (!passes(r.turn, r.kind, r.counterparty, f)) continue;
     const key = `${accountKey(r.counterparty)}|${r.kind}`;
-    const g = m.get(key) ?? { counterparty: r.counterparty, counterpartyLabel: accountLabel(snap, r.counterparty), kind: r.kind, kindLabel: KIND_LABEL[r.kind], inflow: 0, outflow: 0, net: 0, debtNet: 0, count: 0, fromTurn: r.turn, toTurn: r.turn };
+    const g = m.get(key) ?? { counterparty: r.counterparty, counterpartyLabel: accountLabel(snap, r.counterparty), kind: r.kind, kindLabel: kindLabel(r.kind), inflow: 0, outflow: 0, net: 0, debtNet: 0, count: 0, fromTurn: r.turn, toTurn: r.turn };
     g.inflow += r.inflow; g.outflow += r.outflow; g.net += r.net; g.debtNet += r.debtNet; g.count += r.count; g.fromTurn = Math.min(g.fromTurn, r.turn); g.toTurn = Math.max(g.toTurn, r.turn);
     m.set(key, g);
   }
@@ -221,4 +220,4 @@ export function earningsRows(entries: LedgerEntry[], snap: Snapshot | null, hous
 export const PEOPLE_NOTE = 'People have no purse in this model: money belongs to the household. A person\'s page lists the wages they earned (credited to their household) and their job events.';
 
 /** Shown wherever a firm's ledger revenue and the model's own revenue figure can both be seen. Not an error: some sales move no money. */
-export const FIRM_REVENUE_NOTE = 'Revenue on the ledger is money actually received. It can sit up to about 10% below the Revenue figure of the firm\'s books, because when the Factory buys capital goods from itself the model records a sale but no money moves.';
+export const firmRevenueNote = (): string => text('ledger', 'firm_revenue_note');

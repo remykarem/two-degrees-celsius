@@ -1,7 +1,7 @@
 <script lang="ts">
   import { quarterLabel, type Game } from '../store';
   import { ARROW, money, pct, TREND_WORD } from './format';
-  import { historyChange, METRIC_BREAKDOWN, METRIC_LEDGER, METRIC_TABS, metricById, metricsFor, runway, runwayText, seriesOf, type MetricTab } from './metrics';
+  import { historyChange, METRIC_BREAKDOWN, METRIC_LEDGER, METRIC_TABS, metricById, metricHint, metricsFor, runway, runwayText, seriesOf, type MetricTab } from './metrics';
   import { forecastView } from '../store';
   import ClimateGauge from './ClimateGauge.svelte';
   import EnergyPanel from './EnergyPanel.svelte';
@@ -99,7 +99,7 @@
           {@const ch = historyChange(m, history)}
           <li>
             <div class="head">
-              <span class="label" title={m.hint}>{m.label}</span>
+              <span class="label" title={metricHint(m.id)}>{m.label}</span>
               {#if METRIC_LEDGER[m.id]}<button class="why" onclick={() => { const l = METRIC_LEDGER[m.id]!; game.select({ kind: 'government' }); game.openLedger(l.account, l.kind); }}>see transactions</button>{/if}
               <HowButton breakdown={METRIC_BREAKDOWN[m.id]} anchor={m.metric} label={m.label} />
               {#if m.why}<button class="why" aria-label="Why is {m.label} changing?" onclick={() => setUi({ why: { kind: m.why!, metric: m.metric } })}>why?</button>{/if}

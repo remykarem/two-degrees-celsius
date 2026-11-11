@@ -59,9 +59,22 @@ export function forecastOf(s: MockState): Weather['forecast'] {
   return { fireRisk: level(fire), droughtRisk: s.drought ? 'high' : level(drought) };
 }
 
+/** MOCK ONLY (invented, like the rest of the mock's weather): the odds a fire reaches a standing forest tile next month, from the mock's own ignition and spread numbers. */
+export function tileFireRisk(s: MockState, x: number, y: number): number {
+  const cells = forestCells(s);
+  const standing = cells.filter((c) => c.state === 'standing');
+  const stress = stressNow(s);
+  const sev = s.drought?.severity ?? 0;
+  const ignite = stress > 0 && standing.length ? clamp01(W.fireBase * (1 + W.fireStressGain * stress) * (1 + W.fireDroughtDryness * sev) * (1 - resilienceEffect(s))) / standing.length : 0;
+  const spread = clamp01(W.spreadBase * (1 + W.spreadDrought * sev) * (covered(s, x, y) ? 1 - W.coverageSpread : 1));
+  let stays = 1 - ignite;
+  for (const c of cells) if (c.state === 'burning' && Math.abs(c.x - x) + Math.abs(c.y - y) === 1) stays *= 1 - spread;
+  return clamp01(1 - stays);
+}
+
 export function weatherView(s: MockState): Weather {
   const fires = forestCells(s).filter((c) => c.state === 'burning').map((c) => ({ tile: { x: c.x, y: c.y }, monthsLeft: cellAt(s, c.x, c.y)!.left ?? 1 }));
-  return { stress: stressNow(s), onset: STRESS.onset, full: STRESS.full, curve: STRESS.curve, drought: s.drought ? { ...s.drought } : null, fires, forecast: forecastOf(s) };
+  return { stress: stressNow(s), onset: STRESS.onset, full: STRESS.full, curve: STRESS.curve, coverageRadius: WX.coverageRadius, smokeRadius: GEN.weather.smokeRadius, drought: s.drought ? { ...s.drought } : null, fires, forecast: forecastOf(s) };
 }
 
 export interface WeatherMonth { events: SimEvent[] }

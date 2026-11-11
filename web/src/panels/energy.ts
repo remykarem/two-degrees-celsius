@@ -1,14 +1,14 @@
 import type { EnergyView, Snapshot } from '../contract';
 import { compact, pct } from './format';
 import { pctWith } from './backing';
+import { fill, text } from '../store/catalog';
 
 /** Pure derivations for the energy panel (docs/town-v5.md section 5). */
 
 /** "MWh/month" from the wire's unit ('MWh' per the contract; a unit that already has a "/" is kept as given). */
 export const unitLabel = (e: Pick<EnergyView, 'unit'>): string => (!e.unit ? 'MWh/month' : e.unit.includes('/') ? e.unit : `${e.unit}/month`);
 export const energyText = (v: number, e: Pick<EnergyView, 'unit'>): string => `${compact(v)} ${unitLabel(e)}`;
-export const UNIT_HELP = (e: Pick<EnergyView, 'unit'>): string =>
-  `${unitLabel(e)}: energy per month, in megawatt-hours. A person uses roughly 0.1 to 0.25 of it a month; a plant has the capacity shown. The unit is a label from the game's settings; the numbers are the model's own.`;
+export const unitHelp = (e: Pick<EnergyView, 'unit'>): string => fill(text('misc', 'energy_unit_help'), { unit: unitLabel(e) });
 
 export interface PlantRow {
   tile: { x: number; y: number }; kind: 'fossil' | 'renewable'; kindLabel: string; capacity: number; capacityText: string;

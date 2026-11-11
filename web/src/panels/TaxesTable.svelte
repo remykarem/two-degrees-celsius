@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snapshot } from '../contract';
-  import { taxLines, GST_REASON } from './taxes';
+  import { taxLines, gstReason } from './taxes';
   import HowLink from './HowLink.svelte';
   let { snap }: { snap: Snapshot } = $props();
   const rows = $derived(taxLines(snap));
@@ -19,7 +19,7 @@
         {/each}
       </tbody>
     </table>
-    {#if rows.some((r) => !r.modelled)}<p class="dim" data-testid="gst-note">GST/VAT: not modelled. {GST_REASON}</p>{/if}
+    {#if rows.some((r) => !r.modelled)}<p class="dim" data-testid="gst-note">GST/VAT: not modelled. {gstReason()}</p>{/if}
     <HowLink anchor="taxes" />
   </section>
 {/if}

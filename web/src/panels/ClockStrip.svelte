@@ -8,13 +8,14 @@
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   const c = $derived($v.clock);
+  const months = $derived($gs.snapshot?.game.ticksPerTurn ?? 0); // months (monthly ticks) in a quarter, from the wire
   const R = 15;
   const CIRC = 2 * Math.PI * R;
   const secs = $derived(Number.isFinite(c.secondsLeft) ? Math.max(0, Math.ceil(c.secondsLeft)) : null);
   const near = $derived($v.active && c.phase !== 'paused' && c.secondsLeft <= 3);
   const why = $derived(c.pausedBy.includes('modal') ? 'a dialog is open' : c.pausedBy.includes('hidden') ? 'this tab is hidden' : 'paused by you');
   const manual = $derived(c.pausedBy.includes('manual'));
-  const announce = $derived($v.active ? `Month ${c.month + 1} of 3 of ${$v.playing ?? 'the quarter'}.` : '');
+  const announce = $derived($v.active ? `Month ${c.month + 1} of ${months} of ${$v.playing ?? 'the quarter'}.` : '');
   const budget = $derived(c.pauseBudgetLeft === null ? null : Math.ceil(c.pauseBudgetLeft));
   const tick = (f: number) => ({ x1: 18 + (R - 3) * Math.sin(2 * Math.PI * f), y1: 18 - (R - 3) * Math.cos(2 * Math.PI * f), x2: 18 + (R + 3) * Math.sin(2 * Math.PI * f), y2: 18 - (R + 3) * Math.cos(2 * Math.PI * f) });
 </script>
@@ -34,7 +35,7 @@
     </svg>
     <div class="q">
       <strong>{$v.playing ? `Playing ${$v.playing}` : 'Clock stopped'}</strong>
-      <span class="dim">month {Math.min(3, c.month + 1)} of 3{#if secs !== null}, next quarter in {secs} s{/if}</span>
+      <span class="dim">month {Math.min(months, c.month + 1)} of {months}{#if secs !== null}, next quarter in {secs} s{/if}</span>
     </div>
     <div class="q planning">
       <strong>Planning {$v.planning ?? ''}</strong>

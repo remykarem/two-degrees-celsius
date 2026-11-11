@@ -8,9 +8,8 @@ import { emissionsBars, whyData } from '../src/panels/why';
 import { generateStory, weatherFacts } from '../src/panels/story';
 import { eventLines, rankEvents } from '../src/panels/results';
 import { builtCount, resolveTile } from '../src/panels/inspect';
-import { fireLabel, fireSelection, forecastView, healthLevel, healthMeters, layoutOf, nearestLandmark, stressAt, stressGauge, weatherOf, WEATHER_UI } from '../src/store';
+import { fireLabel, fireSelection, forecastView, healthLevel, healthMeters, layoutOf, nearestLandmark, stressGauge, weatherOf } from '../src/store';
 import { createMockSim } from '../src/sim-port/mock';
-import { stressOf } from '../src/sim-port/mock/weather';
 import { ok } from './helpers';
 
 const base = (): Snapshot => ok(createMockSim().init(2));
@@ -19,7 +18,7 @@ type Edit = { fires?: { x: number; y: number; left?: number }[]; drought?: { sev
 function withWeather(e: Edit): Snapshot {
   const s = structuredClone(base());
   s.weather = {
-    stress: e.stress ?? 0.4, drought: e.drought ?? null, fires: (e.fires ?? []).map((f) => ({ tile: { x: f.x, y: f.y }, monthsLeft: f.left ?? 2 })),
+    ...s.weather!, stress: e.stress ?? 0.4, drought: e.drought ?? null, fires: (e.fires ?? []).map((f) => ({ tile: { x: f.x, y: f.y }, monthsLeft: f.left ?? 2 })),
     forecast: { fireRisk: e.fireRisk ?? 'low', droughtRisk: e.droughtRisk ?? 'low' },
   };
   for (const f of e.fires ?? []) s.map.tiles[f.y * 12 + f.x]!.state = 'burning';
@@ -31,27 +30,22 @@ const forestTile = (s: Snapshot) => s.map.tiles.find((t) => t.kind === 'forest')
 const ev = (e: SimEvent): SimEvent => e;
 
 describe('stress gauge and health derivation', () => {
-  it('the web copy of the stress curve matches the mock (and so the documented formula)', () => {
-    for (const r of [1, 0.6, 0.5, 0.4, 0.25, 0.1, 0.05, 0]) expect(stressAt(r)).toBeCloseTo(stressOf(r, { onset: 0.5, full: 0.1, curve: 1.5 }), 12);
-  });
   it('the gauge reports percent, a word, the marks and the budget left', () => {
     const g = stressGauge(withWeather({ stress: 0.35, budgetShare: 0.3 }))!;
-    expect(g).toMatchObject({ percent: 35, onset: WEATHER_UI.onset, full: WEATHER_UI.full, remaining: 0.3, word: 'High' });
+    expect(g).toMatchObject({ percent: 35, onset: 0.75, full: 0.1, remaining: 0.3, word: 'High' });
     expect(stressGauge(withWeather({ stress: 0 }))!.word).toBe('Calm');
-    expect(stressGauge(withWeather({ stress: 0 }))!.text).toMatch(/50%/);
+    expect(stressGauge(withWeather({ stress: 0 }))!.text).toMatch(/75%/); // the onset, from the wire
     expect(stressGauge(withWeather({ stress: 0.9 }))!.word).toBe('Severe');
   });
-  it('the gauge reads onset and full from the wire (contract v1.3) and falls back to the old constants without them', () => {
+  it('the gauge reads onset and full from the wire (contract v1.3), never from a web constant', () => {
     const wired = withWeather({ stress: 0 });
-    wired.weather!.onset = 0.75; wired.weather!.full = 0.2; wired.weather!.curve = 1;
+    wired.weather!.onset = 0.6; wired.weather!.full = 0.2;
     const g = stressGauge(wired)!;
-    expect(g).toMatchObject({ onset: 0.75, full: 0.2 });
-    expect(g.text).toMatch(/75%/);
-    expect(stressGauge(withWeather({ stress: 0.5 }))!.text).toMatch(/10% budget left/); // no fields: WEATHER_UI
-    expect(stressGauge(withWeather({ stress: 0 }))).toMatchObject({ onset: WEATHER_UI.onset, full: WEATHER_UI.full });
-    // the mock snapshot carries the curve from content/params.json
-    const mock = base().weather!;
-    expect(mock).toMatchObject({ onset: 0.75, full: 0.1, curve: 1 });
+    expect(g).toMatchObject({ onset: 0.6, full: 0.2 });
+    expect(g.text).toMatch(/60%/);
+    expect(stressGauge(withWeather({ stress: 0.5 }))!.text).toMatch(/10% budget left/);
+    // the mock snapshot carries the curve and radii from content/params.json
+    expect(base().weather!).toMatchObject({ onset: 0.75, full: 0.1, curve: 1, coverageRadius: 3, smokeRadius: 2 });
   });
   it('three health meters with a number and a word each (colour is never the only cue), from the wire fields', () => {
     const s = structuredClone(base());
@@ -180,11 +174,11 @@ describe('metrics, why-bars and the end story', () => {
     expect(fire.sub).toMatch(/ t emitted/);
     expect(whyData('emissions', trace, base(), []).groups[0]!.bars.map((b) => b.label)).toContain('Sink lost to fire');
   });
-  it('the policy drawer has resilience spending in the nature group', () => {
+  it('the policy drawer has resilience spending in the climate and energy group', () => {
     const sim = createMockSim();
     ok(sim.init(1));
     const g = groupLevers(sim.levers());
-    expect(g.find((x) => x.group.id === 'nature')!.levers.map((l) => l.key)).toContain('resilience_spending');
+    expect(g.find((x) => x.group.label === 'Climate and energy')!.levers.map((l) => l.key)).toContain('resilience_spending');
     expect(g.map((x) => x.group.id)).not.toContain('other');
   });
   const full = (() => { const sim = createMockSim(); ok(sim.init(1)); return ok(sim.submitTurn([])).snapshot.history[0]!; })();

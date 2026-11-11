@@ -187,6 +187,7 @@ export function createMockSim(): SimPort {
     personLedger: (person: number) => personLedger(s, person),
     assumptions: () => ok(mockAssumptions()),
     agents: () => ok(mockAgents()),
+    catalog: () => ok(structuredClone(GEN.catalog)),
 
     cancelPending(id) {
       if (s.gameOver) return fail('game_over', 'The game is over: nothing can be cancelled.');

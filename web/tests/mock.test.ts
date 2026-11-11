@@ -503,7 +503,7 @@ describe('turn result shape', () => {
   it('carries a calendar, a mock flag, and payload-only events', () => {
     const sim = fresh();
     const s = ok(sim.init(1));
-    expect(s.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4 });
+    expect(s.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4, ticksPerTurn: 3 });
     expect(s.mock).toBe(true);
     for (const e of ok(sim.submitTurn([])).months.flatMap((m) => m.events)) {
       expect(e).not.toHaveProperty('text');

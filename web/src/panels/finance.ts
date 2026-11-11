@@ -1,5 +1,6 @@
 import type { AccountRef, FinanceFlows, FinanceView, HistoryPoint, LedgerKind, Snapshot } from '../contract';
 import { money, pct } from './format';
+import { bands, text } from '../store/catalog';
 import { capitalBacking, debtBacking, legitimacyBacking, shareBacking } from './backing';
 import type { BreakdownKey } from './metrics';
 
@@ -30,22 +31,18 @@ const BANK: AccountRef = { kind: 'bank' };
 const sum = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
 const hist = (h: HistoryPoint[], f: (p: HistoryPoint) => number | undefined): number[] => h.map(f).filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
-export const REVENUE_LABEL: Record<keyof FinanceFlows['govRevenue'], string> = { wageTax: 'Income tax', profitTax: 'Profit tax', capitalTax: 'Capital tax', wealthTax: 'Wealth tax', carbon: 'Carbon revenue', other: 'Other revenue' };
-export const SPENDING_LABEL: Record<keyof FinanceFlows['govSpending'], string> = {
-  benefits: 'Benefits', ubi: 'Basic income', publicSpending: 'Public purchases', jobGuarantee: 'Job guarantee', upkeep: 'Road and plant upkeep', subsidy: 'Subsidies', interest: 'Debt interest', builds: 'Building', other: 'Other spending',
-};
-const INCOME_LABEL: Record<keyof FinanceFlows['householdIncome'], string> = { wages: 'Wages', dividends: 'Dividends', rent: 'Rent received', interest: 'Interest', benefits: 'Benefits' };
+const label = (group: 'revenue' | 'spending' | 'income', k: string): string => text('finance_label', `${group}.${k}`);
+const REVENUE_KEYS: (keyof FinanceFlows['govRevenue'])[] = ['wageTax', 'profitTax', 'capitalTax', 'wealthTax', 'carbon', 'other'];
+const SPENDING_KEYS: (keyof FinanceFlows['govSpending'])[] = ['benefits', 'ubi', 'publicSpending', 'jobGuarantee', 'upkeep', 'subsidy', 'interest', 'builds', 'other'];
+const INCOME_KEYS: (keyof FinanceFlows['householdIncome'])[] = ['wages', 'dividends', 'rent', 'interest', 'benefits'];
+/** Authored hint of a finance row (content/ui.json `text.finance_hint`), or undefined when the row has none. */
+const hintOf = (key: string): string | undefined => { const t = text('finance_hint', key); return t.startsWith('?') ? undefined : t; };
 const REVENUE_KIND: Partial<Record<keyof FinanceFlows['govRevenue'], LedgerKind>> = { wageTax: 'tax', profitTax: 'tax', capitalTax: 'tax', wealthTax: 'tax', carbon: 'tax' };
 const SPENDING_KIND: Partial<Record<keyof FinanceFlows['govSpending'], LedgerKind>> = { benefits: 'benefit', ubi: 'benefit', publicSpending: 'purchase', upkeep: 'upkeep', subsidy: 'subsidy', interest: 'interest', builds: 'build' };
 
 /** Rows with a zero month AND quarter are dropped from flow lists to keep the tab short, except for the first entries of a section (kept so the player sees what exists). */
 const nonZero = (r: FinRow) => r.stock || Math.abs(r.month) > 1e-9 || Math.abs(r.quarter ?? 0) > 1e-9;
 
-const TAX_HINT: Partial<Record<keyof FinanceFlows['govRevenue'], string>> = {
-  wageTax: 'Income tax: charged on the wages households earn (the lever key is still tax_wage).',
-  profitTax: 'Profit tax: charged on a firm\'s profit each month, before dividends are paid out to its owners.',
-  capitalTax: 'Capital tax: charged on income from owning things (dividends, rent, interest) that households receive.',
-};
 const HOW: Record<string, BreakdownKey> = { 'gov-dgdp': 'debtToGdp', 'gov-leg': 'legitimacy', 'bank-cr': 'capitalRatio', 'p-wage': 'wageShare', 'p-profit': 'profitShare', 'rev-wageTax': 'taxes', 'rev-profitTax': 'taxes', 'rev-capitalTax': 'taxes', 'rev-wealthTax': 'taxes', 'rev-carbon': 'taxes' };
 
 /** Adds the "how?" link and the backing numbers of percent rows. */
@@ -57,8 +54,8 @@ function decorate(snap: Snapshot, secs: FinSection[]): FinSection[] {
     'bank-def': `on ${money(snap.finance.bank.loans)} of loans`, 'hh-save': `income ${money(incomeTotal)}, spending ${money(hh.spending)} a month`,
   };
   return secs.map((sec) => ({ ...sec, rows: sec.rows.map((r) => {
-    const tax = r.id.startsWith('rev-') ? TAX_HINT[r.id.slice(4) as keyof FinanceFlows['govRevenue']] : undefined;
-    return { ...r, ...(tax ? { hint: tax } : {}), ...(backing[r.id] ? { backing: backing[r.id]! } : {}), ...(HOW[r.id] ? { how: HOW[r.id]! } : {}) };
+    const hint = hintOf(r.id.startsWith('rev-') ? `revenue.${r.id.slice(4)}` : r.id);
+    return { ...r, ...(hint ? { hint } : {}), ...(backing[r.id] ? { backing: backing[r.id]! } : {}), ...(HOW[r.id] ? { how: HOW[r.id]! } : {}) };
   }) }));
 }
 
@@ -70,14 +67,14 @@ function rawSections(snap: Snapshot): FinSection[] {
   const q = f.quarter ?? null;
   const h = snap.history;
   const gov = f.government, bank = f.bank, hh = f.households, fi = f.firms;
-  const govRevenue: FinRow[] = (Object.keys(REVENUE_LABEL) as (keyof FinanceFlows['govRevenue'])[]).map((k) => ({
-    id: `rev-${k}`, label: REVENUE_LABEL[k], month: gov.revenue[k], quarter: q ? q.govRevenue[k] : null, fmt: 'money', ledger: { account: GOV, ...(REVENUE_KIND[k] ? { kind: REVENUE_KIND[k]! } : {}) },
+  const govRevenue: FinRow[] = REVENUE_KEYS.map((k) => ({
+    id: `rev-${k}`, label: label('revenue', k), month: gov.revenue[k], quarter: q ? q.govRevenue[k] : null, fmt: 'money', ledger: { account: GOV, ...(REVENUE_KIND[k] ? { kind: REVENUE_KIND[k]! } : {}) },
   }));
-  const govSpend: FinRow[] = (Object.keys(SPENDING_LABEL) as (keyof FinanceFlows['govSpending'])[]).map((k) => ({
-    id: `spend-${k}`, label: SPENDING_LABEL[k], month: gov.spending[k], quarter: q ? q.govSpending[k] : null, fmt: 'money', ledger: { account: GOV, ...(SPENDING_KIND[k] ? { kind: SPENDING_KIND[k]! } : {}) },
+  const govSpend: FinRow[] = SPENDING_KEYS.map((k) => ({
+    id: `spend-${k}`, label: label('spending', k), month: gov.spending[k], quarter: q ? q.govSpending[k] : null, fmt: 'money', ledger: { account: GOV, ...(SPENDING_KIND[k] ? { kind: SPENDING_KIND[k]! } : {}) },
   }));
-  const income: FinRow[] = (Object.keys(INCOME_LABEL) as (keyof FinanceFlows['householdIncome'])[]).map((k) => ({
-    id: `inc-${k}`, label: INCOME_LABEL[k], month: hh.income[k], quarter: q ? q.householdIncome[k] : null, fmt: 'money',
+  const income: FinRow[] = INCOME_KEYS.map((k) => ({
+    id: `inc-${k}`, label: label('income', k), month: hh.income[k], quarter: q ? q.householdIncome[k] : null, fmt: 'money',
   }));
   const qv = (get: (x: FinanceFlows) => number): number | null => (q ? get(q) : null);
   return [
@@ -95,8 +92,8 @@ function rawSections(snap: Snapshot): FinSection[] {
       { id: 'bank-eq', label: 'Equity', month: bank.equity, quarter: null, fmt: 'money', stock: true, ledger: { account: BANK } },
       { id: 'bank-loans', label: 'Loans', month: bank.loans, quarter: null, fmt: 'money', stock: true, ledger: { account: BANK, kind: 'loan_new' } },
       { id: 'bank-dep', label: 'Deposits', month: bank.deposits, quarter: null, fmt: 'money', stock: true },
-      { id: 'bank-cr', label: 'Capital ratio', hint: 'Equity over loans. Must stay above the limit, or lending stops.', month: bank.capitalRatio, quarter: null, fmt: 'pct', stock: true, spark: hist(h, (p) => p.bankCapitalRatio) },
-      { id: 'bank-head', label: 'Lending headroom', hint: 'How much more the bank can lend before it hits the capital limit.', month: bank.headroom, quarter: null, fmt: 'money', stock: true },
+      { id: 'bank-cr', label: 'Capital ratio', month: bank.capitalRatio, quarter: null, fmt: 'pct', stock: true, spark: hist(h, (p) => p.bankCapitalRatio) },
+      { id: 'bank-head', label: 'Lending headroom', month: bank.headroom, quarter: null, fmt: 'money', stock: true },
       { id: 'bank-def', label: 'Default rate', month: bank.defaultRate, quarter: null, fmt: 'pct', stock: true },
       { id: 'bank-int', label: 'Interest income', month: bank.interestIncome, quarter: qv((x) => x.bankInterestIncome), fmt: 'money', ledger: { account: BANK, kind: 'interest' } },
     ] },
@@ -106,12 +103,12 @@ function rawSections(snap: Snapshot): FinSection[] {
       { id: 'hh-rent', label: 'Rent paid', month: hh.rentPaid, quarter: qv((x) => x.rentPaid), fmt: 'money' },
       { id: 'hh-loan', label: 'Loan payments', month: hh.loanPayments, quarter: qv((x) => x.loanPayments), fmt: 'money' },
       { id: 'hh-spend', label: 'Spending', month: hh.spending, quarter: qv((x) => x.householdSpending), fmt: 'money' },
-      { id: 'hh-save', label: 'Saving rate', hint: 'Share of income left after tax, rent, loan payments and spending.', month: hh.savingRate, quarter: null, fmt: 'pct', stock: true },
+      { id: 'hh-save', label: 'Saving rate', month: hh.savingRate, quarter: null, fmt: 'pct', stock: true },
       { id: 'hh-debt', label: 'Debt', month: hh.debt, quarter: null, fmt: 'money', stock: true },
       { id: 'hh-nw', label: 'Net worth', month: hh.netWorth, quarter: null, fmt: 'money', stock: true },
     ] },
     { id: 'firms', title: 'Firms (all together)', ledgers: snap.firms.filter((x) => x.active).map((x) => ({ label: x.name, account: { kind: 'firm', id: x.id } as AccountRef })), rows: [
-      { id: 'f-rev', label: 'Revenue', hint: 'Money received for purchases, from the ledger. Up to about 10% below the model\'s own firm revenue: a firm buying from itself moves no money.', month: fi.revenue, quarter: qv((x) => x.firmRevenue), fmt: 'money' },
+      { id: 'f-rev', label: 'Revenue', month: fi.revenue, quarter: qv((x) => x.firmRevenue), fmt: 'money' },
       { id: 'f-wage', label: 'Wage bill', month: fi.wageBill, quarter: qv((x) => x.wageBill), fmt: 'money' },
       { id: 'f-profit', label: 'Profit', month: fi.profit, quarter: qv((x) => x.firmProfit), fmt: 'money' },
       { id: 'f-inv', label: 'Investment', month: fi.investment, quarter: qv((x) => x.investment), fmt: 'money' },
@@ -120,16 +117,16 @@ function rawSections(snap: Snapshot): FinSection[] {
     ] },
     { id: 'money', title: 'Money', rows: [
       { id: 'm-supply', label: 'Money supply', month: f.money.supply, quarter: null, fmt: 'money', stock: true },
-      { id: 'm-created', label: 'Created this turn', hint: 'New loans create money.', month: f.money.createdThisTurn, quarter: null, fmt: 'money', stock: true },
-      { id: 'm-destroyed', label: 'Destroyed this turn', hint: 'Repaid loans destroy money.', month: f.money.destroyedThisTurn, quarter: null, fmt: 'money', stock: true },
+      { id: 'm-created', label: 'Created this turn', month: f.money.createdThisTurn, quarter: null, fmt: 'money', stock: true },
+      { id: 'm-destroyed', label: 'Destroyed this turn', month: f.money.destroyedThisTurn, quarter: null, fmt: 'money', stock: true },
     ] },
     { id: 'prices', title: 'Prices and distribution', rows: [
       { id: 'p-index', label: 'Price index', month: f.priceIndex, quarter: null, fmt: 'index', stock: true },
       { id: 'p-wage', label: 'Wage share', month: f.wageShare, quarter: null, fmt: 'pct', stock: true },
       { id: 'p-profit', label: 'Profit share', month: f.profitShare, quarter: null, fmt: 'pct', stock: true },
       { id: 'p-gini', label: 'Inequality (Gini)', month: snap.indicators.gini, quarter: null, fmt: 'index', stock: true, spark: hist(h, (p) => p.gini) },
-      { id: 'p-median', label: 'Median income', hint: 'Per person, per month.', month: snap.indicators.medianIncomePerPerson, quarter: null, fmt: 'money', stock: true, spark: hist(h, (p) => p.medianIncomePerPerson) },
-      { id: 'p-avg', label: 'Average income', hint: 'Per person, per month.', month: snap.indicators.avgIncomePerPerson, quarter: null, fmt: 'money', stock: true, spark: hist(h, (p) => p.avgIncomePerPerson) },
+      { id: 'p-median', label: 'Median income', month: snap.indicators.medianIncomePerPerson, quarter: null, fmt: 'money', stock: true, spark: hist(h, (p) => p.medianIncomePerPerson) },
+      { id: 'p-avg', label: 'Average income', month: snap.indicators.avgIncomePerPerson, quarter: null, fmt: 'money', stock: true, spark: hist(h, (p) => p.avgIncomePerPerson) },
     ] },
   ];
 }
@@ -141,18 +138,18 @@ export interface CapitalGauge { /** 0..1 position of the ratio on the scale. */ 
 /** The capital ratio against its limit. The scale runs from 0 to twice the limit (or the ratio, if higher). */
 export function capitalGauge(bank: FinanceView['bank']): CapitalGauge {
   const max = Math.max(bank.capitalRatioLimit * 2, bank.capitalRatio * 1.15, 0.01);
-  const status = bank.capitalRatio < bank.capitalRatioLimit ? 'breach' : bank.capitalRatio < bank.capitalRatioLimit * 1.25 ? 'tight' : 'ok';
+  const status = bank.capitalRatio < bank.capitalRatioLimit ? 'breach' : bank.capitalRatio < bank.capitalRatioLimit * bands().capitalTightFactor ? 'tight' : 'ok';
   return {
     at: Math.min(1, bank.capitalRatio / max), limitAt: Math.min(1, bank.capitalRatioLimit / max), status,
-    text: status === 'breach' ? 'Below the limit: the bank cannot lend.' : status === 'tight' ? 'Close to the limit.' : 'Comfortably above the limit.',
+    text: text('capital_gauge', status),
   };
 }
 
 export interface FlowEdge { from: 'households' | 'firms' | 'government' | 'bank'; to: 'households' | 'firms' | 'government' | 'bank'; amount: number; label: string }
 /** The circular flow over the last quarter: who paid whom. Uses the quarter totals; when the wire has none, three times the month (flagged). */
-export function circularFlow(f: FinanceView): { edges: FlowEdge[]; approx: boolean } {
+export function circularFlow(f: FinanceView, ticksPerTurn: number): { edges: FlowEdge[]; approx: boolean } {
   const q = f.quarter ?? null;
-  const k = q ? 1 : 3;
+  const k = q ? 1 : ticksPerTurn;
   const a = q ?? ({ govRevenue: f.government.revenue, govSpending: f.government.spending, householdIncome: f.households.income, householdTaxes: f.households.taxes, rentPaid: f.households.rentPaid, loanPayments: f.households.loanPayments, householdSpending: f.households.spending, firmRevenue: f.firms.revenue, wageBill: f.firms.wageBill, firmProfit: f.firms.profit, investment: f.firms.investment, bankInterestIncome: f.bank.interestIncome } as FinanceFlows);
   const edges: FlowEdge[] = [
     { from: 'households', to: 'firms', amount: a.householdSpending * k, label: 'spending' },

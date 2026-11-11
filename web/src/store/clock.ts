@@ -64,7 +64,7 @@ export function gameDate(turn: number, cal: Pick<GameCalendar, 'startYear' | 'fi
 
 export type ClockEvent =
   /** Month 2 or 3 of the quarter begins (month 1 begins together with the quarter). */
-  | { type: 'month'; month: 1 | 2; quarter: number }
+  | { type: 'month'; month: number; quarter: number }
   /** The quarter boundary. `action` says what to do with the drafts: locked plans are always submitted. `quarter` is the index of the quarter that begins. */
   | { type: 'quarter'; quarter: number; locked: boolean; action: TimeoutPolicy };
 
@@ -79,7 +79,7 @@ export interface ClockState {
   /** 0..1 progress through the quarter now playing. */
   frac: number;
   /** Months of this quarter already begun, 1..3 once started. */
-  month: 0 | 1 | 2;
+  month: number;
   secondsPerQuarter: number;
   /** Real seconds until the boundary at the current rate (Infinity while paused). */
   secondsLeft: number;
@@ -106,12 +106,13 @@ export interface Clock {
   readonly config: ClockConfig;
 }
 
-export function createClock(config: ClockConfig, now: () => number, turnsPerYear = 4): Clock {
+/** `calendar` is read on every use: the wire's game.turnsPerYear and game.ticksPerTurn (months per turn, params run.ticks_per_turn) of the game in play. */
+export function createClock(config: ClockConfig, now: () => number, calendar: () => Pick<GameCalendar, 'turnsPerYear' | 'ticksPerTurn'>): Clock {
   const cfg = config;
-  const spq = secondsPerQuarter(cfg, turnsPerYear);
+  const spqNow = () => secondsPerQuarter(cfg, calendar().turnsPerYear);
   let last = now();
   let elapsed = 0; // seconds into the quarter, in 1x time
-  let monthsBegun = 0; // 0 or 1 or 2: months after the first that have been announced
+  let monthsBegun = 0; // months after the first that have been announced (0 .. monthsPerTurn - 1)
   let quarter = 0;
   let locked = false;
   let speed = cfg.speeds[0] ?? 1;
@@ -126,8 +127,8 @@ export function createClock(config: ClockConfig, now: () => number, turnsPerYear
     const paused = pausedBy.size > 0;
     return {
       phase: paused ? 'paused' : locked ? 'locked' : 'planning', locked, pausedBy: [...pausedBy], speed, slow, quarter,
-      frac: Math.min(1, elapsed / spq), month: monthsBegun as 0 | 1 | 2, secondsPerQuarter: spq,
-      secondsLeft: paused ? Infinity : (spq - elapsed) / rate(), pauseBudgetLeft: budget,
+      frac: Math.min(1, elapsed / spqNow()), month: monthsBegun, secondsPerQuarter: spqNow(),
+      secondsLeft: paused ? Infinity : (spqNow() - elapsed) / rate(), pauseBudgetLeft: budget,
     };
   };
   let snapshot = compute();
@@ -145,11 +146,12 @@ export function createClock(config: ClockConfig, now: () => number, turnsPerYear
     if (pausedBy.size === 0 && dt > 0) {
       elapsed += dt * rate();
       for (let guard = 0; guard < 16; guard++) {
-        const edge = ((monthsBegun + 1) * spq) / 3;
+        const spq = spqNow(), monthsPerTurn = calendar().ticksPerTurn;
+        const edge = ((monthsBegun + 1) * spq) / monthsPerTurn;
         if (elapsed < edge - 1e-9) break;
-        if (monthsBegun < 2) {
+        if (monthsBegun < monthsPerTurn - 1) {
           monthsBegun++;
-          emit({ type: 'month', month: monthsBegun as 1 | 2, quarter });
+          emit({ type: 'month', month: monthsBegun, quarter });
         } else {
           elapsed -= spq;
           monthsBegun = 0;

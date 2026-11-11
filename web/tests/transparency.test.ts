@@ -12,7 +12,8 @@ import { anchorsWithoutTopic, groupTopics, relatedOf, searchTopics, topicFor } f
 import { METRICS, metricText } from '../src/panels/metrics';
 import { isBarePercent, pctWith } from '../src/panels/backing';
 import { energyBalance } from '../src/panels/energy';
-import { financeSections, fmtFin, REVENUE_LABEL } from '../src/panels/finance';
+import { financeSections, fmtFin } from '../src/panels/finance';
+import { text } from '../src/store';
 import { taxLines } from '../src/panels/taxes';
 import { relabelLevers, uiLabel } from '../src/store';
 import { ok } from './helpers';
@@ -225,7 +226,7 @@ describe('Income tax label and taxes table', () => {
   it('relabels Wage tax everywhere in the UI, keys unchanged', () => {
     expect(uiLabel('Wage tax')).toBe('Income tax');
     expect(relabelLevers([{ ...sim.levers()[1]!, key: 'tax_wage', label: 'Wage tax' }])[0]).toMatchObject({ key: 'tax_wage', label: 'Income tax' });
-    expect(REVENUE_LABEL.wageTax).toBe('Income tax');
+    expect(text('finance_label', 'revenue.wageTax')).toBe('Income tax');
     expect(financeSections(played).flatMap((s) => s.rows.map((r) => r.label)).join('|')).not.toMatch(/Wage tax/);
   });
   it('has a GST/VAT row that is not modelled, and tax rows with revenue', () => {

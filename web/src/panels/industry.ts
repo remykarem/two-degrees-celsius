@@ -1,13 +1,13 @@
+import { ownerWord } from '../store/catalog';
 import type { Industry, IndustryFirm, InfraKind } from '../contract';
 import { compact, money, tonnes } from './format';
 
 /** Pure derivations for the Industry tab (contract v1.6). */
 export const SECTOR_WORD = { goods: 'Goods', food: 'Food', services: 'Services' } as const;
 export const INFRA_WORD: Record<InfraKind, string> = { road: 'Roads', public_housing: 'Public housing', fossil_plant: 'Fossil power plants', renewable_plant: 'Renewable power plants', fire_station: 'Fire stations' };
-const OWNER_WORD = { household: 'Household', workers: 'Workers', state: 'State', bank: 'Bank' } as const;
 
 export function ownershipText(f: IndustryFirm): string {
-  return f.ownership.map((o) => `${OWNER_WORD[o.owner]}${o.household !== undefined ? ` ${o.household}` : ''} ${o.share.toFixed(2)}`).join(', ');
+  return f.ownership.map((o) => `${ownerWord(o.owner)}${o.household !== undefined ? ` ${o.household}` : ''} ${o.share.toFixed(2)}`).join(', ');
 }
 export const stateShareText = (f: IndustryFirm): string => (f.stateShare > 0 ? `state holds ${f.stateShare.toFixed(2)} of the shares` : 'state holds no shares (0 of 1)');
 

@@ -2,7 +2,7 @@
   import type { AccountRef } from '../contract';
   import type { Game } from '../store';
   import { capitalGauge, financeEmpty, financeSections, fmtFin } from './finance';
-  import { accountLabel, FIRM_REVENUE_NOTE } from './ledger';
+  import { accountLabel, firmRevenueNote } from './ledger';
   import CircularFlow from './CircularFlow.svelte';
   import Sparkline from './Sparkline.svelte';
   import HowButton from './HowButton.svelte';
@@ -57,7 +57,7 @@
             {/each}
           </tbody>
         </table>
-        {#if sec.id === 'firms'}<p class="dim">{FIRM_REVENUE_NOTE}</p>{/if}
+        {#if sec.id === 'firms'}<p class="dim">{firmRevenueNote()}</p>{/if}
         {#if sec.ledgers}
           <div class="entry small" role="group" aria-label="Ledgers of each {sec.id === 'households' ? 'household' : 'firm'}">
             {#each sec.ledgers as l (l.label)}<button type="button" onclick={() => open(l.account)} title="See transactions: {accountLabel(snap, l.account)}">{l.label}</button>{/each}
@@ -66,7 +66,7 @@
       </section>
     {/each}
 
-    <section aria-labelledby="fin-flow"><h3 id="fin-flow">Circular flow, last quarter</h3><CircularFlow finance={snap.finance} /></section>
+    <section aria-labelledby="fin-flow"><h3 id="fin-flow">Circular flow, last quarter</h3><CircularFlow finance={snap.finance} ticksPerTurn={snap.game.ticksPerTurn} /></section>
   </div>
 {/if}
 

@@ -23,7 +23,7 @@ export interface UiError { code: string; message: string; where: 'new_game' | 'p
 export interface LiveSlice {
   /** A turn is open in the sim (beginTurn done, finishTurn not yet). */
   open: boolean;
-  monthsDone: 0 | 1 | 2 | 3;
+  monthsDone: number;
   /** The month frame that landed last, and a counter so the scene notices a new one. */
   frame: MonthFrame | null;
   frameSeq: number;

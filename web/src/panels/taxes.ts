@@ -1,8 +1,9 @@
 import type { Snapshot, TaxRow } from '../contract';
 import { money } from './format';
+import { text } from '../store/catalog';
 
 /** Why GST/VAT is absent: shown in the Taxes table (docs/town-v5.md section 11). */
-export const GST_REASON = 'Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line.';
+export const gstReason = (): string => text('misc', 'gst_reason');
 
 /** Taxes as one table of display lines: rates (nominal and in force, with the lobbying gap) and the dollars collected. */
 export interface TaxLine { id: TaxRow['id']; label: string; appliesTo: string; nominal: string; effective: string; month: string; quarter: string; modelled: boolean }

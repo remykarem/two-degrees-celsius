@@ -3,9 +3,9 @@
   import type { Game } from '../store';
   import { totalPc } from '../store';
   import { Button, Modal } from '../ui-kit';
-  import { SYSTEM_ORDER, SYSTEMS } from './content/systems';
-  import { leadText } from './format';
-  import { switchOptions } from './systemSwitch';
+  import { catalog } from '../store/catalog';
+  import { leadText, pct } from './format';
+  import { paramText, switchOptions } from './systemSwitch';
   import { setUi, ui } from './ui';
 
   let { game }: { game: Game } = $props();
@@ -17,6 +17,8 @@
   const opts = $derived(snap ? switchOptions(snap, $gs.actions.find((a) => a.key === 'switch_system'), pcFree) : []);
   const close = () => { confirming = null; setUi({ systemModal: false }); };
   const conf = $derived(opts.find((o) => o.to === confirming));
+  const cards = $derived(catalog().systems);
+  const confCard = $derived(cards.find((c) => c.key === confirming));
 
   function confirm() {
     if (!confirming) return;
@@ -27,37 +29,38 @@
 
 {#if $ui.systemModal && snap}
   <Modal title={confirming ? 'Confirm the system switch' : 'Compare economic systems'} size="lg" onclose={() => (confirming ? (confirming = null) : close())}>
-    {#if confirming && conf}
+    {#if confirming && conf && confCard}
       <div class="confirm" role="alert">
-        <h3>Switching to {SYSTEMS[confirming].name} is expensive</h3>
+        <h3>Switching to {confCard.name} is expensive</h3>
         <p>{conf.summary}.</p>
-        <p>{SYSTEMS[confirming].resistance.value}{#if SYSTEMS[confirming].resistance.placeholder} <span class="ph">placeholder</span>{/if}</p>
+        <p>{confCard.resistance}{#if confCard.resistancePlaceholder} <span class="ph">placeholder</span>{/if}</p>
         <p>It takes effect {leadText(conf.leadTime)} after you end the turn, and you cannot start another switch while it runs. You will be asked once more when you end the turn.</p>
       </div>
     {:else}
-      <p class="lead">The system sets who gets the profits, how strong lobbying is and which levers exist. Switching is slow and costs political capital. Costs below come from the simulation; rules and trade-offs from the design doc.</p>
+      <p class="lead">The system sets who gets the profits, how strong lobbying is and which levers exist. Switching is slow and costs political capital. Costs and numbers below come from the simulation; the descriptions are authored in content/ui.json.</p>
       <div class="cols">
-        {#each SYSTEM_ORDER as k (k)}
-          {@const c = SYSTEMS[k]}
+        {#each cards as c (c.key)}
+          {@const k = c.key}
           {@const o = opts.find((x) => x.to === k)!}
           <section class:cur={o.current} aria-label={c.name}>
             <h3>{c.name}{#if o.current}<span class="badge">Current</span>{/if}</h3>
             <p class="tag">{c.tagline}</p>
             <dl>
               {#each c.facts as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
+              {#each c.params as p (p.path)}<dt>{p.label}</dt><dd>{paramText(p)}</dd>{/each}
             </dl>
             <h4>Transition</h4>
             {#if o.current}<p class="dim">You are here.</p>{:else}
               <ul>
                 <li>Cost: about <b>{o.pcCost} PC</b>{#if o.moneyCost > 0}&nbsp;and ${Math.round(o.moneyCost).toLocaleString('en-US')}{/if}</li>
                 <li>Starts {leadText(o.leadTime)}</li>
-                <li>{#if c.transitionMonths !== null}Takes about {c.transitionMonths} months, {Math.round((c.outputHit ?? 0) * 100)}% less output during it{:else}Transition time not specified <span class="ph">placeholder</span>{/if}</li>
+                <li>Takes {c.transitionMonths} months, {pct(c.outputPenalty)} less output during it</li>
               </ul>
             {/if}
-            <h4>{c.resistance.label}</h4>
-            <p>{c.resistance.value}{#if c.resistance.placeholder} <span class="ph">placeholder</span>{/if}</p>
+            <h4>Who resists</h4>
+            <p>{c.resistance}{#if c.resistancePlaceholder} <span class="ph">placeholder</span>{/if}</p>
             <h4>Trade-offs</h4>
-            <ul>{#each c.tradeoffs as t (t.label)}<li><b>{t.label}:</b> {t.value}{#if t.placeholder} <span class="ph">placeholder</span>{/if}</li>{/each}</ul>
+            <ul>{#each c.tradeoffs as t (t.label)}<li><b>{t.label}:</b> {t.value}</li>{/each}</ul>
             {#if !o.current}
               <div class="act">
                 <Button variant="primary" disabled={!!o.disabled} onclick={() => (confirming = k)}>Switch to {c.name}…</Button>

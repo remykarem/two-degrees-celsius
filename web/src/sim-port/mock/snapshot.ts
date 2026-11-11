@@ -5,7 +5,7 @@ import { plantTiles } from './frames';
 import { energyView, financeView } from './finance';
 import { economy, householdViews, median, peopleViews, personIncomes, topWealthShare } from './people';
 import { buildBreakdowns, buildIndustry, buildPolicies } from './transparency';
-import { healthOf, weatherView } from './weather';
+import { healthOf, tileFireRisk, weatherView } from './weather';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
 
 const gdpBase = () => GEN.derived.monthlyOutputValue * 12;
@@ -18,7 +18,7 @@ export function mapTiles(s: MockState): Tile[] {
       const c = cellAt(s, x, y)!;
       const t: Tile = { x, y, kind: c.kind, buildable: c.kind === 'empty' };
       if (c.ref !== undefined) t.ref = c.ref;
-      if (c.kind === 'forest') t.state = c.state ?? 'standing';
+      if (c.kind === 'forest') { t.state = c.state ?? 'standing'; if (t.state === 'standing') t.fireRisk = tileFireRisk(s, x, y); }
       if (c.kind === 'fossil_plant') t.emissionsMonthly = plants ? s.lastPlantEmissions / plants : 0;
       if (c.kind === 'renewable_plant') t.emissionsMonthly = 0;
       tiles.push(t);

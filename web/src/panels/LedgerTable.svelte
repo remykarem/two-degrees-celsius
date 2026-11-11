@@ -2,7 +2,7 @@
   import HowButton from './HowButton.svelte';
   import type { AccountRef, LedgerKind, LedgerPage } from '../contract';
   import type { Game } from '../store';
-  import { accountKey, accountLabel, accountSelection, counterpartiesIn, debtChangeText, exact, externalHint, FIRM_REVENUE_NOTE, KIND_LABEL, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, positionNames, rowTotals, sameAccount, signedExact, turnsIn, type LedgerFilter } from './ledger';
+  import { accountKey, accountLabel, accountSelection, counterpartiesIn, debtChangeText, exact, externalHint, firmRevenueNote, KIND_LABEL, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, positionNames, rowTotals, sameAccount, signedExact, turnsIn, type LedgerFilter } from './ledger';
 
   let { game, account, kind = undefined, onselect }: { game: Game; account: AccountRef; kind?: LedgerKind; onselect: (a: AccountRef) => void } = $props();
   // svelte-ignore state_referenced_locally
@@ -66,12 +66,12 @@
     {#if showDebt}<br />{names.debt}: opening {exact(rec.openingDebt)} {rec.debtEntries >= 0 ? '+' : '-'} entries {exact(Math.abs(rec.debtEntries))} {rec.debtRolled >= 0 ? '+' : '-'} older periods {exact(Math.abs(rec.debtRolled))} = <b>{exact(rec.openingDebt + rec.debtEntries + rec.debtRolled)}</b>; closing <b>{exact(rec.closingDebt)}</b>{#if Math.abs(rec.debtDiff) >= 0.01} (difference {exact(rec.debtDiff)}){/if}.{/if}
     {#if rec.brokenEntries}<br />{rec.brokenEntries} entries do not add up to their running position.{/if}
   </p>
-  {#if account.kind === 'firm'}<p class="dim">{FIRM_REVENUE_NOTE}</p>{/if}
+  {#if account.kind === 'firm'}<p class="dim">{firmRevenueNote()}</p>{/if}
   {#if account.kind === 'bank'}<p class="dim">The bank's balance is its equity. When it lends, the money is created (no cash leaves the bank, its loans outstanding rise); when a loan is repaid the money is destroyed.</p>{/if}
 
   <form class="filters" aria-label="Filter transactions" onsubmit={(e) => e.preventDefault()}>
     <label>Kind
-      <select value={filter.kind} onchange={setKind}><option value="all">All kinds</option>{#each kinds as k (k)}<option value={k}>{KIND_LABEL[k]}</option>{/each}</select></label>
+      <select value={filter.kind} onchange={setKind}><option value="all">All kinds</option>{#each kinds as k (k)}<option value={k}>{KIND_LABEL(k)}</option>{/each}</select></label>
     <label>From turn
       <select value={filter.fromTurn ?? ''} onchange={setTurn('fromTurn')}><option value="">Start</option>{#each turns as t (t)}<option value={t}>{snap ? monthLabel(t, 0, snap.game) : t}</option>{/each}</select></label>
     <label>To turn

@@ -1,5 +1,6 @@
 import type { HistoryPoint, Snapshot, TurnResult } from '../contract';
 import { quarterLabel } from '../store/config';
+import { fill, text } from '../store/catalog';
 import { emissionsBars } from './why';
 import { money, pct } from './format';
 
@@ -41,12 +42,15 @@ function emissionsLine(h: HistoryPoint[], snap: Snapshot): string | null {
     : `Emissions peaked in ${when(peak.turn, snap)} and never came down.`;
 }
 
+/** Milestones are the simulation's own: the budget share where climate stress starts (weather.onset) and where it is fullest (weather.full). */
 function budgetTurnLine(h: HistoryPoint[], snap: Snapshot): string | null {
-  const half = h.find((p) => p.budgetShare <= 0.5);
-  const quarter = h.find((p) => p.budgetShare <= 0.25);
-  if (!half) return h.length ? `The carbon budget was never more than half used (${pct(1 - h[h.length - 1]!.budgetShare)} used at the end).` : null;
-  const parts = [`Half the carbon budget was gone by ${when(half.turn, snap)}`];
-  if (quarter) parts.push(`three quarters by ${when(quarter.turn, snap)}`);
+  const w = snap.weather;
+  const pctOf = (v: number) => `${Math.round(v * 100)}%`;
+  const reached = h.find((p) => p.budgetShare <= w.onset);
+  if (!reached) return h.length ? fill(text('story', 'budget_never'), { used: pctOf(1 - h[h.length - 1]!.budgetShare) }) : null;
+  const parts = [fill(text('story', 'budget_onset'), { onset: pctOf(w.onset), when: when(reached.turn, snap) })];
+  const full = h.find((p) => p.budgetShare <= w.full);
+  if (full) parts.push(fill(text('story', 'budget_full'), { full: pctOf(w.full), when: when(full.turn, snap) }));
   return parts.join(', ') + '.';
 }
 
@@ -89,7 +93,7 @@ export function weatherFacts(snap: Snapshot, last: TurnResult | null): string[] 
   if (h.length < 2 || !h.every((p) => fin(p.climateStress) && fin(p.forestHealth) && fin(p.commonsHealth) && fin(p.farmHealth))) return out;
   const peak = h.reduce((m, x) => (x.climateStress > m.climateStress ? x : m));
   if (peak.climateStress > 0.01) out.push(`Climate stress began to bite as the carbon budget ran down; it peaked at ${pct(peak.climateStress)} in ${when(peak.turn, snap)}.`);
-  else out.push('Climate stress never began: the town kept more than half of its carbon budget, so there were no fires or droughts.');
+  else out.push(fill(text('story', 'stress_never'), { onset: `${Math.round(snap.weather.onset * 100)}%` }));
   const steps = h.slice(1).map((p, i) => ({ turn: p.turn, forest: h[i]!.forestHealth - p.forestHealth, from: h[i]!.forestHealth, to: p.forestHealth, commons: h[i]!.commonsHealth - p.commonsHealth, farm: h[i]!.farmHealth - p.farmHealth }));
   const fires = steps.filter((x) => x.forest > 0.03).sort((a, b) => b.forest - a.forest);
   if (fires.length) {

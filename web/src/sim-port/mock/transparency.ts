@@ -82,7 +82,10 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
   const month = line(mon), tl = line(turn);
   const ok = (l: EmissionsLine) => near(l.firms + l.households + l.plants, l.grossTotal) && near(l.grossTotal + l.sink, l.net) && near(l.net, l.headline);
   const rem = Math.max(0, GEN.carbon.budget - s.cumulativeTonnes);
+  const perTurn = Math.max(0, month.net) * GEN.game.ticksPerTurn;
+  const runOut = perTurn > 0 ? Math.min(s.turn, GEN.game.lastTurn + 1) + rem / perTurn : undefined;
   const emissions = {
+    runway: { perTurn, ...(runOut !== undefined ? { runOutTurn: runOut } : {}), runsOutBeforeEnd: runOut !== undefined && runOut <= GEN.game.lastTurn + 1 },
     month, turn: tl, cumulative: { tonnes: s.cumulativeTonnes, budget: GEN.carbon.budget, remaining: rem, share: GEN.carbon.budget ? s.cumulativeTonnes / GEN.carbon.budget : 0 },
     reconciles: ok(month) && ok(tl), note: 'Mock data: sources are split by invented shares; the mock cumulative counts gross emissions.',
   };

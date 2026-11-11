@@ -21,7 +21,7 @@ function scene(opts: { burning?: number[]; regrowing?: number[]; drought?: numbe
   for (const i of opts.regrowing ?? []) f[i]!.state = 'regrowing';
   for (const st of opts.stations ?? []) s.map.tiles[st.y * 12 + st.x]!.kind = 'fire_station';
   s.weather = {
-    stress: opts.stress ?? 0.5, drought: opts.drought ? { severity: opts.drought, monthsLeft: 3 } : null,
+    ...s.weather!, stress: opts.stress ?? 0.5, drought: opts.drought ? { severity: opts.drought, monthsLeft: 3 } : null,
     fires: (opts.burning ?? []).map((i) => ({ tile: { x: f[i]!.x, y: f[i]!.y }, monthsLeft: 2 })), forecast: { fireRisk: opts.fireRisk ?? 'medium', droughtRisk: 'low' },
   };
   return s;
@@ -77,21 +77,24 @@ describe('scene: derived look', () => {
     snap.weather.fires = [];
     expect(weatherLook(snap).fires).toHaveLength(1);
   });
-  it('fire risk: higher with a worse forecast, halved under a station, 1 when burning, low when regrowing', () => {
-    const t = (s: Snapshot) => forests(s)[3]!;
-    const lo = scene({ fireRisk: 'low' }), hi = scene({ fireRisk: 'high' });
-    expect(tileFireRisk(weatherLook(hi), t(hi))).toBeGreaterThan(tileFireRisk(weatherLook(lo), t(lo)));
-    const f = forests(hi)[3]!;
-    const covered = scene({ fireRisk: 'high', stations: [{ x: f.x, y: f.y === 0 ? 1 : f.y - 1 }] });
-    const ct = forests(covered)[3]!;
-    expect(isCovered(weatherLook(covered), ct)).toBe(true);
-    expect(tileFireRisk(weatherLook(covered), ct)).toBeCloseTo(tileFireRisk(weatherLook(hi), f) * 0.5, 6);
+  it('fire risk is the simulation\'s own per-tile odds (tile.fireRisk) scaled to the riskiest tile; 1 when burning, 0 when regrowing or not forest', () => {
+    const s = scene();
+    for (const t of forests(s)) t.fireRisk = 0.01;
+    forests(s)[3]!.fireRisk = 0.02; forests(s)[4]!.fireRisk = 0.04;
+    const look = weatherLook(s);
+    expect(tileFireRisk(look, forests(s)[4]!)).toBe(1);
+    expect(tileFireRisk(look, forests(s)[3]!)).toBeCloseTo(0.5, 12);
+    expect(tileFireRisk(look, forests(s)[5]!)).toBeCloseTo(0.25, 12);
+    const f = forests(s)[3]!;
+    const covered = scene({ stations: [{ x: f.x, y: f.y === 0 ? 1 : f.y - 1 }] });
+    expect(isCovered(weatherLook(covered), forests(covered)[3]!)).toBe(true);
+    expect(weatherLook(covered).coverageRadius).toBe(covered.weather.coverageRadius);
     const b = scene({ burning: [3] });
     expect(tileFireRisk(weatherLook(b), forests(b)[3]!)).toBe(1);
     const r = scene({ regrowing: [3] });
-    expect(tileFireRisk(weatherLook(r), forests(r)[3]!)).toBeLessThan(0.1);
-    const home = hi.map.tiles.find((x) => x.kind === 'home')!;
-    expect(tileFireRisk(weatherLook(hi), home)).toBe(0); // not forest
+    expect(tileFireRisk(weatherLook(r), forests(r)[3]!)).toBe(0);
+    const home = s.map.tiles.find((x) => x.kind === 'home')!;
+    expect(tileFireRisk(look, home)).toBe(0); // not forest
   });
 });
 

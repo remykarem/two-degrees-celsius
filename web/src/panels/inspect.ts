@@ -1,8 +1,9 @@
-import type { ClassKey, FirmOwner, InfraKind, PersonView, Snapshot } from '../contract';
+import type { FirmOwner, InfraKind, PersonView, Snapshot } from '../contract';
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
 import { fossilShareOf, occupant, pendingAt, sameTile, tileAt } from '../store';
-import { forestStateOf, forecastView, WEATHER_UI, weatherOf } from '../store/weather';
-import { energyText, plantAt, plantRows, UNIT_HELP } from './energy';
+import { forestStateOf, forecastView, weatherOf } from '../store/weather';
+import { classLabel, fill, infraLabel, ownerText, ownerWord, text } from '../store/catalog';
+import { energyText, plantAt, plantRows, unitHelp } from './energy';
 import { debtBacking, forestTiles, legitimacyBacking, pctWith, stockOf } from './backing';
 import { compact, money, tonnes, turnsUntil } from './format';
 
@@ -27,11 +28,10 @@ export interface InspectModel {
   note?: string;
 }
 
-export const CLASS_LABEL: Record<ClassKey, string> = { capitalist: 'Capitalist', rentier: 'Rentier (landlord)', manager: 'Manager', worker: 'Worker', dependent: 'Dependent' };
-export const INFRA_LABEL: Record<InfraKind, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road', fire_station: 'Fire station' };
+export const INFRA_LABEL = infraLabel;
 const AGE_LABEL = { child: 'Child', adult: 'Adult', retired: 'Retired' } as const;
 const OWNER_TEXT = (o: FirmOwner, s: Snapshot) =>
-  o.kind === 'household' ? `${s.households.find((h) => h.id === o.id)?.label ?? `Household ${o.id}`}` : o.kind === 'workers' ? 'Its workers' : o.kind === 'state' ? 'The state' : 'The bank';
+  o.kind === 'household' ? `${s.households.find((h) => h.id === o.id)?.label ?? `${ownerWord('household')} ${o.id}`}` : ownerText(o.kind);
 
 /** Finished buildings of a kind (summary counts; the tiles are the truth). */
 export const builtCount = (snap: Snapshot | null, kind: InfraKind): number =>
@@ -69,7 +69,7 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
   const home = h?.home != null ? s.homes.find((x) => x.id === h.home) : undefined;
   const jobText = firmName ?? (p.ageBand === 'child' ? 'child, not working' : p.ageBand === 'retired' ? 'retired' : p.inLabourForce ? 'looking for work' : 'not in the labour force');
   return {
-    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${AGE_LABEL[p.ageBand]}${h ? `. ${CLASS_LABEL[h.class]} household` : ''}`,
+    kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${AGE_LABEL[p.ageBand]}${h ? `. ${classLabel(h.class)} household` : ''}`,
     ...(h ? { household: { label: h.label, detail: `${h.members.length} people`, selection: { kind: 'household' as const, id: h.id } } } : {}),
     sections: [
       { heading: 'Work', rows: [
@@ -102,7 +102,7 @@ function householdModel(s: Snapshot, id: number, home?: Snapshot['homes'][number
   const owns = s.homes.filter((x) => x.owner === h.id && x.household !== h.id);
   const ownerText = theHome ? (theHome.owner === 'public' ? 'public housing' : theHome.owner === h.id ? 'this household' : s.households.find((x) => x.id === theHome.owner)?.label ?? 'a landlord') : 'none';
   return {
-    kind: 'household', title: h.label, subtitle: `${CLASS_LABEL[h.class]} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
+    kind: 'household', title: h.label, subtitle: `${classLabel(h.class)} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
     members: members.map((p) => ({ label: p.label, detail: p.job ? `works${p.wage > 0 ? `, ${money(p.wage)}/month` : ''}` : AGE_LABEL[p.ageBand].toLowerCase(), selection: { kind: 'person' as const, id: p.id } })),
     sections: [
       { heading: 'Home', rows: [
@@ -139,20 +139,20 @@ export function resolveTile(snap: Snapshot, layout: MapLayout, tile: Tile, draft
   const q = queued === null ? undefined : snap.pending.find((x) => x.id === queued);
   if (q && q.command.type === 'place') {
     const left = turnsUntil(q.effectiveTurn, snap.turn);
-    return { kind: 'planned', title: `Under construction: ${INFRA_LABEL[q.command.kind]}`, subtitle: where, sections: [{ heading: 'Queued', rows: [
+    return { kind: 'planned', title: `Under construction: ${INFRA_LABEL(q.command.kind)}`, subtitle: where, sections: [{ heading: 'Queued', rows: [
       { label: 'Takes effect', value: left === 1 ? 'next turn' : `in ${left} turns` }, { label: 'PC paid', value: String(Math.round(q.pcCost * 10) / 10) }] }],
-      note: 'Cancel it from the pending list to get half the political capital back.' };
+      note: text('inspect', 'planned_queued') };
   }
   const draftHere = draft.find((d) => sameTile(d.command.type === 'set_policy' || d.command.type === 'switch_system' ? { x: -1, y: -1 } : d.command.tile, tile));
   if (!o) {
     const t = tileAt(snap, tile);
     if (t?.kind === 'road') return roadModel(where, tile, draft);
     if (draftHere && draftHere.command.type === 'place') {
-      return { kind: 'planned', title: `Planned: ${INFRA_LABEL[draftHere.command.kind]}`, subtitle: where, sections: [{ heading: 'Plan', rows: [
+      return { kind: 'planned', title: `Planned: ${INFRA_LABEL(draftHere.command.kind)}`, subtitle: where, sections: [{ heading: 'Plan', rows: [
         { label: 'Takes effect', value: draftHere.preview.leadTime <= 1 ? 'next turn' : `in ${draftHere.preview.leadTime} turns` }, { label: 'PC', value: String(Math.round(draftHere.preview.pc * 10) / 10) }] }],
-        note: 'Cancel it from the plan tray.' };
+        note: text('inspect', 'planned_draft') };
     }
-    return { kind: 'empty', title: 'Empty tile', subtitle: where, sections: [], note: 'Pick a building or a road in the build palette to place one here.' };
+    return { kind: 'empty', title: 'Empty tile', subtitle: where, sections: [], note: text('inspect', 'empty') };
   }
   if (!('label' in o)) return building(snap, o as Placed, where, draft);
   const sc = o as Scenery;
@@ -164,7 +164,7 @@ export function resolveTile(snap: Snapshot, layout: MapLayout, tile: Tile, draft
     case 'forest': return forestModel(snap, tile, where);
     case 'commons': return { kind: 'commons', title: 'Commons', subtitle: where, sections: [{ heading: 'Commons', rows: [
       { label: 'Health', value: pctWith(snap.nature.commons, stockOf(snap.nature.commonsStock, snap.nature.commons) ?? 'stock n/a') }, { label: 'Access', value: snap.nature.commonsAccess },
-      { label: 'Harvest policy', value: String(snap.policy.commons_harvest.nominal) }] }], note: 'Change access and harvest in the policy drawer.' };
+      { label: 'Harvest policy', value: String(snap.policy.commons_harvest.nominal) }] }], note: text('inspect', 'commons') };
   }
 }
 
@@ -177,18 +177,18 @@ function forestModel(snap: Snapshot, tile: Tile, where: string): InspectModel {
     { label: 'Forest stock', value: pctWith(snap.nature.forest, stockOf(snap.nature.forestStock, snap.nature.forest) ?? forestTiles(snap)) }, { label: 'Absorbs', value: `${tonnes(snap.nature.sinkMonthly)} per month` },
     { label: 'Net emissions', value: `${tonnes(snap.nature.netEmissionsMonthly)} per month` }, ...(fc ? [{ label: 'Fire risk', value: fc.fireWord }] : [])];
   return { kind: 'forest', title: st === 'burning' ? 'Forest fire' : st === 'regrowing' ? 'Burnt forest, regrowing' : 'Forest', subtitle: where, sections: [{ heading: 'Forest', rows }],
-    note: st === 'burning' ? 'Burning forest stops absorbing carbon. A fire station nearby shortens fires and slows their spread.' : st === 'regrowing' ? 'Burnt tiles regrow slowly and then stand again.' : 'Forests are fixed scenery in this version.' };
+    note: text('inspect', st === 'burning' ? 'forest_burning' : st === 'regrowing' ? 'forest_regrowing' : 'forest_standing') };
 }
 
 function roadModel(where: string, tile: Tile, draft: DraftItem[]): InspectModel {
   const already = draft.some((d) => d.command.type === 'remove' && sameTile(d.command.tile, tile));
-  return { kind: 'road', title: 'Road', subtitle: where, sections: [], removable: { kind: 'road', tile: { ...tile }, already }, note: 'A commute over a road tile takes less time than over open ground.' };
+  return { kind: 'road', title: 'Road', subtitle: where, sections: [], removable: { kind: 'road', tile: { ...tile }, already }, note: text('inspect', 'road') };
 }
 
 function firm(s: Snapshot, id: number, where: string): InspectModel | null {
   const f = s.firms.find((x) => x.id === id);
   if (!f) return null;
-  if (!f.active) return { kind: 'firm', title: f.name, subtitle: where, sections: [], note: 'No firm has been founded here yet. Firms open when households move up in class.' };
+  if (!f.active) return { kind: 'firm', title: f.name, subtitle: where, sections: [], note: text('inspect', 'firm_inactive') };
   const sector = f.sector === 'food' ? 'Food' : f.sector === 'services' ? 'Services' : 'Goods';
   return { kind: 'firm', title: f.name, subtitle: `${sector} firm. ${where}`, sections: [
     { heading: 'Firm', rows: [{ label: 'Owner', value: OWNER_TEXT(f.owner, s) }, { label: 'Workers', value: compact(f.workers) }, { label: 'Wage', value: money(f.wage) }, { label: 'Price', value: money(f.price) }] },
@@ -215,12 +215,12 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
     { label: 'Public rent', value: money(s.housing.rentPublic) }, { label: 'Private rent', value: money(s.housing.rentPrivate) },
     { label: 'Occupancy', value: pctWith(s.housing.occupancy, `${s.homes.filter((h) => h.household !== null).length} of ${s.housing.homes} homes occupied`) }] });
   else if (p.kind === 'fire_station') sections.push({ heading: 'Fire cover', rows: [
-    { label: 'Covers', value: `forest within about ${WEATHER_UI.coverageRadius} tiles` }, { label: 'Effect', value: 'fires there burn shorter and spread less' },
+    { label: 'Covers', value: fill(text('inspect', 'fire_station_covers'), { radius: weatherOf(s)?.coverageRadius ?? 0 }) }, { label: 'Effect', value: text('inspect', 'fire_station_effect') },
     { label: 'Fire risk now', value: forecastView(s)?.fireWord ?? 'unknown' }] });
   else {
     const pl = plantAt(s, p);
     sections.push({ heading: 'This plant', rows: [
-      ...(pl ? [{ label: 'Capacity', value: pl.capacityText, hint: UNIT_HELP(s.energy) }, { label: 'Share of the grid', value: pctWith(pl.outputShare, `${pl.capacityText} of ${energyText(plantRows(s.energy).reduce((a, r) => a + r.capacity, 0), s.energy)}`) }] : []),
+      ...(pl ? [{ label: 'Capacity', value: pl.capacityText, hint: unitHelp(s.energy) }, { label: 'Share of the grid', value: pctWith(pl.outputShare, `${pl.capacityText} of ${energyText(plantRows(s.energy).reduce((a, r) => a + r.capacity, 0), s.energy)}`) }] : []),
       { label: 'Emits', value: `${tonnes(pl?.emissions ?? t?.emissionsMonthly ?? 0)} per month` }] },
     { heading: 'Energy (whole town)', rows: [
     { label: 'Fossil share of capacity', value: pctWith(fossilShareOf(s.energy), `${s.energy.supply.filter((x) => x.kind === 'fossil').length} of ${s.energy.supply.length} plants`) }, { label: 'Renewable share', value: pctWith(s.energy.renewableShare, `${s.energy.supply.filter((x) => x.kind === 'renewable').length} of ${s.energy.supply.length} plants`) },
@@ -228,8 +228,8 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
   }
   const already = draft.some((d) => d.command.type === 'remove' && sameTile(d.command.tile, p));
   return {
-    kind: 'building', title: INFRA_LABEL[p.kind], subtitle: `Built. ${where}`, sections,
+    kind: 'building', title: INFRA_LABEL(p.kind), subtitle: `Built. ${where}`, sections,
     removable: { kind: p.kind, tile: { x: p.x, y: p.y }, already },
-    note: 'Removal is queued like any move and costs political capital.',
+    note: text('inspect', 'building'),
   };
 }

@@ -1,5 +1,6 @@
 import type { AccountRef, AgentsCatalog, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
 import type { SimPort } from '../sim-port/port';
+import { setCatalog } from './catalog';
 import { relabelLevers } from './labels';
 import { withCommand, withoutItem, withPreviews } from './draft';
 import { describeTileReason, inBounds, layoutOf, pendingAt, sameTile, selectionAt, tileAt, tileKey, type Selection, type Tile } from './map';
@@ -84,6 +85,9 @@ function safe<T>(f: () => Result<T>): Result<T> {
 }
 
 export function createGame(port: SimPort): Game {
+  // The UI catalog (bands, labels, explanatory text) comes from the simulation; without it there is no text to show.
+  const cat = safe(() => port.catalog());
+  if (cat.ok) setCatalog(cat.value);
   let assumptionsCache: Result<AssumptionTopic[]> | null = null;
   let agentsCache: Result<AgentsCatalog> | null = null;
   const liveAvailable = port.liveTurn !== false;
@@ -92,7 +96,7 @@ export function createGame(port: SimPort): Game {
     mode: 'relaxed', liveAvailable, live: null, savedClock: null,
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
     playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
-    buildKind: null, validTiles: null, lens: 'none', camera: 0, error: null, dismissedCrises: {},
+    buildKind: null, validTiles: null, lens: 'none', camera: 0, error: cat.ok ? null : { ...cat.error, where: 'new_game' }, dismissedCrises: {},
   });
   const get = store.get;
   const patch = (p: Partial<GameState>) => store.set({ ...get(), ...p });
@@ -293,7 +297,7 @@ export function createGame(port: SimPort): Game {
       const res = safe(() => port.advanceMonth());
       if (!res.ok) return res;
       const l = get().live;
-      if (l) patch({ snapshot: res.value.snapshot, live: { ...l, open: true, monthsDone: (res.value.snapshot.turnPhase?.monthsDone ?? res.value.month + 1) as LiveSlice['monthsDone'], frame: res.value.frame, frameSeq: l.frameSeq + 1 } });
+      if (l) patch({ snapshot: res.value.snapshot, live: { ...l, open: true, monthsDone: (res.value.snapshot.turnPhase?.monthsDone ?? res.value.month + 1), frame: res.value.frame, frameSeq: l.frameSeq + 1 } });
       return res;
     },
     liveFinish() {

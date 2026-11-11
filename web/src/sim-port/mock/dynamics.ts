@@ -109,7 +109,7 @@ export function checkOutcome(s: MockState): { outcome: GameOutcome; event: 'budg
   if (s.cumulativeTonnes >= GEN.carbon.budget) return { outcome: 'budget_exhausted', event: 'budget_exhausted' };
   if (s.legitimacy <= 0) return { outcome: { collapse: 'legitimacy_zero' }, event: 'legitimacy_zero' };
   if (s.unemployment > GEN.collapseUnemployment) return { outcome: { collapse: 'mass_unemployment' }, event: 'mass_unemployment' };
-  if (s.bank.failed && s.unemployment > 0.2) return { outcome: { collapse: 'bank_failure_cascade' }, event: 'bank_failure_cascade' };
+  if (s.bank.failed && s.unemployment > GEN.bankCascadeUnemployment) return { outcome: { collapse: 'bank_failure_cascade' }, event: 'bank_failure_cascade' };
   return null;
 }
 

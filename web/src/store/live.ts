@@ -50,8 +50,9 @@ const MAX_FAILS = 3;
  * Errors never deadlock: a turn_state error is resynced; anything else is reported and, after repeated failures, the loop stops.
  */
 export function createLive(game: Game, config: ClockConfig, now: () => number = () => Date.now()): Live {
-  const turnsPerYear = () => game.state.get().snapshot?.game.turnsPerYear ?? 4;
-  const clock = createClock(config, now, turnsPerYear());
+  // The calendar comes from the wire (game.turnsPerYear, game.ticksPerTurn). Before a game exists the clock is idle and these values are never used.
+  const calendar = () => game.state.get().snapshot?.game ?? { turnsPerYear: 1, ticksPerTurn: 1 };
+  const clock = createClock(config, now, calendar);
   let running = false;
   let started = false;
   let fails = 0;
@@ -67,13 +68,13 @@ export function createLive(game: Game, config: ClockConfig, now: () => number = 
       date: snap && started ? gameDate(snap.turn + c.frac, snap.game) : null,
       playing: snap && playingTurn !== null ? quarterLabel(playingTurn, snap.game) : null,
       planning: snap && started ? quarterLabel(Math.min(snap.game.lastTurn, (playingTurn ?? snap.turn) + 1), snap.game) : null,
-      markers: [1 / 3, 2 / 3],
+      markers: Array.from({ length: snap ? snap.game.ticksPerTurn - 1 : 0 }, (_, i) => (i + 1) / snap!.game.ticksPerTurn),
     };
   }
   const refresh = () => {
     view.set(compute());
     const c = clock.state();
-    liveClock.set({ active: running, monthT: Math.min(1, Math.max(0, c.frac * 3 - c.month)), paused: c.phase === 'paused' });
+    liveClock.set({ active: running, monthT: Math.min(1, Math.max(0, c.frac * calendar().ticksPerTurn - c.month)), paused: c.phase === 'paused' });
   };
   clock.subscribe(refresh);
   game.state.subscribe(refresh);
@@ -106,7 +107,8 @@ export function createLive(game: Game, config: ClockConfig, now: () => number = 
 
   /** After a game over inside a month: the sim still needs its remaining months and the finish to close the turn. */
   function closeAfterGameOver() {
-    for (let i = 0; i < 3 && game.state.get().live?.monthsDone !== 3; i++) game.liveMonth();
+    const months = calendar().ticksPerTurn;
+    for (let i = 0; i < months && game.state.get().live?.monthsDone !== months; i++) game.liveMonth();
     game.liveFinish();
     halt();
   }

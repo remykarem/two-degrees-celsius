@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMockSim } from '../src/sim-port/mock';
 import { capitalGauge, circularFlow, financeEmpty, financeSections, fmtFin } from '../src/panels/finance';
-import { energyBalance, energyText, intensityText, plantAt, plantRows, UNIT_HELP, unitLabel } from '../src/panels/energy';
+import { energyBalance, energyText, intensityText, plantAt, plantRows, unitHelp, unitLabel } from '../src/panels/energy';
 import { METRIC_LEDGER } from '../src/panels/metrics';
 import { eventLedger } from '../src/panels/results';
 import { fossilShareOf } from '../src/store';
@@ -35,8 +35,8 @@ describe('finance derivations', () => {
     const noQ = structuredClone(played);
     delete (noQ.finance as Partial<typeof noQ.finance>).quarter;
     expect(row(noQ, 'government', 'rev-wageTax').quarter).toBeNull();
-    expect(circularFlow(noQ.finance).approx).toBe(true);
-    expect(circularFlow(played.finance).approx).toBe(false);
+    expect(circularFlow(noQ.finance, noQ.game.ticksPerTurn).approx).toBe(true);
+    expect(circularFlow(played.finance, played.game.ticksPerTurn).approx).toBe(false);
   });
   it('ledger links: government revenue and spending rows open the government ledger with the right kind; the bank rows the bank', () => {
     expect(row(played, 'government', 'rev-wageTax').ledger).toEqual({ account: { kind: 'government' }, kind: 'tax' });
@@ -76,7 +76,7 @@ describe('finance derivations', () => {
     expect(capitalGauge({ ...bank, capitalRatio: 0, capitalRatioLimit: 0 }).at).toBe(0);
   });
   it('the circular flow has only positive edges between the four sectors', () => {
-    const { edges } = circularFlow(played.finance);
+    const { edges } = circularFlow(played.finance, played.game.ticksPerTurn);
     expect(edges.length).toBeGreaterThan(3);
     expect(edges.every((e) => e.amount > 0 && e.from !== e.to)).toBe(true);
     expect(edges.find((e) => e.from === 'households' && e.to === 'firms')!.amount).toBeCloseTo(played.finance.quarter!.householdSpending, 1);
@@ -99,7 +99,7 @@ describe('energy formatting and the unit label', () => {
     expect(unitLabel({ unit: 'MWh/month' })).toBe('MWh/month');
     expect(unitLabel({ unit: '' })).toBe('MWh/month');
     expect(energyText(12.34, { unit: 'MWh' })).toBe('12.3 MWh/month');
-    expect(UNIT_HELP({ unit: 'MWh' })).toMatch(/MWh\/month.*megawatt-hours/);
+    expect(unitHelp({ unit: 'MWh' })).toMatch(/MWh\/month.*megawatt-hours/);
     expect(intensityText({ ...e, intensity: 0.5, unit: 'MWh' })).toBe('0.50 t CO2 per MWh');
   });
   it('lists plants with capacity, share of the grid and emissions; shares add to 1', () => {

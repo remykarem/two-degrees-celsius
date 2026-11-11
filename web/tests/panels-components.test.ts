@@ -32,7 +32,7 @@ describe('component smoke (server render)', () => {
     expect(html(PlanTray, { game: g })).toContain('Carbon price → $50/t');
     setUi({ drawerOpen: true });
     const d = html(PolicyDrawer, { game: g });
-    for (const label of ['Taxes', 'Money and credit', 'Labour and welfare', 'Nature and carbon', 'Government spending']) expect(d).toContain(label);
+    for (const label of ['Taxes', 'Money and credit', 'Labour and welfare', 'Climate and energy', 'Nature and commons', 'Government spending']) expect(d).toContain(label);
     expect(d).toContain('Draft: costs');
     setUi({ drawerOpen: false });
   });

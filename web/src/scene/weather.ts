@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { WEATHER_UI } from '../store/weather';
 import { nearFire, type WeatherLook } from '../store/scene-weather';
 import { hash01, worldOf } from './coords';
 import { mix } from './palette';
@@ -85,12 +84,12 @@ export class WeatherLayer {
     this.fire = planFire(look, size);
     this.hazePlan = planHaze(look, stands);
   }
-  /** Show the coverage ring around a fire station tile (or hide it with null). The radius is WEATHER_UI.coverageRadius tiles. */
-  setCover(tile: { x: number; y: number } | null, size: number) {
+  /** Show the coverage ring around a fire station tile (or hide it with null). The radius (tiles) is the wire's weather.coverageRadius. */
+  setCover(tile: { x: number; y: number } | null, size: number, radius: number) {
     this.ring.visible = this.disc.visible = !!tile;
     if (!tile) return;
     const [x, , z] = worldOf(tile, size);
-    const r = WEATHER_UI.coverageRadius + 0.5;
+    const r = radius + 0.5;
     for (const m of [this.ring, this.disc]) { m.position.set(x, 0.05, z); m.scale.set(r, 1, r); }
   }
 

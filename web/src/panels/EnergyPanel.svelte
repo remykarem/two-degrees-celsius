@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Game } from '../store';
-  import { energyBalance, energyText, intensityText, plantRows, UNIT_HELP, unitLabel } from './energy';
+  import { energyBalance, energyText, intensityText, plantRows, unitHelp, unitLabel } from './energy';
   import { pct, tonnes } from './format';
   import { pctWith } from './backing';
   import HowButton from './HowButton.svelte';
@@ -16,7 +16,7 @@
 
 {#if e && bal}
   <section class="energy" aria-labelledby="energy-h" data-testid="energy-panel">
-    <h3 id="energy-h">Power grid <HowButton anchor="energy" label="the power grid" /> <button type="button" class="unit" title={UNIT_HELP(e)} aria-label="Unit: {unitLabel(e)}. {UNIT_HELP(e)}">unit: {unitLabel(e)} (?)</button></h3>
+    <h3 id="energy-h">Power grid <HowButton anchor="energy" label="the power grid" /> <button type="button" class="unit" title={unitHelp(e)} aria-label="Unit: {unitLabel(e)}. {unitHelp(e)}">unit: {unitLabel(e)} (?)</button></h3>
     {#if bal.warning}<p class="warn" role="alert">{bal.warning}</p>{/if}
     <dl class="kv">
       <dt>Capacity</dt><dd>{energyText(bal.capacity, e)}</dd>

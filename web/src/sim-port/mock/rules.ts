@@ -15,6 +15,17 @@ export function numericValue(l: LeverData, v: unknown): number | null {
 
 export const activeNumeric = (s: MockState, l: LeverData): number => numericValue(l, s.policy[l.key]) ?? 0;
 
+/** Mirrors sim_model::lobbying::expected_effective: what a lobbied lever would be in force at today's net lobbying. */
+export function expectedEffective(s: MockState, c: Command): { expectedEffective?: number } {
+  if (c.type !== 'set_policy' || typeof c.value !== 'number') return {};
+  const net = s.netLobby;
+  switch (c.lever) {
+    case 'carbon_price': case 'wealth_tax': case 'tax_profit': return { expectedEffective: c.value * (1 - net) };
+    case 'emissions_cap': return { expectedEffective: c.value > 0 ? c.value / (1 - net) : 0 };
+    default: return {};
+  }
+}
+
 /** Mirrors PolicyChange::opposed_by_capital in crates/sim-types/src/enums.rs. */
 export function opposedByCapital(s: MockState, l: LeverData, next: number): boolean {
   const active = activeNumeric(s, l);
@@ -131,7 +142,7 @@ export function evaluate(s: MockState, commands: Command[]): Evaluation {
       accepted.push(item);
     }
     previews.push({
-      command, pc: c.pc, money: c.money, leadTime: c.leadTime, effectiveTurn: s.turn + c.leadTime, opposition: c.opposition, blocked,
+      command, pc: c.pc, money: c.money, leadTime: c.leadTime, effectiveTurn: s.turn + c.leadTime, opposition: c.opposition, ...expectedEffective(s, command), blocked,
       tileValid: c.tileValid, ...(c.tileReason ? { tileReason: c.tileReason } : {}),
     });
   }

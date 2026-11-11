@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { configFromSearch, createClock, DEFAULT_CONFIG, gameDate, secondsPerQuarter, type ClockConfig, type ClockEvent } from '../src/store';
 
+/** The calendar the wire sends for the default content (4 turns a year, 3 monthly ticks a turn). */
+const CAL = () => ({ turnsPerYear: 4, ticksPerTurn: 3 });
+
 /** A fake time source: `advance(s)` moves time forward by s seconds in 100 ms ticks, like the app's interval. */
 function rig(over: Partial<ClockConfig> = {}) {
   let t = 1_000_000;
   const cfg: ClockConfig = { ...DEFAULT_CONFIG, realSecondsPerGameDay: 0.2, ...over }; // quarter = 18.25 s
-  const c = createClock(cfg, () => t);
+  const c = createClock(cfg, () => t, CAL);
   const events: ClockEvent[] = [];
   c.onEvent((e) => events.push(e));
   const advance = (s: number) => { for (let i = 0; i < Math.round(s * 10); i++) { t += 100; c.tick(); } };
@@ -129,7 +132,7 @@ describe('clock state machine', () => {
   });
   it('one very long gap (sleep) is capped instead of skipping quarters', () => {
     let t = 0;
-    const c = createClock({ ...DEFAULT_CONFIG, realSecondsPerGameDay: 0.2 }, () => t);
+    const c = createClock({ ...DEFAULT_CONFIG, realSecondsPerGameDay: 0.2 }, () => t, CAL);
     const ev: ClockEvent[] = [];
     c.onEvent((e) => ev.push(e));
     t += 3_600_000;

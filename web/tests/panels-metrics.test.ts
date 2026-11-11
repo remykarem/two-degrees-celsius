@@ -42,7 +42,7 @@ describe('metrics', () => {
   });
   it('runway with zero emissions never runs out', () => {
     const s = structuredClone(played(1));
-    s.nature.netEmissionsMonthly = 0;
+    s.breakdowns!.emissions.runway = { perTurn: 0, runsOutBeforeEnd: false }; // the sim reports no run-out when nothing is emitted
     const r = runway(s)!;
     expect(r.runOutTurn).toBeNull();
     expect(runwayText(r, String)).toMatch(/do not use up/);

@@ -1,5 +1,5 @@
 import type { ClassKey, Snapshot } from '../contract';
-import { fossilShareOf, type Lens, type MapLayout } from '../store';
+import { fossilShareOf, text, type Lens, type MapLayout } from '../store';
 import type { LensLegend } from '../store/scene-bus';
 import { centreOf, tileKey } from './coords';
 import type { EntityDesc } from './entities';
@@ -195,10 +195,10 @@ export function legendFor(lens: Lens, ctx: LensCtx): LensLegend {
         notes: ['Orange and blue are used so the lens works for colour-blind players; arrows of tokens show direction.'] };
     case 'fire': {
       const fc = ctx.snapshot ? ctx.snapshot.weather?.forecast : undefined;
-      return { lens, label: 'Fire and drought risk', scale: 'gradient', stops: grad(FIRE_RAMP, ['low', '', '', 'burning or very high']),
+      return { lens, label: text('weather', 'lens_title'), scale: 'gradient', stops: grad(FIRE_RAMP, ['low', '', '', 'burning or very high']),
         lowLabel: 'Low risk', highLabel: 'High risk',
-        meaning: `Forest tiles are coloured by how likely they are to catch fire: the forecast${fc ? ` (fire risk ${fc.fireRisk}, drought risk ${fc.droughtRisk})` : ''}, how much dry forest is around, and whether a fire station covers them. Under a drought the ground turns straw-coloured; blue-grey ground is covered by a fire station.`,
-        notes: ['Burning tiles are the darkest red; regrowing tiles are low risk.', 'A fire station halves the risk of the forest within its cover.'] };
+        meaning: `${text('weather', 'lens_note')}${fc ? ` Forecast: fire risk ${fc.fireRisk}, drought risk ${fc.droughtRisk}.` : ''} Under a drought the ground turns straw-coloured; blue-grey ground is covered by a fire station.`,
+        notes: ['Burning tiles are the darkest red; burnt, regrowing tiles are not at risk.'] };
     }
     default:
       return { lens: 'none', label: 'No lens', scale: 'none', stops: [], meaning: 'The town as it is. Home colours hint at class; use a lens for detail.', notes: [] };

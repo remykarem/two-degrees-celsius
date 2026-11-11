@@ -84,10 +84,10 @@
     {#if model.removable}
       <section class="rm">
         {#if model.removable.already}
-          <p>Removal of this {INFRA_LABEL[model.removable.kind].toLowerCase()} is in your plan.</p>
+          <p>Removal of this {INFRA_LABEL(model.removable.kind).toLowerCase()} is in your plan.</p>
           <Button onclick={undoRemoval} disabled={!canEdit}>Undo removal</Button>
         {:else}
-          <Button onclick={queueRemoval} disabled={!canEdit} title="Queue removal of this tile's building">Remove {INFRA_LABEL[model.removable.kind].toLowerCase()}…</Button>
+          <Button onclick={queueRemoval} disabled={!canEdit} title="Queue removal of this tile's building">Remove {INFRA_LABEL(model.removable.kind).toLowerCase()}…</Button>
           {#if !canEdit}<p class="hint">Removal can be queued in Review or Plan.</p>{/if}
         {/if}
       </section>

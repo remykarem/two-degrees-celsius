@@ -22,7 +22,7 @@ describe('mock data is generated from content/', () => {
     expect(GEN.carbon.budget).toBe(900);
     expect(GEN.policyStart.tax_wage).toBe(0.3);
     expect(GEN.policyStart.min_wage).toBe(1200);
-    expect(GEN.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4 });
+    expect(GEN.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4, ticksPerTurn: 3 });
   });
   it('the layout comes from content/initial_town.json: 20 people, 8 households, 7 homes, 4 firms, a 12 x 12 map', () => {
     expect(GEN.households).toHaveLength(8);

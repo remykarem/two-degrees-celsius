@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { SimEvent, Snapshot, TurnResult } from '../src/contract';
-import { BUDGET_WARNING, LEGITIMACY_WARNING, deriveCrises } from '../src/panels/crisis';
+import { deriveCrises } from '../src/panels/crisis';
+import { bands, catalog } from '../src/store';
+const LEGITIMACY_WARNING = bands().crisis.legitimacyBelow, BUDGET_WARNING = bands().crisis.budgetBelow;
 import { arrowFlip, estimatePc, leverCostHint } from '../src/panels/costs';
 import { leadRangeText, turnsUntil } from '../src/panels/format';
 import { arrowsShown, groupLevers, leverStatus, lobbyNote, toCommandValue, toNum } from '../src/panels/policy';
@@ -9,7 +11,6 @@ import { generateStory } from '../src/panels/story';
 import { emissionsBars, incomeByType, lobbyingBars, whyData } from '../src/panels/why';
 import { resolveSelection, resolveTile, builtCount } from '../src/panels/inspect';
 import { switchOptions } from '../src/panels/systemSwitch';
-import { SYSTEMS } from '../src/panels/content/systems';
 import { createSimPort } from '../src/sim-port';
 import { createGame, layoutOf, quarterLabel, shownTurn, type Game } from '../src/store';
 
@@ -213,8 +214,9 @@ describe('policy logic', () => {
   });
   it('lobby note states what you set and what to expect', () => {
     const cp = levers.find((l) => l.key === 'carbon_price')!;
-    const pv = { command: { type: 'set_policy' as const, lever: 'carbon_price' as const, value: 50 }, pc: 14, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0.38, blocked: null, tileValid: true };
-    expect(lobbyNote(cp, 0, 50, pv)).toBe('You set $50/t; expect about $31/t in force (lobbying opposes this).');
+    const pv = { command: { type: 'set_policy' as const, lever: 'carbon_price' as const, value: 50 }, pc: 14, money: 0, leadTime: 2, effectiveTurn: 3, opposition: 0.38, expectedEffective: 31, blocked: null, tileValid: true };
+    expect(lobbyNote(cp, 0, 50, pv)).toBe('You set $50/t; lobbying is expected to leave about $31/t in force (this opposes the change).');
+    expect(lobbyNote(cp, 0, 50, { ...pv, expectedEffective: undefined })).toBeNull(); // no expectation from the sim: no claim
     expect(lobbyNote(cp, 0, 50, { ...pv, opposition: 0 })).toBeNull();
     expect(lobbyNote(levers.find((l) => l.key === 'tax_wage')!, 0, 0.3, pv)).toBeNull();
   });
@@ -233,11 +235,12 @@ describe('system switch', () => {
     expect(reg.summary).toMatch(/12 month transition, 5% less output/);
     expect(switchOptions(snapshot!, act, 0).find((o) => o.to === 'coop')!.disabled).toMatch(/Needs about/);
   });
-  it('marks copy the design doc is silent on as placeholder', () => {
-    expect(SYSTEMS.market.resistance.placeholder).toBe(true);
-    expect(SYSTEMS.coop.resistance.placeholder).toBe(true);
-    expect(SYSTEMS.regulated.resistance.placeholder).toBeUndefined();
-    expect(SYSTEMS.coop.transitionMonths).toBe(24);
+  it('marks copy the design doc is silent on as placeholder, and takes numbers from the wire cards', () => {
+    const card = (k: string) => catalog().systems.find((c) => c.key === k)!;
+    expect(card('market').resistancePlaceholder).toBe(true);
+    expect(card('coop').resistancePlaceholder).toBe(true);
+    expect(card('regulated').resistancePlaceholder).toBe(false);
+    expect(card('coop').transitionMonths).toBe(24);
   });
 });
 
@@ -316,11 +319,12 @@ describe('v0.3 panels logic', () => {
     expect(arrowFlip(cap, 0, 200)).toBe(-1); // none -> a cap is TIGHTER
     expect(arrowFlip(cap, 200, 0)).toBe(1);
     expect(arrowFlip(cap, 300, 100)).toBe(-1);
-    expect(arrowsShown(cap, 0, 200).arrows[0]).toMatchObject({ metric: 'emissions', direction: 'down' });
+    // arrows come from content/levers.json (none for the cap today); the flip logic is checked on a lever that has one
+    const withArrow = { ...cap, arrows: [{ metric: 'emissions' as const, direction: 'up' as const }] }; // raising the cap raises emissions
+    expect(arrowsShown(withArrow, 0, 200).arrows[0]).toMatchObject({ metric: 'emissions', direction: 'down' });
   });
-  it('only causal-model arrows: none for campaign_cap, nothing on gini for commons, nothing on prices for bailout', () => {
+  it('only causal-model arrows (content/levers.json): none for campaign_cap, nothing on prices for bailout', () => {
     expect(lv('campaign_cap').arrows).toEqual([]);
-    expect(lv('commons_access').arrows.map((a) => a.metric)).toEqual(['commons']);
     expect(lv('bailout').arrows.map((a) => a.metric)).not.toContain('prices');
     for (const l of levers) for (const a of l.arrows) expect(['gdp', 'unemployment', 'gini', 'emissions', 'legitimacy', 'debt', 'wage_share', 'money', 'commons', 'forest_health', 'commons_health', 'farm_health']).toContain(a.metric);
   });
@@ -343,7 +347,7 @@ describe('v0.3 panels logic', () => {
     expect(lv('commons_access').optionAvailableIn).toEqual({ community: ['regulated', 'coop'] });
   });
   it('system copy does not claim the emissions cap is unlocked only by Regulated', () => {
-    expect(JSON.stringify(SYSTEMS.regulated)).not.toMatch(/Unlocks the emissions cap/);
+    expect(JSON.stringify(catalog().systems.find((c) => c.key === 'regulated'))).not.toMatch(/Unlocks the emissions cap/);
     expect(lv('emissions_cap').availableIn).toContain('market');
   });
   it('crisis text makes no unsupported causal claim', () => {

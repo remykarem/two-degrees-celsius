@@ -1,10 +1,9 @@
 import type { AccountRef, LedgerKind, HistoryPoint, MetricKey, Snapshot } from '../contract';
 import { money, pct, tonnes, trendOf, type Trend } from './format';
-import { HEALTH_WORD, healthLevel } from '../store/weather';
+import { healthWord } from '../store/weather';
+import { text } from '../store/catalog';
 import { unemploymentCount } from './people';
 import { budgetOf, debtBacking, forestTiles, legitimacyBacking, richestBacking, shareBacking, stockOf } from './backing';
-
-const healthWord = (v: number) => HEALTH_WORD[healthLevel(v)];
 
 export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People' | 'Finance' | 'Policies' | 'Industry';
 export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People', 'Finance', 'Policies', 'Industry'];
@@ -17,8 +16,6 @@ export interface MetricDef {
   metric: MetricKey;
   tab: MetricTab;
   label: string;
-  /** Plain-language one-liner shown as a tooltip. */
-  hint: string;
   value(s: Snapshot): number;
   fmt(v: number): string;
   /** Series for the sparkline from snapshot.history, or null when history does not carry it. */
@@ -31,31 +28,31 @@ export interface MetricDef {
 }
 
 export const METRICS: MetricDef[] = [
-  { id: 'gdp', metric: 'gdp', tab: 'Economy', label: 'GDP (real, per year)', hint: 'Total output, adjusted for prices', value: (s) => s.indicators.gdpRealAnnual, fmt: money, series: (h) => h.gdpRealAnnual, goodUp: true, why: 'income' },
-  { id: 'gpi', metric: 'gpi', tab: 'Economy', label: 'GPI (per year)', hint: 'Genuine progress: output adjusted for social and environmental costs', value: (s) => s.indicators.gpiAnnual, fmt: money, series: (h) => h.gpiAnnual, goodUp: true, why: null },
-  { id: 'unemployment', metric: 'unemployment', tab: 'Economy', label: 'Unemployment', hint: 'Share of the labour force without a job', value: (s) => s.indicators.unemployment, fmt: (v) => pct(v, 1), series: (h) => h.unemployment, goodUp: false, why: null,
+  { id: 'gdp', metric: 'gdp', tab: 'Economy', label: 'GDP (real, per year)', value: (s) => s.indicators.gdpRealAnnual, fmt: money, series: (h) => h.gdpRealAnnual, goodUp: true, why: 'income' },
+  { id: 'gpi', metric: 'gpi', tab: 'Economy', label: 'GPI (per year)', value: (s) => s.indicators.gpiAnnual, fmt: money, series: (h) => h.gpiAnnual, goodUp: true, why: null },
+  { id: 'unemployment', metric: 'unemployment', tab: 'Economy', label: 'Unemployment', value: (s) => s.indicators.unemployment, fmt: (v) => pct(v, 1), series: (h) => h.unemployment, goodUp: false, why: null,
     detail: (s) => { const u = unemploymentCount(s); return `${u.unemployed} of ${u.labourForce} unemployed`; } },
-  { id: 'avg_income', metric: 'avg_income', tab: 'Economy', label: 'Average income per person', hint: 'Total household income per person per month, children and retired people included', value: (s) => s.indicators.avgIncomePerPerson, fmt: money, series: (h) => h.avgIncomePerPerson, goodUp: true, why: 'income' },
-  { id: 'median_income', metric: 'median_income', tab: 'Economy', label: 'Median income per person', hint: 'The middle person: half the town earns more, half less. Compare with the average to see skew', value: (s) => s.indicators.medianIncomePerPerson, fmt: money, series: (h) => h.medianIncomePerPerson, goodUp: true, why: 'income' },
-  { id: 'debt', metric: 'debt', tab: 'Economy', label: 'Public debt / GDP', hint: 'Government debt relative to a year of output', value: (s) => s.government.debtToGdp, fmt: (v) => pct(v, 1), series: (h) => h.debtToGdp, goodUp: false, why: null, detail: debtBacking },
-  { id: 'wage_share', metric: 'wage_share', tab: 'Economy', label: 'Wage share', hint: 'Share of income paid as wages', value: (s) => s.indicators.wageShare, fmt: (v) => pct(v, 1), series: null, goodUp: true, why: 'income', detail: (s) => shareBacking(s, 'wage') },
-  { id: 'emissions', metric: 'emissions', tab: 'Ecology', label: 'Emissions, net (per month)', hint: 'Net emissions in the latest month: sources minus the forest sink. Open "how?" for the turn total, the accumulated total and the sources.', value: (s) => s.breakdowns?.emissions.month.headline ?? s.nature.netEmissionsMonthly, fmt: tonnes, series: (h) => h.emissions, goodUp: false, why: 'emissions',
+  { id: 'avg_income', metric: 'avg_income', tab: 'Economy', label: 'Average income per person', value: (s) => s.indicators.avgIncomePerPerson, fmt: money, series: (h) => h.avgIncomePerPerson, goodUp: true, why: 'income' },
+  { id: 'median_income', metric: 'median_income', tab: 'Economy', label: 'Median income per person', value: (s) => s.indicators.medianIncomePerPerson, fmt: money, series: (h) => h.medianIncomePerPerson, goodUp: true, why: 'income' },
+  { id: 'debt', metric: 'debt', tab: 'Economy', label: 'Public debt / GDP', value: (s) => s.government.debtToGdp, fmt: (v) => pct(v, 1), series: (h) => h.debtToGdp, goodUp: false, why: null, detail: debtBacking },
+  { id: 'wage_share', metric: 'wage_share', tab: 'Economy', label: 'Wage share', value: (s) => s.indicators.wageShare, fmt: (v) => pct(v, 1), series: null, goodUp: true, why: 'income', detail: (s) => shareBacking(s, 'wage') },
+  { id: 'emissions', metric: 'emissions', tab: 'Ecology', label: 'Emissions, net (per month)', value: (s) => s.breakdowns?.emissions.month.headline ?? s.nature.netEmissionsMonthly, fmt: tonnes, series: (h) => h.emissions, goodUp: false, why: 'emissions',
     detail: (s) => { const e = s.breakdowns?.emissions; return e ? `this turn ${tonnes(e.turn.net)}; accumulated ${tonnes(e.cumulative.tonnes)} of ${tonnes(e.cumulative.budget)}` : `accumulated ${tonnes(s.nature.cumulativeTonnes)}`; } },
-  { id: 'budget', metric: 'budget', tab: 'Ecology', label: 'Carbon budget left', hint: 'Share of the carbon budget not yet used', value: (s) => s.indicators.budgetShare, fmt: (v) => pct(v, 1), series: (h) => h.budgetShare, goodUp: true, why: 'emissions', detail: budgetOf },
-  { id: 'temperature', metric: 'temperature', tab: 'Ecology', label: 'Temperature rise', hint: 'Degrees C above the starting level', value: (s) => s.indicators.temperature, fmt: (v) => `${v.toFixed(2)} C`, series: null, goodUp: false, why: 'emissions' },
-  { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', hint: 'Forest stock, as a share of its maximum', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.forestStock, s.nature.forest) ?? forestTiles(s) },
-  { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', hint: 'Health of the shared land', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.commonsStock, s.nature.commons) ?? 'stock not on the wire' },
-  { id: 'forest_health', metric: 'forest_health', tab: 'Ecology', label: 'Forest health', hint: 'How much of the forest is still standing and healthy. Fires burn it down; burnt tiles regrow slowly.', value: (s) => s.nature.forestHealth ?? s.nature.forest, fmt: (v) => pct(v, 0), series: (h) => h.forestHealth, goodUp: true, why: 'emissions',
+  { id: 'budget', metric: 'budget', tab: 'Ecology', label: 'Carbon budget left', value: (s) => s.indicators.budgetShare, fmt: (v) => pct(v, 1), series: (h) => h.budgetShare, goodUp: true, why: 'emissions', detail: budgetOf },
+  { id: 'temperature', metric: 'temperature', tab: 'Ecology', label: 'Temperature rise', value: (s) => s.indicators.temperature, fmt: (v) => `${v.toFixed(2)} C`, series: null, goodUp: false, why: 'emissions' },
+  { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.forestStock, s.nature.forest) ?? forestTiles(s) },
+  { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.commonsStock, s.nature.commons) ?? 'stock not on the wire' },
+  { id: 'forest_health', metric: 'forest_health', tab: 'Ecology', label: 'Forest health', value: (s) => s.nature.forestHealth ?? s.nature.forest, fmt: (v) => pct(v, 0), series: (h) => h.forestHealth, goodUp: true, why: 'emissions',
     detail: (s) => `${healthWord(s.nature.forestHealth ?? s.nature.forest)}: ${forestTiles(s)}` },
-  { id: 'commons_health', metric: 'commons_health', tab: 'Ecology', label: 'Commons health', hint: 'Health of the shared land. Droughts and over-harvesting wear it down.', value: (s) => s.nature.commonsHealth ?? s.nature.commons, fmt: (v) => pct(v, 0), series: (h) => h.commonsHealth, goodUp: true, why: null,
+  { id: 'commons_health', metric: 'commons_health', tab: 'Ecology', label: 'Commons health', value: (s) => s.nature.commonsHealth ?? s.nature.commons, fmt: (v) => pct(v, 0), series: (h) => h.commonsHealth, goodUp: true, why: null,
     detail: (s) => `${healthWord(s.nature.commonsHealth ?? s.nature.commons)}: ${stockOf(s.nature.commonsStock, s.nature.commons) ?? 'commons stock not on the wire'}` },
-  { id: 'farm_health', metric: 'farm_health', tab: 'Ecology', label: 'Farm health', hint: 'How well the farm can produce. It follows forest and commons health and drops in a drought.', value: (s) => s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2), fmt: (v) => pct(v, 0), series: (h) => h.farmHealth, goodUp: true, why: null,
+  { id: 'farm_health', metric: 'farm_health', tab: 'Ecology', label: 'Farm health', value: (s) => s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2), fmt: (v) => pct(v, 0), series: (h) => h.farmHealth, goodUp: true, why: null,
     detail: (s) => `${healthWord(s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2))}: forest ${stockOf(s.nature.forestStock, s.nature.forest) ?? '?'}, commons ${stockOf(s.nature.commonsStock, s.nature.commons) ?? '?'}${s.weather?.drought ? `, drought ${s.weather.drought.monthsLeft} months left` : ''}` },
-  { id: 'climate_stress', metric: 'climate_stress', tab: 'Ecology', label: 'Climate stress', hint: 'Rises as the carbon budget runs down. The more stress, the likelier and fiercer fires and droughts become.', value: (s) => s.weather?.stress ?? 0, fmt: (v) => pct(v, 0), series: (h) => h.climateStress, goodUp: false, why: 'emissions', detail: (s) => `budget left ${budgetOf(s)}` },
-  { id: 'gini', metric: 'gini', tab: 'Society', label: 'Inequality (Gini)', hint: '0 is perfectly equal, 1 is one person has everything', value: (s) => s.indicators.gini, fmt: (v) => v.toFixed(3), series: (h) => h.gini, goodUp: false, why: 'income' },
-  { id: 'top_wealth_share', metric: 'top_wealth_share', tab: 'Society', label: 'Wealth of the richest household', hint: 'Share of all household net worth held by the single richest household', value: (s) => s.indicators.topHouseholdWealthShare, fmt: (v) => pct(v, 0), series: (h) => h.topHouseholdWealthShare, goodUp: false, why: null, detail: richestBacking },
-  { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', hint: 'Average wellbeing, 0 to 1', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: null },
-  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null, detail: legitimacyBacking },
+  { id: 'climate_stress', metric: 'climate_stress', tab: 'Ecology', label: 'Climate stress', value: (s) => s.weather?.stress ?? 0, fmt: (v) => pct(v, 0), series: (h) => h.climateStress, goodUp: false, why: 'emissions', detail: (s) => `budget left ${budgetOf(s)}` },
+  { id: 'gini', metric: 'gini', tab: 'Society', label: 'Inequality (Gini)', value: (s) => s.indicators.gini, fmt: (v) => v.toFixed(3), series: (h) => h.gini, goodUp: false, why: 'income' },
+  { id: 'top_wealth_share', metric: 'top_wealth_share', tab: 'Society', label: 'Wealth of the richest household', value: (s) => s.indicators.topHouseholdWealthShare, fmt: (v) => pct(v, 0), series: (h) => h.topHouseholdWealthShare, goodUp: false, why: null, detail: richestBacking },
+  { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: null },
+  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null, detail: legitimacyBacking },
 ];
 
 /** Metric id -> the wire breakdown (snapshot.breakdowns key) that explains it. Metrics without one open the explorer topic instead. */
@@ -73,6 +70,8 @@ export function seriesOf(def: MetricDef, history: HistoryPoint[]): number[] {
   const v = history.map(def.series);
   return v.every((x) => typeof x === 'number' && Number.isFinite(x)) ? v : [];
 }
+/** The plain-language one-liner shown as a tooltip: authored in content/ui.json `text.metric_hint`. */
+export const metricHint = (id: string): string => text('metric_hint', id);
 export const metricById = (id: string) => METRICS.find((m) => m.id === id);
 export const metricsFor = (tab: MetricTab) => METRICS.filter((m) => m.tab === tab);
 
@@ -101,7 +100,7 @@ export interface Runway {
   /** Total budget at the start (tonnes), derived from remaining / share. */
   total: number;
   remaining: number;
-  /** Tonnes used per turn at the current net rate (3 months). */
+  /** Tonnes used per turn at the current net rate (the sim's breakdowns.emissions.runway). */
   perTurn: number;
   /** Turn on which the budget runs out at the current rate, or null if it does not at this rate. */
   runOutTurn: number | null;
@@ -113,19 +112,20 @@ export interface Runway {
   runsOutBeforeEnd: boolean;
 }
 
+/** The budget runway as the simulation computes it (`breakdowns.emissions.runway`); this only adds the chart series. Null without the breakdowns or when the budget is gone. */
 export function runway(s: Snapshot): Runway | null {
   const share = s.indicators.budgetShare;
   const remaining = s.indicators.remainingBudget;
-  if (share <= 0 && remaining <= 0) return null;
+  const r = s.breakdowns?.emissions.runway;
+  if (!r || (share <= 0 && remaining <= 0)) return null;
   const total = share > 0 ? remaining / share : 0;
-  const perTurn = Math.max(0, s.nature.netEmissionsMonthly) * 3;
+  const perTurn = r.perTurn, runOutTurn = r.runOutTurn ?? null;
   const lastTurn = s.game.lastTurn;
   const now = Math.min(s.turn, lastTurn + 1);
-  const runOutTurn = perTurn > 0 ? now + remaining / perTurn : null;
   const actual = s.history.map((h) => ({ turn: h.turn, remaining: h.budgetShare * total }));
   const endTurn = runOutTurn !== null ? Math.min(runOutTurn, lastTurn + 1) : lastTurn + 1;
   const projection = [{ turn: now, remaining }, { turn: endTurn, remaining: Math.max(0, remaining - perTurn * (endTurn - now)) }];
-  return { total, remaining, perTurn, runOutTurn, lastTurn, actual, projection, runsOutBeforeEnd: runOutTurn !== null && runOutTurn <= lastTurn + 1 };
+  return { total, remaining, perTurn, runOutTurn, lastTurn, actual, projection, runsOutBeforeEnd: r.runsOutBeforeEnd };
 }
 
 export function runwayText(r: Runway, label: (turn: number) => string): string {

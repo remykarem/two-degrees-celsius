@@ -1,4 +1,5 @@
 import { fireLabel, nearestLandmark } from '../store/weather';
+import { bands, wordOf } from '../store/catalog';
 import type { ActionInfo, Command, LeverInfo, MetricKey, SimEvent, Snapshot, TurnResult } from '../contract';
 
 export const METRIC_LABEL: Record<MetricKey, string> = {
@@ -77,7 +78,7 @@ export function describeCommand(c: Command, levers: LeverInfo[], actions: Action
 }
 
 /** Plain words for a drought's severity (0..1). */
-export const severityWord = (v: number) => (v < 0.35 ? 'mild' : v < 0.65 ? 'moderate' : 'severe');
+export const severityWord = (v: number) => wordOf(bands().severityWords, v);
 
 /** People are floats in the real sim (2.0000000000000057); show at most one decimal. */
 const n = (v: number) => String(Math.round(v * 10) / 10);

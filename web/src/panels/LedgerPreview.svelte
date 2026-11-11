@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AccountRef } from '../contract';
   import type { Game } from '../store';
-  import { exact, ledgerRows, NO_FILTER, FIRM_REVENUE_NOTE, positionNames, reconcile } from './ledger';
+  import { exact, ledgerRows, NO_FILTER, firmRevenueNote, positionNames, reconcile } from './ledger';
 
   let { game, account }: { game: Game; account: AccountRef } = $props();
   // svelte-ignore state_referenced_locally
@@ -20,7 +20,7 @@
   {:else if page && rec}
     <p class="bal"><span class="badge" class:good={rec.ok} class:bad={!rec.ok} data-testid="reconciliation-badge"><span aria-hidden="true">{rec.ok ? '✓' : '✗'}</span> {rec.ok ? 'Reconciled' : 'Does not reconcile'}</span></p>
     <dl><dt>{names.balance}, opening (turn 0)</dt><dd>{exact(rec.opening)}</dd><dt>{names.balance}, now</dt><dd>{exact(rec.closing)}</dd>{#if rec.openingDebt > 0 || rec.closingDebt > 0}<dt>{names.debt}, opening</dt><dd>{exact(rec.openingDebt)}</dd><dt>{names.debt}, now</dt><dd>{exact(rec.closingDebt)}</dd>{/if}</dl>
-    {#if account.kind === 'firm'}<p class="dim" data-testid="firm-revenue-note">{FIRM_REVENUE_NOTE}</p>{/if}
+    {#if account.kind === 'firm'}<p class="dim" data-testid="firm-revenue-note">{firmRevenueNote()}</p>{/if}
     {#if rows.length}
       <ul class="last" aria-label="Latest transactions">
         {#each rows as r (r.key)}

@@ -267,7 +267,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     // Fire station coverage ring: the hovered or selected station, or the hovered tile while placing one.
     const stationAt = (t: Tile | null) => (t && tileAt(s.snapshot, t)?.kind === 'fire_station' ? t : null);
     const placing = s.buildKind === 'fire_station' && s.hover && !game.tileError(s.hover) ? s.hover : null;
-    weather.setCover(stationAt(s.hover) ?? stationAt(selTile) ?? placing, size);
+    weather.setCover(stationAt(s.hover) ?? stationAt(selTile) ?? placing, size, look.coverageRadius);
 
     const showHover = !!s.hover && s.phase !== 'playback';
     hoverLine.visible = hoverFill.visible = showHover;

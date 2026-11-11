@@ -1,5 +1,5 @@
 import type { ClassKey, ForestState, FirmView, HouseholdView, PlantView, Snapshot } from '../contract';
-import type { DraftItem, MapLayout, Tile } from '../store';
+import { text, type DraftItem, type MapLayout, type Tile } from '../store';
 import type { EntityRef } from '../store/scene-bus';
 import { tileKey, worldOf } from './coords';
 import type { ModelId } from './models';
@@ -38,7 +38,7 @@ const KIND_TINT: Record<string, number> = {
 
 type Building = 'public_housing' | 'fossil_plant' | 'renewable_plant' | 'road' | 'fire_station';
 const INFRA_MODEL: Record<Building, ModelId> = { public_housing: 'public_housing', fossil_plant: 'fossil_plant', renewable_plant: 'renewable_plant', road: 'road_site', fire_station: 'fire_station' };
-const INFRA_LABEL: Record<Building, string> = { public_housing: 'Public housing', fossil_plant: 'Fossil plant', renewable_plant: 'Renewable plant', road: 'Road', fire_station: 'Fire station' };
+const INFRA_LABEL = (k: Building): string => text('infra_label', k);
 
 export const infraModel = (k: Building): ModelId => INFRA_MODEL[k];
 
@@ -94,7 +94,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
   for (const p of layout.placed) {
     out.push({
       key: `p:${tileKey(p)}`, ...at(p), plant: snap?.plants.find((q) => q.tile.x === p.x && q.tile.y === p.y), state: 'normal', turnsLeft: 0, model: INFRA_MODEL[p.kind], tint: KIND_TINT[p.kind]!,
-      ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL[p.kind] },
+      ref: { kind: p.kind, id: null, tile: { x: p.x, y: p.y }, label: INFRA_LABEL(p.kind) },
     });
   }
   for (const q of snap?.pending ?? []) {
@@ -103,7 +103,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     const tl = turnsLeft(q.effectiveTurn, turn);
     out.push({
       key: `q:${q.id}`, ...at(tile), state: 'pending', turnsLeft: tl, model: INFRA_MODEL[q.command.kind], tint: KIND_TINT[q.command.kind]!,
-      ref: { kind: q.command.kind, id: null, tile: { x: tile.x, y: tile.y }, label: INFRA_LABEL[q.command.kind], pendingTurns: tl },
+      ref: { kind: q.command.kind, id: null, tile: { x: tile.x, y: tile.y }, label: INFRA_LABEL(q.command.kind), pendingTurns: tl },
     });
   }
 
@@ -112,7 +112,7 @@ export function planEntities(layout: MapLayout, snap: Snapshot | null, draft: Dr
     if (c.type !== 'place') continue;
     out.push({
       key: `d:${tileKey(c.tile)}`, ...at(c.tile), state: 'draft', turnsLeft: Math.max(1, d.preview.leadTime), model: INFRA_MODEL[c.kind], tint: KIND_TINT[c.kind]!,
-      ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL[c.kind]} (planned)`, pendingTurns: d.preview.leadTime },
+      ref: { kind: c.kind, id: null, tile: { ...c.tile }, label: `${INFRA_LABEL(c.kind)} (planned)`, pendingTurns: d.preview.leadTime },
     });
   }
   return out;

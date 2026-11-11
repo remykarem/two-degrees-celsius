@@ -16,7 +16,7 @@ export {
   type Clock, type ClockConfig, type ClockEvent, type ClockPhase, type ClockState, type GameDate, type GameMode, type PauseReason, type TimeoutPolicy,
 } from './clock';
 export {
-  weatherOf, healthMeters, healthLevel, HEALTH_WORD, RISK_WORD, stressGauge, stressAt, forecastView, forestStateOf, fireTiles, fireSelection, nearestLandmark, fireLabel, WEATHER_UI,
+  weatherOf, healthMeters, healthLevel, healthWord, RISK_WORD, stressGauge, forecastView, forestStateOf, fireTiles, fireSelection, nearestLandmark, fireLabel,
   type HealthMeter, type HealthLevel, type StressGauge, type ForecastView,
 } from './weather';
 export { weatherLook, tileFireRisk, isCovered, nearFire, type WeatherLook } from './scene-weather';
@@ -25,3 +25,4 @@ export { liveClock, type LiveClockFeed } from './scene-live';
 export type { LiveSlice } from './types';
 export { fossilShareOf } from './scene-energy';
 export { uiLabel, relabelLevers } from './labels';
+export { catalog, setCatalog, hasCatalog, bands, text, fill, wordOf, infraLabel, classLabel, classShort, kindLabel, ownerText, ownerWord } from './catalog';

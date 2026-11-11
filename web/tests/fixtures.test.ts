@@ -53,12 +53,12 @@ const HOUSEHOLD = { id: 'number', label: 'string', members: 'array', home: 'null
 const HOME = { id: 'number', tile: 'object', owner: 'string', household: 'nullable', rent: 'number', value: 'number' } as unknown as Shape<HomeView>; // owner is a number or "public"
 (HOME as Record<string, unknown>).owner = 'nullable';
 const PLANT = { id: 'number', kind: 'string', tile: 'object', capacity: 'number', output: 'number', emissionsMonthly: 'number' } satisfies Shape<PlantView>;
-const TILE = { x: 'number', y: 'number', kind: 'string', ref: 'number?', buildable: 'boolean', emissionsMonthly: 'number?', state: 'string?' } satisfies Shape<Tile>;
+const TILE = { x: 'number', y: 'number', kind: 'string', ref: 'number?', buildable: 'boolean', emissionsMonthly: 'number?', state: 'string?', fireRisk: 'number?' } satisfies Shape<Tile>;
 const FIRM = { id: 'number', active: 'boolean', sector: 'string', name: 'string', tile: 'object', owner: 'object', workers: 'number', wage: 'number', price: 'number', output: 'number', emissions: 'number',
   revenue: 'number', profit: 'number', capital: 'number', debt: 'number', greenTech: 'number' } satisfies Shape<FirmView>;
 const TURN = { turn: 'number', accepted: 'array', rejected: 'array', activated: 'array', pcBefore: 'number', pcAfter: 'number', months: 'array', policyGaps: 'array', trace: 'array', snapshot: 'object' } satisfies Shape<TurnResult>;
 const FRAME = { month: 'number', events: 'array', flows: 'object' } satisfies Shape<MonthFrame>;
-const LEVER = { key: 'string', label: 'string', unit: 'string', min: 'number', max: 'number', step: 'number', baseCostPc: 'number', costModel: 'object', zeroMeansNone: 'boolean?', leadTime: 'number',
+const LEVER = { key: 'string', label: 'string', group: 'string', unit: 'string', min: 'number', max: 'number', step: 'number', baseCostPc: 'number', costModel: 'object', zeroMeansNone: 'boolean?', leadTime: 'number',
   lobbied: 'boolean', arrows: 'array', availableIn: 'array', options: 'array?', optionAvailableIn: 'object?' } satisfies Shape<LeverInfo>;
 const ACTION = { key: 'string', label: 'string', baseCostPc: 'number', costModel: 'object?', leadTime: 'number', moneyCost: 'number', availableIn: 'array', needsTile: 'boolean?', tileRule: 'string?' } satisfies Shape<ActionInfo>;
 const PENDING = { id: 'number', command: 'object', submittedTurn: 'number', effectiveTurn: 'number', pcCost: 'number', moneyCost: 'number' } satisfies Shape<PendingItem>;

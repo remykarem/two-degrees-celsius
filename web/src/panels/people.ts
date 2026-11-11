@@ -1,6 +1,7 @@
 import type { ClassKey, HouseholdView, PersonView, Snapshot } from '../contract';
 import type { Selection } from '../store';
 import { money } from './format';
+import { classShort } from '../store/catalog';
 
 export type HouseholdSortKey = 'id' | 'netWorth' | 'income';
 
@@ -19,7 +20,7 @@ export interface HouseholdRow {
   incomeText: string;
 }
 
-export const CLASS_SHORT: Record<ClassKey, string> = { capitalist: 'Capitalist', rentier: 'Rentier', manager: 'Manager', worker: 'Worker', dependent: 'Dependent' };
+export const CLASS_SHORT = classShort;
 
 /** Monthly income of a household from all five sources. */
 export const householdIncome = (h: HouseholdView) => h.income.wages + h.income.dividends + h.income.rent + h.income.interest + h.income.benefits;

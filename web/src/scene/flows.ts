@@ -143,11 +143,11 @@ export function planEmitters(emissions: NonNullable<MonthFlows['emissions']> = [
 
 /** Emissions as a flow list straight from a snapshot, used for ambient smoke outside playback. */
 export function emissionsFromSnapshot(s: Snapshot): NonNullable<MonthFlows['emissions']> {
-  const sum = s.nature.grossEmissionsMonthly * 0.1; // a rough ambient share for household puffs
+  const households = s.breakdowns?.emissions.month.households ?? 0; // the model's own household footprint for the latest month
   return [
     ...s.firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: f.active ? f.emissions : 0 })),
     ...s.plants.map((p) => ({ source: 'plant' as const, tile: { ...p.tile }, tonnes: p.emissionsMonthly })),
-    { source: 'households' as const, tonnes: sum },
+    { source: 'households' as const, tonnes: households },
     { source: 'sink' as const, tonnes: -s.nature.sinkMonthly },
   ];
 }
