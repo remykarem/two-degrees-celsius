@@ -15,8 +15,8 @@ Scope: the Three.js scene only (`web/src/scene/**`, `web/src/store/scene-estate.
 - Debug hook for screenshots: `window.__scene.debugFlight(t | null)` (dev builds) shows the jet at month time `t`.
 - Screenshots: `web/playwright/v7-scene-shots.mjs <outDir> [mock|real] [seed]` (needs `npm run dev -- --port 5180`).
 
-## Found: wire bug (not fixed here, outside scope)
-`MonthFlows` in `crates/sim-api/src/turn.rs` has no `#[serde(rename_all = "camelCase")]`, so the real wire sends `staff_commutes`, while the contract (section 19) and `contract/index.ts` say `staffCommutes`. The scene reads both (`staffCommutesOf`). The fix is one attribute in Rust (and the wasm golden hashes may move); then the fallback can be removed.
+## Fixed: wire bug
+`MonthFlows` in `crates/sim-api/src/turn.rs` lacked `#[serde(rename_all = "camelCase")]`, so the real wire sent `staff_commutes`. Fixed (the other sim-api structs with multi-word fields already rename them); the scene now reads only `staffCommutes`, and `web/tests/fixtures.test.ts` checks that no snapshot, turn or month fixture key contains an underscore (the `policy` lever map excepted).
 
 ## Unverified / rough
 - Only checked at 1440x900 in software GL (SwiftShader); frame rate with the jet not measured separately.

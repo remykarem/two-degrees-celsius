@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ActionInfo, EnergyView, FinanceView, FirmView, LedgerEntry, LedgerPage, HomeView, HouseholdView, Indicators, LeverInfo, MonthFrame, PendingItem, PersonView, PlantView, Snapshot, Tile, TurnResult } from '../src/contract';
@@ -220,5 +220,22 @@ describe('real fixtures against contract v1.4 (finance, energy, ledgers)', () =>
 describe('fixtures presence', () => {
   it('reports whether docs/fixtures/ exists', () => {
     expect(typeof present).toBe('boolean');
+  });
+});
+
+describe('fixture key naming', () => {
+  // Wire bug guard: a Rust struct without serde camelCase leaks snake_case keys (`staff_commutes` instead of `staffCommutes`).
+  it.skipIf(!present)('every object key in the snapshot, turn and month fixtures is camelCase', () => {
+    const bad: string[] = [];
+    const walk = (v: unknown, where: string): void => {
+      if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${where}[${i}]`));
+      else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k.includes('_') && !where.endsWith('.policy')) bad.push(`${where}.${k}`); walk(x, `${where}.${k}`); }
+    };
+    for (const f of readdirSync(dir).filter((n) => /^(snapshot|turn|month)-/.test(n))) walk(load(f), f);
+    expect(bad.slice(0, 20)).toEqual([]);
+  });
+  it.skipIf(!present)('the pilot commute key is staffCommutes', () => {
+    const flows = load<{ frame: MonthFrame }>('month-result.json').frame.flows;
+    expect(flows.staffCommutes?.length).toBeGreaterThan(0);
   });
 });

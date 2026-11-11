@@ -121,6 +121,7 @@ pub struct WageFlow {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MonthFlows {
     pub commutes: Vec<Commute>,
     pub purchases: Vec<Purchase>,
