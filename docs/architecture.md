@@ -28,7 +28,7 @@ content/*.json ──include_str!──> sim-api (content.rs)
         v
  web/src/sim-port      port.ts (SimPort interface)
    ├─ wasm/   loads pkg/ built by `npm run build:wasm`
-   └─ mock/   TypeScript stand-in; numbers from content/ via `npm run sync-mock`
+   └─ replay/ recorded demo: a typed recording of a real run (recording.generated.ts), used only when wasm is unavailable
         │ (only sim-port knows which one runs: selectSimPort())
         v
  web/src/store         game state machine, drafts, selection, save/load, sceneBus
@@ -108,7 +108,9 @@ Note: `SPEC.md` section 11 lists a different, older ordering and "S" numbers do 
 | Random state (PCG32 `state`, `inc`) | Save file wrapper (`ecotown-save`, saveVersion 2): sim blob + last result + previous snapshot + lens/camera |
 | Lever metadata (labels, ranges, arrows) via `content/levers.json` | Nothing about layout: since Town v2 the store derives the map from `snapshot.map` (`layoutOf`) |
 
-The UI must never compute economy numbers. The mock is the one exception by design (it stands in for the sim) and must read its numbers from `content/`.
+The UI must never compute economy numbers, and there is no second implementation of the rules: when wasm is unavailable the web replays a recorded run of the real simulation (`sim-port/replay/`, `docs/how-to.md` section 22), badged "Recorded demo", with the controls that cannot change the outcome turned off.
+
+**Entity registry (contract v2.1).** `content/entities.json` lists the kinds of actor, facility and stock (label, plural, roles, tiles and footprint, owner, scene model ids, inspector sections), validated at load by `crates/sim-api/src/entities.rs` and served in `Catalog.entities`. `web/src/store/entities.ts` is the web's only view of it: the inspector builds its sections from the entity's section list (`panels/inspect.ts`), the scene picks models and labels from it (`scene/entityModel.ts`, `scene/entities.ts`), and the Industry list uses its plurals. `docs/how-to.md` section 21 is the recipe.
 
 **Pressure mode (web, Town v3).** Relaxed mode is the phase machine above (`submitTurn`). In Pressure mode the phases stay `review`/`plan` all game long and the quarter plays live: `store/clock.ts` (pure, injected time source, config in `clock-config.json`) emits `month` and `quarter` events; `store/live.ts` turns them into `game.liveBegin/liveMonth/liveFinish` (`beginTurn` + `advanceMonth` + `finishTurn`) and never waits for the player (the plan is submitted at the boundary per `onTimeout`). `store/scene-live.ts` feeds the scene the clock position inside the current month. Saves hold the last turn boundary, never a turn in progress. Details: `docs/web-notes-v3.md`.
 
@@ -136,7 +138,7 @@ The UI must never compute economy numbers. The mock is the one exception by desi
 | Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history, ledger, log }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 
-`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the wire one (6). Town v7 left the wire version at 5 (contract v1.9 is additive) and raised the state version to 4; the platform cleanup (contract v2.0, sources as lists) raised the wire version to 6 without changing the saved blob.
+`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The recorded demo carries the `schemaVersion` it was made with (a test pins it to 6). Town v7 left the wire version at 5 (contract v1.9 is additive) and raised the state version to 4; the platform cleanup (contract v2.0, sources as lists) raised the wire version to 6 without changing the saved blob.
 
 ## 8. Wrapper log, breakdowns and the explorer (Town v5.1/v5.2)
 

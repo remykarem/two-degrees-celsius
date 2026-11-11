@@ -5,7 +5,7 @@
 ## Layout and commands
 - `crates/sim-wasm`: thin wasm-bindgen shell over `sim_api::Api`. JSON strings in and out; every reply is `{"ok":true,"value":..}` or `{"ok":false,"error":{"code","message"}}`. Content is embedded by `sim-api` (`include_str!`). Class `WasmSim` (`init(seed, paramsJson?)`, `levers`, `actions`, `snapshot`, `preview`, `submit_turn`, `cancel_pending`, `export_state`, `import_state`) plus `install_panic_hook` and `last_panic`.
 - Build: `cd web && npm run build:wasm` (cargo release build for `wasm32-unknown-unknown`, then `wasm-bindgen --target web` into `web/src/sim-port/wasm/pkg/`, gitignored). Needs `rustup target add wasm32-unknown-unknown` and `cargo install wasm-bindgen-cli --version 0.2.130 --locked` (must equal the `wasm-bindgen` version in `Cargo.lock`; the script checks and prints the command). `wasm-opt` is used when installed (it was not here).
-- Run: `npm run dev` / `npm run build`. Default sim = wasm when `pkg/` exists, else mock with a visible notice and a console warning. Override with `?sim=wasm|mock` or `VITE_SIM`. The top bar badge says "Real simulation" or "Mock data" (from `snapshot.mock`, which only the mock sets).
+- Run: `npm run dev` / `npm run build`. Default sim = wasm when `pkg/` exists, else the recorded demo (a replay of a real run, `docs/how-to.md` section 22) with a visible notice and a console warning. Override with `?sim=wasm|replay` or `VITE_SIM`. The top bar badge says "Real simulation" or "Recorded demo" (from the port's `demo` info).
 - Size (release, no wasm-opt): about 1.15 MiB raw, about 295 KiB gzipped.
 
 ## Unsafe code and panics

@@ -22,7 +22,7 @@ To play against the real Rust simulation in the browser, build it first (needs R
 npm run build:wasm
 ```
 
-Without it the app falls back to a mock economy and shows a "Mock data" badge. Rebuild with `npm run build:wasm` after any Rust change; an old package keeps running the old rules (the top bar badge says "Real simulation" or "Mock data").
+Without it the app falls back to a **recorded demo**: a replay of one real game (seed 7, 12 turns) badged "Recorded demo"; your policy and building choices cannot change it, so those controls are off. Rebuild with `npm run build:wasm` after any Rust change; an old package keeps running the old rules (the top bar badge says "Real simulation" or "Recorded demo"). `?sim=replay` forces the demo.
 
 ## Run the simulation (no graphics)
 

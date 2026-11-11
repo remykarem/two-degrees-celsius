@@ -8,14 +8,14 @@ Two rules of thumb: (1) the Rust compiler and `web/tests/*` tell you most of wha
 
 | You changed | Regenerate | Command |
 |---|---|---|
-| Any number in `content/params.json`, `initial_town.json`, `systems/*.json` | mock data | `cd web && npm run sync-mock` |
+| Any number in `content/params.json`, `initial_town.json`, `systems/*.json` | fixtures, golden, the recorded demo | `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `cd web && npm run gen:recording` |
 | Same, if wire output changes (almost always) | fixtures | `cargo run -p sim-api --example fixtures` |
 | Anything that changes sim output | golden | `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` |
 | Anything that changes seed-42 market output | insta snapshot | `INSTA_UPDATE=always cargo test -p sim-engine --test scenarios golden_snapshot_seed_42` (unverified: not run) |
 | `content/levers.json` | fixtures (`levers.json`, `actions.json`) and golden | as above |
 | Rust sim (for the web wasm test) | wasm package | `cd web && npm run build:wasm` |
 | Any wire type in `crates/sim-api` (field, type, rename) | generated TS contract | `cd web && npm run gen:contract` (`cargo test --workspace` fails until you do) |
-| `content/ui.json` (labels, `emission_sources`, `income_sources`) | fixtures (`catalog.json`), golden, mock data | `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice); `cd web && npm run sync-mock` |
+| `content/ui.json` (labels, `emission_sources`, `income_sources`) | fixtures (`catalog.json`), golden, the recorded demo | `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice); `cd web && npm run gen:recording` |
 | `content/` at all | invalidates old saves (`paramsHash`) | nothing to run; say so in the commit message |
 
 Then run all tests. Baseline tests A-D in `tests/scenarios.rs` (20 seeds each) can fail after a parameter change; that is information about balance, not necessarily a bug. Do not tune to make them pass (see `AGENTS.md`).
@@ -35,9 +35,8 @@ Rust
 Web
 - `web/src/contract/index.ts`: add to the `LeverKey` union (and `LeverInfo` unit if new).
 - `web/src/panels/policy.ts`: put the key in a drawer group.
-- Mock: `web/src/sim-port/mock/mock-only.json` (hand-authored lever presentation), `web/scripts/sync-mock.mjs` `POLICY_KEYS` (maps `initial_town.json` policy keys to lever keys; unknown keys throw), and the mock rule in `mock/rules.ts` / `mock/dynamics.ts` if the mock should react to it.
 
-Tests/commands: add a sign or behaviour test in `tests/scenarios.rs` (see `job_guarantee_employs_people_and_lowers_unemployment`); `web/tests/contract.test.ts`, `mock-sync.test.ts`, `fixtures.test.ts` will flag missing pieces. Run section 0 regeneration, then the full checklist. Update `docs/causal-model.md` section 10 (the rule) and `docs/glossary.md` if the lever adds a concept.
+Tests/commands: add a sign or behaviour test in `tests/scenarios.rs` (see `job_guarantee_employs_people_and_lowers_unemployment`); `web/tests/contract.test.ts`, `fixtures.test.ts` will flag missing pieces. Run section 0 regeneration, then the full checklist. Update `docs/causal-model.md` section 10 (the rule) and `docs/glossary.md` if the lever adds a concept.
 
 ## 2. Add a buildable kind
 
@@ -54,9 +53,8 @@ Web
 - `web/src/contract/index.ts`: `InfraKind`, `TileKind`, `ActionKey` types.
 - Palette: `store/palette.ts` builds entries from `actions()` automatically; label/hint text in `panels/BuildPalette.svelte`; `store/game.ts` (the kind guard near line 185) and `store/map.ts`; inspector text in `panels/inspect.ts`.
 - Scene: `scene/models.ts` (mesh/model id), `scene/entities.ts` (`Building` type, planning), `scene/entityLayer.ts`; roads have their own `scene/roads.ts` and ghost handling in `scene/index.ts`.
-- Mock: `mock/data.ts` (`INFRA_KINDS`, `moneyFor`), `mock/rules.ts` (`REMOVABLE`, validity), `mock/state.ts`, `mock/space.ts`, `mock/snapshot.ts`; costs via `sync-mock.mjs`.
 
-Tests: roads tests in `tests/scenarios.rs` (`roads_are_built_on_their_tile_cost_money_and_need_upkeep`, `a_road_shortens_a_commute_...`), `tests/golden/plan.json` (add the kind to the golden plan only if you want it covered), `web/tests/mock.test.ts`, `scene-roads.test.ts`. Regenerate per section 0. Update `docs/snapshot-contract.md` section 11 if the wire changed.
+Tests: roads tests in `tests/scenarios.rs` (`roads_are_built_on_their_tile_cost_money_and_need_upkeep`, `a_road_shortens_a_commute_...`), `tests/golden/plan.json` (add the kind to the golden plan only if you want it covered), `scene-roads.test.ts`. Regenerate per section 0. Update `docs/snapshot-contract.md` section 11 if the wire changed.
 
 ## 3. Add an event type
 
@@ -67,7 +65,7 @@ Real example: `electricity_rationed` (raised in `sim-model/src/production.rs`).
 3. `crates/sim-api/src/events.rs`: add the `SimEventKind` variant (wire shape, snake_case tag, camelCase fields), the `from_sim` arm, and its **importance** (3 game-shaping, 2 notable, 1 routine) in `importance()`. The match is exhaustive, so the compiler points here.
 4. `crates/sim-api/tests/wire.rs`: add it to the list of every kind (near `K::ElectricityRationed`).
 5. `web/src/contract/index.ts`: add to the `SimEvent` union.
-6. `web/src/panels/format.ts::formatEvent`: the text (the contract carries no display text). Tests: `web/tests/panels-v2.test.ts` (see the `electricity_rationed` case). Optionally `scene/flows.ts` (event-driven effects/labels) and the mock (`mock/people.ts` etc.) if the mock should emit it.
+6. `web/src/panels/format.ts::formatEvent`: the text (the contract carries no display text). Tests: `web/tests/panels-v2.test.ts` (see the `electricity_rationed` case). Optionally `scene/flows.ts` (event-driven effects/labels).
 7. Regenerate fixtures and golden; update `docs/snapshot-contract.md` section 11 events list.
 
 ## 4. Add a metric / indicator
@@ -79,9 +77,8 @@ Real example: `median_income` / `top_wealth_share` (Town v2).
 3. If a CLI line or CSV column helps: `crates/sim-cli/src/main.rs`, `crates/sim-engine/src/series.rs`.
 4. `web/src/contract/index.ts`: add to `Indicators`, `HistoryPoint`, and `MetricKey` if it is a panel metric.
 5. Panel: `web/src/panels/metrics.ts` (add an entry to the `METRICS` list with tab, label, hint; give a percent metric a `detail` with its backing numbers, map it in `METRIC_BREAKDOWN` if the wire has a breakdown for it; a test fails if its key has no explorer topic, so add the key to a topic's `usedBy` in `content/assumptions.json`) and `web/src/panels/format.ts` (`METRIC_LABEL`, a `Record<MetricKey,...>`, so the compiler forces it). Results/end story text: `panels/results.ts`, `panels/story.ts`.
-6. Mock: `mock/snapshot.ts` (indicators), `mock/index.ts` (history).
 7. If a lever's arrow should point at it: `content/levers.json` `arrows[].metric`.
-Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via `satisfies Record<keyof T,...>`, so adding a field fails until listed), `mock.test.ts`, `crates/sim-api/tests/wire.rs`. Regenerate fixtures and golden.
+Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via `satisfies Record<keyof T,...>`, so adding a field fails until listed), `crates/sim-api/tests/wire.rs`. Regenerate fixtures and golden.
 
 ## 5. Add a new tick system (a new rule module)
 
@@ -96,8 +93,8 @@ Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via
 
 Real example: `coop` (`content/systems/coop.json`, `content/scenarios/worker_coops.json`).
 - `content/systems/<name>.json` (fields as in `market.json`); `crates/sim-params/src/lib.rs` (load it into `Params.systems`), `sim-types/src/enums.rs` (`EconomicSystem`), `crates/sim-api/src/content.rs` (embed the file), `keys.rs` (`SystemKey`), `content/levers.json` (`availableIn`, the `switch_system` action), `content/params.json` (`turn.levers.switch_system` cost).
-- Web: `contract/index.ts` (`SystemKey`), `panels/content/systems.ts` (copy), `panels/systemSwitch.ts`, `panels/format.ts`, `panels/story.ts`, `mock/rules.ts`, `mock/mock-only.json`, `web/scripts/sync-mock.mjs` (`SYSTEM_KEYS`).
-- Tests: scenario tests (`coop_scenario_has_lower_inequality_than_market`), `web/tests/mock-sync.test.ts`, `panels-logic.test.ts`.
+- Web: `contract/index.ts` (`SystemKey`), `panels/content/systems.ts` (copy), `panels/systemSwitch.ts`, `panels/format.ts`, `panels/story.ts`.
+- Tests: scenario tests (`coop_scenario_has_lower_inequality_than_market`), `panels-logic.test.ts`.
 
 ## 7. Add a firm or a sector
 
@@ -110,9 +107,9 @@ Real example: the **Shop** (Services) added in Town v2 (commits `4fb53fc` to `e9
 
 - Where: `content/params.json` (rules and costs), `content/initial_town.json` (the start: people, households, tiles, firms, policy), `content/systems/*.json`, `content/levers.json` (UI metadata only: labels, ranges, arrows).
 - Try first without editing: `cargo run -p sim-cli -- --seed 42 --set labour.wage_up=1.01` (prefix `town.`, `market.`, `regulated.` or `coop.` for the other files).
-- Edit, then: `cd web && npm run sync-mock`; `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `cargo test --workspace`; `cd web && npm run build:wasm && npm test`. Some tests hard-code values (for example `web/tests/mock-sync.test.ts` pins `GEN.pc`, `GEN.carbon.budget`, `policyStart`; `tests/scenarios.rs` checks start Gini and baselines). Update them only if the change is intended.
+- Edit, then: `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `cargo test --workspace`; `cd web && npm run gen:recording && npm run build:wasm && npm test`. Some tests hard-code values (for example `tests/scenarios.rs` checks start Gini and baselines). Update them only if the change is intended.
 - To see weather at once without playing 14 turns: `cargo run -p sim-cli -- --seed 3 --set weather.force_stress=0.7` (`weather.force_stress` is `null` in `params.json`; the web has no URL option for it).
-- After any Rust change run `cd web && npm run build:wasm`, or the browser keeps an old package (or the mock).
+- After any Rust change run `cd web && npm run build:wasm`, or the browser keeps an old package. Also `cd web && npm run gen:recording` after any change to the sim or `content/` (the recorded demo is a run of the sim; `cargo test --workspace` fails when it is stale).
 - Judge on 20 seeds and baselines A-D, not one run. Record the change and result in `docs/tuning-log.md`. Do not tune just to hit a target (`AGENTS.md`).
 
 ## 9. Add a lens
@@ -168,8 +165,8 @@ A figure that comes from a ledger links to it with `game.openLedger(account, kin
 ## 13. Try Pressure mode (Town v3)
 1. `npm run dev` in `web/`, open `http://localhost:5173/?mode=pressure` (add `&pace=0.02` to make a quarter about 2 s; `pace` is real seconds per game day, default 0.143 = about 13 s per quarter). A plain visit shows the New game screen with Relaxed preselected; `?seed=` or `?mode=` links start straight away.
 2. Other overrides: `timeout=submit|discard|skip`, `budget=<seconds of pause>`, `pause=0`. Defaults live in `web/src/store/clock-config.json`.
-3. Pressure needs the live-turn calls (`begin_turn`, `advance_month`, `finish_turn`) in the wasm package; rebuild with `npm run build:wasm` if the New game screen says it is unavailable. The mock always has them (`?sim=mock`).
-4. Tests: `web/tests/clock.test.ts` (state machine, fake time), `live.test.ts` (game loop), `live-turn.test.ts` (mock equals `submitTurn`), `panels-v3.test.ts`.
+3. Pressure needs the live-turn calls (`begin_turn`, `advance_month`, `finish_turn`) in the wasm package; rebuild with `npm run build:wasm` if the New game screen says it is unavailable. The recorded demo has no live clock, so Pressure is unavailable there.
+4. Tests: `web/tests/clock.test.ts` (state machine, fake time), `live.test.ts` (game loop), `live-turn.test.ts` (live turn equals `submitTurn`), `panels-v3.test.ts`.
 
 ## 14. Add a breakdown (Town v5.2)
 1. Make the headline a small callable function (in `sim-metrics` or the model crate) and have both the indicator and the breakdown call it; never recompute the formula in `sim-api`.
@@ -188,7 +185,7 @@ A figure that comes from a ledger links to it with `game.openLedger(account, kin
 1. Change the rule in `crates/sim-model/src` as usual (numbers in `content/`).
 2. Update the matching entry in the `agents` section of `content/assumptions.json`: `kinds[].rule`/`decides`/`observes`/`params`, or a `randomness[]` entry (distribution `bernoulli`, `uniform` or `uniform_index`; `params` are dotted paths into `params.json`, or `systems.<name>.` for the system files).
 3. A new `r.chance(`/`r.next_f64(`/`r.below(` call fails `randomness_table_matches_the_draw_sites_in_the_model` until the table lists it. Add the entry (and, for a draw that is really two, adjust the test's count rule).
-4. `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, then the usual tests. State hashes must be unchanged unless the rule itself changed.
+4. `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run gen:recording && npm run build:wasm`, then the usual tests. State hashes must be unchanged unless the rule itself changed.
 
 ## 17. Add or change text, a threshold or a band shown in the UI (Town v6)
 
@@ -198,7 +195,7 @@ The web is a thin renderer: it must not hold model facts, explanatory text or th
 3. A number the model owns (a radius, a rate, a count of ticks): `content/params.json`, then put it on the wire (a field of the snapshot, see "Change the contract") instead of copying it into the web.
 4. A derived figure (a risk, an expected effective value, a runway): compute it in `sim-model` or `sim-api`, serve it, and let the web only scale or format it.
 5. Economic-system card text: `content/ui.json` `system_cards` (prose) and `system_param_labels`; the numbers are read from `params.systems.*` by `crates/sim-api/src/catalog.rs`.
-6. Then: `cargo run -p sim-api --example fixtures` (refreshes `docs/fixtures/catalog.json`), `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, tests.
+6. Then: `cargo run -p sim-api --example fixtures` (refreshes `docs/fixtures/catalog.json`), `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run gen:recording && npm run build:wasm`, tests.
 
 What stays in the web: layout, formatting, animation, chart scaling, onboarding/coach copy and the wording of wire ids (event sentences, block-reason text).
 
@@ -207,7 +204,7 @@ What stays in the web: layout, formatting, animation, chart scaling, onboarding/
 - **Content:** `content/initial_town.json` `estate` (household and home index, grounds, runway tiles in take-off order, `hangar_tile`, jet name and value), the estate household (the last in `households`) and its home, `staff_of` on the pilot (a person of Worker C's household), and the 7 road and 11 forest tiles in `map`. Rules numbers: `content/params.json` `estate`. Words: `content/ui.json` `tags`, `wealth_bands`, `text.estate`. Explorer: the `private_jet` topic and the `estate` kind and `estate_flight` draw in `content/assumptions.json`.
 - **A town without an estate** still loads and runs: remove the `estate` block, the estate household, its home and the pilot; no flight draw is taken (`tests/estate.rs`).
 - **Measure the estate:** `cargo run --release -p sim-cli --example estate_probe` (dismissals, flights, Gini for baselines A to F, 20 seeds); `cargo run --release -p sim-cli --example tune_probe -- estate.flight_prob_monthly=0.2` (A exhaustion, B survival and margins under overrides of any `section.field`). The pilot is dismissed when the estate's pay is short for `estate.pilot_unpaid_months_max` months: lower `pilot_wage_usd` or raise the Farm's profit to avoid it.
-- **Wire:** `docs/snapshot-contract.md` section 19. The mock's copy of the rules is `web/src/sim-port/mock/estate.ts` (flights use their own seeded stream).
+- **Wire:** `docs/snapshot-contract.md` section 19. (Flights use their own seeded stream.)
 - **Bank identity:** the estate's savings are deposits, so they reduce bank equity (`equity = loans - deposits`) and the government's lending headroom (`equity / capital ratio - loans`). Check `init` still passes and the first-turn headroom is not below the cost of one plant.
 
 ## 19. Regenerate the TS contract (platform cleanup)
@@ -227,8 +224,7 @@ What stays in the web: layout, formatting, animation, chart scaling, onboarding/
 2. `crates/sim-api/src/sources.rs`: add the id to `EMISSION_IDS` (or `INCOME_IDS`), and a category variant if none fits (`EmissionCategory`, `IncomeCategory`).
 3. `crates/sim-api/src/emissions.rs` (`Acc` field and `Acc::tonnes` arm, tallied in `acc()`), or `snapshot.rs` / `finance.rs` for income (the `match id` closures). A missing arm reads as 0, so the test in step 5 is what catches it.
 4. `content/ui.json`: one entry in `emission_sources` (`id`, `label`, `category`, `showWhenZero`) or `income_sources` (`id`, `label`, `category`, `partOf`, `views`). Load-time validation refuses a missing or unknown id.
-5. Regenerate: `npm run gen:contract`, fixtures, golden, `npm run sync-mock`. Tests: `crates/sim-api/tests/transparency.rs` (sources sum to gross), `web/tests/sources.test.ts`. The web needs no change: panels iterate the list and read labels from it.
-6. The mock builds its lists from the catalog fixture (`web/src/sim-port/mock/sources.ts`); add the id to its field maps only if the mock should produce it.
+5. Regenerate: `npm run gen:contract`, fixtures, golden, `npm run gen:recording`. Tests: `crates/sim-api/tests/transparency.rs` (sources sum to gross), `web/tests/sources.test.ts`. The web needs no change: panels iterate the list and read labels from it.
 
 ## 21. Add a new entity kind (entity registry, contract v2.1)
 
@@ -243,3 +239,14 @@ What stays in the web: layout, formatting, animation, chart scaling, onboarding/
 7. Regenerate: `npm run gen:contract` if a wire type changed, fixtures, golden, `npm run build:wasm`.
 
 File count, landfill example (a buildable emitter on the map with a rule): `enums.rs`, `keys.rs`, `entities.rs` (tile list), `industry.rs` (infra key), the model system, `params.json`, `entities.json`, `ui.json` (emission source label), plus generated files. The web needs 0 files (1 optional mesh). A scenery-only entity with no rule is 1 content file plus the Rust tile kind lists. Before the registry the taxonomy counted about 15 files in 3 languages.
+
+## 22. The recorded demo (replaces the hand-written mock)
+
+`npm run dev` and the deployed app always use the real simulation (wasm). When the package is missing or fails to load, `selectSimPort()` (`web/src/sim-port/index.ts`) loads a **recorded demo**: `sim-port/replay/` implements the same `SimPort` over a run of the real simulation that a cargo example wrote into a typed fixture. Nothing in the web simulates anything.
+
+- **What it is:** `content/demo_script.json` (seed 7 and the commands of 12 turns) is played by `sim_api::recording::record()`; `web/src/sim-port/replay/recording.generated.ts` holds the replies (`Recording`, a generated contract type: initial snapshot, levers, actions, catalog, explorer data, and each turn's `TurnResult`). The replay port serves them in order; `init` starts over; the seed asked for is ignored (the recording's seed is shown).
+- **Honest controls:** the port sets `demo` (`DemoInfo`); the store exposes `GameState.demo`. The top bar says "Recorded demo" (tooltip: what it is), the policy drawer, building, save/load, ledger links, live clock and previews are off or explain themselves, and End turn reads "Next recorded turn" and stops at the end. A call that would diverge (`preview`, `submitTurn` with commands, `ledger`, `exportState`, ...) returns an error result with code `demo_unavailable`.
+- **Regenerate** after any change to the simulation, `content/` or the wire (it contains snapshots): `cd web && npm run gen:recording` (`cargo run -p sim-api --example recording`). Tests: `crates/sim-api/tests/recording.rs` fails in `cargo test --workspace` when the committed file is stale (like the contract check; `npm run check:recording` runs it alone); `npm run typecheck` fails when the file does not match the generated contract (it is annotated `: Recording`); `web/tests/replay.test.ts` covers the port and the store in demo mode.
+- **To record a different run:** edit `content/demo_script.json` (any number of turns; the file grows about 100 KB per turn) and regenerate.
+- **Force it:** `?sim=replay` or `VITE_SIM=replay`. **Without the wasm package:** `npm run dev` shows the demo with a notice; `npm test` leaves out the files that need the real simulation (they import `tests/port.ts` or the wasm package) and says so; CI (`deploy.yml`) first runs the tests without the package, then builds it and runs everything.
+- **Tests that need the real simulation** import `createSimPort` from `web/tests/port.ts` (a fresh wasm sim, already started). There is no second implementation to keep in step: `sync-mock`, `mock/` and the parity tests are gone.

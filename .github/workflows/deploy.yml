@@ -40,16 +40,28 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      # cargo test also fails when the generated TS contract or the recorded demo (web/src/sim-port/replay) is stale.
       - name: Test simulation
         run: cargo test --workspace
 
-      - name: Install dependencies and build wasm
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      # No wasm package yet: this is what a contributor without the wasm toolchain gets. The tests that need the real
+      # simulation are left out (the run says so); the recorded-demo path, boundaries, contract and pure logic run.
+      - name: Test web without the wasm package (recorded demo path)
         working-directory: web
         run: |
-          npm ci
-          npm run build:wasm
+          npm test
+          npm run typecheck
+          npm run lint
 
-      - name: Test web
+      - name: Build wasm
+        working-directory: web
+        run: npm run build:wasm
+
+      - name: Test web with the real simulation
         working-directory: web
         run: |
           npm test
