@@ -74,11 +74,14 @@ export function stepMonth(s: MockState): MonthOut {
   const { fossil_plant: fossil, renewable_plant: renewable } = buildingCounts(s);
   const scale = (s.gdp / (GEN.derived.monthlyOutputValue * 12)) * (1 + t.emissions);
   const plant = Math.max(0, X.plantEmissionPerFossil! * fossil * (fossil / Math.max(1, fossil + renewable)) * scale);
-  const emissions = Math.max(0, baseNonPlant() * scale) + plant;
+  const base = Math.max(0, baseNonPlant() * scale) + plant;
+  // Town v7 (MOCK): a jet flight adds its content tonnes as their own source (estate.ts draws it before this step).
+  const flight = s.estate?.flyingThisMonth && GEN.estate ? GEN.estate.flightTonnes : 0;
+  const emissions = base + flight;
   s.lastMonthlyEmissions = emissions;
   s.lastPlantEmissions = plant;
   s.cumulativeTonnes += emissions;
-  (s.emLog ??= []).push(emissionsMonth(emissions, plant, s.forest));
+  (s.emLog ??= []).push({ ...emissionsMonth(base, plant, s.forest), sink: -emissions * 0.1 * s.forest, aviation: flight });
   if (s.emLog.length > 3) s.emLog.shift();
 
   // Bank (mock): loses equity to defaults that rise with unemployment and the base rate, earns a small margin.

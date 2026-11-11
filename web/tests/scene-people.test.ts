@@ -15,14 +15,15 @@ const rl = layoutOf(result.snapshot);
 
 describe('people stands', () => {
   it('draws one figure per person', () => {
-    expect(snap.people.length).toBe(20);
+    expect(snap.people.length).toBe(22);
     expect(stands.map((s) => s.id).sort((a, b) => a - b)).toEqual(snap.people.map((p) => p.id).sort((a, b) => a - b));
   });
-  it('household cue: every household has its own colour and marker shape (up to 8)', () => {
+  it('household cue: every household has its own index; colours and marker shapes are distinct up to the 8 the palette has', () => {
     const idx = new Set(stands.map((s) => s.hIndex));
     expect(idx.size).toBe(snap.households.length);
-    expect(snap.households.length).toBeLessThanOrEqual(HOUSEHOLD_COLORS.length);
-    expect(new Set([...idx].map((i) => MARKER_SHAPES[i % MARKER_SHAPES.length])).size).toBe(idx.size);
+    // Town v7 has 9 households: the ninth (the estate) wraps to the first colour and shape until the scene gets a ninth.
+    expect(new Set([...idx].map((i) => MARKER_SHAPES[i % MARKER_SHAPES.length])).size).toBe(Math.min(idx.size, MARKER_SHAPES.length));
+    expect(new Set([...idx].map((i) => HOUSEHOLD_COLORS[i % HOUSEHOLD_COLORS.length])).size).toBe(Math.min(idx.size, HOUSEHOLD_COLORS.length));
   });
   it('idle people stand within a tile of their home', () => {
     for (const s of stands.filter((q) => !q.unhoused)) {

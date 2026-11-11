@@ -42,14 +42,14 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?', estate: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;
 const PERSON = { id: 'number', label: 'string', household: 'number', ageBand: 'string', skill: 'number', job: 'nullable', wage: 'number', commuteTiles: 'number', commuteMinutes: 'number', wellbeing: 'number',
-  inLabourForce: 'boolean', jobGuarantee: 'boolean', effectiveHours: 'number' } satisfies Shape<PersonView>;
+  inLabourForce: 'boolean', jobGuarantee: 'boolean', effectiveHours: 'number', employer: 'object?' } satisfies Shape<PersonView>;
 const HOUSEHOLD = { id: 'number', label: 'string', members: 'array', home: 'nullable', class: 'string', savings: 'number', debt: 'number', netWorth: 'number', income: 'object', politicalPower: 'number',
-  arrearsMonths: 'number', wellbeing: 'number', footprintTonnes: 'number', foodMet: 'number' } satisfies Shape<HouseholdView>;
+  arrearsMonths: 'number', wellbeing: 'number', footprintTonnes: 'number', foodMet: 'number', tag: 'string?', wealthBand: 'object?' } satisfies Shape<HouseholdView>;
 const HOME = { id: 'number', tile: 'object', owner: 'string', household: 'nullable', rent: 'number', value: 'number' } as unknown as Shape<HomeView>; // owner is a number or "public"
 (HOME as Record<string, unknown>).owner = 'nullable';
 const PLANT = { id: 'number', kind: 'string', tile: 'object', capacity: 'number', output: 'number', emissionsMonthly: 'number' } satisfies Shape<PlantView>;
@@ -95,7 +95,7 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     expect(snap.households).toHaveLength(8);
     expect(snap.homes).toHaveLength(7);
     expect(snap.households.filter((h) => h.home === null)).toHaveLength(1);
-    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 11 });
   });
   it('has 3 month frames, 20 levers, 11 actions, an entry per lever in the policy table', () => {
     expect(turn.months).toHaveLength(3);

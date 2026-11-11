@@ -1,6 +1,7 @@
 import type { Breakdown, Breakdowns, EmissionsLine, HouseholdView, Industry, LeverKey, PolicyBoard, PolicyRow, Snapshot, TaxRow } from '../../contract';
 import { GEN, INFRA_KINDS, INFRA_LABEL, LEVERS, WX } from './data';
 import { effectiveValue } from './dynamics';
+import { netWorthParts } from './people';
 import type { MockState } from './state';
 
 // MOCK ONLY: invented breakdowns, policy board and industry view. They follow the wire's shapes (docs/snapshot-contract.md section 16) and the same sum-to-result rules,
@@ -12,11 +13,11 @@ const withSums = (b: Breakdown): Breakdown => (b.parts ? { ...b, sumsToResult: n
 
 import { emissionsMonth, type EmMonth } from './emissions';
 const line = (m: EmMonth): EmissionsLine => {
-  const grossTotal = m.firms + m.households + m.plants;
+  const grossTotal = m.firms + m.households + m.plants + (m.aviation ?? 0);
   const net = grossTotal + m.sink;
-  return { firms: m.firms, households: m.households, plants: m.plants, grossTotal, sink: m.sink, net, headline: net };
+  return { firms: m.firms, households: m.households, plants: m.plants, aviation: m.aviation ?? 0, grossTotal, sink: m.sink, net, headline: net };
 };
-const sumMonths = (ms: EmMonth[]): EmMonth => ms.reduce((a, m) => ({ firms: a.firms + m.firms, households: a.households + m.households, plants: a.plants + m.plants, sink: a.sink + m.sink }), { firms: 0, households: 0, plants: 0, sink: 0 });
+const sumMonths = (ms: EmMonth[]): EmMonth => ms.reduce((a, m) => ({ firms: a.firms + m.firms, households: a.households + m.households, plants: a.plants + m.plants, sink: a.sink + m.sink, aviation: (a.aviation ?? 0) + (m.aviation ?? 0) }), { firms: 0, households: 0, plants: 0, sink: 0, aviation: 0 });
 
 export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' | 'government' | 'bank' | 'finance' | 'nature'>, households: HouseholdView[], monthlyOutput: number, wageBill: number): Breakdowns {
   const ind = snap.indicators;
@@ -53,7 +54,7 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
     ...bd('gini', 'Inequality (Gini)', 'Gini = 1 - 2 x (area under the Lorenz curve). Wealth is net worth; each member of a household carries an equal share. (mock: the headline Gini drifts with toy dynamics)', [
       { label: 'People', value: per.length, unit: 'people' }, { label: 'Total net worth', value: total, unit: 'USD' }, { label: 'Richest household share', value: ind.topHouseholdWealthShare, unit: 'share', source: 'top_wealth_share' },
     ], { value: ind.gini, unit: 'index 0..1' }),
-    lorenz, byHousehold: households.map((h) => ({ household: h.id, people: h.members.length, netWorth: h.netWorth })),
+    lorenz, byHousehold: households.map((h) => ({ household: h.id, people: h.members.length, netWorth: h.netWorth, parts: netWorthParts(s, s.households[h.id]!) })),
   };
 
   // Legitimacy: last month's level plus the signed terms. MOCK weights.
@@ -80,7 +81,7 @@ export function buildBreakdowns(s: MockState, snap: Pick<Snapshot, 'indicators' 
   const mon = log.length ? log[log.length - 1]! : emissionsMonth(s.lastMonthlyEmissions, s.lastPlantEmissions, s.forest);
   const turn = sumMonths(log.slice(-3));
   const month = line(mon), tl = line(turn);
-  const ok = (l: EmissionsLine) => near(l.firms + l.households + l.plants, l.grossTotal) && near(l.grossTotal + l.sink, l.net) && near(l.net, l.headline);
+  const ok = (l: EmissionsLine) => near(l.firms + l.households + l.plants + (l.aviation ?? 0), l.grossTotal) && near(l.grossTotal + l.sink, l.net) && near(l.net, l.headline);
   const rem = Math.max(0, GEN.carbon.budget - s.cumulativeTonnes);
   const perTurn = Math.max(0, month.net) * GEN.game.ticksPerTurn;
   const runOut = perTurn > 0 ? Math.min(s.turn, GEN.game.lastTurn + 1) + rem / perTurn : undefined;

@@ -1,15 +1,18 @@
 import type { HouseholdView, PersonView, SimEvent } from '../../contract';
 import { GEN } from './data';
 import { coverShortfall, hKey, recordMonth } from './ledger';
-import { commute, type Route } from './space';
+import { commute, commuteToTile, type Route } from './space';
+import { settleEstatePay } from './estate';
 import { cellAt, type HouseholdState, type MockState, type PersonState } from './state';
 
 // MOCK ONLY: person and household money and wellbeing are invented toy rules, shaped like the real sim's outputs.
 
-export const personWage = (s: MockState, p: PersonState): number => (p.job === null ? 0 : Math.round(Math.max(Number(s.policy.min_wage), s.wage * (0.7 + 0.6 * p.skill))));
+/** Domestic staff (the estate's pilot) are paid the content's wage by the estate; everyone else by their firm. */
+export const personWage = (s: MockState, p: PersonState): number => (p.staffOf != null && GEN.estate ? GEN.estate.pilotWageUsd : p.job === null ? 0 : Math.round(Math.max(Number(s.policy.min_wage), s.wage * (0.7 + 0.6 * p.skill))));
 const homeOf = (s: MockState, h: HouseholdState) => (h.home === null ? undefined : s.homes.find((x) => x.id === h.home));
 
 export function personRoute(s: MockState, p: PersonState): Route | null {
+  if (p.staffOf != null && GEN.estate) return commuteToTile(s, s.households[p.household]!.home, GEN.estate.hangarTile);
   if (p.job === null) return null;
   return commute(s, s.households[p.household]!.home, p.job);
 }
@@ -26,7 +29,7 @@ function polluted(s: MockState, h: HouseholdState): boolean {
 export function wellbeingOf(s: MockState, p: PersonState, route: Route | null): number {
   const h = s.households[p.household]!;
   let w = s.wellbeing;
-  if (p.labourForce) w += p.job !== null ? 0.08 : -0.1;
+  if (p.labourForce) w += p.job !== null || p.staffOf != null ? 0.08 : -0.1;
   if (p.ageBand === 'child') w += 0.02;
   if (h.home === null) w -= 0.12;
   if (route) w -= 0.002 * Math.max(0, route.minutes - GEN.space.freeMinutes);
@@ -40,6 +43,7 @@ export function peopleViews(s: MockState): PersonView[] {
     const r = personRoute(s, p);
     return {
       id: p.id, label: p.label, household: p.household, ageBand: p.ageBand, skill: p.skill, job: p.job === null ? null : { firm: p.job },
+      ...(p.staffOf != null ? { employer: { kind: 'household' as const, household: p.staffOf, label: s.households[p.staffOf]?.label ?? `household ${p.staffOf}` } } : {}),
       wage: personWage(s, p), commuteTiles: r?.tiles ?? 0, commuteMinutes: r?.minutes ?? 0, wellbeing: wellbeingOf(s, p, r),
       inLabourForce: p.labourForce, jobGuarantee: false,
       effectiveHours: r ? Math.max(GEN.space.minEffectiveHours, 1 - GEN.space.kCommute * Math.max(0, r.minutes - GEN.space.freeMinutes)) : 1,
@@ -54,6 +58,7 @@ export function economy(s: MockState): Economy {
   return { monthlyOutput, wageBill, profitFirms: Math.max(0, monthlyOutput - wageBill), activeFirms: s.firmActive.filter(Boolean).length };
 }
 
+/** The household income lines (`HouseholdView.income`); the mock's ledger books the estate's domestic wage separately. */
 export type Income = HouseholdView['income'];
 export function householdIncome(s: MockState, h: HouseholdState, e: Economy): Income {
   const members = h.members.map((id) => s.people[id]!);
@@ -79,10 +84,21 @@ export const totalIncome = (i: Income) => i.wages + i.dividends + i.rent + i.int
 
 /** Wealth: savings plus owned homes and founded firms, minus debt (mock valuation of firms: capital x 1,500). */
 export function netWorth(s: MockState, h: HouseholdState): number {
-  const homes = s.homes.filter((x) => x.owner === h.id).length * GEN.homes[0]!.valueUsd;
-  const firms = GEN.firms.filter((f) => f.founder === h.id && f.active).reduce((a, f) => a + f.capital * 1500, 0);
-  return h.savings + homes + firms - h.debt;
+  return netWorthParts(s, h).reduce((a, p) => a + p.value, 0);
 }
+
+/** The parts of a household's net worth (contract v1.9 ids): savings minus debt, homes owned (each at its content value), the jet, firm equity. */
+export function netWorthParts(s: MockState, h: HouseholdState): { id: string; value: number }[] {
+  const homes = s.homes.filter((x) => x.owner === h.id).reduce((a, x) => a + (GEN.homes.find((g) => g.id === x.id)?.valueUsd ?? GEN.homes[0]!.valueUsd), 0);
+  const firms = GEN.firms.filter((f) => f.founder === h.id && f.active).reduce((a, f) => a + f.capital * 1500, 0);
+  const jet = GEN.estate && GEN.estate.household === h.id ? GEN.estate.jetValueUsd : 0;
+  return [{ id: 'net_cash', value: h.savings - h.debt }, { id: 'homes', value: homes }, { id: 'jet', value: jet }, { id: 'firms', value: firms }].filter((p) => p.value !== 0);
+}
+
+const wealthBandOf = (nw: number): { id: string; label: string } | undefined => {
+  const b = GEN.catalog.wealthBands?.find((x) => x.min === null || nw >= x.min);
+  return b ? { id: b.id, label: b.label } : undefined;
+};
 
 export function householdViews(s: MockState): HouseholdView[] {
   const e = economy(s);
@@ -90,8 +106,13 @@ export function householdViews(s: MockState): HouseholdView[] {
   return s.households.map((h) => {
     const mine = people.filter((p) => p.household === h.id);
     const power = h.class === 'capitalist' ? 0.4 : h.class === 'rentier' ? 0.3 : h.class === 'manager' ? 0.1 : 0.03;
-    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: netWorth(s, h), income: householdIncome(s, h, e), politicalPower: power, arrearsMonths: h.arrears,
-      wellbeing: mine.reduce((a, p) => a + p.wellbeing, 0) / Math.max(1, mine.length), footprintTonnes: 0.1 * (s.lastMonthlyEmissions / s.households.length), foodMet: h.savings > 0 || h.home !== null ? 1 : 0.7 };
+    const isEstate = !!GEN.estate && GEN.estate.household === h.id;
+    const nw = netWorth(s, h);
+    const band = wealthBandOf(nw);
+    return { id: h.id, label: h.label, members: [...h.members], home: h.home, class: h.class, savings: h.savings, debt: h.debt, netWorth: nw, income: householdIncome(s, h, e), politicalPower: power, arrearsMonths: h.arrears,
+      wellbeing: mine.reduce((a, p) => a + p.wellbeing, 0) / Math.max(1, mine.length),
+      footprintTonnes: isEstate ? GEN.estate!.householdEmissionsT + (s.estate?.flyingThisMonth ? GEN.estate!.flightTonnes : 0) : 0.1 * (s.lastMonthlyEmissions / s.households.length), foodMet: h.savings > 0 || h.home !== null ? 1 : 0.7,
+      ...(isEstate && GEN.catalog.tags?.estate_owner ? { tag: GEN.catalog.tags.estate_owner } : {}), ...(band ? { wealthBand: band } : {}) };
   });
 }
 
@@ -142,6 +163,7 @@ export function stepHouseholds(s: MockState, events: SimEvent[]): void {
       events.push({ type: 'household_evicted', importance: 3, household: h.id });
     }
   }
+  settleEstatePay(s);
   // Moves: an unhoused household takes the cheapest vacant home whose rent is at most half of its income.
   for (const h of [...s.households].filter((x) => x.home === null).sort((a, b) => b.savings - a.savings)) {
     const income = totalIncome(householdIncome(s, h, e));
@@ -157,8 +179,10 @@ export function stepHouseholds(s: MockState, events: SimEvent[]): void {
 
 /** Match the number of employed people to the mock's aggregate unemployment: hire the most skilled jobless, fire the least skilled. */
 export function syncJobs(s: MockState, events: SimEvent[]): void {
-  const lf = s.people.filter((p) => p.labourForce);
-  const target = Math.round(lf.length * (1 - s.unemployment));
+  // Domestic staff (the estate's pilot) are employed by their household, outside the firms' hiring and firing.
+  const lf = s.people.filter((p) => p.labourForce && p.staffOf == null);
+  const domestic = s.people.filter((p) => p.labourForce && p.staffOf != null).length;
+  const target = Math.max(0, Math.round((lf.length + domestic) * (1 - s.unemployment)) - domestic);
   const active = GEN.firms.filter((f) => s.firmActive[f.id]);
   if (!active.length) return;
   const staff = (id: number) => s.people.filter((p) => p.job === id).length;

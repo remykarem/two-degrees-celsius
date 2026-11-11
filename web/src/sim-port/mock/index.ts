@@ -5,6 +5,7 @@ import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, 
 import { mockAgents, mockAssumptions } from './assumptions';
 import { ledgerPage, personLedger, rollUp } from './ledger';
 import { frame, makeEvents, makeFlows } from './frames';
+import { stepEstateMonth } from './estate';
 import { stepHouseholds, syncJobs } from './people';
 import { activate, evaluate, spend, validTiles } from './rules';
 import { buildSnapshot } from './snapshot';
@@ -128,6 +129,7 @@ export function createMockSim(): SimPort {
       else {
         const sysBefore = s.system;
         const weather = stepWeather(s); // MOCK weather (weather.ts), before the economy step as S11 runs before nature and production
+        const estateMonth = stepEstateMonth(s, m); // MOCK estate (estate.ts): pilot dismissal or rehire, then the jet's flight draw, before the emissions step
         const out = stepMonth(s);
         spend(s, buildingCounts(s).road * GEN.build.roadUpkeepUsd); // road maintenance, paid by the government
         if (turn === MOCK.dynamics.firmFoundedTurn && m === 0) {
@@ -140,7 +142,7 @@ export function createMockSim(): SimPort {
         stepHouseholds(s, jobEvents);
         const flows = makeFlows(s, out.emissions);
         const events = makeEvents(s, flows, [...(m === 0 ? month0 : []), ...jobEvents]);
-        events.push(...weather.events);
+        events.push(...weather.events, ...estateMonth.events);
         if (out.bankFailedNow) events.push({ type: 'bank_failed', importance: 3 });
         if (out.bailoutAmount > 0) events.push({ type: 'bank_bailout', importance: 3, amount: Math.round(out.bailoutAmount) });
         if (s.system !== sysBefore) events.push({ type: 'system_switch_completed', importance: 3, to: s.system });

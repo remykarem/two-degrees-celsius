@@ -25,7 +25,7 @@ describe('layout to entity mapping', () => {
   });
   it('homes get a distinct model per class', () => {
     const homes = descs.filter((d) => d.ref.kind === 'home');
-    expect(homes).toHaveLength(7);
+    expect(homes).toHaveLength(8);
     expect(new Set(homes.map((h) => h.model)).size).toBe(new Set(homes.map((h) => h.household?.class)).size);
     const classes = ['capitalist', 'rentier', 'manager', 'worker', 'dependent'] as const;
     for (const c of classes) expect(MODELS[`home_${c}`]).toBeDefined();

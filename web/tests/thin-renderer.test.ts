@@ -57,6 +57,7 @@ describe('wire ids the web words (the web owns this wording, so every id must ha
       loan_defaulted: true, firm_founded: true, firm_closed: true, forest_shrank: true, commons_collapsed: true, commons_enclosed: true, policy_blocked: true, command_activated: true, bank_failed: true,
       rent_shortfall: true, spending_cut: true, bank_bailout: true, class_changed: true, system_switch_started: true, system_switch_completed: true, budget_exhausted: true, collapse: true,
       fire_started: true, fire_spread: true, fire_out: true, forest_burned: true, drought_started: true, drought_ended: true, home_damaged: true,
+      private_jet_flight: true, pilot_let_go: true, pilot_hired: true,
     };
     const rust = readFileSync(resolve(repo, 'crates/sim-api/src/events.rs'), 'utf8');
     const start = rust.indexOf('pub enum SimEventKind');

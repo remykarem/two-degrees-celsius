@@ -75,7 +75,7 @@ export function generate() {
   const households = town.households.map((h, id) => ({
     id, label: h.label, class: cls(h.class), savings: h.savings_usd, debt: h.debt_usd, home: h.home, monthlyIncome: h.initial_income_usd,
     people: h.people.map((p) => ({
-      label: p.label, ageBand: p.age_band.toLowerCase(), skill: p.skill, labourForce: p.labour_force, reservation: p.reservation_usd, job: p.job,
+      label: p.label, ageBand: p.age_band.toLowerCase(), skill: p.skill, labourForce: p.labour_force, reservation: p.reservation_usd, job: p.job, staffOf: p.staff_of ?? null,
     })),
   }));
   const homes = town.homes.map((h, id) => ({ id, tile: { x: h.tile[0], y: h.tile[1] }, owner: h.owner, valueUsd: h.value_usd }));
@@ -97,12 +97,15 @@ export function generate() {
   const xy = (t) => ({ x: t[0], y: t[1] });
   const map = {
     width: m.width, height: m.height, roads: m.roads.map(xy), forest: m.forest.map(xy), commons: m.commons.map(xy), townHall: xy(m.town_hall), bank: xy(m.bank),
+    // Town v7: the estate's tiles (empty arrays when the town has no estate).
+    estateGrounds: (town.estate?.grounds ?? []).map(xy), runway: (town.estate?.runway ?? []).map(xy),
   };
 
   const active = firms.filter((f) => f.active);
   const people = households.flatMap((h) => h.people);
   const labourForce = people.filter((p) => p.labourForce).length;
-  const employed = people.filter((p) => p.job !== null).length;
+  // Domestic staff (Town v7: the estate's pilot) are employed: the same rule as Person::employed in the Rust model.
+  const employed = people.filter((p) => p.job !== null || p.staffOf !== null).length;
   const loans = sum(households.map((h) => h.debt)) + sum(firms.map((f) => f.debt)) + town.gov_debt_usd;
   const deposits = sum(households.map((h) => h.savings)) + sum(firms.map((f) => f.cash)) + town.gov_cash_usd;
   const equity = loans - deposits;
@@ -159,6 +162,12 @@ export function generate() {
       monthlyWageBill: wageBill,
     },
     map,
+    // Town v7: the estate block of initial_town.json plus the rules numbers of params.json `estate` (null without an estate).
+    estate: town.estate ? {
+      household: town.estate.household, home: town.estate.home, hangarTile: xy(town.estate.hangar_tile), jetName: town.estate.jet_name, jetValueUsd: town.estate.jet_value_usd,
+      flightProbMonthly: params.estate.flight_prob_monthly, flightTonnes: params.estate.flight_tonnes, householdEmissionsT: params.estate.household_emissions_t,
+      pilotWageUsd: params.estate.pilot_wage_usd, pilotUnpaidMonthsMax: params.estate.pilot_unpaid_months_max, pilotRehireMonthsOfWages: params.estate.pilot_rehire_months_of_wages,
+    } : null,
     homes,
     plants,
     households,

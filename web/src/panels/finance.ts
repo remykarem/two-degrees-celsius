@@ -97,7 +97,7 @@ function rawSections(snap: Snapshot): FinSection[] {
       { id: 'bank-def', label: 'Default rate', month: bank.defaultRate, quarter: null, fmt: 'pct', stock: true },
       { id: 'bank-int', label: 'Interest income', month: bank.interestIncome, quarter: qv((x) => x.bankInterestIncome), fmt: 'money', ledger: { account: BANK, kind: 'interest' } },
     ] },
-    { id: 'households', title: 'Households (all 8 together)', ledgers: snap.households.map((x) => ({ label: x.label, account: { kind: 'household', id: x.id } as AccountRef })), rows: [
+    { id: 'households', title: `Households (all ${snap.households.length} together)`, ledgers: snap.households.map((x) => ({ label: x.label, account: { kind: 'household', id: x.id } as AccountRef })), rows: [
       ...income.filter(nonZero),
       { id: 'hh-tax', label: 'Taxes paid', month: hh.taxes, quarter: qv((x) => x.householdTaxes), fmt: 'money' },
       { id: 'hh-rent', label: 'Rent paid', month: hh.rentPaid, quarter: qv((x) => x.rentPaid), fmt: 'money' },

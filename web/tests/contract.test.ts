@@ -25,7 +25,7 @@ describe('contract types', () => {
   it('v1.0 fields: buildings, map, costModel, units, zeroMeansNone', () => {
     const sim = createSimPort();
     const snap = ok(sim.init(1));
-    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+    expect(snap.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 11 });
     expect(snap.map.tiles).toHaveLength(snap.map.width * snap.map.height);
     const ls = sim.levers();
     for (const l of ls) {

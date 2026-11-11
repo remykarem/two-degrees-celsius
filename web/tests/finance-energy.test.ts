@@ -56,7 +56,7 @@ describe('finance derivations', () => {
     ok(sim2.init(6));
     const s = ok(sim2.submitTurn([])).snapshot;
     let wages = 0;
-    for (const h of s.households) for (const e of ok(sim2.ledger({ kind: 'household', id: h.id })).entries) if (e.kind === 'wage' && e.to.kind === 'household') wages += e.amount;
+    for (const h of s.households) for (const e of ok(sim2.ledger({ kind: 'household', id: h.id })).entries) if (e.kind === 'wage' && e.to.kind === 'household' && e.to.id === h.id) wages += e.amount; // received by this household (a domestic wage is also in the payer's ledger)
     expect(s.finance.quarter!.householdIncome.wages).toBeCloseTo(wages, 0);
   });
   it('formats and flags an empty first month', () => {

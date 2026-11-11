@@ -18,7 +18,7 @@ const fixture = existsSync(fixturePath) ? (JSON.parse(readFileSync(fixturePath, 
 
 describe('agents catalogue (mock)', () => {
   it('has every kind, the five classes and a randomness table with live parameters', () => {
-    expect(mock.kinds.map((k) => k.id)).toEqual(['households', 'firms', 'bank', 'government', 'lobbyists', 'nature', 'weather']);
+    expect(mock.kinds.map((k) => k.id)).toEqual(['households', 'firms', 'bank', 'government', 'lobbyists', 'nature', 'weather', 'estate']);
     expect(mock.kinds[0]!.variants.map((v) => v.id)).toEqual(['capitalist', 'rentier', 'manager', 'worker', 'dependent']);
     expect(mock.randomness.length).toBeGreaterThanOrEqual(8);
     for (const k of mock.kinds) expect(k.params.every((p) => p.value !== undefined), k.id).toBe(true);

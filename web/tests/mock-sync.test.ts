@@ -16,7 +16,7 @@ describe('mock data is generated from content/', () => {
     expect(GEN.turnCosts.place_fossil_plant).toEqual({ baseCost: 12, leadTime: 4, unit: 1, minSize: 1 });
     expect(GEN.systems.regulated.transitionMonths).toBe(12);
     expect(GEN.systems.coop.transitionMonths).toBe(24);
-    expect(GEN.build.start).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+    expect(GEN.build.start).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 11 });
     expect(GEN.build.roadCostUsd).toBe(2500);
     expect(GEN.space).toMatchObject({ slowMinutes: 6, fastMinutes: 2 });
     expect(GEN.carbon.budget).toBe(900);
@@ -24,14 +24,21 @@ describe('mock data is generated from content/', () => {
     expect(GEN.policyStart.min_wage).toBe(1200);
     expect(GEN.game).toEqual({ startYear: 2026, firstTurn: 1, lastTurn: 40, turnsPerYear: 4, ticksPerTurn: 3 });
   });
-  it('the layout comes from content/initial_town.json: 20 people, 8 households, 7 homes, 4 firms, a 12 x 12 map', () => {
-    expect(GEN.households).toHaveLength(8);
-    expect(GEN.households.flatMap((h) => h.people)).toHaveLength(20);
-    expect(GEN.homes).toHaveLength(7);
+  it('the layout comes from content/initial_town.json: 22 people, 9 households, 8 homes, 4 firms, a 12 x 12 map', () => {
+    expect(GEN.households).toHaveLength(9);
+    expect(GEN.households.flatMap((h) => h.people)).toHaveLength(22);
+    expect(GEN.homes).toHaveLength(8);
+    // Town v7: the estate block and the pilot, from content
+    expect(GEN.estate).toMatchObject({ household: 8, home: 7, hangarTile: { x: 2, y: 11 } });
+    expect(GEN.map.estateGrounds).toHaveLength(3);
+    expect(GEN.map.runway).toHaveLength(3);
+    expect(GEN.households[6]!.people.filter((p) => p.staffOf === 8)).toHaveLength(1);
+    expect(GEN.town.employed).toBe(10); // the pilot counts as employed, as Person::employed does
+    expect(GEN.town.labourForce).toBe(11);
     expect(GEN.households.filter((h) => h.home === null)).toHaveLength(1);
     expect(GEN.firms.map((f) => f.sector)).toEqual(['goods', 'food', 'services', 'services']);
     expect(GEN.map).toMatchObject({ width: 12, height: 12 });
-    expect(GEN.map.roads).toHaveLength(4);
+    expect(GEN.map.roads).toHaveLength(11); // 4 in the town and the estate's 7
     expect(GEN.plants).toHaveLength(2);
     expect(GEN.turnCosts.place_road).toEqual({ baseCost: 0.5, leadTime: 2, unit: 1, minSize: 1 });
   });

@@ -51,7 +51,7 @@ export function emptyFlows(): FinanceFlows {
   return {
     govRevenue: { wageTax: 0, profitTax: 0, capitalTax: 0, wealthTax: 0, carbon: 0, other: 0 },
     govSpending: { benefits: 0, ubi: 0, publicSpending: 0, jobGuarantee: 0, upkeep: 0, subsidy: 0, interest: 0, builds: 0, other: 0 },
-    householdIncome: { wages: 0, dividends: 0, rent: 0, interest: 0, benefits: 0 },
+    householdIncome: { wages: 0, dividends: 0, rent: 0, interest: 0, benefits: 0, domesticWages: 0 },
     householdTaxes: 0, rentPaid: 0, loanPayments: 0, householdSpending: 0, firmRevenue: 0, wageBill: 0, firmProfit: 0, investment: 0, bankInterestIncome: 0,
   };
 }
@@ -96,6 +96,8 @@ export function recordMonth(s: MockState, e: Economy, incs: Map<number, Income>)
 
   // wages: firm -> household, one entry per working person
   for (const p of s.people) if (p.job !== null) book(s, fKey(p.job), hKey(p.household), personWage(s, p), 'wage', p.label, `wage, ${name(p.job)}, ${p.label}`, p.id);
+  // Town v7: the estate pays its pilot, household to household
+  if (GEN.estate) for (const p of s.people) if (p.staffOf != null) book(s, hKey(p.staffOf), hKey(p.household), personWage(s, p), 'wage', 'domestic wages', `domestic wage, ${p.label}`, p.id);
   // dividends and the profit tax on them
   const grossDiv = active.length ? (e.profitFirms * 0.6) / active.length : 0;
   for (const f of active) {
@@ -159,7 +161,8 @@ export function flowsOf(recs: Rec[]): FinanceFlows {
     if (r.from === 'gov' && r.kind === 'upkeep') f.govSpending.upkeep += a;
     if (r.from === 'gov' && r.kind === 'interest') f.govSpending.interest += a;
     if (isF(r.from) && isH(r.to)) { if (r.kind === 'wage') f.householdIncome.wages += a; else if (r.kind === 'dividend') f.householdIncome.dividends += a; }
-    if (r.kind === 'wage') f.wageBill += a;
+    if (isH(r.from) && isH(r.to) && r.kind === 'wage') { f.householdIncome.wages += a; f.householdIncome.domesticWages += a; }
+    if (r.kind === 'wage' && isF(r.from)) f.wageBill += a;
     if (isH(r.from) && isH(r.to) && r.kind === 'rent') { f.householdIncome.rent += a; f.rentPaid += a; }
     if (isH(r.from) && r.to === 'gov' && r.kind === 'rent') f.rentPaid += a;
     if (r.from === 'bank' && isH(r.to) && r.kind === 'interest') f.householdIncome.interest += a;

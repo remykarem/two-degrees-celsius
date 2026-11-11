@@ -37,11 +37,16 @@ export interface Generated {
   carbon: { budget: number; t0: number; tLimit: number };
   collapseUnemployment: number;
   derived: { monthlyFirmEmissions: number; monthlyOutputValue: number; monthlyWageBill: number };
-  map: { width: number; height: number; roads: XY[]; forest: XY[]; commons: XY[]; townHall: XY; bank: XY };
+  map: { width: number; height: number; roads: XY[]; forest: XY[]; commons: XY[]; townHall: XY; bank: XY; estateGrounds: XY[]; runway: XY[] };
+  /** Town v7: content/initial_town.json `estate` and content/params.json `estate` (null when the town has none). */
+  estate: null | {
+    household: number; home: number; hangarTile: XY; jetName: string; jetValueUsd: number;
+    flightProbMonthly: number; flightTonnes: number; householdEmissionsT: number; pilotWageUsd: number; pilotUnpaidMonthsMax: number; pilotRehireMonthsOfWages: number;
+  };
   homes: { id: number; tile: XY; owner: number; valueUsd: number }[];
   plants: { kind: 'fossil' | 'renewable'; tile: XY; capacity: number }[];
   households: { id: number; label: string; class: ClassKey; savings: number; debt: number; home: number | null; monthlyIncome: number;
-    people: { label: string; ageBand: AgeBand; skill: number; labourForce: boolean; reservation: number; job: number | null }[] }[];
+    people: { label: string; ageBand: AgeBand; skill: number; labourForce: boolean; reservation: number; job: number | null; staffOf: number | null }[] }[];
   firms: { id: number; sector: Sector; active: boolean; name: string; founder: number; tile: XY; capital: number; cash: number; debt: number; wage: number; price: number;
     output: number; intensity: number; workers: number }[];
 }

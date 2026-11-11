@@ -19,6 +19,15 @@ export function makeFlows(s: MockState, emissions: number): MonthFlows {
   const e = economy(s);
   const commutes: NonNullable<MonthFlows['commutes']> = [];
   const wages = new Map<string, { person: number; household: number; firm: number; amount: number }>();
+  const staffCommutes: NonNullable<MonthFlows['staffCommutes']> = [];
+  if (GEN.estate) {
+    for (const p of s.people) {
+      if (p.staffOf == null) continue;
+      const r = personRoute(s, p)!;
+      const home = s.homes.find((h) => h.id === s.households[p.household]!.home);
+      staffCommutes.push({ person: p.id, household: p.household, employer: p.staffOf, from: home ? { x: home.x, y: home.y } : null, to: { ...GEN.estate.hangarTile }, tiles: r.tiles, minutes: r.minutes, wage: Math.round(personWage(s, p)) });
+    }
+  }
   for (const p of s.people) {
     if (p.job === null) continue;
     const r = personRoute(s, p)!;
@@ -36,14 +45,16 @@ export function makeFlows(s: MockState, emissions: number): MonthFlows {
   // Emissions: the plants' part (fossil plants only) and the rest between firms and households. The sink absorbs a slice of the total.
   const plants = plantTiles(s);
   const plantTotal = plants.length ? s.lastPlantEmissions : 0;
-  const rest = emissions - plantTotal;
+  const flight = s.estate?.flyingThisMonth && GEN.estate ? GEN.estate.flightTonnes : 0;
+  const rest = emissions - plantTotal - flight;
   const weight = (f: (typeof firms)[number]) => (f.output * f.intensity) / Math.max(1e-9, firms.reduce((a, x) => a + x.output * x.intensity, 0));
   return {
-    commutes, purchases, rent, wages: [...wages.values()],
+    commutes, purchases, rent, wages: [...wages.values()], ...(staffCommutes.length ? { staffCommutes } : {}),
     emissions: [
       ...plants.map((tile, id) => ({ source: 'plant' as const, id, tile, tonnes: +(plantTotal / plants.length).toFixed(1) })),
       ...firms.map((f) => ({ source: 'firm' as const, id: f.id, tonnes: +(rest * weight(f) * 0.8).toFixed(1) })),
       { source: 'households' as const, tonnes: +(rest * 0.2).toFixed(1) },
+      ...(flight > 0 ? [{ source: 'aviation' as const, tonnes: flight }] : []),
       { source: 'sink' as const, tonnes: -+(emissions * 0.1 * s.forest).toFixed(1) },
     ],
   };

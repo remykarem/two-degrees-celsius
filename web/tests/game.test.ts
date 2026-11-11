@@ -130,7 +130,7 @@ describe('v0.3 store behaviour', () => {
     expect(l.scenery.filter((x) => x.kind === 'home')).toHaveLength(snap.homes.length);
     expect(l.scenery.filter((x) => x.kind === 'firm')).toHaveLength(snap.firms.length);
     expect(l.placed.filter((p) => p.kind === 'fossil_plant')).toHaveLength(2);
-    expect(l.roads).toHaveLength(4);
+    expect(l.roads).toHaveLength(11); // 4 in the town and the estate's 7
     expect(layoutOf(snap)).toBe(l);
     expect(layoutOf(null).scenery).toEqual([]);
     const tiles = [...l.scenery, ...l.placed, ...l.roads].map((t) => `${t.x},${t.y}`);

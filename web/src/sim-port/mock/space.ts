@@ -3,7 +3,7 @@ import { GEN } from './data';
 import { cellAt, GRID, type MockState } from './state';
 
 /** What a walker may step on (besides the start and the destination): open ground, roads and commons. */
-const PASSABLE: TileKind[] = ['empty', 'road', 'commons'];
+const PASSABLE: TileKind[] = ['empty', 'road', 'commons', 'estate_grounds', 'runway'];
 
 export interface Route { path: TileRef[]; tiles: number; minutes: number }
 
@@ -48,4 +48,11 @@ export function commute(s: MockState, homeId: number | null, firmId: number): Ro
   const firm = GEN.firms.find((f) => f.id === firmId);
   if (!home || !firm) return { path: [], tiles: 0, minutes: 0 };
   return route(s, { x: home.x, y: home.y }, firm.tile);
+}
+
+/** Town v7: the commute of domestic staff (the estate's pilot) from `homeId` to a workplace tile (the hangar). */
+export function commuteToTile(s: MockState, homeId: number | null, to: TileRef): Route {
+  if (homeId === null) return { path: [], tiles: GEN.space.unhousedTiles, minutes: GEN.space.unhousedMinutes };
+  const home = s.homes.find((h) => h.id === homeId);
+  return home ? route(s, { x: home.x, y: home.y }, to) : { path: [], tiles: 0, minutes: 0 };
 }

@@ -1,4 +1,4 @@
-import type { LeverKey, SchemaVersion, Snapshot, Tile } from '../../contract';
+import type { Estate, LeverKey, SchemaVersion, Snapshot, Tile } from '../../contract';
 import { GEN, LEVERS, MOCK } from './data';
 import { effectiveValue, remainingBudget } from './dynamics';
 import { plantTiles } from './frames';
@@ -9,6 +9,32 @@ import { healthOf, tileFireRisk, weatherView } from './weather';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
 
 const gdpBase = () => GEN.derived.monthlyOutputValue * 12;
+
+/** MOCK estate view (contract v1.9): content for tiles, jet and wage; the mock's own flights and ledger for the rest. */
+function estateView(s: MockState): Estate | null {
+  const g = GEN.estate, e = s.estate;
+  if (!g || !e) return null;
+  const pilot = e.pilot === null ? null : s.people[e.pilot]!;
+  const sum = (recs: typeof s.ledger.detail, f: (r: (typeof s.ledger.detail)[number]) => boolean) => recs.filter(f).reduce((a, r) => a + r.amount, 0);
+  const me = `h${g.household}`;
+  const money = (fromTick: number) => {
+    const recs = s.ledger.detail.filter((r) => r.tick >= fromTick);
+    return {
+      dividends: sum(recs, (r) => r.to === me && r.kind === 'dividend'), wagePaid: sum(recs, (r) => r.from === me && r.detail === 'domestic wages'),
+      wealthTax: 0, carbonCharge: 0,
+    };
+  };
+  const last = s.tick - 1;
+  return {
+    household: g.household, home: g.home,
+    groundsTiles: GEN.map.estateGrounds.map((t) => ({ ...t })), runwayTiles: GEN.map.runway.map((t) => ({ ...t })), hangarTile: { ...g.hangarTile }, jetName: g.jetName,
+    jet: { value: g.jetValueUsd, flyingThisMonth: e.flyingThisMonth },
+    ...(e.lastFlight ? { lastFlight: { ...e.lastFlight } } : {}),
+    flightsTotal: e.flightsTotal, tonnesTotal: e.tonnesTotal, flightTonnes: g.flightTonnes, householdEmissionsT: g.householdEmissionsT,
+    ...(pilot ? { pilot: { person: pilot.id, wage: g.pilotWageUsd, status: pilot.staffOf != null ? 'employed' as const : 'let_go' as const, unpaidMonths: e.unpaidMonths, unpaidMonthsMax: g.pilotUnpaidMonthsMax } } : {}),
+    finance: { month: money(last), last12: money(last - 11), months: Math.max(0, Math.min(12, s.tick)) },
+  };
+}
 
 export function mapTiles(s: MockState): Tile[] {
   const tiles: Tile[] = [];
@@ -32,7 +58,7 @@ export function buildSnapshot(s: MockState): Snapshot {
   const gdpReal = s.gdp / s.prices;
   const lf = s.people.filter((p) => p.labourForce);
   const labour = lf.length;
-  const employed = lf.filter((p) => p.job !== null).length;
+  const employed = lf.filter((p) => p.job !== null || p.staffOf != null).length;
   const unemployment = labour ? 1 - employed / labour : 0;
   const idx = s.gdp / gdpBase();
   const policy = {} as Snapshot['policy'];
@@ -69,7 +95,7 @@ export function buildSnapshot(s: MockState): Snapshot {
     },
     people,
     households,
-    homes: s.homes.map((h) => ({ id: h.id, tile: { x: h.x, y: h.y }, owner: h.owner, household: h.household, rent: h.owner === 'public' ? GEN.town.rentPublic : GEN.town.rentPrivate, value: h.owner === 'public' ? GEN.build.publicHousingCostUsd : GEN.homes[0]!.valueUsd })),
+    homes: s.homes.map((h) => ({ id: h.id, tile: { x: h.x, y: h.y }, owner: h.owner, household: h.household, rent: h.owner === 'public' ? GEN.town.rentPublic : GEN.town.rentPrivate, value: h.owner === 'public' ? GEN.build.publicHousingCostUsd : (GEN.homes.find((g) => g.id === h.id)?.valueUsd ?? GEN.homes[0]!.valueUsd) })),
     plants: plantTiles(s).map((tile, id) => ({ id, kind: 'fossil' as const, tile, capacity: GEN.build.plantCapacity, output: 0, emissionsMonthly: s.lastPlantEmissions / Math.max(1, plantTiles(s).length) })),
     firms: GEN.firms.map((f) => {
       const on = s.firmActive[f.id] ?? false;
@@ -96,6 +122,7 @@ export function buildSnapshot(s: MockState): Snapshot {
       { deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1) }, s.debt / s.gdp),
     energy: energyView(s, households, firmOutput),
     history: s.history.map((h) => ({ ...h })),
+    ...(estateView(s) ? { estate: estateView(s)! } : {}),
   };
   const nominalOf = (k: LeverKey) => s.policy[k]!;
   return {

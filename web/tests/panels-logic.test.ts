@@ -273,7 +273,7 @@ describe('inspector model', () => {
     const bm = resolveTile(snap, layout, fossil, []);
     expect(bm.removable).toEqual({ kind: 'fossil_plant', tile: { x: fossil.x, y: fossil.y }, already: false });
     expect(builtCount(snap, 'fossil_plant')).toBe(2);
-    expect(builtCount(snap, 'road')).toBe(4);
+    expect(builtCount(snap, 'road')).toBe(11);
     const queued = resolveTile(snap, layout, fossil, [{ id: 1, command: { type: 'remove', tile: { x: fossil.x, y: fossil.y } }, preview: {} as never }]);
     expect(queued.removable!.already).toBe(true);
     const road = layout.roads[0]!;

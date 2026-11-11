@@ -1,5 +1,5 @@
 import { fireLabel, nearestLandmark } from '../store/weather';
-import { bands, wordOf } from '../store/catalog';
+import { bands, fill, text, wordOf } from '../store/catalog';
 import type { ActionInfo, Command, LeverInfo, MetricKey, SimEvent, Snapshot, TurnResult } from '../contract';
 
 export const METRIC_LABEL: Record<MetricKey, string> = {
@@ -123,6 +123,9 @@ export function formatEvent(e: SimEvent, snap: Snapshot | null): string {
     case 'forest_burned': { const near = nearestLandmark(snap, e.tile); return `A forest tile burned down ${near ? `near ${near}` : `at (${e.tile.x},${e.tile.y})`}; it will regrow slowly`; }
     case 'drought_started': return `A ${severityWord(e.severity)} drought began and may last about ${n(e.months)} months`;
     case 'drought_ended': return 'The drought ended';
+    case 'private_jet_flight': return fill(text('estate', 'flight_event'), { tonnes: n(e.tonnes) });
+    case 'pilot_let_go': return text('estate', 'pilot_let_go_event');
+    case 'pilot_hired': return text('estate', 'pilot_hired_event');
     case 'home_damaged': { const h = snap?.homes.find((x) => x.id === e.home); const t = h?.household != null ? hh(h.household) : null; return `${t ? `${t} home` : `Home ${e.home}`} was damaged by fire`; }
   }
 }

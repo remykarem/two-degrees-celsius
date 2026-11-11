@@ -9,7 +9,9 @@ import type { Rng } from './rng';
 export const SCHEMA_VERSION = 5;
 export const GRID = 12;
 
-export interface PersonState { id: number; label: string; household: number; ageBand: AgeBand; skill: number; labourForce: boolean; job: number | null }
+export interface PersonState { id: number; label: string; household: number; ageBand: AgeBand; skill: number; labourForce: boolean; job: number | null; /** Town v7: employed by this household as domestic staff (the estate's pilot). */ staffOf?: number | null }
+/** MOCK estate bookkeeping (estate.ts): the jet's flights and the pilot's pay record. */
+export interface EstateState { rng: Rng; pilot: number | null; flightsTotal: number; tonnesTotal: number; lastFlight: null | { turn: number; month: 0 | 1 | 2; tonnes: number }; flyingThisMonth: boolean; unpaidMonths: number }
 export interface HouseholdState { id: number; label: string; class: ClassKey; members: number[]; home: number | null; savings: number; debt: number; arrears: number }
 export interface HomeState { id: number; x: number; y: number; owner: number | 'public'; household: number | null }
 /** `state` and `left` are MOCK-ONLY weather bookkeeping on forest cells: 'burning' (months of fire left) or 'regrowing' (months until standing again). */
@@ -37,6 +39,8 @@ export interface MockState {
   people: PersonState[];
   households: HouseholdState[];
   /** MOCK weather (see weather.ts): own random stream, so weather never disturbs the economy's draws; the active drought; tonnes of sink lost to fire this turn. */
+  /** Town v7 (MOCK estate): null when the content has no estate. Absent in saves made before Town v7. */
+  estate?: EstateState | null;
   weatherRng: Rng;
   drought: null | { severity: number; monthsLeft: number };
   fireSinkLossTurn: number;
@@ -70,6 +74,8 @@ export function initialState(seed: number): MockState {
   for (const p of GEN.map.forest) { put(p, 'forest'); grid[p.y * GRID + p.x]!.state = 'standing'; }
   for (const p of GEN.map.commons) put(p, 'commons');
   for (const p of GEN.map.roads) put(p, 'road');
+  for (const p of GEN.map.estateGrounds) put(p, 'estate_grounds');
+  for (const p of GEN.map.runway) put(p, 'runway');
   put(GEN.map.townHall, 'town_hall');
   put(GEN.map.bank, 'bank');
   for (const h of GEN.homes) put(h.tile, 'home', h.id);
@@ -80,7 +86,7 @@ export function initialState(seed: number): MockState {
   const households: HouseholdState[] = GEN.households.map((h) => {
     const members = h.people.map((p) => {
       const id = people.length;
-      people.push({ id, label: p.label, household: h.id, ageBand: p.ageBand, skill: p.skill, labourForce: p.labourForce, job: p.job });
+      people.push({ id, label: p.label, household: h.id, ageBand: p.ageBand, skill: p.skill, labourForce: p.labourForce, job: p.job, staffOf: p.staffOf });
       return id;
     });
     return { id: h.id, label: h.label, class: h.class, members, home: h.home, savings: h.savings, debt: h.debt, arrears: 0 };
@@ -92,6 +98,7 @@ export function initialState(seed: number): MockState {
     turn: GEN.game.firstTurn, tick: 0, pc: GEN.pc.start, system: 'market', transition: null,
     nextPendingId: 1, pending: [], policy, grid, homes, nextHomeId: homes.length, people, households,
     weatherRng: { state: (seed ^ 0x9e3779b9) >>> 0 }, drought: null, fireSinkLossTurn: 0,
+    estate: GEN.estate ? { rng: { state: (seed ^ 0x7f4a7c15) >>> 0 }, pilot: people.find((x) => x.staffOf !== null && x.staffOf !== undefined)?.id ?? null, flightsTotal: 0, tonnesTotal: 0, lastFlight: null, flyingThisMonth: false, unpaidMonths: 0 } : null,
     gdp: GEN.derived.monthlyOutputValue * 12, unemployment: t.unemployment, legitimacy: t.legitimacy, gini: 0.7, gini0: 0.7, wellbeing: 0.6,
     cash: t.govCash, debt: t.govDebt, netLobby: MOCK.extra.startingNetLobby!, forest: t.forest / t.forestMax, commons: t.commons / t.commonsMax,
     bank: { equity: t.bank.equity, loans: t.bank.loans, failed: false },

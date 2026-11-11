@@ -79,7 +79,7 @@ describe('v0.3 component behaviour', () => {
     const b = html(BuildPalette, { game: game() });
     for (const label of ['Build public housing', 'Build fossil power plant', 'Build renewable power plant', 'Build road']) expect(b).toContain(label);
     expect(b).toContain('Built 2'); // two fossil plants
-    expect(b).toContain('Built 4'); // four roads
+    expect(b).toContain('Built 11'); // four roads in the town and the estate's seven
     expect(b).toContain('click it on the map');
   });
   it('shows cost estimates from the cost model, then the authoritative preview once drafted', () => {

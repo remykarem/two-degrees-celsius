@@ -244,11 +244,11 @@ describe('block reasons (validate)', () => {
 });
 
 describe('buildings live on tiles', () => {
-  it('starts with 2 fossil plants, 4 roads, no renewables, no public housing, 7 homes', () => {
+  it('starts with 2 fossil plants, 11 roads (4 in the town and 7 for the estate), no renewables, no public housing, 8 homes', () => {
     const s = ok(fresh().init(1));
-    expect(s.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 4 });
+    expect(s.buildings).toEqual({ publicHousing: 0, fossilPlant: 2, renewablePlant: 0, road: 11 });
     expect(s.energy.supply.filter((p) => p.kind === 'fossil').reduce((a, p) => a + p.capacity, 0)).toBe(10);
-    expect(s.homes).toHaveLength(7);
+    expect(s.homes).toHaveLength(8);
     expect(s.map.tiles.filter((t) => t.kind === 'fossil_plant')).toHaveLength(2);
   });
   it('a renewable plant appears on its tile when it takes effect, and money is charged then, not when queued', () => {
@@ -275,8 +275,8 @@ describe('buildings live on tiles', () => {
     ok(sim.submitTurn([placeAt('public_housing', tile)]));
     const moved: unknown[] = [];
     for (let i = 0; i < 8; i++) { const r = ok(sim.submitTurn([])); s = r.snapshot; moved.push(...r.months.flatMap((m) => m.events).filter((e) => e.type === 'household_moved')); }
-    expect(s.homes).toHaveLength(8);
-    expect(s.homes[7]!.owner).toBe('public');
+    expect(s.homes).toHaveLength(9);
+    expect(s.homes[8]!.owner).toBe('public');
     expect(s.households.every((h) => h.home !== null)).toBe(true);
     expect(moved).toHaveLength(1);
     expect(s.housing.unhousedHouseholds).toBe(0);
@@ -383,7 +383,7 @@ describe('roads shorten commutes', () => {
     let s = ok(sim.submitTurn(cmds)).snapshot;
     for (let i = 0; i < 4; i++) s = ok(sim.submitTurn([])).snapshot;
     expect(s.pending).toHaveLength(0);
-    expect(s.buildings.road).toBe(4 + cmds.length);
+    expect(s.buildings.road).toBe(11 + cmds.length);
     const after = s.people.find((p) => p.id === worker.id)!;
     expect(after.commuteMinutes).toBeLessThan(worker.commuteMinutes);
     expect(after.commuteTiles).toBeGreaterThanOrEqual(1);
@@ -395,7 +395,9 @@ describe('roads shorten commutes', () => {
       expect(p.commuteMinutes).toBeGreaterThanOrEqual(p.commuteTiles * GEN.space.fastMinutes);
       expect(p.commuteMinutes).toBeLessThanOrEqual(p.commuteTiles * GEN.space.slowMinutes);
     }
-    expect(s.people.filter((p) => !p.job).every((p) => p.commuteTiles === 0 && p.commuteMinutes === 0)).toBe(true);
+    expect(s.people.filter((p) => !p.job && !p.employer).every((p) => p.commuteTiles === 0 && p.commuteMinutes === 0)).toBe(true);
+    // domestic staff (the estate's pilot) commute to the hangar tile
+    for (const p of s.people.filter((x) => x.employer)) expect(p.commuteTiles).toBeGreaterThan(0);
   });
   it('removing a road lengthens (never shortens) commutes', () => {
     const sim = fresh(3);
@@ -403,17 +405,17 @@ describe('roads shorten commutes', () => {
     const road = before.map.tiles.find((t) => t.kind === 'road')!;
     ok(sim.submitTurn([{ type: 'remove', tile: road }]));
     const s = ok(sim.submitTurn([])).snapshot;
-    expect(s.buildings.road).toBe(3);
+    expect(s.buildings.road).toBe(10);
     for (const p of before.people) expect(s.people.find((x) => x.id === p.id)!.commuteMinutes).toBeGreaterThanOrEqual(p.commuteMinutes);
   });
 });
 
 describe('people, households and homes', () => {
-  it('starts as designed: 20 people, 8 households, 7 homes, one unhoused, harsh inequality', () => {
+  it('starts as designed: 22 people, 9 households, 8 homes, one unhoused, harsh inequality', () => {
     const s = ok(fresh().init(1));
-    expect(s.people).toHaveLength(20);
-    expect(s.households).toHaveLength(8);
-    expect(s.homes).toHaveLength(7);
+    expect(s.people).toHaveLength(22);
+    expect(s.households).toHaveLength(9);
+    expect(s.homes).toHaveLength(8);
     expect(s.households.filter((h) => h.home === null)).toHaveLength(1);
     expect(s.households.flatMap((h) => h.members).sort((a, b) => a - b)).toEqual(s.people.map((p) => p.id));
     for (const h of s.households) for (const m of h.members) expect(s.people[m]!.household).toBe(h.id);
@@ -443,7 +445,7 @@ describe('people, households and homes', () => {
   });
   it('unemployment counts people: employed of labourForce, and jobs match', () => {
     const s = ok(fresh(1).init(1));
-    expect(s.indicators.employed).toBe(s.people.filter((p) => p.job).length);
+    expect(s.indicators.employed).toBe(s.people.filter((p) => p.job || p.employer).length); // domestic staff (the pilot) are employed
     expect(s.indicators.labourForce).toBe(s.people.filter((p) => p.inLabourForce).length);
     expect(s.indicators.unemployment).toBeCloseTo(1 - s.indicators.employed / s.indicators.labourForce, 9);
   });
@@ -635,7 +637,7 @@ describe('a full run (40 turns)', () => {
         expect(new Set(occupied).size).toBe(occupied.length);
         for (const v of [s.indicators.gdpAnnual, s.indicators.gini, s.indicators.avgWellbeing, s.indicators.avgIncomePerPerson, s.indicators.medianIncomePerPerson, s.indicators.topHouseholdWealthShare, s.government.cash, s.bank.equity]) expect(Number.isFinite(v)).toBe(true);
         for (const p of s.people) { expect(p.wellbeing).toBeGreaterThanOrEqual(0); expect(p.wellbeing).toBeLessThanOrEqual(1); }
-        expect(s.indicators.employed).toBe(s.people.filter((p) => p.job).length);
+        expect(s.indicators.employed).toBe(s.people.filter((p) => p.job || p.employer).length); // domestic staff (the pilot) are employed
         log.push(`${s.turn}:${Math.round(s.indicators.gdpAnnual)}:${s.indicators.employed}`);
       }
       return { turns, log: log.join(','), outcome: JSON.stringify(s.gameOver), final: JSON.stringify(s) };

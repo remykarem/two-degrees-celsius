@@ -117,7 +117,9 @@ export interface Indicators {
 }
 
 export type TileKind = 'empty' | 'home' | 'public_housing' | 'firm' | 'bank' | 'town_hall'
-  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons' | 'fire_station';
+  | 'fossil_plant' | 'renewable_plant' | 'road' | 'forest' | 'commons' | 'fire_station'
+  /** Contract v1.9 (Town v7): the estate's pool, garden and drive, and its runway. Fixed scenery. */
+  | 'estate_grounds' | 'runway';
 /** Contract v1.2: the state of a forest tile. */
 export type ForestState = 'standing' | 'burning' | 'regrowing';
 export interface Tile {
@@ -140,6 +142,8 @@ export interface PersonView {
   job: { firm: number } | null; wage: number; commuteTiles: number; commuteMinutes: number; wellbeing: number;
   /** Extras on the real wire (docs/sim-api-notes.md). */
   inLabourForce: boolean; jobGuarantee: boolean; effectiveHours: number;
+  /** Contract v1.9: set for domestic staff (the estate's pilot); `job` stays null. */
+  employer?: { kind: 'household'; household: number; label: string };
 }
 
 export interface HouseholdView {
@@ -152,6 +156,10 @@ export interface HouseholdView {
   politicalPower: number; arrearsMonths: number;
   /** Extras on the real wire (docs/sim-api-notes.md). */
   wellbeing: number; footprintTonnes: number; foodMet: number;
+  /** Contract v1.9: a short tag from the catalog (`catalog.tags`): "Estate owner", on the estate household only. */
+  tag?: string;
+  /** Contract v1.9: the wealth band of the household's net worth (`catalog.wealthBands`). */
+  wealthBand?: { id: string; label: string };
 }
 
 export interface HomeView {
@@ -252,7 +260,8 @@ export interface LedgerQuery { fromTurn?: number; toTurn?: number; kind?: Ledger
 export interface FinanceFlows {
   govRevenue: Record<'wageTax' | 'profitTax' | 'capitalTax' | 'wealthTax' | 'carbon' | 'other', number>;
   govSpending: Record<'benefits' | 'ubi' | 'publicSpending' | 'jobGuarantee' | 'upkeep' | 'subsidy' | 'interest' | 'builds' | 'other', number>;
-  householdIncome: Record<'wages' | 'dividends' | 'rent' | 'interest' | 'benefits', number>;
+  /** `domesticWages` (contract v1.9) is the part of `wages` that a household paid to its staff (the estate's pilot). */
+  householdIncome: Record<'wages' | 'dividends' | 'rent' | 'interest' | 'benefits' | 'domesticWages', number>;
   householdTaxes: number; rentPaid: number; loanPayments: number; householdSpending: number;
   firmRevenue: number; wageBill: number; firmProfit: number; investment: number; bankInterestIncome: number;
 }
@@ -307,6 +316,28 @@ export interface Weather {
   forecast: { fireRisk: RiskLevel; droughtRisk: RiskLevel };
 }
 
+/** Contract v1.9: the estate's money from the ledger, in dollars. */
+export interface EstateMoney { dividends: number; wagePaid: number; wealthTax: number; carbonCharge: number }
+/** Contract v1.9 (Town v7): the elite estate, its jet and its pilot. Tiles come from content/initial_town.json; the scene draws what this says. */
+export interface Estate {
+  household: number; home: number;
+  /** Pool, garden and drive tiles (`estate_grounds` on the map). */
+  groundsTiles: TileRef[];
+  /** Runway tiles in take-off order (`runway` on the map). */
+  runwayTiles: TileRef[];
+  hangarTile: TileRef;
+  jetName: string;
+  /** `flyingThisMonth`: the jet flew in the latest month (the month's frame has a `private_jet_flight` event). */
+  jet: { value: number; flyingThisMonth: boolean };
+  lastFlight?: { turn: number; month: 0 | 1 | 2; tonnes: number };
+  flightsTotal: number; tonnesTotal: number;
+  /** Tonnes of one flight and the estate household's direct tonnes a month (content/params.json `estate`). */
+  flightTonnes: number; householdEmissionsT: number;
+  pilot?: { person: number; wage: number; status: 'employed' | 'let_go'; unpaidMonths: number; unpaidMonthsMax: number };
+  /** The latest month and the trailing twelve months (`months` says how many are covered). */
+  finance: { month: EstateMoney; last12: EstateMoney; months: number };
+}
+
 export interface Snapshot {
   schemaVersion: SchemaVersion;
   /** Contract v1.1. Absent in a package built before v1.1 (the UI then treats it as closed). */
@@ -347,6 +378,8 @@ export interface Snapshot {
   policies?: PolicyBoard;
   industry?: Industry;
   history: HistoryPoint[];
+  /** Contract v1.9 (Town v7): the elite estate; absent when the town has none. */
+  estate?: Estate;
 }
 
 export interface RejectedCommand { index: number; command: Command; reason: BlockReason }
@@ -383,7 +416,9 @@ export interface MonthFlows {
   purchases?: { household: number; firm: number; sector: Sector; amount: number }[];
   rent?: { household: number; home: number; amount: number }[];
   wages?: { person: number; household: number; firm: number; amount: number }[];
-  emissions?: { source: 'firm' | 'households' | 'sink' | 'plant'; id?: number; tile?: TileRef; tonnes: number }[];
+  emissions?: { source: 'firm' | 'households' | 'sink' | 'plant' | 'aviation'; id?: number; tile?: TileRef; tonnes: number }[];
+  /** Contract v1.9: people on a household's payroll (the estate's pilot) commuting to the hangar tile; omitted when empty. */
+  staffCommutes?: { person: number; household: number; employer: number; from: TileRef | null; to: TileRef; tiles: number; minutes: number; wage: number }[];
 }
 
 /** Section 10.7: every fallible SimPort call returns this; Rust violations become error results, never exceptions. */
@@ -433,11 +468,15 @@ export type SimEvent = Importance & (
   | { type: 'drought_started'; severity: number; months: number }
   | { type: 'drought_ended' }
   | { type: 'home_damaged'; home: number }
+  // contract v1.9 (Town v7: the estate)
+  | { type: 'private_jet_flight'; household: number; tonnes: number }
+  | { type: 'pilot_let_go'; person: number }
+  | { type: 'pilot_hired'; person: number }
 );
 export type SimEventType = SimEvent['type'];
 
 export type TraceRecord =
-  | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant' | 'fire_sink_loss'; id?: number; tile?: TileRef; tonnes: number }
+  | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant' | 'fire_sink_loss' | 'aviation'; id?: number; tile?: TileRef; tonnes: number }
   | { type: 'income'; household: number; kind: 'wages' | 'dividends' | 'rent' | 'interest' | 'benefits'; amount: number }
   | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; netLobby: number };
 
@@ -469,14 +508,15 @@ export interface Breakdown {
   id: string; title: string; formula: string; inputs: BreakdownInput[]; result: { value: number; unit: string };
   parts?: BreakdownPart[]; sumsToResult?: boolean;
 }
-export interface EmissionsLine { firms: number; households: number; plants: number; grossTotal: number; sink: number; net: number; headline: number }
+/** `aviation` (contract v1.9): private jet flights; `grossTotal` = firms + households + plants + aviation. */
+export interface EmissionsLine { firms: number; households: number; plants: number; aviation?: number; grossTotal: number; sink: number; net: number; headline: number }
 export interface LegitimacyTerm { id: 'wellbeing' | 'unemployment' | 'inequality' | 'debt' | 'bailout'; label: string; input: number; threshold?: number; weight: number; contribution: number }
 export interface TaxRow { id: 'income' | 'profit' | 'capital' | 'wealth' | 'carbon' | 'gst'; label: string; appliesTo: string; rateNominal: number | null; rateEffective: number | null; revenueMonth: number; revenueQuarter: number; modelled: boolean }
 /** Contract v1.8: the budget at the current net rate (per turn, run-out turn). */
 export interface Runway { perTurn: number; runOutTurn?: number; runsOutBeforeEnd: boolean }
 export interface Breakdowns {
   gdp: Breakdown; gpi: Breakdown; wageShare: Breakdown; profitShare: Breakdown; debtToGdp: Breakdown;
-  gini: Breakdown & { lorenz: { populationShare: number; wealthShare: number }[]; byHousehold: { household: number; people: number; netWorth: number }[] };
+  gini: Breakdown & { lorenz: { populationShare: number; wealthShare: number }[]; byHousehold: { household: number; people: number; netWorth: number; /** Contract v1.9: what the net worth is made of; ids net_cash, homes, jet, bank, firms. */ parts?: { id: string; value: number }[] }[] };
   legitimacy: Breakdown & { terms: LegitimacyTerm[]; trend: number };
   capitalRatio: Breakdown;
   emissions: { runway: Runway; month: EmissionsLine; turn: EmissionsLine; cumulative: { tonnes: number; budget: number; remaining: number; share: number }; reconciles: boolean; note: string };
@@ -523,4 +563,8 @@ export interface Catalog {
   /** Authored text by group, then key. `{name}` placeholders are filled by the web. */
   text: Record<string, Record<string, string>>;
   systems: SystemCard[];
+  /** Contract v1.9: short tags by key (`estate_owner`). */
+  tags?: Record<string, string>;
+  /** Contract v1.9: wealth bands, richest first; `min: null` is the catch-all last band. */
+  wealthBands?: { min: number | null; id: string; label: string }[];
 }

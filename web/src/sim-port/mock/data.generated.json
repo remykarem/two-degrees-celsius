@@ -270,7 +270,7 @@
       "publicHousing": 0,
       "fossilPlant": 2,
       "renewablePlant": 0,
-      "road": 4
+      "road": 11
     }
   },
   "town": {
@@ -287,13 +287,13 @@
     "bankOwner": 0,
     "bank": {
       "loans": 345000,
-      "deposits": 289000,
-      "equity": 56000,
-      "headroom": 215000
+      "deposits": 304000,
+      "equity": 41000,
+      "headroom": 65000
     },
-    "labourForce": 10,
-    "employed": 9,
-    "unemployment": 0.09999999999999998
+    "labourForce": 11,
+    "employed": 10,
+    "unemployment": 0.09090909090909094
   },
   "weather": {
     "onset": 0.75,
@@ -818,6 +818,36 @@
   "collapseUnemployment": 0.35,
   "bankCascadeUnemployment": 0.2,
   "catalog": {
+    "tags": {
+      "estate_owner": "Estate owner"
+    },
+    "wealthBands": [
+      {
+        "min": 1000000,
+        "id": "ultra_rich",
+        "label": "Ultra-rich"
+      },
+      {
+        "min": 250000,
+        "id": "wealthy",
+        "label": "Wealthy"
+      },
+      {
+        "min": 40000,
+        "id": "comfortable",
+        "label": "Comfortable"
+      },
+      {
+        "min": 0,
+        "id": "modest",
+        "label": "Modest"
+      },
+      {
+        "min": null,
+        "id": "in_debt",
+        "label": "In debt"
+      }
+    ],
     "bands": {
       "crisis": {
         "legitimacyBelow": 0.2,
@@ -942,6 +972,27 @@
         "low_legitimacy_detail": "At zero the town collapses.",
         "low_legitimacy_title": "Collapse warning: legitimacy is very low",
         "policy_blocked_title": "A policy was blocked"
+      },
+      "estate": {
+        "aviation_source": "Private jet flight",
+        "does_not_work": "Does not work: outside the labour force",
+        "domestic_wages_row": "Domestic wages (paid by the estate)",
+        "employer_line": "Employer: {label} (household)",
+        "employs_line": "Employs: {name}",
+        "flight_event": "Private jet flight from the estate: {tonnes} t CO2",
+        "grounded_note": "The jet is grounded while the pilot is let go.",
+        "home_label": "Estate",
+        "jet_label": "Private jet",
+        "pilot_hired_event": "The estate hired its pilot back. The jet can fly again.",
+        "pilot_let_go_event": "The estate could not pay its pilot and let them go. The jet is grounded.",
+        "pilot_status_employed": "Employed",
+        "pilot_status_let_go": "Let go",
+        "wealth_part_bank": "Bank equity",
+        "wealth_part_firms": "Firm equity",
+        "wealth_part_homes": "Homes owned",
+        "wealth_part_jet": "Private jet",
+        "wealth_part_net_cash": "Savings minus debt",
+        "wealth_tax_note": "Paid in part if the estate's savings cannot cover it"
       },
       "finance_hint": {
         "bank-cr": "Equity over loans. Must stay above the limit, or lending stops.",
@@ -1358,7 +1409,7 @@
   },
   "derived": {
     "monthlyFirmEmissions": 2.56,
-    "monthlyOutputValue": 34800,
+    "monthlyOutputValue": 35500,
     "monthlyWageBill": 14850
   },
   "map": {
@@ -1379,6 +1430,34 @@
       },
       {
         "x": 8,
+        "y": 6
+      },
+      {
+        "x": 1,
+        "y": 9
+      },
+      {
+        "x": 1,
+        "y": 8
+      },
+      {
+        "x": 2,
+        "y": 8
+      },
+      {
+        "x": 3,
+        "y": 8
+      },
+      {
+        "x": 4,
+        "y": 8
+      },
+      {
+        "x": 4,
+        "y": 7
+      },
+      {
+        "x": 4,
         "y": 6
       }
     ],
@@ -1442,6 +1521,50 @@
       {
         "x": 0,
         "y": 7
+      },
+      {
+        "x": 0,
+        "y": 8
+      },
+      {
+        "x": 0,
+        "y": 9
+      },
+      {
+        "x": 2,
+        "y": 9
+      },
+      {
+        "x": 3,
+        "y": 9
+      },
+      {
+        "x": 4,
+        "y": 9
+      },
+      {
+        "x": 2,
+        "y": 10
+      },
+      {
+        "x": 3,
+        "y": 10
+      },
+      {
+        "x": 4,
+        "y": 10
+      },
+      {
+        "x": 5,
+        "y": 9
+      },
+      {
+        "x": 5,
+        "y": 10
+      },
+      {
+        "x": 5,
+        "y": 11
       }
     ],
     "commons": [
@@ -1489,7 +1612,51 @@
     "bank": {
       "x": 6,
       "y": 5
-    }
+    },
+    "estateGrounds": [
+      {
+        "x": 1,
+        "y": 10
+      },
+      {
+        "x": 0,
+        "y": 11
+      },
+      {
+        "x": 1,
+        "y": 11
+      }
+    ],
+    "runway": [
+      {
+        "x": 2,
+        "y": 11
+      },
+      {
+        "x": 3,
+        "y": 11
+      },
+      {
+        "x": 4,
+        "y": 11
+      }
+    ]
+  },
+  "estate": {
+    "household": 8,
+    "home": 7,
+    "hangarTile": {
+      "x": 2,
+      "y": 11
+    },
+    "jetName": "Gulfstream",
+    "jetValueUsd": 800000,
+    "flightProbMonthly": 0.4,
+    "flightTonnes": 2,
+    "householdEmissionsT": 0.5,
+    "pilotWageUsd": 1800,
+    "pilotUnpaidMonthsMax": 3,
+    "pilotRehireMonthsOfWages": 3
   },
   "homes": [
     {
@@ -1554,6 +1721,15 @@
       },
       "owner": 1,
       "valueUsd": 45000
+    },
+    {
+      "id": 7,
+      "tile": {
+        "x": 0,
+        "y": 10
+      },
+      "owner": 8,
+      "valueUsd": 1200000
     }
   ],
   "plants": [
@@ -1590,7 +1766,8 @@
           "skill": 0.6,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         },
         {
           "label": "Adult 2",
@@ -1598,7 +1775,8 @@
           "skill": 0.6,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1617,7 +1795,8 @@
           "skill": 0.6,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         },
         {
           "label": "Retired 1",
@@ -1625,7 +1804,8 @@
           "skill": 0.4,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1644,7 +1824,8 @@
           "skill": 0.85,
           "labourForce": true,
           "reservation": 2900,
-          "job": 0
+          "job": 0,
+          "staffOf": null
         },
         {
           "label": "Adult 2",
@@ -1652,7 +1833,8 @@
           "skill": 0.85,
           "labourForce": true,
           "reservation": 2900,
-          "job": 2
+          "job": 2,
+          "staffOf": null
         },
         {
           "label": "Child 1",
@@ -1660,7 +1842,8 @@
           "skill": 0.3,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1679,7 +1862,8 @@
           "skill": 0.85,
           "labourForce": true,
           "reservation": 2900,
-          "job": 0
+          "job": 0,
+          "staffOf": null
         },
         {
           "label": "Adult 2",
@@ -1687,7 +1871,8 @@
           "skill": 0.85,
           "labourForce": true,
           "reservation": 2900,
-          "job": 2
+          "job": 2,
+          "staffOf": null
         },
         {
           "label": "Child 1",
@@ -1695,7 +1880,8 @@
           "skill": 0.3,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1714,7 +1900,8 @@
           "skill": 0.5,
           "labourForce": true,
           "reservation": 1300,
-          "job": 0
+          "job": 0,
+          "staffOf": null
         },
         {
           "label": "Adult 2",
@@ -1722,7 +1909,8 @@
           "skill": 0.5,
           "labourForce": true,
           "reservation": 1300,
-          "job": 2
+          "job": 2,
+          "staffOf": null
         },
         {
           "label": "Child 1",
@@ -1730,7 +1918,8 @@
           "skill": 0.3,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1749,7 +1938,8 @@
           "skill": 0.5,
           "labourForce": true,
           "reservation": 1300,
-          "job": 1
+          "job": 1,
+          "staffOf": null
         },
         {
           "label": "Adult 2",
@@ -1757,7 +1947,8 @@
           "skill": 0.5,
           "labourForce": true,
           "reservation": 1300,
-          "job": 1
+          "job": 1,
+          "staffOf": null
         },
         {
           "label": "Child 1",
@@ -1765,7 +1956,8 @@
           "skill": 0.3,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
         }
       ]
     },
@@ -1776,7 +1968,7 @@
       "savings": 6000,
       "debt": 0,
       "home": 6,
-      "monthlyIncome": 1700,
+      "monthlyIncome": 3800,
       "people": [
         {
           "label": "Adult 1",
@@ -1784,7 +1976,8 @@
           "skill": 0.45,
           "labourForce": true,
           "reservation": 1200,
-          "job": 1
+          "job": 1,
+          "staffOf": null
         },
         {
           "label": "Retired 1",
@@ -1792,7 +1985,17 @@
           "skill": 0.4,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
+        },
+        {
+          "label": "Pilot",
+          "ageBand": "adult",
+          "skill": 0.65,
+          "labourForce": true,
+          "reservation": 2000,
+          "job": null,
+          "staffOf": 8
         }
       ]
     },
@@ -1811,7 +2014,8 @@
           "skill": 0.4,
           "labourForce": true,
           "reservation": 900,
-          "job": null
+          "job": null,
+          "staffOf": null
         },
         {
           "label": "Retired 1",
@@ -1819,7 +2023,28 @@
           "skill": 0.4,
           "labourForce": false,
           "reservation": 0,
-          "job": null
+          "job": null,
+          "staffOf": null
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "label": "Estate owner",
+      "class": "capitalist",
+      "savings": 15000,
+      "debt": 0,
+      "home": 7,
+      "monthlyIncome": 5000,
+      "people": [
+        {
+          "label": "Adult 1",
+          "ageBand": "adult",
+          "skill": 0.5,
+          "labourForce": false,
+          "reservation": 0,
+          "job": null,
+          "staffOf": null
         }
       ]
     }
@@ -1849,7 +2074,7 @@
       "sector": "food",
       "active": true,
       "name": "Farm",
-      "founder": 0,
+      "founder": 8,
       "tile": {
         "x": 7,
         "y": 9
@@ -1877,7 +2102,7 @@
       "cash": 5000,
       "debt": 20000,
       "wage": 1650,
-      "price": 70,
+      "price": 75,
       "output": 140,
       "intensity": 0,
       "workers": 3
@@ -1908,7 +2133,7 @@
         "id": "households",
         "title": "Households and people",
         "actor": "agent",
-        "summary": "Eight households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
+        "summary": "Nine households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
         "decides": [
           "How much to spend on food, goods and services this month",
           "Which firm in each sector gets that spending",
@@ -2327,6 +2552,45 @@
         "code": [
           "crates/sim-model/src/weather.rs"
         ]
+      },
+      {
+        "id": "estate",
+        "title": "The estate and its pilot",
+        "actor": "agent",
+        "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
+        "decides": [
+          "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)",
+          "Whether to let the pilot go after months of short pay, and to rehire once it can afford wages again"
+        ],
+        "observes": [
+          "Its savings, the carbon price after lobbying, whether the pilot is employed"
+        ],
+        "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
+        "params": [
+          {
+            "path": "estate.flight_prob_monthly",
+            "label": "Chance the jet flies in a month",
+            "value": 0.4,
+            "unit": "probability per month"
+          },
+          {
+            "path": "estate.flight_tonnes",
+            "label": "Emissions of one flight",
+            "value": 2,
+            "unit": "t CO2 per flight"
+          },
+          {
+            "path": "estate.pilot_wage_usd",
+            "label": "Pilot's wage",
+            "value": 1800,
+            "unit": "$ per month"
+          }
+        ],
+        "variants": [],
+        "classParams": [],
+        "code": [
+          "crates/sim-model/src/estate.rs"
+        ]
       }
     ],
     "randomness": [
@@ -2524,11 +2788,28 @@
           }
         ],
         "code": "crates/sim-model/src/class.rs"
+      },
+      {
+        "id": "estate_flight",
+        "event": "The estate's jet flies",
+        "system": "estate",
+        "distribution": "bernoulli",
+        "probability": "the fixed monthly flight chance; the flight happens only if the pilot is employed (the draw is taken either way, so a dismissal never shifts the random stream)",
+        "when": "each month while the estate exists",
+        "params": [
+          {
+            "path": "estate.flight_prob_monthly",
+            "label": "Chance the jet flies in a month",
+            "value": 0.4,
+            "unit": "probability per month"
+          }
+        ],
+        "code": "crates/sim-model/src/estate.rs"
       }
     ],
     "deterministic": [
       "Everything else is deterministic: spending, shop choice, hiring, wages, prices, credit, taxes, lobbying and legitimacy use no random draws.",
-      "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off and whether a household founds a firm; it does not change the starting town.",
+      "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off, whether a household founds a firm and when the estate's jet flies; it does not change the starting town.",
       "The starting differences between households (income, savings, skill, who owns what) are written in content/initial_town.json, not drawn."
     ]
   }
