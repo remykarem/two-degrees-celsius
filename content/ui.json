@@ -291,7 +291,13 @@
       "wealth_part_bank": "Bank equity",
       "wealth_part_firms": "Firm equity",
       "domestic_wages_row": "Domestic wages (paid by the estate)",
-      "wealth_tax_note": "Paid in part if the estate's savings cannot cover it"
+      "wealth_tax_note": "Paid in part if the estate's savings cannot cover it",
+      "wealth_tax_short": "Wealth tax paid in part: about {owed} was due and {paid} was paid, because the estate's savings ({savings}) fall short.",
+      "pilot_unpaid_warning": "The estate has paid the pilot short for {unpaid} of {max} months in a row. At {max} the pilot is let go and the jet is grounded.",
+      "top_share_line": "{name} (1 of {households} households, {people} of {total_people} people) holds {top} of the town's {total} net worth.",
+      "estate_card_title": "The estate",
+      "flights_line": "Flights this game: {flights}, {tonnes} t CO2 in all. The whole town has emitted {town_tonnes} t so far.",
+      "no_flights": "No flights yet this game"
     }
   },
   "system_cards": [
