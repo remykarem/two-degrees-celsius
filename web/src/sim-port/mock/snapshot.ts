@@ -32,7 +32,7 @@ function estateView(s: MockState): Estate | null {
     ...(e.lastFlight ? { lastFlight: { ...e.lastFlight } } : {}),
     flightsTotal: e.flightsTotal, tonnesTotal: e.tonnesTotal, flightTonnes: g.flightTonnes, householdEmissionsT: g.householdEmissionsT,
     ...(pilot ? { pilot: { person: pilot.id, wage: g.pilotWageUsd, status: pilot.staffOf != null ? 'employed' as const : 'let_go' as const, unpaidMonths: e.unpaidMonths, unpaidMonthsMax: g.pilotUnpaidMonthsMax } } : {}),
-    finance: { month: money(last), last12: money(last - 11), months: Math.max(0, Math.min(12, s.tick)) },
+    finance: { month: money(last), last12: money(last - 11), months: Math.max(0, Math.min(12, s.tick)), wealthTaxOwed: 0 },
   };
 }
 

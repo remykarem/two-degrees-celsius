@@ -6509,7 +6509,8 @@
           "wealthTax": 0.0,
           "carbonCharge": 0.0
         },
-        "months": 12
+        "months": 12,
+        "wealthTaxOwed": 0.0
       }
     }
   }

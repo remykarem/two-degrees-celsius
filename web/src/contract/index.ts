@@ -335,7 +335,7 @@ export interface Estate {
   flightTonnes: number; householdEmissionsT: number;
   pilot?: { person: number; wage: number; status: 'employed' | 'let_go'; unpaidMonths: number; unpaidMonthsMax: number };
   /** The latest month and the trailing twelve months (`months` says how many are covered). */
-  finance: { month: EstateMoney; last12: EstateMoney; months: number };
+  finance: { month: EstateMoney; last12: EstateMoney; months: number; /** Wealth tax owed for the coming month, in dollars (net worth now, rate in force); paid is capped by savings. */ wealthTaxOwed: number };
 }
 
 export interface Snapshot {

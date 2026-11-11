@@ -536,6 +536,10 @@ pub struct EstateFinance {
     pub month: EstateMoney,
     pub last12: EstateMoney,
     pub months: u32,
+    /// Wealth tax the estate owes for the coming month, in dollars: the monthly wealth tax on its
+    /// net worth now at the rate in force (the same rule the government system applies). The
+    /// tax actually paid is capped by savings, so `owed > month.wealthTax` means paid in part.
+    pub wealth_tax_owed: f64,
 }
 
 /// Contract v1.9 (Town v7): the elite estate. Tiles come from `content/initial_town.json`; the
@@ -872,7 +876,17 @@ fn estate_view(sim: &Sim, ledger: &crate::ledger::LedgerStore) -> Option<EstateV
         flight_tonnes: sim.params.estate.flight_tonnes,
         household_emissions_t: sim.params.estate.household_emissions_t,
         pilot,
-        finance: crate::finance::estate_finance(e.household, ledger),
+        finance: {
+            let mut f = crate::finance::estate_finance(e.household, ledger);
+            let wealth = sim_metrics::household_wealth(s, &sim.params);
+            f.wealth_tax_owed = sim_model::util::wealth_tax_monthly(
+                wealth[e.household.idx()],
+                s.policy.wealth_threshold,
+                s.effective.wealth_tax.0,
+            )
+            .dollars();
+            f
+        },
     })
 }
 

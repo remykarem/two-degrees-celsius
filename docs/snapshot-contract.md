@@ -443,7 +443,7 @@ interface Estate {
   lastFlight?: { turn: number; month: 0 | 1 | 2; tonnes: number }; flightsTotal: number; tonnesTotal: number;   // counted from the start of play (settling flights are not counted)
   flightTonnes: number; householdEmissionsT: number;                                // params estate.flight_tonnes, household_emissions_t
   pilot?: { person: number; wage: number; status: 'employed' | 'let_go'; unpaidMonths: number; unpaidMonthsMax: number };
-  finance: { month: EstateMoney; last12: EstateMoney; months: number };            // from the ledger: dividends, wagePaid, wealthTax, carbonCharge (dollars)
+  finance: { month: EstateMoney; last12: EstateMoney; months: number; wealthTaxOwed: number };            // from the ledger: dividends, wagePaid, wealthTax, carbonCharge (dollars)
 }
 // events (importance 2, 3 for pilot_let_go and 2 for pilot_hired): { type: 'private_jet_flight', household, tonnes } | { type: 'pilot_let_go', person } | { type: 'pilot_hired', person }
 interface MonthFlows { /* ... */ staffCommutes?: { person; household; employer; from: TileRef | null; to: TileRef /* hangar */; tiles; minutes; wage }[] }   // omitted when empty

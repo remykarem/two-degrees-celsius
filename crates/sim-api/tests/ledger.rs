@@ -372,7 +372,10 @@ fn pilot_earnings_name_the_estate_household_as_payer() {
     let hp = page(&api, &AccountRef::Household { id: estate });
     assert!(hp.entries.iter().any(|e| e.kind == LedgerKindKey::Wage
         && e.from == AccountRef::Household { id: estate }
-        && e.to == AccountRef::Household { id: pilot.household }));
+        && e.to
+            == AccountRef::Household {
+                id: pilot.household
+            }));
 }
 
 fn cents(d: f64) -> i64 {
@@ -583,4 +586,52 @@ fn history_points_carry_the_new_fields_and_energy_is_labelled() {
     let d = &s.energy.demand;
     assert!((d.firms + d.households - d.total).abs() < 1e-9);
     assert_eq!(s.schema_version, 5);
+}
+
+/// V7-6: the estate's wealth tax owed is on the wire (`estate.finance.wealthTaxOwed`), so the web
+/// does not estimate it. It follows the rule: annual rate in force on net worth above the threshold,
+/// one twelfth a month.
+#[test]
+fn estate_wealth_tax_owed_is_on_the_wire() {
+    let mut api = api_with(4, 8);
+    let before = api
+        .snapshot()
+        .estate
+        .expect("estate")
+        .finance
+        .wealth_tax_owed;
+    let set = |lever, v| Command::SetPolicy {
+        lever,
+        value: PolicyValue::Number(v),
+    };
+    for _ in 0..3 {
+        api.submit_turn(&[]).unwrap(); // earn political capital first
+    }
+    let r = api.submit_turn(&[set(LeverKey::WealthTax, 0.05)]).unwrap();
+    assert!(r.rejected.is_empty(), "{:?}", r.rejected);
+    for _ in 0..3 {
+        api.submit_turn(&[]).unwrap();
+    }
+    let snap = api.snapshot();
+    let estate = snap.estate.as_ref().expect("estate");
+    let hh = &snap.households[estate.household as usize];
+    let rate = snap.policy[&LeverKey::WealthTax]
+        .effective
+        .expect("effective wealth tax");
+    let threshold = match snap.policy[&LeverKey::WealthThreshold].nominal {
+        sim_api::snapshot::PolicyScalar::Number(v) => v,
+        _ => panic!("threshold is a number"),
+    };
+    let expected = (hh.net_worth - threshold).max(0.0) * rate / 12.0;
+    assert!(
+        expected > 0.0,
+        "nw {} thr {threshold} rate {rate}",
+        hh.net_worth
+    );
+    let owed = estate.finance.wealth_tax_owed;
+    assert!(owed > before);
+    assert!(
+        (owed - expected).abs() <= 0.01 * expected,
+        "owed {owed} vs {expected}"
+    );
 }

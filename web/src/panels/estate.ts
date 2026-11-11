@@ -29,18 +29,14 @@ export function topHouseholdLine(s: Snapshot): string | null {
 }
 
 /**
- * The wealth tax the estate was charged against what it owed. The wire sends the amount paid (`estate.finance.month.wealthTax`) but not the amount owed, so
- * owed is estimated here from the policy in force and the household's net worth (rate in force, one twelfth a month, above the threshold): a labelled
- * estimate, shown only when the estate's savings are below it. Returns null when nothing is short.
+ * The wealth tax the estate was charged against what it owes. Both amounts come from the wire (`estate.finance.wealthTaxOwed` and
+ * `estate.finance.month.wealthTax`); the tax is capped by savings, so nothing is shown unless the estate's savings are below what it owes.
+ * Returns null when nothing is short.
  */
 export function wealthTaxShortfall(s: Snapshot): { owed: number; paid: number; savings: number } | null {
   const e = s.estate, h = estateHousehold(s);
-  const rate = s.policy?.wealth_tax, thr = s.policy?.wealth_threshold;
-  if (!e || !h || !rate || !thr) return null;
-  const rateNow = rate.effective ?? Number(rate.nominal), thresholdNow = thr.effective ?? Number(thr.nominal);
-  const monthsPerYear = s.game.turnsPerYear * s.game.ticksPerTurn;
-  const owed = Math.max(0, h.netWorth - thresholdNow) * rateNow / monthsPerYear;
-  const paid = e.finance.month.wealthTax;
+  if (!e || !h) return null;
+  const owed = e.finance.wealthTaxOwed, paid = e.finance.month.wealthTax;
   return owed > 0 && owed > paid && h.savings < owed ? { owed, paid, savings: Math.max(0, h.savings) } : null;
 }
 export const wealthTaxShortText = (s: Snapshot): string | null => {

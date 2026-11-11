@@ -606,6 +606,7 @@ pub fn estate_finance(hh: HouseholdId, store: &LedgerStore) -> EstateFinance {
             month: EstateMoney::default(),
             last12: EstateMoney::default(),
             months: 0,
+            wealth_tax_owed: 0.0,
         };
     };
     let sum = |from: u32, to: u32| {
@@ -637,5 +638,6 @@ pub fn estate_finance(hh: HouseholdId, store: &LedgerStore) -> EstateFinance {
         month: sum(t, t),
         last12: sum(from, t),
         months: t - from + 1,
+        wealth_tax_owed: 0.0, // filled by `estate_view` (needs the state)
     }
 }

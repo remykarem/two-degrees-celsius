@@ -511,7 +511,10 @@ impl LedgerStore {
         for e in old {
             let (turn, month) = (turn_of(e.tick), (e.tick % 3) as u8);
             match self.earning_rollups.iter_mut().find(|r| {
-                r.person == e.person && r.turn == turn && r.month == month && r.firm == e.firm
+                r.person == e.person
+                    && r.turn == turn
+                    && r.month == month
+                    && r.firm == e.firm
                     && r.employer == e.employer
             }) {
                 Some(r) => {

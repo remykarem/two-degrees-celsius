@@ -53,9 +53,9 @@ describe('estate card', () => {
     expect(deriveCrises(s, null).map((x) => x.id)).toContain('pilot_let_go');
     expect(html(EstateCard, { game: createGame(createSimPort()), snap: s })).toContain('pilot-grounded');
   });
-  it('estimates a wealth tax shortfall only when the savings fall short', () => {
+  it('shows a wealth tax shortfall only when the savings fall short of the wire\'s owed amount', () => {
     const s = clone(real());
-    s.policy.wealth_tax = { nominal: 0.05, effective: 0.05 };
+    s.estate!.finance.wealthTaxOwed = 5000;
     s.households.find((h) => h.id === s.estate!.household)!.savings = 10;
     const x = wealthTaxShortfall(s)!;
     expect(x.owed).toBeGreaterThan(x.paid);
