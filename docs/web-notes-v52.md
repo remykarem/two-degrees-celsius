@@ -1,0 +1,40 @@
+# Web notes: Town v5.2 (transparency pass)
+
+Design: `docs/town-v5.md` sections 10 and 11. Contract: `docs/snapshot-contract.md` sections 15 (v1.5, explorer) and 16 (v1.6, breakdowns, policies, industry). Scope: `web/` only. The web renders what the wire gives and never recomputes model math.
+
+## What was built
+- **Contract and ports**: types for v1.5/v1.6 (`Breakdowns`, `PolicyBoard`, `Industry`, `AssumptionTopic`; the three snapshot blocks are optional only so an older package shows "older package" notes), `SimPort.assumptions()` on the mock and the wasm wrapper (`sim.assumptions()`, the real export name), `SchemaVersion = 4 | 5` (mock and the wasm loader now require 5 with `breakdowns`).
+- **Mock transparency** (`sim-port/mock/transparency.ts`, `emissions.ts`, `assumptions.ts`): INVENTED but self-consistent breakdowns (parts sum to results, legitimacy terms sum to the trend, Lorenz from the households, emissions lines reconcile), policy board with a timeline (queued, activated, cancelled, rejected, weakened; kept in `MockState.policyLog`), industry view (ownership 0.8 household / 0.2 bank, state share 0), an 11-topic catalogue. All labelled mock.
+- **Breakdown popover** (`HowButton`, `BreakdownModal`, `BreakdownTable`, `panels/explain.ts`): formula, live inputs with units, result, parts with a sums-to check (the wire's `sumsToResult` shown beside the web's own check; a mismatch is red). A "how?" button sits on every metric row (Economy, Ecology, Society, People, Finance rows, Industry, lever rows, health meters, stress gauge, energy panel, inspector, ledger). Where the wire has a breakdown (`METRIC_BREAKDOWN`) it opens that; otherwise the explorer topic. It is a `Modal` (focus trap, Escape), and a modal pauses the Pressure clock (`app/keys.ts modalOpen`); the dialog footer says so in Pressure mode.
+- **Emissions panel** (`EmissionsPanel`, `panels/emissions.ts`): last month and this turn by source (firms, households, plants), gross, sink, net; accumulated vs budget; a visible reconciliation line with the numbers; a cumulative chart against the budget line. The emissions metric row now shows the wire's net headline, with turn and accumulated totals under it.
+- **Gini** (formula, inputs, hand-rolled SVG Lorenz curve, wealth by household), **Legitimacy** (terms with input, threshold, weight, signed contribution), **Taxes table** (Income, Profit, Capital, Wealth, Carbon, and a GST/VAT row marked not modelled, with the reason), **Capital ratio** (equity, loans, limit, headroom in dollars).
+- **"Wage tax" is "Income tax"** everywhere (`store/labels.ts` for the lever label, `REVENUE_LABEL`, mock label; keys unchanged). Finance rows for profit and capital tax carry plain explanations.
+- **Policies tab** (`PoliciesPanel`, `panels/policies.ts`): pending (with Cancel), drafts in the plan tray, policies changed from turn 0 or weakened or pending (turn 0, set, in force, last change), a "show unchanged" toggle, timeline newest first. A policy name opens the drawer at that lever.
+- **Industry tab** (`IndustryPanel`, `panels/industry.ts`): firms with output, price, workers, wage, revenue, profit, emissions and the ownership split, saying the state share is 0 in every firm; infrastructure (count, build cost, upkeep each and in all); public goods with monthly spend and what it buys. A firm name selects it, an infrastructure row selects its first tile (`game.selectFirstOf`).
+- **Explorer** ("How it works" in the top bar, `ExplorerModal`, `panels/explorer.ts`): searchable (title, summary, formula, parameters, examples, anchors), grouped, status filter and badge, live parameters, worked examples, what it leaves out, related topics, developer code paths. Every "how?" button and "How is this calculated?" link resolves a UI anchor (metric key, lever key, panel id) to a topic by `usedBy`.
+- **No bare percentages** (`panels/backing.ts`): see below.
+
+## No bare percentages: found and fixed
+Top bar (budget tonnes used and left, stress with budget left), Debt/GDP (both dollar figures), wage and profit share (the wire's breakdown inputs, else wage bill and profit dollars), legitimacy (the two biggest terms and the trend), richest household (their net worth of the total), forest and commons (stock of max from `forestStock`/`commonsStock`, else forest tiles standing), farm (forest and commons stock, drought), climate stress (budget tonnes), health meters (stock of max under each bar), GPI beside GDP (dollars), capital ratio (equity, loans, limit, headroom), bank default rate (loans), saving rate (income and spending), energy served share (supply and demand), renewable share (plants N of M), plant share (the row's capacity), inspector rows (commons, forest, firm green tech, bank, government, housing occupancy N of M homes, plant share, fossil and renewable plants N of M, served), crisis banners (legitimacy and budget with their numbers), emissions "why" bars (tonnes of tonnes). `tests/transparency.test.ts` runs `isBarePercent` over `metricText` of every metric, the finance percent rows and the served share, on the mock and (`wasm-real-v52.test.ts`) the real sim.
+Left as they are: the end-of-game story and results prose (they quote a start and an end value in a sentence, e.g. "from 8.2% to 6.1%"), system switch copy ("10% less output while it lasts": a parameter, not a metric), tax and policy rates (they are the lever settings).
+
+## Tests
+`tests/transparency.test.ts` (popover logic and units, sums-to checks, emissions reconciliation display including a forced mismatch, Lorenz path, Policies derivation through queue/activate/cancel, Industry derivation and selection, explorer search/filter/anchor resolution and coverage of every metric and lever, Income tax label, taxes table, no-bare-percent rule, Pressure pause wiring, and the fixtures `breakdowns.json`, `policies.json`, `industry.json`, `assumptions.json`), `wasm-real-v52.test.ts` (the same views on the real wasm sim), `wasm-golden.test.ts` extended with the new golden keys.
+
+## Real sim
+Tested on the real wasm sim (package rebuilt after the Rust commits "Transparency: ..." landed, schemaVersion 5). Screenshots at 1440x900 and 1024x768 of every new view on both the mock and the real sim are in the session scratchpad (`playwright/v52-shots.mjs`, dev server port 5186).
+
+## Rough
+- A mock Gini breakdown is recomputed from households while the mock's headline Gini drifts with its toy dynamics (the breakdown says so).
+- The mock cumulative counts gross emissions (the real wire counts net).
+- The cumulative chart reads `(1 - budgetShare) x budget` from history; turn 0 is drawn as zero.
+- The sidebar is 280 to 310 px wide, so the Policies and Industry tabs are card-like lists, not wide tables. Seven tabs wrap to two rows.
+- `breakdownsFnv` in the golden is the native hash of re-serialised JSON, which JS cannot reproduce (serde prints `5.0`); the wasm golden test carries it over after checking it exists and compares every breakdown result as exact doubles.
+- Stale `docs/architecture.md` text still mentions `sim-port/wasm/upgrade.ts`, which was removed in Town v5.
+
+## Contract issues
+1. `Snapshot.nature` has no forest or commons stock maximum; the web divides `forestStock` by the share to show "stock of max". A `forestMax`/`commonsMax` field would remove the division. Farm health has no stock at all (the web shows its inputs).
+2. The cumulative emissions series is not on the wire (only `history.budgetShare`); a `history.cumulativeEmissions` exists on the real wire (commit 9ca65e3) but is not in the section 16 text, so the web does not use it yet.
+3. Real `PolicyRow.weakenedBy` is nonzero for policies the player never changed (profit tax 25% set, 11% in force): the wording "lobbying weakens this" is used; the share's definition is not in section 16.
+4. Units on the wire are free text ("$", "$/year", "0..1", "0 or 1", "t CO2", "usd_per_tonne"); `fmtUnit` handles those seen and falls back to "value unit". An enum would be safer.
+5. `docs/fixtures/policies.json` carries a `cancelRefund` field not in `PolicyBoard`.

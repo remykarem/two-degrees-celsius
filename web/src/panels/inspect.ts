@@ -2,8 +2,9 @@ import type { ClassKey, FirmOwner, InfraKind, PersonView, Snapshot } from '../co
 import type { DraftItem, MapLayout, Placed, Scenery, Selection, Tile } from '../store';
 import { fossilShareOf, occupant, pendingAt, sameTile, tileAt } from '../store';
 import { forestStateOf, forecastView, WEATHER_UI, weatherOf } from '../store/weather';
-import { plantAt, UNIT_HELP } from './energy';
-import { compact, money, pct, tonnes, turnsUntil } from './format';
+import { energyText, plantAt, plantRows, UNIT_HELP } from './energy';
+import { debtBacking, forestTiles, legitimacyBacking, pctWith, stockOf } from './backing';
+import { compact, money, tonnes, turnsUntil } from './format';
 
 export interface Row { label: string; value: string; hint?: string }
 export interface Section { heading: string; rows: Row[] }
@@ -73,7 +74,7 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
     sections: [
       { heading: 'Work', rows: [
         { label: 'Job', value: jobText }, { label: 'Wage', value: p.job ? `${money(p.wage)}/month` : 'none' },
-        { label: 'Skill', value: pct(p.skill) }, ...(p.jobGuarantee ? [{ label: 'Job guarantee', value: 'yes' }] : [])] },
+        { label: 'Skill', value: `${p.skill.toFixed(2)} (0 to 1)` }, ...(p.jobGuarantee ? [{ label: 'Job guarantee', value: 'yes' }] : [])] },
       { heading: 'Commute', rows: p.job ? [
         { label: 'Distance', value: `${compact(p.commuteTiles)} ${p.commuteTiles === 1 ? 'tile' : 'tiles'}` }, { label: 'Time', value: `${Math.round(p.commuteMinutes)} minutes each way` }]
         : [{ label: 'Commute', value: 'none (no job)' }] },
@@ -162,7 +163,7 @@ export function resolveTile(snap: Snapshot, layout: MapLayout, tile: Tile, draft
     case 'government': return government(snap, where);
     case 'forest': return forestModel(snap, tile, where);
     case 'commons': return { kind: 'commons', title: 'Commons', subtitle: where, sections: [{ heading: 'Commons', rows: [
-      { label: 'Health', value: pct(snap.nature.commons) }, { label: 'Access', value: snap.nature.commonsAccess },
+      { label: 'Health', value: pctWith(snap.nature.commons, stockOf(snap.nature.commonsStock, snap.nature.commons) ?? 'stock n/a') }, { label: 'Access', value: snap.nature.commonsAccess },
       { label: 'Harvest policy', value: String(snap.policy.commons_harvest.nominal) }] }], note: 'Change access and harvest in the policy drawer.' };
   }
 }
@@ -173,7 +174,7 @@ function forestModel(snap: Snapshot, tile: Tile, where: string): InspectModel {
   const fire = weatherOf(snap)?.fires.find((f) => f.tile.x === tile.x && f.tile.y === tile.y);
   const fc = forecastView(snap);
   const rows = [{ label: 'This tile', value: STATE_WORD[st] }, ...(fire ? [{ label: 'Fire ends in', value: `about ${fire.monthsLeft} ${fire.monthsLeft === 1 ? 'month' : 'months'}` }] : []),
-    { label: 'Forest stock', value: pct(snap.nature.forest) }, { label: 'Absorbs', value: `${tonnes(snap.nature.sinkMonthly)} per month` },
+    { label: 'Forest stock', value: pctWith(snap.nature.forest, stockOf(snap.nature.forestStock, snap.nature.forest) ?? forestTiles(snap)) }, { label: 'Absorbs', value: `${tonnes(snap.nature.sinkMonthly)} per month` },
     { label: 'Net emissions', value: `${tonnes(snap.nature.netEmissionsMonthly)} per month` }, ...(fc ? [{ label: 'Fire risk', value: fc.fireWord }] : [])];
   return { kind: 'forest', title: st === 'burning' ? 'Forest fire' : st === 'regrowing' ? 'Burnt forest, regrowing' : 'Forest', subtitle: where, sections: [{ heading: 'Forest', rows }],
     note: st === 'burning' ? 'Burning forest stops absorbing carbon. A fire station nearby shortens fires and slows their spread.' : st === 'regrowing' ? 'Burnt tiles regrow slowly and then stand again.' : 'Forests are fixed scenery in this version.' };
@@ -191,19 +192,19 @@ function firm(s: Snapshot, id: number, where: string): InspectModel | null {
   const sector = f.sector === 'food' ? 'Food' : f.sector === 'services' ? 'Services' : 'Goods';
   return { kind: 'firm', title: f.name, subtitle: `${sector} firm. ${where}`, sections: [
     { heading: 'Firm', rows: [{ label: 'Owner', value: OWNER_TEXT(f.owner, s) }, { label: 'Workers', value: compact(f.workers) }, { label: 'Wage', value: money(f.wage) }, { label: 'Price', value: money(f.price) }] },
-    { heading: 'Output', rows: [{ label: 'Output', value: compact(f.output) }, { label: 'Emissions', value: `${tonnes(f.emissions)} per month` }, { label: 'Green tech', value: pct(f.greenTech) }] },
+    { heading: 'Output', rows: [{ label: 'Output', value: compact(f.output) }, { label: 'Emissions', value: `${tonnes(f.emissions)} per month` }, { label: 'Green tech', value: f.greenTech.toFixed(2) }] },
     { heading: 'Books (per month)', rows: [{ label: 'Revenue', value: money(f.revenue) }, { label: 'Profit', value: money(f.profit) }, { label: 'Capital', value: money(f.capital) }, { label: 'Debt', value: money(f.debt) }] },
   ] };
 }
 
 const bank = (s: Snapshot, where: string): InspectModel => ({ kind: 'bank', title: 'Bank', subtitle: s.bank.failed ? `FAILED. ${where}` : where, sections: [{ heading: 'Balance sheet', rows: [
   { label: 'Status', value: s.bank.failed ? 'Failed' : 'Operating' }, { label: 'Equity', value: money(s.bank.equity) }, { label: 'Loans', value: money(s.bank.loans) },
-  { label: 'Deposits', value: money(s.bank.deposits) }, { label: 'Default rate', value: pct(s.bank.defaultRate, 1) }] }] });
+  { label: 'Deposits', value: money(s.bank.deposits) }, { label: 'Default rate', value: pctWith(s.bank.defaultRate, `on ${money(s.bank.loans)} of loans`, 1) }] }] });
 
 const government = (s: Snapshot, where: string): InspectModel => ({ kind: 'government', title: 'Town hall', subtitle: where, sections: [{ heading: 'Government', rows: [
-  { label: 'Legitimacy', value: pct(s.government.legitimacy, 1) }, { label: 'Cash', value: money(s.government.cash) }, { label: 'Debt', value: money(s.government.debt) },
-  { label: 'Debt / GDP', value: pct(s.government.debtToGdp, 1) }, { label: 'Receipts', value: `${money(s.government.receipts)} per month` }, { label: 'Spending', value: `${money(s.government.spending)} per month` }] },
-  { heading: 'Politics', rows: [{ label: 'Net lobbying pressure', value: pct(s.netLobby) }, { label: 'Union density', value: pct(s.unionDensity) },
+  { label: 'Legitimacy', value: pctWith(s.government.legitimacy, legitimacyBacking(s), 1) }, { label: 'Cash', value: money(s.government.cash) }, { label: 'Debt', value: money(s.government.debt) },
+  { label: 'Debt / GDP', value: pctWith(s.government.debtToGdp, debtBacking(s), 1) }, { label: 'Receipts', value: `${money(s.government.receipts)} per month` }, { label: 'Spending', value: `${money(s.government.spending)} per month` }] },
+  { heading: 'Politics', rows: [{ label: 'Net lobbying pressure', value: `${s.netLobby.toFixed(2)} (0 none, 1 full)` }, { label: 'Union density', value: `${s.unionDensity.toFixed(2)} of workers` },
   { label: 'Political capital', value: `${Math.round(s.pc.current)} of ${s.pc.cap}` }] }] });
 
 function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): InspectModel {
@@ -212,18 +213,18 @@ function building(s: Snapshot, p: Placed, where: string, draft: DraftItem[]): In
   if (p.kind === 'public_housing') sections.push({ heading: 'Housing (whole town)', rows: [
     { label: 'Homes in town', value: compact(s.housing.homes) }, { label: 'Unhoused households', value: compact(s.housing.unhousedHouseholds) },
     { label: 'Public rent', value: money(s.housing.rentPublic) }, { label: 'Private rent', value: money(s.housing.rentPrivate) },
-    { label: 'Occupancy', value: pct(s.housing.occupancy) }] });
+    { label: 'Occupancy', value: pctWith(s.housing.occupancy, `${s.homes.filter((h) => h.household !== null).length} of ${s.housing.homes} homes occupied`) }] });
   else if (p.kind === 'fire_station') sections.push({ heading: 'Fire cover', rows: [
     { label: 'Covers', value: `forest within about ${WEATHER_UI.coverageRadius} tiles` }, { label: 'Effect', value: 'fires there burn shorter and spread less' },
     { label: 'Fire risk now', value: forecastView(s)?.fireWord ?? 'unknown' }] });
   else {
     const pl = plantAt(s, p);
     sections.push({ heading: 'This plant', rows: [
-      ...(pl ? [{ label: 'Capacity', value: pl.capacityText, hint: UNIT_HELP(s.energy) }, { label: 'Share of the grid', value: pct(pl.outputShare) }] : []),
+      ...(pl ? [{ label: 'Capacity', value: pl.capacityText, hint: UNIT_HELP(s.energy) }, { label: 'Share of the grid', value: pctWith(pl.outputShare, `${pl.capacityText} of ${energyText(plantRows(s.energy).reduce((a, r) => a + r.capacity, 0), s.energy)}`) }] : []),
       { label: 'Emits', value: `${tonnes(pl?.emissions ?? t?.emissionsMonthly ?? 0)} per month` }] },
     { heading: 'Energy (whole town)', rows: [
-    { label: 'Fossil share of capacity', value: pct(fossilShareOf(s.energy)) }, { label: 'Renewable share', value: pct(s.energy.renewableShare) },
-    { label: 'Served', value: pct(s.energy.served) }, { label: 'Grid intensity', value: `${s.energy.intensity.toFixed(2)} t per ${s.energy.unit || 'MWh'}` }] });
+    { label: 'Fossil share of capacity', value: pctWith(fossilShareOf(s.energy), `${s.energy.supply.filter((x) => x.kind === 'fossil').length} of ${s.energy.supply.length} plants`) }, { label: 'Renewable share', value: pctWith(s.energy.renewableShare, `${s.energy.supply.filter((x) => x.kind === 'renewable').length} of ${s.energy.supply.length} plants`) },
+    { label: 'Served', value: pctWith(s.energy.served, `supply ${energyText(s.energy.supply.reduce((a, x) => a + x.capacity, 0), s.energy)}, demand ${energyText(s.energy.demand.total, s.energy)}`) }, { label: 'Grid intensity', value: `${s.energy.intensity.toFixed(2)} t per ${s.energy.unit || 'MWh'}` }] });
   }
   const already = draft.some((d) => d.command.type === 'remove' && sameTile(d.command.tile, p));
   return {

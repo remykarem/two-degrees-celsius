@@ -76,7 +76,7 @@ Real example: `median_income` / `top_wealth_share` (Town v2).
 2. `crates/sim-api/src/snapshot.rs`: add to the wire `Indicators` struct and the conversion (near line 431). History: `crates/sim-api/src/history.rs` (`HistoryPoint` field and `point()`), if it should be charted.
 3. If a CLI line or CSV column helps: `crates/sim-cli/src/main.rs`, `crates/sim-engine/src/series.rs`.
 4. `web/src/contract/index.ts`: add to `Indicators`, `HistoryPoint`, and `MetricKey` if it is a panel metric.
-5. Panel: `web/src/panels/metrics.ts` (add an entry to the `METRICS` list with tab, label, hint) and `web/src/panels/format.ts` (`METRIC_LABEL`, a `Record<MetricKey,...>`, so the compiler forces it). Results/end story text: `panels/results.ts`, `panels/story.ts`.
+5. Panel: `web/src/panels/metrics.ts` (add an entry to the `METRICS` list with tab, label, hint; give a percent metric a `detail` with its backing numbers, map it in `METRIC_BREAKDOWN` if the wire has a breakdown for it; a test fails if its key has no explorer topic, so add the key to a topic's `usedBy` in `content/assumptions.json`) and `web/src/panels/format.ts` (`METRIC_LABEL`, a `Record<MetricKey,...>`, so the compiler forces it). Results/end story text: `panels/results.ts`, `panels/story.ts`.
 6. Mock: `mock/snapshot.ts` (indicators), `mock/index.ts` (history).
 7. If a lever's arrow should point at it: `content/levers.json` `arrows[].metric`.
 Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via `satisfies Record<keyof T,...>`, so adding a field fails until listed), `mock.test.ts`, `crates/sim-api/tests/wire.rs`. Regenerate fixtures and golden.

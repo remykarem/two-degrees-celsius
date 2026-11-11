@@ -132,7 +132,7 @@ describe('why panels', () => {
     const bars = emissionsBars([
       { type: 'emissions', source: 'firm', id: snap.firms[0]!.id, tonnes: 90 }, { type: 'emissions', source: 'households', tonnes: 10 }, { type: 'emissions', source: 'sink', tonnes: 20 },
     ], snap);
-    expect(bars[0]).toMatchObject({ label: snap.firms[0]!.name, value: 90, sub: '90% of emitted' });
+    expect(bars[0]).toMatchObject({ label: snap.firms[0]!.name, value: 90, sub: '90 t of 100 t emitted' });
     expect(bars.at(-1)).toMatchObject({ value: -20, tone: 'sink' });
   });
   it('sums income by type', () => {

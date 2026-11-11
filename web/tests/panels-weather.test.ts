@@ -177,7 +177,7 @@ describe('metrics, why-bars and the end story', () => {
     const bars = emissionsBars(trace, base());
     const fire = bars.find((b) => b.label === 'Sink lost to fire')!;
     expect(fire.value).toBe(5);
-    expect(fire.sub).toMatch(/of emitted/);
+    expect(fire.sub).toMatch(/ t emitted/);
     expect(whyData('emissions', trace, base(), []).groups[0]!.bars.map((b) => b.label)).toContain('Sink lost to fire');
   });
   it('the policy drawer has resilience spending in the nature group', () => {

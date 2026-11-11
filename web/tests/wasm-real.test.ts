@@ -30,7 +30,7 @@ describe.skipIf(!present)(`the real sim after ${TURNS} turns (wasm)`, async () =
   const latestTick = Math.max(...gov.entries.map((e) => e.tick));
 
   it('is schemaVersion 4 with the v1.4 blocks', () => {
-    expect(snap.schemaVersion).toBe(4);
+    expect(snap.schemaVersion).toBe(5);
     expect(Array.isArray(snap.energy.supply)).toBe(true);
     expect(snap.finance.quarter.govRevenue).toBeDefined();
     expect(snap.finance.government.cash).toBeGreaterThan(0);

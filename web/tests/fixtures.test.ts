@@ -42,7 +42,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', mock: 'boolean?', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;
@@ -87,7 +87,7 @@ describe.skipIf(!current)('real fixtures from docs/fixtures/ against the TypeScr
     expect(bad).toEqual([]);
   });
   it('is schemaVersion 4 with a 12 x 12 map, 20 people, 8 households, 7 homes', () => {
-    expect(snap.schemaVersion).toBe(4);
+    expect(snap.schemaVersion).toBe(5);
     expect(snap.map).toMatchObject({ width: 12, height: 12 });
     expect(snap.map.tiles).toHaveLength(144);
     snap.map.tiles.forEach((t, i) => expect([t.x, t.y]).toEqual([i % 12, Math.floor(i / 12)]));

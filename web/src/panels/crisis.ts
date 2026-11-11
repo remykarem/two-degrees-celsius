@@ -1,4 +1,5 @@
 import type { SimEvent, Snapshot, TurnResult } from '../contract';
+import { budgetOf, legitimacyBacking } from './backing';
 import { fireLabel, fireSelection, weatherOf } from '../store/weather';
 import type { Selection } from '../store';
 import { REASON_TEXT, severityWord } from './format';
@@ -58,11 +59,11 @@ export function deriveCrises(snap: Snapshot | null, last: TurnResult | null): Cr
   const leg = snap.government.legitimacy;
   if (leg < LEGITIMACY_WARNING) {
     add({ id: 'low_legitimacy', severity: 'warning', title: 'Collapse warning: legitimacy is very low',
-      detail: `Legitimacy is ${(leg * 100).toFixed(0)}%. At zero the town collapses.` });
+      detail: `Legitimacy is ${(leg * 100).toFixed(0)}% (${legitimacyBacking(snap)}). At zero the town collapses.` });
   }
   if (snap.indicators.budgetShare < BUDGET_WARNING && snap.indicators.remainingBudget > 0) {
     add({ id: 'low_budget', severity: 'warning', title: 'Collapse warning: carbon budget nearly spent',
-      detail: `Only ${(snap.indicators.budgetShare * 100).toFixed(0)}% of the carbon budget is left.`, why: 'emissions' });
+      detail: `Only ${(snap.indicators.budgetShare * 100).toFixed(0)}% of the carbon budget is left (${budgetOf(snap)}).`, why: 'emissions' });
   }
   return [...out.values()].sort((a, b) => (a.severity === b.severity ? a.id.localeCompare(b.id) : a.severity === 'critical' ? -1 : 1));
 }

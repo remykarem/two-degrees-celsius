@@ -29,7 +29,7 @@ export function emissionsBars(trace: TraceRecord[], snap: Snapshot | null): Bar[
   }
   const bars = [...by.values()];
   const gross = bars.filter((b) => b.value > 0).reduce((a, b) => a + b.value, 0);
-  bars.forEach((b) => { b.text = tonnes(b.value); if (b.value > 0 && gross > 0) b.sub = `${pct(b.value / gross)} of emitted${b.label === 'Sink lost to fire' ? ' (burnt forest absorbs less)' : ''}`; });
+  bars.forEach((b) => { b.text = tonnes(b.value); if (b.value > 0 && gross > 0) b.sub = `${tonnes(b.value)} of ${tonnes(gross)} emitted${b.label === 'Sink lost to fire' ? ' (burnt forest absorbs less)' : ''}`; });
   return bars.sort((a, b) => b.value - a.value);
 }
 

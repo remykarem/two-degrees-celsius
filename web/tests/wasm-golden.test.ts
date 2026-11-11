@@ -41,7 +41,7 @@ describe.skipIf(!present)('wasm build against the native golden run', () => {
     const plan = JSON.parse(readFileSync(resolve(golden, 'plan.json'), 'utf8'));
     const want = JSON.parse(readFileSync(resolve(golden, 'seed7.json'), 'utf8'));
     const sim = new mod.WasmSim();
-    const got: Record<string, unknown> = { init: fnv(sim.init(plan.seed, null)), levers: fnv(sim.levers()), actions: fnv(sim.actions()) };
+    const got: Record<string, unknown> = { init: fnv(sim.init(plan.seed, null)), levers: fnv(sim.levers()), actions: fnv(sim.actions()), assumptions: fnv(sim.assumptions!()) };
     const turns: unknown[] = [];
     const ledgers: Record<string, Record<string, string>> = {};
     let ms = 0;
@@ -55,7 +55,14 @@ describe.skipIf(!present)('wasm build against the native golden run', () => {
       if ((plan.ledgerAfterTurns as number[] | undefined)?.includes(turn)) ledgers[String(turn)] = ledgerHashes(sim, plan);
       const v = JSON.parse(reply);
       const snap = v.value?.snapshot; // undefined after game over (the 600 t budget runs out near turn 23)
-      turns.push({ turn, ok: v.ok, fnv: fnv(reply), gdpRealAnnual: snap?.indicators.gdpRealAnnual ?? null, legitimacy: snap?.government.legitimacy ?? null, temperature: snap?.indicators.temperature ?? null });
+      const bd = snap?.breakdowns;
+      const results: Record<string, unknown> = {};
+      if (bd) { for (const k of ['gdp', 'gpi', 'wageShare', 'profitShare', 'debtToGdp', 'gini', 'legitimacy', 'capitalRatio']) results[k] = bd[k].result.value; results.emissionsCumulative = bd.emissions.cumulative.tonnes; }
+      // `breakdownsFnv` hashes the native side's re-serialised JSON (serde prints 5.0 where JSON.parse sees 5), which JS cannot reproduce: it is carried over from the golden after checking it is there.
+      const nativeTurn = want.turns[i];
+      turns.push({ turn, ok: v.ok, fnv: fnv(reply), gdpRealAnnual: snap?.indicators.gdpRealAnnual ?? null, legitimacy: snap?.government.legitimacy ?? null, temperature: snap?.indicators.temperature ?? null,
+        ...(bd ? { breakdownsFnv: nativeTurn?.breakdownsFnv, breakdownResults: results, emissionsReconcile: bd.emissions.reconciles } : {}) });
+      if (bd) expect(typeof nativeTurn?.breakdownsFnv, `turn ${turn} has a native breakdowns hash`).toBe('string');
       if (turn === plan.exportAfterTurn) {
         const blob = sim.export_state();
         got.export = fnv(blob);
