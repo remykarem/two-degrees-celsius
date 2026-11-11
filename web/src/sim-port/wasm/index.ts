@@ -1,4 +1,4 @@
-import type { AccountRef, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 
 /**
@@ -23,6 +23,8 @@ export interface WasmSimInstance {
   /** Contract v1.4 ledger exports. Missing in a package built before v1.4 (the loader refuses such a package; this stays defensive for tests that pass a partial module). */
   ledger?(accountJson: string, queryJson: string): string;
   person_ledger?(person: number): string;
+  /** Contract v1.5. Assumed export name; absent in an older package. */
+  assumptions?(): string;
   cancel_pending(id: number): string;
   export_state(): string;
   import_state(blob: string): string;
@@ -79,6 +81,8 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
       ? call<LedgerPage>(() => sim.ledger!(JSON.stringify(account), JSON.stringify(query ?? {}))) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
     personLedger: (person: number) => sim.person_ledger
       ? call<PersonLedger>(() => sim.person_ledger!(person)) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
+    assumptions: () => sim.assumptions
+      ? call<AssumptionTopic[]>(() => sim.assumptions!()) : fail('unsupported', 'This simulation package has no model explorer (contract v1.5). Rebuild it with npm run build:wasm.'),
     cancelPending: (id) => call(() => sim.cancel_pending(id)),
     exportState: () => call<string>(() => sim.export_state()),
     importState: (blob) => call<Snapshot>(() => sim.import_state(blob)),
@@ -104,8 +108,8 @@ export async function loadWasmPort(): Promise<SimPort> {
   // A package built before contract v1.4 (schemaVersion 4: ledger in the saved blob, new `energy` and `finance` shapes) must not drive this UI: refuse, and the caller falls back to the mock.
   const probe = port.init(1);
   const e = probe.ok ? (probe.value.energy as unknown as { supply?: unknown } | undefined) : undefined;
-  if (!probe.ok || probe.value.schemaVersion !== 4 || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
-    throw new Error('the wasm package is older than contract v1.4 (Town v5: expected schemaVersion 4, a ledger and the new energy and finance blocks); rebuild it with npm run build:wasm');
+  if (!probe.ok || probe.value.schemaVersion !== 5 || !probe.value.breakdowns || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
+    throw new Error('the wasm package is older than contract v1.6 (Town v5.2: expected schemaVersion 5 with breakdowns, policies and industry); rebuild it with npm run build:wasm');
   }
   return port;
 }

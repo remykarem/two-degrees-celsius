@@ -1,5 +1,6 @@
-import type { AccountRef, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
 import type { SimPort } from '../sim-port/port';
+import { relabelLevers } from './labels';
 import { withCommand, withoutItem, withPreviews } from './draft';
 import { describeTileReason, inBounds, layoutOf, pendingAt, sameTile, selectionAt, tileAt, tileKey, type Selection, type Tile } from './map';
 import type { GameMode, TimeoutPolicy } from './clock';
@@ -31,6 +32,10 @@ export interface Game {
   /** Contract v1.4: an account's transaction ledger, or an error result (never throws). */
   ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;
   personLedger(person: number): Result<PersonLedger>;
+  /** Contract v1.5: the model explorer's topics (asked once and cached; an error result when the package has none). */
+  assumptions(): Result<AssumptionTopic[]>;
+  /** Selects the first built tile of a kind (the Industry tab's infrastructure rows). Returns false when there is none. */
+  selectFirstOf(kind: string): boolean;
   /** Opens the full transaction viewer for an account (optionally with a kind filter), or closes it with null. */
   openLedger(account: AccountRef | null, kind?: LedgerKind): void;
   hover(t: Tile | null): void;
@@ -78,6 +83,7 @@ function safe<T>(f: () => Result<T>): Result<T> {
 }
 
 export function createGame(port: SimPort): Game {
+  let assumptionsCache: Result<AssumptionTopic[]> | null = null;
   const liveAvailable = port.liveTurn !== false;
   const freshLive = (): LiveSlice => ({ open: false, monthsDone: 0, frame: null, frameSeq: 0, locked: false, summary: null, report: null, notice: null });
   const store = writable<GameState>({
@@ -127,7 +133,7 @@ export function createGame(port: SimPort): Game {
       if (!res.ok) return fail('new_game', res.error);
       const snapshot = res.value;
       store.set({
-        ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [], lastResult: null, previous: null,
+        ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: relabelLevers(port.levers()), actions: port.actions(), draft: [], lastResult: null, previous: null,
         playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
         buildKind: null, validTiles: null, error: null, dismissedCrises: {}, savedClock: null, live: get().mode === 'pressure' ? freshLive() : null,
       });
@@ -189,6 +195,16 @@ export function createGame(port: SimPort): Game {
     select: (selection) => patch({ selection }),
     ledger: (account, query) => safe(() => port.ledger(account, query)),
     personLedger: (person) => safe(() => port.personLedger(person)),
+    assumptions() {
+      if (!assumptionsCache) { const r = safe(() => port.assumptions()); if (!r.ok) return r; assumptionsCache = r; }
+      return assumptionsCache;
+    },
+    selectFirstOf(kind) {
+      const t = get().snapshot?.map.tiles.find((x) => x.kind === kind);
+      if (!t) return false;
+      patch({ selection: { kind: 'tile', x: t.x, y: t.y } });
+      return true;
+    },
     openLedger: (account, kind) => patch({ ledgerView: account ? { account, ...(kind ? { kind } : {}) } : null }),
     hover: (t) => {
       const h = get().hover;
@@ -335,7 +351,7 @@ export function createGame(port: SimPort): Game {
       const mode: GameMode = f.mode === 'pressure' && liveAvailable ? 'pressure' : 'relaxed';
       store.set({
         ...get(), mode, live: mode === 'pressure' ? freshLive() : null, savedClock: f.clock ?? null,
-        phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: port.levers(), actions: port.actions(), draft: [],
+        phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: relabelLevers(port.levers()), actions: port.actions(), draft: [],
         lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false },
         selection: null, ledgerView: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
       });

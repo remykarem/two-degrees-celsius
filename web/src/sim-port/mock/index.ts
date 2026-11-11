@@ -1,7 +1,8 @@
-import type { AccountRef, Command, LedgerQuery, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, PolicyEvent, Command, LedgerQuery, HistoryPoint, MonthFrame, MonthResult, PendingItem, Result, SimEvent, TraceRecord, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 import { actionList, GEN, LEVERS, MOCK } from './data';
 import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
+import { mockAssumptions } from './assumptions';
 import { ledgerPage, personLedger, rollUp } from './ledger';
 import { frame, makeEvents, makeFlows } from './frames';
 import { stepHouseholds, syncJobs } from './people';
@@ -19,6 +20,7 @@ export function createMockSim(): SimPort {
   /** The turn in progress (contract section 12). Lives outside MockState: a save is only legal at a turn boundary, so it is never serialised. */
   let open: { turn: number; pcBefore: number; accepted: PendingItem[]; rejected: TurnResult['rejected']; activated: PendingItem[]; month0: SimEvent[]; months: MonthFrame[]; halted: boolean } | null = null;
   const snap = () => ({ ...buildSnapshot(s), turnPhase: { open: open !== null, monthsDone: (open ? open.months.length : 0) as 0 | 1 | 2 | 3 } });
+  const logPolicy = (e: PolicyEvent) => { (s.policyLog ??= []).push(e); };
   const turnState = (message: string) => fail('turn_state', message);
 
   /** Rust activate_due: runs at the START of a submit, before the ticks. */
@@ -26,8 +28,19 @@ export function createMockSim(): SimPort {
     const due = s.pending.filter((p) => p.effectiveTurn <= s.turn);
     s.pending = s.pending.filter((p) => p.effectiveTurn > s.turn);
     for (const p of due) {
+      const before = p.command.type === 'set_policy' ? s.policy[p.command.lever] : undefined;
       const blocked = activate(s, p);
       out.push(p);
+      if (p.command.type === 'set_policy') {
+        const lever = p.command.lever;
+        if (blocked) logPolicy({ turn: s.turn, lever, kind: 'rejected', from: before, to: p.command.value, reason: blocked });
+        else {
+          logPolicy({ turn: s.turn, lever, kind: 'activated', from: before, to: s.policy[lever] });
+          (s.policyLast ??= {})[lever] = s.turn;
+          const eff = LEVERS.find((l) => l.key === lever)?.lobbied ? effectiveValue(s, lever) : null;
+          if (eff !== null && Math.abs(eff - Number(s.policy[lever])) > 1e-9) logPolicy({ turn: s.turn, lever, kind: 'weakened', from: s.policy[lever], to: eff, reason: 'lobbying' });
+        }
+      }
       if (blocked) events.push({ type: 'policy_blocked', importance: 2, reason: blocked });
       else if (p.command.type === 'switch_system') events.push({ type: 'system_switch_started', importance: 3, to: p.command.to });
       else if (p.command.type === 'place') events.push({ type: 'built', importance: 2, kind: p.command.kind, tile: { ...p.command.tile } });
@@ -89,11 +102,13 @@ export function createMockSim(): SimPort {
       const month0: SimEvent[] = [];
       ev.previews.forEach((p, index) => {
         if (p.blocked) {
+          if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'rejected', from: s.policy[p.command.lever], to: p.command.value, reason: p.blocked });
           rejected.push({ index, command: p.command, reason: p.blocked });
           month0.push({ type: 'policy_blocked', importance: 2, reason: p.blocked });
         }
       });
       const pcBefore = s.pc;
+      for (const a of accepted) if (a.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: a.command.lever, kind: 'queued', from: s.policy[a.command.lever], to: a.command.value });
       s.pending.push(...accepted);
       s.nextPendingId += accepted.length;
       s.pc = ev.pcLeft;
@@ -170,12 +185,14 @@ export function createMockSim(): SimPort {
 
     ledger: (account: AccountRef, query?: LedgerQuery) => ledgerPage(s, account, query),
     personLedger: (person: number) => personLedger(s, person),
+    assumptions: () => ok(mockAssumptions()),
 
     cancelPending(id) {
       if (s.gameOver) return fail('game_over', 'The game is over: nothing can be cancelled.');
       const p = s.pending.find((x) => x.id === id);
       if (!p) return fail('unknown_pending', `There is no pending item #${id}.`);
       s.pending = s.pending.filter((x) => x.id !== id);
+      if (p.command.type === 'set_policy') logPolicy({ turn: s.turn, lever: p.command.lever, kind: 'cancelled', from: s.policy[p.command.lever], to: p.command.value });
       const refundPc = p.pcCost * GEN.pc.cancelRefund; // PC only: money is charged when the item takes effect
       s.pc = Math.min(GEN.pc.cap, s.pc + refundPc);
       return ok({ refundPc, snapshot: snap() });

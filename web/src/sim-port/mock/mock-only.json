@@ -28,7 +28,7 @@
   },
   {
    "key": "tax_wage",
-   "label": "Wage tax",
+   "label": "Income tax",
    "unit": "fraction",
    "min": 0,
    "max": 0.6,

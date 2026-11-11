@@ -21,3 +21,5 @@ export { default as StartScreen } from './StartScreen.svelte';
 export { default as ForecastCard } from './ForecastCard.svelte';
 export { default as ErrorScreen } from './ErrorScreen.svelte';
 export { default as LedgerModal } from './LedgerModal.svelte';
+export { default as BreakdownModal } from './BreakdownModal.svelte';
+export { default as ExplorerModal } from './ExplorerModal.svelte';

@@ -1,7 +1,7 @@
 // Snapshot contract v1.4, Town v5 (docs/snapshot-contract.md sections 11 to 14 win over sections 3-10). Types only: no logic, no imports.
 
 /** Snapshot.schemaVersion. 3 since the weather State layout (section 13); 4 since the saved wrapper blob gains the ledger (section 14). Older saves are refused. */
-export type SchemaVersion = 4;
+export type SchemaVersion = 4 | 5;
 
 export type LeverKey =
   | 'carbon_price' | 'tax_wage' | 'tax_profit' | 'tax_capital' | 'wealth_tax'
@@ -332,6 +332,10 @@ export interface Snapshot {
   /** Contract v1.4. */
   finance: FinanceView;
   energy: EnergyView;
+  /** Contract v1.6 (section 16). Optional only because a package built before it lacks them; the UI then says so. */
+  breakdowns?: Breakdowns;
+  policies?: PolicyBoard;
+  industry?: Industry;
   history: HistoryPoint[];
 }
 
@@ -426,3 +430,48 @@ export type TraceRecord =
   | { type: 'emissions'; source: 'firm' | 'households' | 'sink' | 'plant' | 'fire_sink_loss'; id?: number; tile?: TileRef; tonnes: number }
   | { type: 'income'; household: number; kind: 'wages' | 'dividends' | 'rent' | 'interest' | 'benefits'; amount: number }
   | { type: 'policy_gap'; lever: LeverKey; nominal: number; effective: number; netLobby: number };
+
+/** Contract v1.5 (section 15): the model explorer. */
+export interface AssumptionParam { path: string; label: string; value: number | string | boolean; unit: string }
+export interface AssumptionExample { label: string; inputs: Record<string, number | string>; result: { value: number; unit: string }; note?: string }
+export type AssumptionGroup = 'emissions_energy' | 'people_households' | 'production_prices' | 'nature_climate' | 'weather' | 'government_policy' | 'finance_credit' | 'class_politics' | 'scoring' | 'leaves_out';
+export interface AssumptionTopic {
+  id: string; title: string; group: AssumptionGroup; summary: string; formula: string;
+  params: AssumptionParam[]; examples: AssumptionExample[];
+  status: 'placeholder' | 'tuned' | 'rough_real_world'; statusNote: string; leavesOut: string[]; code: string[];
+  related: string[]; usedBy: string[];
+}
+
+/** Contract v1.6 (section 16): breakdowns, policies, industry. */
+export interface BreakdownInput { label: string; value: number; unit: string; source?: string }
+export interface BreakdownPart { label: string; value: number; unit: string; note?: string }
+export interface Breakdown {
+  id: string; title: string; formula: string; inputs: BreakdownInput[]; result: { value: number; unit: string };
+  parts?: BreakdownPart[]; sumsToResult?: boolean;
+}
+export interface EmissionsLine { firms: number; households: number; plants: number; grossTotal: number; sink: number; net: number; headline: number }
+export interface LegitimacyTerm { id: 'wellbeing' | 'unemployment' | 'inequality' | 'debt' | 'bailout'; label: string; input: number; threshold?: number; weight: number; contribution: number }
+export interface TaxRow { id: 'income' | 'profit' | 'capital' | 'wealth' | 'carbon' | 'gst'; label: string; appliesTo: string; rateNominal: number | null; rateEffective: number | null; revenueMonth: number; revenueQuarter: number; modelled: boolean }
+export interface Breakdowns {
+  gdp: Breakdown; gpi: Breakdown; wageShare: Breakdown; profitShare: Breakdown; debtToGdp: Breakdown;
+  gini: Breakdown & { lorenz: { populationShare: number; wealthShare: number }[]; byHousehold: { household: number; people: number; netWorth: number }[] };
+  legitimacy: Breakdown & { terms: LegitimacyTerm[]; trend: number };
+  capitalRatio: Breakdown;
+  emissions: { month: EmissionsLine; turn: EmissionsLine; cumulative: { tonnes: number; budget: number; remaining: number; share: number }; reconciles: boolean; note: string };
+  taxes: TaxRow[];
+}
+export type PolicyValue = number | boolean | string;
+export interface PolicyRow {
+  lever: LeverKey; label: string; group: string; initial: PolicyValue; active: PolicyValue; effective: number | null;
+  pending: { id: number; value: PolicyValue; effectiveTurn: number } | null; lastChangeTurn: number | null; weakenedBy: number | null;
+}
+export interface PolicyEvent { turn: number; lever: LeverKey; kind: 'queued' | 'activated' | 'cancelled' | 'rejected' | 'weakened'; from: unknown; to: unknown; reason?: string }
+export interface PolicyBoard { rows: PolicyRow[]; timeline: PolicyEvent[] }
+export interface OwnershipSlice { owner: 'household' | 'workers' | 'state' | 'bank'; household?: number; share: number }
+export interface IndustryFirm {
+  firm: number; name: string; sector: Sector; output: number; price: number; workers: number; wage: number; revenue: number; profit: number; emissions: number;
+  ownership: OwnershipSlice[]; stateShare: number;
+}
+export interface IndustryInfra { kind: InfraKind; count: number; buildCost: number; upkeepMonthly: number }
+export interface IndustryPublicGood { id: string; label: string; spendingMonthly: number; buys: string }
+export interface Industry { firms: IndustryFirm[]; infrastructure: IndustryInfra[]; publicGoods: IndustryPublicGood[]; note: string }

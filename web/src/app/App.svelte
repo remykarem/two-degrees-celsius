@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { BriefingCard, BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, LedgerModal, MetricsPanel, Onboarding, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, QuarterCard, ResultsScreen, StartScreen, SystemModal, TopBar, ViewBar, WhyModal } from '../panels';
+  import { BreakdownModal, ExplorerModal, BriefingCard, BuildPalette, CrisisBanner, EndScreen, ErrorScreen, Inspector, LedgerModal, MetricsPanel, Onboarding, PendingList, PlanTray, PlaybackTicker, PolicyDrawer, QuarterCard, ResultsScreen, StartScreen, SystemModal, TopBar, ViewBar, WhyModal } from '../panels';
   import type { Game, Live } from '../store';
   import { attachFocus } from './focus';
   import { attachKeys, modalOpen } from './keys';
@@ -51,6 +51,8 @@
   <SystemModal {game} />
   <WhyModal {game} />
   <LedgerModal {game} />
+  <BreakdownModal {game} />
+  <ExplorerModal {game} />
   <ErrorScreen {game} {live} />
   <StartScreen {game} {live} {seed} />
   <MetricsPanel {game} />

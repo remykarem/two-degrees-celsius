@@ -1,6 +1,6 @@
 import { writable } from '../store';
 import type { LeverKey, MetricKey } from '../contract';
-import type { WhyKind } from './metrics';
+import type { BreakdownKey, WhyKind } from './metrics';
 
 /** Panel-only UI state shared between components. Nothing here is game state. */
 export interface PanelUi {
@@ -14,11 +14,17 @@ export interface PanelUi {
   /** The New game screen (mode choice) is open. */
   startOpen: boolean;
   nextSeed: number | null;
+  /** The breakdown popover (contract v1.6) for this key, or null. */
+  breakdown: BreakdownKey | null;
+  /** The "How it works" explorer: open when not null; `topic` is a UI anchor (metric key, lever key, panel id) or a topic id to show first. */
+  explorer: { topic: string | null } | null;
 }
 
 const KEY = 'panels.coach.done';
 const read = (): boolean => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
 export const markCoachDone = () => { try { localStorage.setItem(KEY, '1'); } catch { /* storage may be unavailable */ } };
 
-export const ui = writable<PanelUi>({ drawerOpen: false, focusLever: null, systemModal: false, why: null, coachStep: 0, coachDone: read(), startOpen: false, nextSeed: null });
+export const ui = writable<PanelUi>({ drawerOpen: false, focusLever: null, systemModal: false, why: null, coachStep: 0, coachDone: read(), startOpen: false, nextSeed: null, breakdown: null, explorer: null });
 export const setUi = (p: Partial<PanelUi>) => ui.set({ ...ui.get(), ...p });
+export const openBreakdown = (key: BreakdownKey) => setUi({ breakdown: key });
+export const openExplorer = (topic: string | null = null) => setUi({ explorer: { topic }, breakdown: null });

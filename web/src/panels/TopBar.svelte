@@ -4,7 +4,9 @@
   import ClockStrip from './ClockStrip.svelte';
   import HealthMeters from './HealthMeters.svelte';
   import EndTurn from './EndTurn.svelte';
-  import { SYSTEM_NAME } from './format';
+  import { SYSTEM_NAME, tonnes } from './format';
+  import { openExplorer } from './ui';
+  import { budgetOf } from './backing';
   let { game, live = undefined }: { game: Game; live?: Live } = $props();
   // svelte-ignore state_referenced_locally
   const gs = game.state;
@@ -23,18 +25,19 @@
     <div class="item" data-coach="budget" title="Share of the carbon budget still unspent. Hitting zero ends the game.">
       <label for="cb"><span class="long">Carbon budget</span><span class="short">Carbon</span></label>
       <meter id="cb" min="0" max="1" low="0.25" high="0.5" optimum="1" value={snap.indicators.budgetShare}></meter>
-      <span class="num">{Math.round(snap.indicators.budgetShare * 100)}% left</span>
+      <span class="num">{Math.round(snap.indicators.budgetShare * 100)}% left</span><span class="bk">({budgetOf(snap)})</span>
     </div>
     {#if weatherOf(snap)}
       <div class="item cluster" data-coach="health" title="Forest, commons and farm health, and climate stress (it rises as the carbon budget runs down)">
         <HealthMeters {game} compact />
-        <span class="stress" aria-label="Climate stress {Math.round((weatherOf(snap)?.stress ?? 0) * 100)} percent">Stress <b class="num">{Math.round((weatherOf(snap)?.stress ?? 0) * 100)}%</b></span>
+        <span class="stress" aria-label="Climate stress {Math.round((weatherOf(snap)?.stress ?? 0) * 100)} percent">Stress <b class="num">{Math.round((weatherOf(snap)?.stress ?? 0) * 100)}%</b> <span class="bk">({tonnes(snap.indicators.remainingBudget)} budget left)</span></span>
       </div>
     {/if}
     <div class="item"><span class="long">System:</span> <strong>{SYSTEM_NAME[snap.system.current]}</strong>
       {#if snap.system.transition}<span class="dim">(switching to {SYSTEM_NAME[snap.system.transition.to]}, {snap.system.transition.monthsLeft} months left)</span>{/if}
     </div>
     <div class="spacer"></div>
+    <button type="button" class="hiw" data-testid="how-it-works" onclick={() => openExplorer(null)} title="How the model works: every formula, parameter and assumption">How it works</button>
     <SaveLoad {game} />
     {#if $gs.mode === 'pressure' && live}<ClockStrip {game} {live} />{:else}<EndTurn {game} />{/if}
   {/if}
@@ -54,5 +57,7 @@
   .short { display: none; }
   .cluster { gap: 10px; font-size: 12px; }
   .stress { color: var(--text-dim); }
-  @media (max-width: 1200px) { header { flex-wrap: nowrap; } .item { gap: 4px; } .long { display: none; } .short { display: inline; } meter { width: 70px; } header { gap: 4px 12px; padding: 6px 10px; } .dim { display: none; } }
+  .hiw { font: inherit; font-size: 12px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; }
+  .bk { font-size: 11px; color: var(--text-dim); }
+  @media (max-width: 1200px) { header { flex-wrap: wrap; } .item { gap: 4px; } .long { display: none; } .short { display: inline; } meter { width: 70px; } header { gap: 4px 12px; padding: 6px 10px; } .dim { display: none; } }
 </style>

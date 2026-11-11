@@ -1,5 +1,6 @@
 import type { CollapseReason, GameOutcome, LeverKey } from '../../contract';
 import { GEN, INFRA_KINDS, LEVERS, LEVER_BY_KEY, MOCK } from './data';
+import { emissionsMonth } from './emissions';
 import { noise } from './rng';
 import { activeNumeric, spend } from './rules';
 import { gini, netWorth } from './people';
@@ -77,6 +78,8 @@ export function stepMonth(s: MockState): MonthOut {
   s.lastMonthlyEmissions = emissions;
   s.lastPlantEmissions = plant;
   s.cumulativeTonnes += emissions;
+  (s.emLog ??= []).push(emissionsMonth(emissions, plant, s.forest));
+  if (s.emLog.length > 3) s.emLog.shift();
 
   // Bank (mock): loses equity to defaults that rise with unemployment and the base rate, earns a small margin.
   let bankFailedNow = false, bailoutAmount = 0;

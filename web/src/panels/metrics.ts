@@ -2,11 +2,13 @@ import type { AccountRef, LedgerKind, HistoryPoint, MetricKey, Snapshot } from '
 import { money, pct, tonnes, trendOf, type Trend } from './format';
 import { HEALTH_WORD, healthLevel } from '../store/weather';
 import { unemploymentCount } from './people';
+import { budgetOf, debtBacking, forestTiles, legitimacyBacking, richestBacking, shareBacking, stockOf } from './backing';
 
 const healthWord = (v: number) => HEALTH_WORD[healthLevel(v)];
 
-export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People' | 'Finance';
-export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People', 'Finance'];
+export type MetricTab = 'Economy' | 'Ecology' | 'Society' | 'People' | 'Finance' | 'Policies' | 'Industry';
+export const METRIC_TABS: MetricTab[] = ['Economy', 'Ecology', 'Society', 'People', 'Finance', 'Policies', 'Industry'];
+export type BreakdownKey = 'gdp' | 'gpi' | 'wageShare' | 'profitShare' | 'debtToGdp' | 'gini' | 'legitimacy' | 'capitalRatio' | 'emissions' | 'taxes';
 /** Which trace the "why?" link opens. */
 export type WhyKind = 'emissions' | 'income' | 'lobbying';
 
@@ -35,25 +37,35 @@ export const METRICS: MetricDef[] = [
     detail: (s) => { const u = unemploymentCount(s); return `${u.unemployed} of ${u.labourForce} unemployed`; } },
   { id: 'avg_income', metric: 'avg_income', tab: 'Economy', label: 'Average income per person', hint: 'Total household income per person per month, children and retired people included', value: (s) => s.indicators.avgIncomePerPerson, fmt: money, series: (h) => h.avgIncomePerPerson, goodUp: true, why: 'income' },
   { id: 'median_income', metric: 'median_income', tab: 'Economy', label: 'Median income per person', hint: 'The middle person: half the town earns more, half less. Compare with the average to see skew', value: (s) => s.indicators.medianIncomePerPerson, fmt: money, series: (h) => h.medianIncomePerPerson, goodUp: true, why: 'income' },
-  { id: 'debt', metric: 'debt', tab: 'Economy', label: 'Public debt / GDP', hint: 'Government debt relative to a year of output', value: (s) => s.government.debtToGdp, fmt: (v) => pct(v, 1), series: (h) => h.debtToGdp, goodUp: false, why: null },
-  { id: 'wage_share', metric: 'wage_share', tab: 'Economy', label: 'Wage share', hint: 'Share of income paid as wages', value: (s) => s.indicators.wageShare, fmt: (v) => pct(v, 1), series: null, goodUp: true, why: 'income' },
-  { id: 'emissions', metric: 'emissions', tab: 'Ecology', label: 'Emissions (per month)', hint: 'Gross emissions in the latest month (the history line is net monthly emissions at the end of each turn)', value: (s) => s.nature.grossEmissionsMonthly, fmt: tonnes, series: (h) => h.emissions, goodUp: false, why: 'emissions' },
-  { id: 'budget', metric: 'budget', tab: 'Ecology', label: 'Carbon budget left', hint: 'Share of the carbon budget not yet used', value: (s) => s.indicators.budgetShare, fmt: (v) => pct(v, 1), series: (h) => h.budgetShare, goodUp: true, why: 'emissions' },
+  { id: 'debt', metric: 'debt', tab: 'Economy', label: 'Public debt / GDP', hint: 'Government debt relative to a year of output', value: (s) => s.government.debtToGdp, fmt: (v) => pct(v, 1), series: (h) => h.debtToGdp, goodUp: false, why: null, detail: debtBacking },
+  { id: 'wage_share', metric: 'wage_share', tab: 'Economy', label: 'Wage share', hint: 'Share of income paid as wages', value: (s) => s.indicators.wageShare, fmt: (v) => pct(v, 1), series: null, goodUp: true, why: 'income', detail: (s) => shareBacking(s, 'wage') },
+  { id: 'emissions', metric: 'emissions', tab: 'Ecology', label: 'Emissions, net (per month)', hint: 'Net emissions in the latest month: sources minus the forest sink. Open "how?" for the turn total, the accumulated total and the sources.', value: (s) => s.breakdowns?.emissions.month.headline ?? s.nature.netEmissionsMonthly, fmt: tonnes, series: (h) => h.emissions, goodUp: false, why: 'emissions',
+    detail: (s) => { const e = s.breakdowns?.emissions; return e ? `this turn ${tonnes(e.turn.net)}; accumulated ${tonnes(e.cumulative.tonnes)} of ${tonnes(e.cumulative.budget)}` : `accumulated ${tonnes(s.nature.cumulativeTonnes)}`; } },
+  { id: 'budget', metric: 'budget', tab: 'Ecology', label: 'Carbon budget left', hint: 'Share of the carbon budget not yet used', value: (s) => s.indicators.budgetShare, fmt: (v) => pct(v, 1), series: (h) => h.budgetShare, goodUp: true, why: 'emissions', detail: budgetOf },
   { id: 'temperature', metric: 'temperature', tab: 'Ecology', label: 'Temperature rise', hint: 'Degrees C above the starting level', value: (s) => s.indicators.temperature, fmt: (v) => `${v.toFixed(2)} C`, series: null, goodUp: false, why: 'emissions' },
-  { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', hint: 'Forest stock, as a share of its maximum', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
-  { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', hint: 'Health of the shared land', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null },
+  { id: 'forest', metric: 'forest', tab: 'Ecology', label: 'Forest', hint: 'Forest stock, as a share of its maximum', value: (s) => s.nature.forest, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.forestStock, s.nature.forest) ?? forestTiles(s) },
+  { id: 'commons', metric: 'commons', tab: 'Ecology', label: 'Commons', hint: 'Health of the shared land', value: (s) => s.nature.commons, fmt: (v) => pct(v, 0), series: null, goodUp: true, why: null, detail: (s) => stockOf(s.nature.commonsStock, s.nature.commons) ?? 'stock not on the wire' },
   { id: 'forest_health', metric: 'forest_health', tab: 'Ecology', label: 'Forest health', hint: 'How much of the forest is still standing and healthy. Fires burn it down; burnt tiles regrow slowly.', value: (s) => s.nature.forestHealth ?? s.nature.forest, fmt: (v) => pct(v, 0), series: (h) => h.forestHealth, goodUp: true, why: 'emissions',
-    detail: (s) => healthWord(s.nature.forestHealth ?? s.nature.forest) },
+    detail: (s) => `${healthWord(s.nature.forestHealth ?? s.nature.forest)}: ${forestTiles(s)}` },
   { id: 'commons_health', metric: 'commons_health', tab: 'Ecology', label: 'Commons health', hint: 'Health of the shared land. Droughts and over-harvesting wear it down.', value: (s) => s.nature.commonsHealth ?? s.nature.commons, fmt: (v) => pct(v, 0), series: (h) => h.commonsHealth, goodUp: true, why: null,
-    detail: (s) => healthWord(s.nature.commonsHealth ?? s.nature.commons) },
+    detail: (s) => `${healthWord(s.nature.commonsHealth ?? s.nature.commons)}: ${stockOf(s.nature.commonsStock, s.nature.commons) ?? 'commons stock not on the wire'}` },
   { id: 'farm_health', metric: 'farm_health', tab: 'Ecology', label: 'Farm health', hint: 'How well the farm can produce. It follows forest and commons health and drops in a drought.', value: (s) => s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2), fmt: (v) => pct(v, 0), series: (h) => h.farmHealth, goodUp: true, why: null,
-    detail: (s) => healthWord(s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2)) },
-  { id: 'climate_stress', metric: 'climate_stress', tab: 'Ecology', label: 'Climate stress', hint: 'Rises as the carbon budget runs down. The more stress, the likelier and fiercer fires and droughts become.', value: (s) => s.weather?.stress ?? 0, fmt: (v) => pct(v, 0), series: (h) => h.climateStress, goodUp: false, why: 'emissions' },
+    detail: (s) => `${healthWord(s.nature.farmHealth ?? ((s.nature.forest + s.nature.commons) / 2))}: forest ${stockOf(s.nature.forestStock, s.nature.forest) ?? '?'}, commons ${stockOf(s.nature.commonsStock, s.nature.commons) ?? '?'}${s.weather?.drought ? `, drought ${s.weather.drought.monthsLeft} months left` : ''}` },
+  { id: 'climate_stress', metric: 'climate_stress', tab: 'Ecology', label: 'Climate stress', hint: 'Rises as the carbon budget runs down. The more stress, the likelier and fiercer fires and droughts become.', value: (s) => s.weather?.stress ?? 0, fmt: (v) => pct(v, 0), series: (h) => h.climateStress, goodUp: false, why: 'emissions', detail: (s) => `budget left ${budgetOf(s)}` },
   { id: 'gini', metric: 'gini', tab: 'Society', label: 'Inequality (Gini)', hint: '0 is perfectly equal, 1 is one person has everything', value: (s) => s.indicators.gini, fmt: (v) => v.toFixed(3), series: (h) => h.gini, goodUp: false, why: 'income' },
-  { id: 'top_wealth_share', metric: 'top_wealth_share', tab: 'Society', label: 'Wealth of the richest household', hint: 'Share of all household net worth held by the single richest household', value: (s) => s.indicators.topHouseholdWealthShare, fmt: (v) => pct(v, 0), series: (h) => h.topHouseholdWealthShare, goodUp: false, why: null },
+  { id: 'top_wealth_share', metric: 'top_wealth_share', tab: 'Society', label: 'Wealth of the richest household', hint: 'Share of all household net worth held by the single richest household', value: (s) => s.indicators.topHouseholdWealthShare, fmt: (v) => pct(v, 0), series: (h) => h.topHouseholdWealthShare, goodUp: false, why: null, detail: richestBacking },
   { id: 'wellbeing', metric: 'wellbeing', tab: 'Society', label: 'Wellbeing', hint: 'Average wellbeing, 0 to 1', value: (s) => s.indicators.avgWellbeing, fmt: (v) => v.toFixed(3), series: (h) => h.avgWellbeing, goodUp: true, why: null },
-  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null },
+  { id: 'legitimacy', metric: 'legitimacy', tab: 'Society', label: 'Legitimacy', hint: 'Public trust in government; at zero the town collapses', value: (s) => s.government.legitimacy, fmt: (v) => pct(v, 1), series: (h) => h.legitimacy, goodUp: true, why: null, detail: legitimacyBacking },
 ];
+
+/** Metric id -> the wire breakdown (snapshot.breakdowns key) that explains it. Metrics without one open the explorer topic instead. */
+export const METRIC_BREAKDOWN: Record<string, BreakdownKey | undefined> = {
+  gdp: 'gdp', gpi: 'gpi', debt: 'debtToGdp', wage_share: 'wageShare', gini: 'gini', legitimacy: 'legitimacy', emissions: 'emissions', budget: 'emissions',
+  top_wealth_share: 'gini',
+};
+
+/** The value and its backing numbers as one string (what the lint-style test checks for bare percentages). */
+export const metricText = (m: MetricDef, s: Snapshot): string => (m.detail ? `${m.fmt(m.value(s))} (${m.detail(s)})` : m.fmt(m.value(s)));
 
 /** The history values of a metric, or [] when the package's history lacks the field (a package built before contract v1.2). */
 export function seriesOf(def: MetricDef, history: HistoryPoint[]): number[] {

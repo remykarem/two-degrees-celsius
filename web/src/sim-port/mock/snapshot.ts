@@ -4,6 +4,7 @@ import { effectiveValue, remainingBudget } from './dynamics';
 import { plantTiles } from './frames';
 import { energyView, financeView } from './finance';
 import { economy, householdViews, median, peopleViews, personIncomes, topWealthShare } from './people';
+import { buildBreakdowns, buildIndustry, buildPolicies } from './transparency';
 import { healthOf, weatherView } from './weather';
 import { buildingCounts, cellAt, GRID, SCHEMA_VERSION, type MockState } from './state';
 
@@ -50,7 +51,7 @@ export function buildSnapshot(s: MockState): Snapshot {
   const households = householdViews(s);
   const firmOutput = activeFirms.reduce((a, f) => a + (f.output > 0 ? f.output : (GEN.firms.find((x) => x.sector === f.sector && x.output > 0)?.output ?? 0) * 0.5) * idx, 0);
   const wellbeing = people.length ? people.reduce((a, p) => a + p.wellbeing, 0) / people.length : 0;
-  return {
+  const snapBase: Snapshot = {
     schemaVersion: SCHEMA_VERSION as SchemaVersion, game: { ...GEN.game }, turn: s.turn, tick: s.tick, mock: true,
     map: { width: 12, height: 12, tiles: mapTiles(s) },
     buildings: { publicHousing: counts.public_housing, fossilPlant: counts.fossil_plant, renewablePlant: counts.renewable_plant, road: counts.road },
@@ -83,7 +84,7 @@ export function buildSnapshot(s: MockState): Snapshot {
     bank: { equity: s.bank.equity, loans: s.bank.loans, deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1), failed: s.bank.failed },
     government: { cash: s.cash, debt: s.debt, debtToGdp: s.debt / s.gdp, legitimacy: s.legitimacy, receipts: govReceipts, spending: Number(s.policy.public_spending) + Number(s.policy.benefit) * (labour - employed) + counts.road * GEN.build.roadUpkeepUsd },
     nature: {
-      forest: s.forest, commons: s.commons, forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm, commonsAccess: s.policy.commons_access as 'open' | 'community', cumulativeTonnes: s.cumulativeTonnes,
+      forest: s.forest, commons: s.commons, forestStock: s.forest * GEN.town.forestMax, commonsStock: s.commons * GEN.town.commonsMax, forestHealth: healthOf(s).forest, commonsHealth: healthOf(s).commons, farmHealth: healthOf(s).farm, commonsAccess: s.policy.commons_access as 'open' | 'community', cumulativeTonnes: s.cumulativeTonnes,
       netEmissionsMonthly: s.lastMonthlyEmissions - s.lastMonthlyEmissions * 0.1 * s.forest, grossEmissionsMonthly: s.lastMonthlyEmissions, sinkMonthly: s.lastMonthlyEmissions * 0.1 * s.forest,
     },
     weather: weatherView(s),
@@ -95,5 +96,12 @@ export function buildSnapshot(s: MockState): Snapshot {
       { deposits: GEN.town.bank.deposits * idx, defaultRate: 0.005 + 0.6 * Math.max(0, s.unemployment - 0.1) }, s.debt / s.gdp),
     energy: energyView(s, households, firmOutput),
     history: s.history.map((h) => ({ ...h })),
+  };
+  const nominalOf = (k: LeverKey) => s.policy[k]!;
+  return {
+    ...snapBase,
+    breakdowns: buildBreakdowns(s, snapBase, households, e.monthlyOutput, e.wageBill),
+    policies: buildPolicies(s, nominalOf),
+    industry: buildIndustry(snapBase, counts),
   };
 }

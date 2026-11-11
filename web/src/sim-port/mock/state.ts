@@ -1,10 +1,12 @@
+import type { PolicyEvent } from '../../contract';
+import type { EmMonth } from './emissions';
 import type { AgeBand, ClassKey, GameOutcome, HistoryPoint, InfraKind, PendingItem, SystemKey, TileKind } from '../../contract';
 import { GEN, LEVERS, MOCK, type PolicyValue } from './data';
 import { initialLedger, type MockLedger } from './ledger';
 import type { Rng } from './rng';
 
 /** The mock's own save format. Equal to the real sim's schemaVersion (4 since the ledger joined the saved blob, Town v5), so saves from before the ledger are refused by both. */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const GRID = 12;
 
 export interface PersonState { id: number; label: string; household: number; ageBand: AgeBand; skill: number; labourForce: boolean; job: number | null }
@@ -45,6 +47,8 @@ export interface MockState {
   firmActive: boolean[];
   /** MOCK transaction ledger (ledger.ts): double-entry bookings of the mock's invented money. */
   ledger: MockLedger;
+  /** MOCK transparency bookkeeping (optional: older mock saves lack it). */
+  policyLog?: PolicyEvent[]; policyLast?: Record<string, number>; emLog?: EmMonth[];
   history: HistoryPoint[];
   gameOver: null | { turn: number; outcome: GameOutcome };
 }
@@ -92,7 +96,7 @@ export function initialState(seed: number): MockState {
     cash: t.govCash, debt: t.govDebt, netLobby: MOCK.extra.startingNetLobby!, forest: t.forest / t.forestMax, commons: t.commons / t.commonsMax,
     bank: { equity: t.bank.equity, loans: t.bank.loans, failed: false },
     cumulativeTonnes: 0, lastMonthlyEmissions: baseEmissions(), lastPlantEmissions: GEN.build.start.fossilPlant * MOCK.extra.plantEmissionPerFossil!, prices: 1, wage: GEN.firms[0]!.wage,
-    firmActive: GEN.firms.map((f) => f.active), ledger: { opening: {}, openingDebt: {}, balance: {}, debt: {}, detail: [], summary: {}, months: [], personEvents: [], lastTurn: 0 }, history: [], gameOver: null,
+    firmActive: GEN.firms.map((f) => f.active), ledger: { opening: {}, openingDebt: {}, balance: {}, debt: {}, detail: [], summary: {}, months: [], personEvents: [], lastTurn: 0 }, history: [], gameOver: null, policyLog: [], policyLast: {}, emLog: [],
   };
   s.ledger = initialLedger(s);
   return s;
