@@ -57,6 +57,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, mock and web panels implemented, web scene see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
 | `docs/town-v8.md` | DRAFT (GST and state ownership; was v7) | Planning fiscal and ownership work |
 | `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
+| `docs/taxonomy.md` | PROPOSAL (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Nothing implemented | Planning shared abstractions, the entity registry, or vocabulary renames |
 | `docs/web-notes-v7.md` | CURRENT (Town v7 web notes: Panels and Scene sections) | Working on the estate in `web/src` |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |
 | `docs/how-to.md` | CURRENT | Making a change |
