@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HowButton from './HowButton.svelte';
   import type { AccountRef, LedgerKind, LedgerPage } from '../contract';
   import type { Game } from '../store';
   import { accountKey, accountLabel, accountSelection, counterpartiesIn, debtChangeText, exact, externalHint, FIRM_REVENUE_NOTE, KIND_LABEL, kindsIn, ledgerRows, monthLabel, NO_FILTER, paginate, reconcile, rollupGroups, rollupTotals, positionNames, rowTotals, sameAccount, signedExact, turnsIn, type LedgerFilter } from './ledger';
@@ -80,7 +81,7 @@
     {#if filtered}<button type="button" class="clear" onclick={() => { filter = { ...NO_FILTER }; pageNo = 0; }}>Clear filters</button>{/if}
   </form>
 
-  <h3>Transactions, last {page.entries.length ? `turns from ${snap ? monthLabel(page.detailFromTurn, 0, snap.game) : page.detailFromTurn}` : 'few turns'} <span class="dim">(newest first; {rows.length} shown)</span></h3>
+  <h3><HowButton anchor="ledger" label="ledger kinds" /> Transactions, last {page.entries.length ? `turns from ${snap ? monthLabel(page.detailFromTurn, 0, snap.game) : page.detailFromTurn}` : 'few turns'} <span class="dim">(newest first; {rows.length} shown)</span></h3>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
   <div class="scroll" role="region" aria-label="Transactions table" tabindex="0" onkeydown={onKey}>
     <table>

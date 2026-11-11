@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HowButton from './HowButton.svelte';
   import { layoutOf, type Game, type Selection } from '../store';
   import { Button } from '../ui-kit';
   import { INFRA_LABEL, resolveSelection, resolveTile } from './inspect';
@@ -35,7 +36,7 @@
 {#if model}
   <aside aria-label="Inspector" class:hover={!pinned}>
     <header>
-      <h3>{model.title}</h3>
+      <h3>{model.title} <HowButton anchor="inspector" label="these fields" /></h3>
       {#if pinned}<button class="close" aria-label="Close inspector" onclick={() => game.select(null)}>✕</button>{:else}<span class="chip">hover</span>{/if}
     </header>
     <p class="sub">{model.subtitle}</p>

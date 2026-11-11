@@ -3,6 +3,7 @@
   import { Segmented, Slider } from '../ui-kit';
   import { leverCostHint } from './costs';
   import { formatLever, leadText, lobbyingDiffers, METRIC_LABEL, SYSTEM_NAME } from './format';
+  import HowButton from './HowButton.svelte';
   import { arrowGlyph, arrowsShown, blockText, lobbyNote, toNum } from './policy';
 
   let { lever, nominal, effective, disabled, system, draftValue, preview, onset, onreset }: {
@@ -41,6 +42,7 @@
 
   <div class="meta">
     {#if lever.unit !== 'bool' && lever.unit !== 'enum'}{@render resetBtn()}{/if}
+    <HowButton anchor={lever.key} label={lever.label} />
     <span>Now <b>{formatLever(lever, nominal)}</b>{#if effective !== null && lever.lobbied && typeof nominal === 'number' && lobbyingDiffers(nominal, effective)} &nbsp;(about {formatLever(lever, effective)} in force){/if}</span>
     <span title="An estimate. The exact price (including lobbying opposition) appears once you draft the change.">{leverCostHint(lever)}; in force {leadText(lever.leadTime)}</span>
   </div>
