@@ -16,6 +16,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | How the pieces fit, turn flow, tick order, save schema | `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
 | `docs/town-v4.md` | DRAFT (weather: fires and drought). Not implemented; planned after v3 | Planning the weather work |
 | `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress (section 10: the 'How it works' explorer is queued as v5.1) | Working on finance/ledger/energy |
+| `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
 | `docs/town-v6.md` | DRAFT, DEFERRED (daily ticks; was v5) | Planning the time-step refactor |
 | `docs/town-v7.md` | DRAFT (GST/VAT and state ownership). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
 | `docs/architecture.md` |

@@ -389,3 +389,20 @@ interface Snapshot { /* additions */ policies: { rows: PolicyRow[]; timeline: Po
 ```
 - A label change: the tax currently keyed `tax_wage` is labelled **"Income tax"** (key unchanged). `gst` is listed with `modelled: false`.
 - A Rust test asserts every breakdown's `parts` sum to `result` and the emissions `reconciles` flag; State hashes must be unchanged.
+
+## 17. Contract v1.7: the agents catalogue (additive)
+
+Design: `docs/town-v5-3.md`. A new call, `agents()` (wasm `WasmSim.agents`, `SimPort.agents()`); `assumptions()` and the snapshot are unchanged. No `SCHEMA_VERSION` bump, no state change (state hashes unchanged). Source: the `agents` section of `content/assumptions.json`, resolved in `crates/sim-api/src/assumptions.rs` against the live `Params` (every `path` must exist, or the load fails).
+```ts
+type Distribution = 'bernoulli' | 'uniform' | 'uniform_index';
+interface AgentVariant { id: ClassKey; label: string; decision: string; rule: string }   // household classes
+interface AgentKindInfo { id: string; title: string; actor: 'agent' | 'non_agent'; summary: string; decides: string[]; observes: string[]; rule: string;
+  params: AssumptionParam[]; variants: AgentVariant[] /* only households */; classParams: AssumptionParam[]; code: string[] }
+interface RandomDraw { id: string; event: string; system: string; distribution: Distribution; probability: string; when: string; params: AssumptionParam[]; code: string }
+interface AgentsCatalog { kinds: AgentKindInfo[]; randomness: RandomDraw[]; deterministic: string[] }
+interface SimPort { agents(): Result<AgentsCatalog> }
+```
+- Kinds: households, firms, bank, government, lobbyists (agents); nature, weather (not agents). Market, Regulated and Coop are economic systems, not firm kinds.
+- `randomness` lists every RNG draw in `sim-model`. A Rust test (`randomness_table_matches_the_draw_sites_in_the_model`) counts `r.chance(`, `r.next_f64(` and `r.below(` in the source and fails when the table and the code disagree (the `drought_size` entry counts as two draws).
+- Param paths may start with `systems.<market|regulated|coop>.` (the economic-system files); the mock resolves them from `content/systems/`.
+- Fixture: `docs/fixtures/agents.json`. The mock's catalogue is generated from `content/` by `npm run sync-mock` and adds one line to `deterministic` saying it does not run the rules.

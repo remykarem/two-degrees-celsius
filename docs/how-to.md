@@ -180,3 +180,10 @@ A figure that comes from a ledger links to it with `game.openLedger(account, kin
 2. For a worked example, put the formula in a small `pub fn` in the model (not inline in `run`), call it from `run`, and register it in `assumptions::registry()` under a name; the catalog example names it and gives its inputs. Behaviour must not change: check `cargo run -p sim-cli --example statehash` is identical.
 3. `usedBy` lists the metric keys, lever keys and UI anchors (`panel:*`, `finance:*`, `people:*`, `industry:*`, `energy:*`, `place:*`) the topic explains. `crates/sim-api/tests/assumptions.rs` fails if a metric, lever or anchor in its lists has no topic, if a path or function does not exist, or if a registry function has no example. A new metric or lever must be added to those lists and to a topic.
 4. Regenerate fixtures and the golden (`assumptions` hash).
+
+## 16. Add or change an agent rule or a random draw (Town v5.3)
+
+1. Change the rule in `crates/sim-model/src` as usual (numbers in `content/`).
+2. Update the matching entry in the `agents` section of `content/assumptions.json`: `kinds[].rule`/`decides`/`observes`/`params`, or a `randomness[]` entry (distribution `bernoulli`, `uniform` or `uniform_index`; `params` are dotted paths into `params.json`, or `systems.<name>.` for the system files).
+3. A new `r.chance(`/`r.next_f64(`/`r.below(` call fails `randomness_table_matches_the_draw_sites_in_the_model` until the table lists it. Add the entry (and, for a draw that is really two, adjust the test's count rule).
+4. `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, then the usual tests. State hashes must be unchanged unless the rule itself changed.

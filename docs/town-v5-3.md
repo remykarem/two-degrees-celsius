@@ -1,6 +1,6 @@
 # Town v5.3 design: agent choices explained (approved, small)
 
-Status: **APPROVED (user: "lets do it", no live trace)**. Builds on v5.2 (`docs/town-v5.md`, assumptions catalog in `content/assumptions.json`, wire v1.5). No simulation change, no schema bump.
+Status: **APPROVED and IMPLEMENTED (contract v1.7; user: "lets do it", no live trace)**. Builds on v5.2 (`docs/town-v5.md`, assumptions catalog in `content/assumptions.json`, wire v1.5). No simulation change, no schema bump.
 
 ## Goal
 Let the player see what kinds of agents exist, how each decides, and exactly where randomness enters.

@@ -69,3 +69,7 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Lens** | A map colouring mode: none, emissions, class, wealth, employment, flows, commute |
 | **Scene bus** | `store/scene-bus.ts`: channel where the scene publishes hover/selection and panels send camera requests |
 | **Town v1 / v2** | v1: 6 cohorts standing for 1,000 people, UI-owned map. v2 (current): 20 people in 8 households, sim-owned map, roads, plant emissions, Shop. Anything describing cohorts is historical |
+| **Agents catalogue** | `content/assumptions.json` `agents` section, served by `agents()` (contract v1.7): agent kinds, what each decides and observes, its rule with live parameters, and the randomness table. Shown in the explorer's Agents tab |
+| **Economic system (Market, Regulated, Coop)** | The town-wide rule set the player can switch (`content/systems/*.json`). Not a kind of firm |
+| **Randomness table** | Every RNG draw in the model (drought, fire, home damage, enclosure, startup) with its distribution and parameter. A test checks it against the source. Everything else is deterministic |
+| **Decision tag** | One line in the person inspector: the class of their household and how such households decide, with a link to the Agents tab |
