@@ -36,6 +36,8 @@ export interface SceneHandle {
   stats(): { drawCalls: number; triangles: number; instances: number; entities: number };
   /** Test/debug hook: where each person is on screen (client pixels). */
   peopleScreen(): { id: number; x: number; y: number }[];
+  /** Test/debug hook: show the jet at month time `t` (a flight that returns), or release it with null. */
+  debugFlight(t: number | null, returns?: boolean): void;
 }
 
 function marker(color: number, opacity: number) {
@@ -158,6 +160,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     { label: 'Work', value: p.job ? `${descs.find((d) => d.firm?.id === p.job!.firm)?.firm?.name ?? 'Employed'}, ${p.commuteMinutes} min commute` : p.inLabourForce ? 'Looking for work' : 'Not in the labour force' },
   ];
   let estateTiles: EstateTiles | null = null;
+  let debugFlight: { t: number; returns: boolean } | null = null;
   /** The jet's flight in the month being played (null: it stays put). `returns` false: the flight is in the latest month, so the jet is still away at the end. */
   let flight: { tonnes: number; returns: boolean } | null = null;
   const flightOf = (frame: { events: Parameters<typeof jetFlightIn>[0]; flows?: Parameters<typeof aviationTonnes>[0] } | undefined, returns: boolean) => {
@@ -504,9 +507,11 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     weather.update(sec, !reducedMotion());
     if (estateTiles) {
       const red = reducedMotion(), len = Math.max(1, estateLayer.runLen);
-      const flying = plan && flight;
-      const pose = plan ? (flying ? jetPoseAt(monthT, len, flight!.returns, red) : jetRestPose(false)) : jetRestPose(estateTiles.estate.jet.flyingThisMonth);
-      estateLayer.update({ pose, trail: flying ? jetTrail(monthT, len, flight!.returns, red) : [], weight: flying ? Math.min(1, flight!.tonnes / Math.max(1e-9, estateTiles.estate.flightTonnes)) : 0, lens: s.lens === 'emissions', sec, still: red });
+      const fl = debugFlight ? { tonnes: estateTiles.estate.flightTonnes, returns: debugFlight.returns } : plan ? flight : null;
+      const mt = debugFlight ? debugFlight.t : monthT;
+      const flying = !!fl && (!!plan || !!debugFlight);
+      const pose = flying ? jetPoseAt(mt, len, fl!.returns, red) : plan ? jetRestPose(false) : jetRestPose(estateTiles.estate.jet.flyingThisMonth);
+      estateLayer.update({ pose, trail: flying ? jetTrail(mt, len, fl!.returns, red) : [], weight: flying ? Math.min(1, fl!.tonnes / Math.max(1e-9, estateTiles.estate.flightTonnes)) : 0, lens: s.lens === 'emissions', sec, still: red });
     } else estateLayer.update(null);
     people.update(sec, commutes, playing ? monthT : 0, selectedPerson, hoverPerson, reducedMotion() || !playing);
     renderer.render(scene, rig.camera);
@@ -532,6 +537,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
 
   return {
     stats,
+    debugFlight(t, returns = true) { debugFlight = t === null ? null : { t, returns }; dirty = true; },
     peopleScreen() {
       const r = el.getBoundingClientRect();
       return people.positions.map((p) => { const v = new THREE.Vector3(p.x, p.y, p.z).project(rig.camera); return { id: p.id, x: r.left + (v.x * 0.5 + 0.5) * r.width, y: r.top + (-v.y * 0.5 + 0.5) * r.height }; });

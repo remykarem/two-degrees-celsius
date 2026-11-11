@@ -1,17 +1,28 @@
-# Web notes, Town v7
+# Web notes: Town v7 scene (the estate)
 
-## Panels (Town v7, contract v1.9)
+Scope: the Three.js scene only (`web/src/scene/**`, `web/src/store/scene-estate.ts`, `web/tests/scene-estate.test.ts`). Panels are in their own notes.
 
-What the panels render from the wire, and where. All wording is `catalog().text.estate` (`content/ui.json`); numbers are the wire's.
+## What was built
+- **Estate house** (`scene/estateModels.ts` `HOME_ESTATE`, chosen in `entities.ts` when `snapshot.estate.household` owns the home): two storeys, cream stone, slate roof with gable and gold finial, chimney, columned portico on the east front, balcony over the pool, warm light in the upper windows. Bigger than every other home. It is a normal tinted home entity, so lenses, hover and selection work as for any home; the `tag` ("Estate owner") is added to the facts.
+- **Grounds** on the `estate_grounds` tiles: the wire gives no roles, so `estateRoles()` (store/scene-estate.ts) assigns them: nearest a road = gravel drive with gate pillars and a turning circle; next nearest the house = pool lawn (pool, loungers, parasol); the rest = garden (conifers, beds, a gravel path to the hangar).
+- **Runway** on the `runway` tiles: asphalt strip along the south edge of the row with a dashed centre line, edge lines and threshold bars; an apron and a small open-front **hangar** on `estate.hangarTile` (in the real data this is also the first runway tile); a **wind sock** at the far end (sways unless Reduced motion). Everything is laid out in a runway frame (`estateLayout.ts`: `u` along the runway, `v` sideways), so a runway in another direction would still draw (untested beyond east-west).
+- **Jet** (`estate.ts`, `jetPath.ts`): one merged mesh. Parked in front of the hangar; hidden while `estate.jet.flyingThisMonth` and no month is being played. In a month whose events hold `private_jet_flight` (turn playback: that month's frame; pressure mode: the live frame) the jet taxis, rolls east, climbs out over the meadow, is away, then lands from the far end, rolls back and parks. The flight is a pure function of month time (`jetPoseAt`), so it follows the existing clocks: 2 s per month in turn playback, the clock feed in pressure mode (it freezes on pause). If the flight is in the last month of the turn the jet stays away (matches `flyingThisMonth`).
+- **Trail and emissions puff**: stateless particles sampled from the jet's own earlier positions (`jetTrail`): dark exhaust puffs near the ground and early in the climb (darkness scales with the month's aviation tonnes over `estate.flightTonnes`, both from the wire), white vapour after. Under the emissions lens the exhaust is tinted by the lens colour.
+- **Reduced motion**: the jet stands on the runway for a moment with one puff, no flight path, no trail, no sock sway.
+- **Pilot**: `flows.staffCommutes` are merged into the commute list in `planCommutes`, so the pilot walks from home along roads to the hangar tile with the existing commute animation (verified: real wire, positions sampled over a month).
+- **Ninth household**: dark gold (`0xb8860b`) and a star marker (`people.ts`, `peopleLayer.ts`); nine colours and nine shapes.
+- **Lenses**: employment and commute treat staff (`PersonView.employer`) as employed/commuting; the estate home is coloured by its footprint under the emissions lens; the month's aviation tonnes add a heat weight on the runway (hidden under the runway slab, so the visible effect is the house and the trail); class and wealth use the household as for any home; fire lens is unchanged (estate tiles are not forest).
+- Debug hook for screenshots: `window.__scene.debugFlight(t | null)` (dev builds) shows the jet at month time `t`.
+- Screenshots: `web/playwright/v7-scene-shots.mjs <outDir> [mock|real] [seed]` (needs `npm run dev -- --port 5180`).
 
-- `web/src/panels/estate.ts` (pure): `estateCard`, `pilotView`, `topHouseholdLine`, `giniRows`, `estateOwnerSections`, `pilotSections`, `wealthTaxShortfall`. `EstateCard.svelte` is the card at the top of the Society tab: tag and wealth band, "1 of 9 households, 1 of 22 people hold $X of $Y", what it owns (Gini `parts`), income by source, jet flights beside the town's emitted tonnes, the pilot (status, wage, short-paid months, a warning before dismissal, the grounded note), and the estate's money (last month and last 12 months).
-- Finance: a "domestic wages" memo row inside the households section (it is part of `wages`, not added to it), an estate money table with an Estate ledger button, and the shortfall note. The estate's carbon charge also appears in the government's carbon revenue row, as before.
-- Inspector: the estate owner (tag, band, Employs, flights, estate money) and the pilot (Job line "Employer: Estate owner (household)", wage, commute to the hangar, status, short-paid months, flights); a household card for the estate gets the same sections. `people.ts`: the pilot is "employed", not "looking for work", and is not counted unemployed.
-- Gini view: richest first, the tag and wealth band, what each net worth is made of, the share as "$ of $" (counts, not bare percentages), the Lorenz curve labelled at its last step. The Society "wealth of the richest household" line now names the household with counts.
-- Emissions: the aviation row and the reconciliation line were already in place (contract v1.9 work); checked in the real app that gross = firms + households + plants + aviation reconciles.
-- Policies: a "paid in part" note under the wealth tax row and at the top when the estate's savings fall short; the unchanged-row filter still hides the row until the player changes the tax. Industry: the Farm's owner reads "Estate owner 1.00" (the household label, plus the tag when it differs).
-- Events and crisis: `pilot_let_go`, `pilot_hired`, `private_jet_flight` were worded already (format.ts, coverage test). New: a warning banner `pilot_let_go` while the pilot is let go, and the end story's estate sentences.
-- Explorer: the estate kind and the `estate_flight` draw come from `agents()` and render with no web change (checked in the generic list; not screenshotted).
-- Mock: new text keys flow through `npm run sync-mock`; the parity tests (`mock-sync`, `thin-renderer`) pass. The mock still charges the estate no wealth tax or carbon charge (V7-8).
-- Tests: `web/tests/panels-estate.test.ts`. Screenshots: `node playwright/v7-panels-shots.mjs <dir>` (needs `npm run dev -- --port 5191` and `npm run build:wasm`).
-- Real-app findings: V7-6 (the owed wealth tax is estimated) and V7-10 (the pilot's earnings name the Government as payer) in `docs/known-issues.md`. One test of the scene agent's area (`scene-entities`, homes per class) was failing in the working tree mid-session; not touched.
+## Found: wire bug (not fixed here, outside scope)
+`MonthFlows` in `crates/sim-api/src/turn.rs` has no `#[serde(rename_all = "camelCase")]`, so the real wire sends `staff_commutes`, while the contract (section 19) and `contract/index.ts` say `staffCommutes`. The scene reads both (`staffCommutesOf`). The fix is one attribute in Rust (and the wasm golden hashes may move); then the fallback can be removed.
+
+## Unverified / rough
+- Only checked at 1440x900 in software GL (SwiftShader); frame rate with the jet not measured separately.
+- Pressure mode (live clock) was not run with a flight; the code path uses the same pure functions as turn playback.
+- Saved games and old wire packages: no `estate` means no estate scene (tested with `estate: undefined`).
+- The jet is drawn larger than to scale (about half a tile long) so it reads at the default zoom.
+- Estate tiles are not pickable entities: clicking grounds, runway or hangar selects the plain tile (`selectionAt`); keyboard description says "estate grounds" / "estate runway". The hangar and runway are not tinted by lenses (only ground tiles and homes are).
+- The pilot's route crosses the pool-lawn-free garden and drive tiles because the routing layout (`store/map.ts`) does not know estate tiles; it looks right today but it is a coincidence of the fixed map.
+- The three-point turn after landing is a swing-in (the jet rotates while taxiing to the stand); it is fast (about half a second at 2 s per month).

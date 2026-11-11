@@ -73,7 +73,10 @@ export const aviationOfSnapshot = (snap: Snapshot | null): number => Math.max(0,
 
 /** Staff commutes of a frame, shaped like ordinary commutes so the people layer can walk them. Empty when none. */
 export function staffCommutesOf(frame: Pick<MonthFrame, 'flows'>): { person: number; from: TileRef | null; to: TileRef; minutes: number }[] {
-  return (frame.flows?.staffCommutes ?? []).map((c) => ({ person: c.person, from: c.from ? { ...c.from } : null, to: { ...c.to }, minutes: c.minutes }));
+  // KNOWN WIRE BUG (docs/web-notes-v7.md): the real wire sends `staff_commutes` (MonthFlows in sim-api has no camelCase rename);
+  // the contract says `staffCommutes`. Read both until the Rust side is fixed.
+  const flows = frame.flows as (MonthFrame['flows'] & { staff_commutes?: MonthFrame['flows']['staffCommutes'] }) | undefined;
+  return (flows?.staffCommutes ?? flows?.staff_commutes ?? []).map((c) => ({ person: c.person, from: c.from ? { ...c.from } : null, to: { ...c.to }, minutes: c.minutes }));
 }
 
 /** Domestic staff (the pilot) have an employer household and no firm job; they still go to work. */
