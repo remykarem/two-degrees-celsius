@@ -1,4 +1,4 @@
-import type { AssumptionGroup, AssumptionTopic } from '../contract';
+import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, Distribution, Snapshot } from '../contract';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
 export const GROUP_LABEL: Record<AssumptionGroup, string> = {
@@ -24,3 +24,33 @@ export const topicFor = (topics: AssumptionTopic[], anchor: string): AssumptionT
 export const anchorsWithoutTopic = (topics: AssumptionTopic[], anchors: string[]): string[] => anchors.filter((a) => !topicFor(topics, a));
 /** Related topics that exist (dangling ids are dropped, and a test checks there are none). */
 export const relatedOf = (topics: AssumptionTopic[], t: AssumptionTopic): AssumptionTopic[] => t.related.map((id) => topics.find((x) => x.id === id)).filter((x): x is AssumptionTopic => !!x);
+
+// ---- Agents section (contract v1.7) ----
+
+/** The explorer's section id and the prefix a person link uses (`agents:worker` opens Households on that class). */
+export const AGENTS_ANCHOR = 'agents';
+export const agentsAnchorFor = (cls: string): string => `${AGENTS_ANCHOR}:${cls}`;
+export const isAgentsAnchor = (a: string | null | undefined): boolean => !!a && (a === AGENTS_ANCHOR || a.startsWith(`${AGENTS_ANCHOR}:`));
+/** The kind an agents link names: `agents:<class>` is Households, a bare kind id (or `agents:<kind id>`) is that kind. */
+export function kindForAnchor(c: AgentsCatalog, anchor: string): AgentKindInfo | null {
+  const rest = anchor.startsWith(`${AGENTS_ANCHOR}:`) ? anchor.slice(AGENTS_ANCHOR.length + 1) : '';
+  return c.kinds.find((k) => k.id === rest) ?? (rest && c.kinds[0]?.variants.some((v) => v.id === rest) ? c.kinds[0] : null) ?? c.kinds[0] ?? null;
+}
+export const DISTRIBUTION_WORD: Record<Distribution, string> = { bernoulli: 'Yes/no draw (Bernoulli)', uniform: 'Uniform on 0 to 1', uniform_index: 'Uniform pick from a list' };
+export const ACTOR_WORD: Record<AgentKindInfo['actor'], string> = { agent: 'Agent', non_agent: 'Not an agent' };
+/** Case-insensitive AND search over kinds (title, summary, decisions, rule) and draws (event, probability, when). */
+export function searchAgents(c: AgentsCatalog, query: string): { kinds: AgentKindInfo[]; draws: AgentsCatalog['randomness'] } {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit = (t: string) => words.every((w) => t.toLowerCase().includes(w));
+  return {
+    kinds: c.kinds.filter((k) => hit([k.title, k.summary, k.rule, ...k.decides, ...k.observes, ...k.params.map((p) => `${p.label} ${p.path}`)].join(' '))),
+    draws: c.randomness.filter((r) => hit([r.event, r.probability, r.when, r.system, ...r.params.map((p) => `${p.label} ${p.path}`)].join(' '))),
+  };
+}
+/** The one-line decision tag of a person: the class of their household and how such households decide. Null when the catalogue or the household is unavailable. */
+export function decisionTag(c: AgentsCatalog | null, snap: Snapshot | null, person: number): { cls: string; variant: AgentVariant } | null {
+  if (!c || !snap) return null;
+  const h = snap.households.find((x) => x.members.includes(person));
+  const v = h && c.kinds.find((k) => k.id === 'households')?.variants.find((x) => x.id === h.class);
+  return h && v ? { cls: h.class, variant: v } : null;
+}

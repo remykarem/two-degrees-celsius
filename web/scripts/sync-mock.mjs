@@ -25,6 +25,28 @@ const POLICY_KEYS = {
 const camel = (o) => ({ baseCost: o.base_cost, leadTime: o.lead_time, unit: o.unit, minSize: o.min_size });
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 
+/** Contract v1.7: the agents catalogue from content/assumptions.json with every parameter reference resolved against content/ (same paths the Rust side reads). */
+function agentsCatalog(params) {
+  const sys = { market: content('systems/market.json'), regulated: content('systems/regulated.json'), coop: content('systems/coop.json') };
+  const root = { ...params, systems: sys };
+  const value = (path) => {
+    let cur = root;
+    for (const k of path.split('.')) cur = cur?.[k];
+    if (cur === undefined) throw new Error(`assumptions.json agents: no parameter ${path}`);
+    return cur;
+  };
+  const refs = (list = []) => list.map((r) => ({ path: r.path, label: r.label, value: value(r.path), unit: r.unit }));
+  const a = content('assumptions.json').agents;
+  return {
+    kinds: a.kinds.map((k) => ({
+      id: k.id, title: k.title, actor: k.actor, summary: k.summary, decides: k.decides, observes: k.observes, rule: k.rule,
+      params: refs(k.params), variants: k.variants ?? [], classParams: refs(k.classParams), code: k.code,
+    })),
+    randomness: a.randomness.map((r) => ({ id: r.id, event: r.event, system: r.system, distribution: r.distribution, probability: r.probability, when: r.when, params: refs(r.params), code: r.code })),
+    deterministic: a.deterministic,
+  };
+}
+
 export function generate() {
   const params = content('params.json');
   const town = content('initial_town.json');
@@ -99,7 +121,7 @@ export function generate() {
   const weatherLever = rl ? { label: rl.label, unit: rl.unit, min: rl.min, max: rl.max, step: rl.step, lobbied: rl.lobbied, arrows: rl.arrows, availableIn: rl.availableIn } : undefined;
 
   return {
-    generatedFrom: ['content/params.json', 'content/initial_town.json', 'content/systems/*.json'],
+    generatedFrom: ['content/params.json', 'content/initial_town.json', 'content/systems/*.json', 'content/assumptions.json (agents)'],
     game: { startYear: START_YEAR, firstTurn: 1, lastTurn: params.run.turns, turnsPerYear: 12 / params.run.ticks_per_turn },
     ticksPerTurn: params.run.ticks_per_turn,
     pc: { start: t.pc_start, cap: t.pc_cap, regenBase: t.pc_base, cancelRefund: t.cancel_refund },
@@ -138,6 +160,7 @@ export function generate() {
     plants,
     households,
     firms,
+    agents: agentsCatalog(params),
   };
 }
 

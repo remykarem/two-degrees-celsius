@@ -1,4 +1,4 @@
-import type { AssumptionGroup, AssumptionTopic } from '../../contract';
+import type { AgentsCatalog, AssumptionGroup, AssumptionTopic } from '../../contract';
 import { GEN, MOCK, WX } from './data';
 
 // MOCK ONLY: an invented explorer catalogue with the wire's shape (docs/snapshot-contract.md section 15). The real catalogue is written in Rust from the live Params;
@@ -45,4 +45,10 @@ export function mockAssumptions(): AssumptionTopic[] {
     topic({ id: 'leaves_out', title: 'What the model leaves out', group: g('leaves_out'), summary: 'Trade, GST/VAT, state ownership of firms, migration, technology change and most real-world detail.', formula: 'n/a',
       related: [], usedBy: ['gst', 'industry-state'], params: [], examples: [], leavesOut: ['International trade', 'GST/VAT', 'State-owned firms'] }),
   ];
+}
+
+/** MOCK ONLY: the real catalogue text and parameter values (generated from content/), but the mock does not run these rules. */
+export function mockAgents(): AgentsCatalog {
+  const a = GEN.agents;
+  return { ...a, deterministic: [...a.deterministic, 'Mock: the web mock does not run these rules or draw these random numbers; it shows the real simulation\'s catalogue.'] };
 }

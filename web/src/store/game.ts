@@ -1,4 +1,4 @@
-import type { AccountRef, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, AgentsCatalog, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
 import type { SimPort } from '../sim-port/port';
 import { relabelLevers } from './labels';
 import { withCommand, withoutItem, withPreviews } from './draft';
@@ -34,6 +34,7 @@ export interface Game {
   personLedger(person: number): Result<PersonLedger>;
   /** Contract v1.5: the model explorer's topics (asked once and cached; an error result when the package has none). */
   assumptions(): Result<AssumptionTopic[]>;
+  agents(): Result<AgentsCatalog>;
   /** Selects the first built tile of a kind (the Industry tab's infrastructure rows). Returns false when there is none. */
   selectFirstOf(kind: string): boolean;
   /** Opens the full transaction viewer for an account (optionally with a kind filter), or closes it with null. */
@@ -84,6 +85,7 @@ function safe<T>(f: () => Result<T>): Result<T> {
 
 export function createGame(port: SimPort): Game {
   let assumptionsCache: Result<AssumptionTopic[]> | null = null;
+  let agentsCache: Result<AgentsCatalog> | null = null;
   const liveAvailable = port.liveTurn !== false;
   const freshLive = (): LiveSlice => ({ open: false, monthsDone: 0, frame: null, frameSeq: 0, locked: false, summary: null, report: null, notice: null });
   const store = writable<GameState>({
@@ -195,6 +197,10 @@ export function createGame(port: SimPort): Game {
     select: (selection) => patch({ selection }),
     ledger: (account, query) => safe(() => port.ledger(account, query)),
     personLedger: (person) => safe(() => port.personLedger(person)),
+    agents() {
+      if (!agentsCache) { const r = safe(() => port.agents()); if (!r.ok) return r; agentsCache = r; }
+      return agentsCache;
+    },
     assumptions() {
       if (!assumptionsCache) { const r = safe(() => port.assumptions()); if (!r.ok) return r; assumptionsCache = r; }
       return assumptionsCache;

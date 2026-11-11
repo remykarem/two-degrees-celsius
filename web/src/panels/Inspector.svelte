@@ -3,6 +3,8 @@
   import { layoutOf, type Game, type Selection } from '../store';
   import { Button } from '../ui-kit';
   import { INFRA_LABEL, resolveSelection, resolveTile } from './inspect';
+  import { agentsAnchorFor, decisionTag } from './explorer';
+  import { openExplorer } from './ui';
   import { selectionAccount } from './ledger';
   import LedgerPreview from './LedgerPreview.svelte';
   import PersonEarnings from './PersonEarnings.svelte';
@@ -16,6 +18,11 @@
   const model = $derived(!$gs.snapshot ? null : pinned ? resolveSelection($gs.snapshot, layout, pinned, $gs.draft) : hovering ? resolveTile($gs.snapshot, layout, hovering, $gs.draft) : null);
   const hoverErr = $derived($gs.buildKind && $gs.hover ? game.tileError($gs.hover) : null);
   const canEdit = $derived($gs.phase === 'review' || $gs.phase === 'plan');
+  const tag = $derived.by(() => {
+    if (pinned?.kind !== 'person') return null;
+    const r = game.agents();
+    return decisionTag(r.ok ? r.value : null, $gs.snapshot, pinned.id);
+  });
   const acct = $derived(pinned ? selectionAccount($gs.snapshot, pinned) : null);
   const maxIncome = $derived(Math.max(1, ...(model?.income ?? []).map((p) => p.value)));
 
@@ -71,6 +78,7 @@
     {/if}
 
     {#if acct}<LedgerPreview {game} account={acct} />{/if}
+    {#if tag}<p class="tag" data-testid="decision-tag"><b>{tag.variant.label} household:</b> {tag.variant.decision} <button type="button" class="lnk" data-testid="howlink-decisions" onclick={() => openExplorer(agentsAnchorFor(tag.cls))}>How decisions are made</button></p>{/if}
     {#if pinned?.kind === 'person'}<PersonEarnings {game} person={pinned.id} />{/if}
 
     {#if model.removable}
@@ -97,6 +105,7 @@
   h4 { margin: 8px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
   .close { border: 0; background: transparent; color: var(--text); cursor: pointer; font-size: 14px; }
   .chip { font-size: 11px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; }
+  .tag { font-size: 12px; margin: 6px 0; }
   .sub, .ro, .note, .hint { font-size: 12px; color: var(--text-dim); margin: 2px 0; }
   .ro { font-style: italic; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; margin: 0; font-size: 13px; }

@@ -2,7 +2,7 @@ import type { AccountRef, PolicyEvent, Command, LedgerQuery, HistoryPoint, Month
 import type { SimPort } from '../port';
 import { actionList, GEN, LEVERS, MOCK } from './data';
 import { checkOutcome, effectiveValue, remainingBudget, stepMonth, updateLobby, wealthGini } from './dynamics';
-import { mockAssumptions } from './assumptions';
+import { mockAgents, mockAssumptions } from './assumptions';
 import { ledgerPage, personLedger, rollUp } from './ledger';
 import { frame, makeEvents, makeFlows } from './frames';
 import { stepHouseholds, syncJobs } from './people';
@@ -186,6 +186,7 @@ export function createMockSim(): SimPort {
     ledger: (account: AccountRef, query?: LedgerQuery) => ledgerPage(s, account, query),
     personLedger: (person: number) => personLedger(s, person),
     assumptions: () => ok(mockAssumptions()),
+    agents: () => ok(mockAgents()),
 
     cancelPending(id) {
       if (s.gameOver) return fail('game_over', 'The game is over: nothing can be cancelled.');

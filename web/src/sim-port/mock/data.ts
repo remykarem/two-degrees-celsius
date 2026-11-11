@@ -1,6 +1,6 @@
 import generated from './data.generated.json';
 import mockOnly from './mock-only.json';
-import type { ActionInfo, AgeBand, ClassKey, CostModel, InfraKind, LeverInfo, LeverKey, Sector, SystemKey } from '../../contract';
+import type { ActionInfo, AgentsCatalog, AgeBand, ClassKey, CostModel, InfraKind, LeverInfo, LeverKey, Sector, SystemKey } from '../../contract';
 
 interface XY { x: number; y: number }
 
@@ -17,6 +17,8 @@ export interface Generated {
     plantCapacity: number; publicHousingCostUsd: number; plantCostUsd: number; roadCostUsd: number; roadUpkeepUsd: number;
     start: { publicHousing: number; fossilPlant: number; renewablePlant: number; road: number };
   };
+  /** Contract v1.7: the agents catalogue resolved from content/. */
+  agents: AgentsCatalog;
   /** Only when content/params.json has a `weather` block (Town v4). */
   weather?: { onset: number; full: number; curve: number; coverageRadius?: number; smokeRadius?: number; regrowMonths?: number; durationMonths?: number; fireStationCostUsd?: number; fireStationUpkeepUsd?: number };
   /** Only when content/levers.json has `resilience_spending`. */

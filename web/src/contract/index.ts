@@ -442,6 +442,16 @@ export interface AssumptionTopic {
   related: string[]; usedBy: string[];
 }
 
+/** Contract v1.7 (section 17): the agents catalogue. */
+export type Distribution = 'bernoulli' | 'uniform' | 'uniform_index';
+export interface AgentVariant { id: ClassKey; label: string; decision: string; rule: string }
+export interface AgentKindInfo {
+  id: string; title: string; actor: 'agent' | 'non_agent'; summary: string; decides: string[]; observes: string[]; rule: string;
+  params: AssumptionParam[]; variants: AgentVariant[]; classParams: AssumptionParam[]; code: string[];
+}
+export interface RandomDraw { id: string; event: string; system: string; distribution: Distribution; probability: string; when: string; params: AssumptionParam[]; code: string }
+export interface AgentsCatalog { kinds: AgentKindInfo[]; randomness: RandomDraw[]; deterministic: string[] }
+
 /** Contract v1.6 (section 16): breakdowns, policies, industry. */
 export interface BreakdownInput { label: string; value: number; unit: string; source?: string }
 export interface BreakdownPart { label: string; value: number; unit: string; note?: string }
