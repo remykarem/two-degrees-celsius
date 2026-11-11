@@ -1,16 +1,17 @@
-# Town v7 design: the elite estate (draft for review)
+# Town v7 design: the elite estate (approved)
 
-Status: **DRAFT for review, nothing implemented.** Numbers are placeholders in `content/`. **[DECIDED]** = from the user; **[PROPOSED]** = my default, for the user to change. Every claim about the code below was checked against the checkout at commit 3df5e76; figures marked "measured" come from `cargo run -p sim-cli --example debug -- 2 3` (seed 42, no player action). This release was numbered v8 for GST/state ownership before this doc existed; the GST and state-ownership draft is now `docs/town-v8.md` and daily ticks are `docs/town-v9.md`.
+Status: **APPROVED with defaults, nothing implemented.** The user approved every default in this doc (Farm as the estate's firm, estate savings and wealth $2.1M, `Dependent` fallback, shared random stream, no jet cost beyond the carbon charge, the estate's 0.5 t replaces 0.12 t) and added one agent, the jet's pilot (section 5A). Numbers are placeholders in `content/`. **[DECIDED]** = from the user; **[APPROVED]** = a default the user accepted; **[PROPOSED]** = new since approval (the pilot), for the user to confirm. Every claim about the code below was checked against the checkout at commit 3df5e76; figures marked "measured" come from `cargo run -p sim-cli --example debug -- 2 3` (seed 42, no player action). This release was numbered v8 for GST/state ownership before this doc existed; the GST and state-ownership draft is now `docs/town-v8.md` and daily ticks are `docs/town-v9.md`.
 
 ## 1. Goal and decisions
 
-One more household, one person, very rich, who does not work, lives on a 2 x 2 estate in a forest corner of the 12 x 12 map, owns one private jet and a short runway, and flies now and then. The point is to make inequality and its carbon cost **visible and playable**: the Lorenz curve gets a real outlier, the wealth tax and the carbon price visibly bite one specific agent, and every flight is an event.
+One more household, one person, very rich, who does not work, plus one employee (the jet's pilot, section 5A), lives on a 2 x 2 estate in a forest corner of the 12 x 12 map, owns one private jet and a short runway, and flies now and then. The point is to make inequality and its carbon cost **visible and playable**: the Lorenz curve gets a real outlier, the wealth tax and the carbon price visibly bite one specific agent, and every flight is an event.
 
 - **[DECIDED]** One household, one person, net worth far above every current household, never counts as unemployed or labour supply.
+- **[DECIDED]** One more agent: the jet's pilot, a worker. The town grows by 2 people (estate owner and pilot): **22 people in 9 households, 8 homes** (was 20, 8, 7).
 - **[DECIDED]** The class label `Capitalist` is **not** renamed. No "Elite" class.
 - **[DECIDED]** 4-tile estate with a posh 2-storey house in a map corner, forest around it, a road to the town centre; a jet owned by this agent; a runway of about 3 tiles; each flight emits CO2 (about 2 t, about 40% a month); estate household emissions about 0.5 t a month; all tunable in `content/`.
-- **[PROPOSED]** No new `Class`. The estate household is `Capitalist` by derivation (section 3) and carries a separate wire tag "Estate owner" plus a wealth band, both read from `content/ui.json`.
-- **[PROPOSED]** Income: the estate household is the single `Owner::Household` of an existing firm. The best choice by the numbers is the **Farm**, not the Shop (section 4). Interest on deposits is not a usable income source (section 4).
+- **[APPROVED]** No new `Class`. The estate household is `Capitalist` by derivation (section 3) and carries a separate wire tag "Estate owner" plus a wealth band, both read from `content/ui.json`.
+- **[APPROVED]** Income: the estate household is the single `Owner::Household` of an existing firm. The best choice by the numbers is the **Farm**, not the Shop (section 4). Interest on deposits is not a usable income source (section 4).
 
 ## 2. What the code allows (checked)
 
@@ -23,6 +24,9 @@ One more household, one person, very rich, who does not work, lives on a 2 x 2 e
 | Homes: one `Home` per tile, `owner` and `household`; the owner-occupier pays no rent | `init.rs`, `income.rs` rent loop (`home.owner == HomeOwner::Household(h.id)` -> skip) | The estate house is an ordinary `Home` owned by its occupant |
 | Startup site search uses the first `TileKind::Empty` tile | `class.rs` `site` | New non-Empty tile kinds are safe; the estate tiles are never picked |
 | Roads cost upkeep per tile (`government.road_upkeep_usd` = 10) and speed commutes | `params.json`, `space.rs` | 7 road tiles add $70 a month of public upkeep (verify it counts initial roads) |
+| `Person.job` is `Option<FirmId>`; `employed()` = firm job or job guarantee; wages are paid only firm to household (`income.rs`); `labour.rs` hires and fires only firm slots | A household cannot employ today. The pilot needs a new employment link (section 5A) |
+| Commutes (`space::commutes`, frames in `sim-api/src/frames.rs`) exist only for people with a firm job (route to the firm tile) | The pilot needs a route to the hangar tile (section 5A) |
+| Current labour force 10 (9 employed, the Destitute household's adult unemployed): unemployment 10.0% (measured from `initial_town.json`) | Section 5A has the new figures |
 | `Owner` is `Household(id) | Workers | State | Bank`; one owner per firm; every firm starts `Owner::Household(founder)` | `sim-types/src/enums.rs`, `init.rs` | Ownership is set by `founder` in `initial_town.json` (section 4) |
 | The bank holds only loans: `equity = loans - deposits`, and init fails if equity is negative or below `bank_capital_ratio` of loans | `init.rs` (end of `init`) | **Big deposits are impossible** without matching loans (section 4) |
 | Household carbon price: none. The carbon price is charged to firms only (`income.rs`) | `grep carbon_cost` | "Carbon price hits the estate" needs a new, explicit charge on flights (section 6) |
@@ -89,33 +93,75 @@ The estate layout lives in `content/initial_town.json` under a new `estate` bloc
 
 **Wealth.** `household_wealth` adds the jet `value` to its owner. Static, no depreciation (`estate.jet_depreciation` = 0, a param so v8 can change it).
 
-**New system `estate` (sim-model/src/estate.rs, `SystemId::Estate`)**, placed in `TICK_ORDER` **after Weather and before Production**, so a flight is known before Nature totals the month's emissions. Pure: `fn(&State, &Params, &mut Rng) -> Deltas`. Each month: one Bernoulli draw `r.chance(estate.flight_prob_monthly)`; on success emit `Event::PrivateJetFlight { tonnes }`, add `flight_tonnes` to the month's emissions (`EmissionSource::Aviation`, a new variant so the breakdown shows it separately from "Households"), and charge the carbon price (section 6). No draw happens if there is no estate, so towns without one keep the old stream exactly.
+**New system `estate` (sim-model/src/estate.rs, `SystemId::Estate`)**, placed in `TICK_ORDER` **after Weather and before Production**, so a flight is known before Nature totals the month's emissions. Pure: `fn(&State, &Params, &mut Rng) -> Deltas`. Each month: one Bernoulli draw `r.chance(estate.flight_prob_monthly)`, **taken every month while the estate exists, even when the pilot is gone, so a dismissal never shifts the stream**; the flight happens only if the draw succeeds **and the jet has an employed pilot** (section 5A). On a flight, emit `Event::PrivateJetFlight { tonnes }`, add `flight_tonnes` to the month's emissions (`EmissionSource::Aviation`, a new variant so the breakdown shows it separately from "Households"), and charge the carbon price (section 6). No draw happens if there is no estate, so towns without one keep the old stream exactly.
 
-**Emissions.** `nature.rs` currently gives every household `members x household_footprint_base` (0.12 t, so 20 people = 2.4 t a month). For the estate household the monthly direct figure becomes `estate.household_emissions_t` (0.5, replacing its 0.12), via a per-household override read from `state.estate`, not a special case in the numbers. Proportions from `params.json` and the measured run:
+**Emissions.** `nature.rs` currently gives every household `members x household_footprint_base` (0.12 t, so 20 people = 2.4 t a month). For the estate household the monthly direct figure becomes `estate.household_emissions_t` (0.5, replacing the 0.12 its one person would otherwise have; approved), via a per-household override read from `state.estate`, not a special case in the numbers. Proportions from `params.json` and the measured run:
 
 | Quantity | t a month | Share of gross 11.6 to 11.8 | Share of the 900 t budget over 120 months |
 |---|---|---|---|
 | Current gross (measured 11.6 to 11.8) | 11.7 | 100% | 1,404 t if sinks are ignored |
 | Current household sector (20 x 0.12) | 2.4 | 20% | |
-| Estate household (replaces 0.12 with 0.5) | +0.38 | +3.2% | +46 t (5.1%) |
+| Estate household (its one person has 0.5, not 0.12; a new person, so +0.5 in full) | +0.5 | +4.3% | +60 t (6.7%) |
+| Pilot (ordinary 0.12 per person, new person, section 5A) | +0.12 | +1.0% | +14 t (1.6%) |
 | Jet, expected (2 t x 0.4) | +0.8 | +6.8% | +96 t (10.7%) |
-| Estate total, expected | +1.18 | +10.1% | +142 t (15.7%) |
-| Household sector after (incl. jet) | 2.4 + 1.18 = 3.58 | +49% | |
+| Estate and pilot total, expected | +1.42 | +12.1% | +170 t (18.9%) |
+| Household sector after (incl. jet) | 2.4 + 1.42 = 3.82 | +59% | |
 | One flight | 2 | 17% of a month's gross | 0.22% of the budget |
 | Estate person vs an average person | 0.5 vs 0.12 per head | 4.2x; with the jet 11x | |
 
-Monthly jet emissions have a standard deviation of 2 x sqrt(0.4 x 0.6) = 0.98 t, so in a given quarter the town's gross swings by about 2 t. Single person, 11 times an average person's footprint, is the intended message. The no-action budget (baseline A) is used up about 2.5 turns earlier (900 / 11.7 = 77 months; 900 / 12.9 = 70 months, ignoring the forest sink).
+Monthly jet emissions have a standard deviation of 2 x sqrt(0.4 x 0.6) = 0.98 t, so in a given quarter the town's gross swings by about 2 t. Single person, 11 times an average person's footprint, is the intended message. **Correction made at approval:** the first draft showed +0.38 t for the estate person, which wrongly treated them as already inside the 20; they are a new person, so the full 0.5 t is added (the draft's +1.18 t total became +1.42 t with the pilot). The no-action budget (baseline A) is used up about 2.8 turns earlier (900 / 11.7 = 77 months; 900 / 13.1 = 69 months, ignoring the forest sink).
+
+## 5A. The pilot (added after approval)
+
+**Decision [DECIDED]:** one more agent, the jet's pilot, a worker. **[PROPOSED]** below is my recommendation; the alternative is costed so the user can switch. Checked against `state.rs`, `labour.rs`, `income.rs`, `space.rs`, `class.rs`, `frames.rs`, `sim-checks`, `initial_town.json`.
+
+**What the code forces.** A job is a firm slot (`Person.job: Option<FirmId>`); wages move only from a firm to a household in `income.rs`; `labour.rs` hires the cheapest unemployed into firm slots and fires by firm demand; commutes and commute frames exist only for firm jobs. A household cannot employ anyone.
+
+**Option A, recommended [PROPOSED]: domestic staff paid by the estate.**
+- New `Person.staff_of: Option<HouseholdId>` (SCHEMA 4 already). `Person::employed()` becomes `job || jg || staff_of`, so every existing metric (`labour_force()`, `unemployment()`, `unemployed()`, wage drift, legitimacy) counts the pilot with no further change. The pilot has `in_labour_force: true`, `job: null`, `staff_of: <estate household>`, skill 0.65, reservation $2,000.
+- Pay: each month in `income.rs`, one transfer `Account::Household(estate) -> Account::Household(pilot's household)` of `estate.pilot_wage_usd` (**$2,400**, close to the ordinary pay of a skill-0.65 worker at today's base wage, about $2.2k; one content number, not derived) with a **new `Purpose::DomesticWages`**, `FlowKind::Wage`. It lands in the household's `income.wages`, so the existing wage tax applies, the ledger reconciles (money moves, none is created), and the Finance tab shows it as its own row. Capped by the estate's savings (`min(wage, savings)`), like the other household payments.
+- **Dismissal link (wealth to jobs):** if the estate could not pay the full wage for `estate.pilot_unpaid_months_max` (**3**) months in a row, the pilot is let go: `staff_of` cleared, event `pilot_let_go`, **flights stop** (the draw is still taken, section 5, the result is ignored and the jet stays parked). The pilot is now unemployed and in the normal labour market (`labour.rs` may hire them into a Farm or Factory slot). **Rehire default:** each month, if the pilot is still unemployed and the estate's savings cover 3 months of wages, they are hired back (event `pilot_hired`); otherwise the jet stays grounded. A raised wealth tax or a lower dividend therefore costs one job and a flight pattern: a small, visible link between wealth and employment.
+- **Class:** `classify_with` already treats `employed()` people as working; its pay line needs one branch (`staff_of` uses `person.wage`, as the job-guarantee branch uses the minimum wage). At skill 0.65 (below the 0.7 `skill_threshold`) the household stays `Worker`. If the pilot is let go and nobody else in the household works, the household becomes `Dependent` as for any worker.
+- **Home [PROPOSED]:** the pilot joins **Worker C** (Adult 1 `0.45` skill, plus a Retired person: 2 people, so 3 after; the validator allows 2 to 4). Worker C's home (5,8) is the closest existing home to the estate (the new road starts at (5,6) and runs along row 8 to the gate at (1,9)), no new tile, no new rent flow, and the Landlord still has 7 homes for 8 households as today (Destitute stays homeless). Rejected: a new one-person household with a new home on a new tile (needs a tile, a rent flow to the Landlord, a second sub-2 household, and a visible empty cottage with no story). The pilot is the third person in Worker C's household, sharing its money and class.
+- **Commute:** the pilot commutes by road to the hangar tile (2,11). `space::commutes` takes the job's destination tile from the firm; add a staff branch that uses `estate.hangar_tile` (content) through the same `routes_to`. Expected 8 to 10 tiles; measure. `frames.rs` builds commute frames from firm jobs only and gets the same branch, so the scene shows the pilot driving to the airfield (the existing commute lens and employment lens include the pilot). The pilot's `effective_hours` and `wellbeing` use the existing commute terms unchanged.
+- **Flights need an employed pilot:** `estate.rs` checks the jet has a person with `staff_of == estate household`. Without one, no flight, no emissions, no carbon charge.
+
+**Option B, alternative: the pilot is on the Farm payroll** (`job = Farm`). No code for pay, employment or class, and the commute works as for any firm worker. Rejected as the default for four reasons: (1) `labour.rs` can fire the pilot when the Farm's target workers fall, with no link to the jet or to the estate's finances, so flights would stop for a reason the player cannot see; (2) the commute goes to the Farm tile (7,9), not the runway, which defeats the scene; (3) the Farm's wage bill and productivity include a worker who produces no food, changing the Farm profit that funds the estate (a leak of about $2.4k a month of $6.7k) and the labour-demand numbers; (4) the pilot's wage then depends on the Farm's skill-wage rule rather than on one tunable number. Its one advantage is zero new schema.
+
+**Recommendation: Option A.** It costs one new field, one transfer, one `Purpose` and two branches (commute, pay), and it is the only version where inequality, jobs and flights are linked.
+
+**Maths (from `initial_town.json`, measured counts):**
+
+| Quantity | Before pilot | With pilot |
+|---|---|---|
+| People / households / homes | 20 / 8 / 7 (21 / 9 / 8 with the estate alone) | **22 / 9 / 8** |
+| Labour force (in_labour_force) | 10 | 11 |
+| Employed | 9 | 10 |
+| Unemployment at start | 1 / 10 = 10.0% | 1 / 11 = 9.1% |
+| Unemployment if the pilot is let go | | 2 / 11 = 18.2% |
+| Wage drift (`wage_k` 0.1 x (`u_ref` 0.09 - u)) | -0.0010 a month | -0.0001 a month |
+
+So the pilot nudges wage drift up by about 0.0009 a month (about 1% a year) while employed; if they are let go, unemployment passes 18%, above the `legit_unemployment_threshold` (0.10): about 0.02 x 0.082 = 0.0016 legitimacy a month, and closer to the `bank_cascade_unemployment` 0.20 line (a second job loss elsewhere crosses it). This is a one-person swing worth 8 to 9 points of unemployment in a 10-person labour force; it is the price of a small town and must be in the balance pass.
+
+**Income, wealth and Gini effects.**
+- Estate cash flow, monthly: dividends about +5,000 (after capital tax), wage -2,400, wealth tax at 1% -1,600, carbon charge about -80 (0.4 x $200); net about +900 before the estate's own consumption (the wealth-effect wish is capped by savings, so it can drain the $20k). **Risk:** the estate may run down its savings and dismiss the pilot in the baseline; must be measured, with the first levers being `estate.pilot_wage_usd` (lower), the estate's savings (higher, within the bank identity room of about $21k, section 8), then the dividend path. Target: no dismissal in baselines A to F unless the player raises the wealth tax.
+- Worker C: monthly income from about $1.7k to about $4.1k gross (wage tax applies); it becomes the best-off Worker household, which narrows income Gini slightly (the town's poorest worker household rises) and raises demand (Worker propensity 1.0, so each wage dollar is spent, against 0.45 for the Capitalist it came from): net demand slightly up and composition more towards services. Landlord rent can rise within `rent_burden_cap`. Worker C wealth is shared over 3 people (2 before), a wash for the wealth Gini.
+- Wealth Gini: see section 6; the estate is still one person in 22; the Lorenz last step becomes 1/22.
+
+**Person inspector, wire, ledger.** Inspector: employer "Estate owner (household)", pay, commute, flights flown, status. Wire (contract v1.9, additive): `PersonView.employer?: { kind: "household", household, label }` (`job` stays null); `Snapshot.estate.pilot?: { person, wage, status: "employed" | "let_go", unpaidMonths }`; events `pilot_let_go`, `pilot_hired`; `Purpose` `domestic_wages` in the ledger and the Finance flow rows; commute frames include staff. Fixtures regenerate; the mock carries the same fields from `content/` and applies the same dismissal rule in its own labelled copy.
+
+**Content:** `initial_town.json`: Worker C gets a third person (`Adult`, skill 0.65, `labour_force: true`, `reservation_usd: 2000`, `staff_of: 8`); `estate` block gets `hangar_tile`. `params.json` `estate`: `pilot_wage_usd` 2400, `pilot_unpaid_months_max` 3, `pilot_rehire_months_of_wages` 3. `ui.json`: wording for the employer line, the two events and the status values. `validate_town`: `staff_of` must name the estate household; a staff member needs `labour_force: true`, `job: null`, a home in a household with a home; the household size rule becomes 1 to 4. `labour.rs` hire loop and job-guarantee selection must skip people with `staff_of` (they are `employed()`); `sim-checks` line 417 (employed implies in labour force) still holds; `persist.rs` bounds check adds `staff_of`.
 
 ## 6. Making inequality and the carbon cost visible
 
-**Gini, Lorenz, top share (verified, `sim-metrics`, `breakdowns.rs`).** Gini is over people, each holding an equal share of their household wealth. I recomputed from the measured month-3 wealth (Farm moved to the estate, estate $2.1M): Gini goes from 0.72 to about 0.87; the Lorenz curve ends in a 1/21 step holding about 76% of all wealth; `top_wealth_share` goes from 0.60 (Owner family) to about 0.76 (estate). Nothing to change in the formulas; the Gini breakdown table (`by_household`) gets the tag column.
+**Gini, Lorenz, top share (verified, `sim-metrics`, `breakdowns.rs`).** Gini is over people, each holding an equal share of their household wealth. I recomputed from the measured month-3 wealth (Farm moved to the estate, estate $2.1M): Gini goes from 0.72 to about 0.87 (the pilot makes it 22 people and moves a third of Worker C's small wealth to a third person, so a few thousandths either way; re-measure); the Lorenz curve ends in a 1/22 step holding about 76% of all wealth; `top_wealth_share` goes from 0.60 (Owner family) to about 0.76 (estate). Nothing to change in the formulas; the Gini breakdown table (`by_household`) gets the tag column.
 
 **Legitimacy impact (balance, not a bug).** `government.legit_gini` 0.012 above `legit_gini_threshold` 0.45 costs legitimacy every month. Moving from 0.72 to 0.87 adds about 0.15 x 0.012 = 0.0018 a month, about 0.2 over the game, against a baseline B minimum legitimacy of 0.44 (`docs/tuning-log.md`). Expect baselines to lose legitimacy faster; this is what the player should feel, but it needs a tuning decision (section 9).
 
 **Where it shows.**
 - Society and people views: the estate row with class chip "Capitalist" and tag "Estate owner", wealth band, net worth, monthly dividend income, footprint (tonnes a month).
 - Wealth and income breakdowns: new rows from the wire (estate home, jet, firm equity in the wealth breakdown; Farm dividends in income). They arrive in the existing `breakdowns` shapes, with labels from `content/ui.json`.
-- Person inspector: person label, "Does not work: outside the labour force", home "Estate", jet, last flight, footprint, wealth tax paid and carbon charge paid, last 12 months.
+- Person inspector: for the pilot, "Employer: Estate owner (household)", monthly pay, commute to the hangar, flights flown, status (employed, let go); for the estate owner, "Employs: the pilot" and the monthly domestic wage paid. Estate person: person label, "Does not work: outside the labour force", home "Estate", jet, last flight, footprint, wealth tax paid and carbon charge paid, last 12 months.
 - Policies and Finance tabs: the wealth tax row already shows the revenue per month; add "of which the estate" (the wire gives the per-household tax already in `household.income` / the ledger). Cheap: the ledger already records `Purpose::WealthTax` per household.
 - **Carbon price on the jet.** Because the carbon price hits firms only, the estate would never feel it. New rule: a flight pays `effective.carbon_price x flight_tonnes` from the estate's savings to the government (`FlowKind::Tax`, `Purpose::CarbonTax`, the existing purpose), capped by savings like the other taxes in `government.rs`; the estate household's other emissions are not charged (so ordinary households stay unaffected; a household carbon price is out of scope). At $100 a tonne, a flight costs $200. This respects lobbying (it uses `s.effective.carbon_price`, which is already eroded by the net lobby).
 - **No jet running cost.** Fuel and crew are not modelled in v7 (no counterparty without inventing a sector). A flight costs money only through the carbon charge. Listed in Out of scope.
@@ -148,22 +194,24 @@ The sim owns the map; the scene only renders what the wire says.
 3. RNG: the new draw is on the shared stream, so every later draw shifts and fire and drought timing change for every seed. Alternative (open question 5): a dedicated stream stored in state, which keeps old weather sequences exactly.
 4. Demand: the estate's wealth effect (`goods.wealth_consumption_rate` 0.005 x $2.1M = $10k a month wish) is capped by savings, so it spends roughly its income, about $5k a month, a rise of about 25% in household spending (21.4k measured) funded by a smaller Owner family income; net demand roughly neutral, composition changes (services share). Measure.
 5. Legitimacy (section 6) and bank: the estate adds $20k of deposits (equity falls from $56k to about $36k, just above the $34.5k requirement). **Tight**: lower the estate savings to $15k, or raise one firm's debt in the content, if init rejects it.
-6. The Landlord is untouched in the Farm option; in the Shop option they are likely to default (section 4).
+6. Pilot (section 5A): unemployment 9.1% instead of 10.0% at start (wage drift +0.0009 a month), 18.2% if dismissed; estate cash margin about $0.9k a month before its own consumption, so dismissal in the baselines is the main thing to measure; Worker C income x2.4; +0.12 t a month. Same record in `docs/tuning-log.md`.
+7. The Landlord is untouched in the Farm option; in the Shop option they are likely to default (section 4).
 
 **Tests.**
 - Content: the estate loads; tile conflicts fail validation; household of 1 allowed; a town without `estate` still runs.
 - Rules: the estate person is never in `unemployed()` or in `labour_force()`; derived class is `Capitalist`; flights only when the draw succeeds; the emissions line `Aviation` equals flights x tonnes; carbon charge equals `effective.carbon_price x tonnes` and is capped by savings; wealth includes the jet.
 - Randomness: add the `estate_flight` entry to `content/assumptions.json` `agents.randomness` (`bernoulli`, `estate.flight_prob_monthly`, system `estate`, code `crates/sim-model/src/estate.rs`, "each month while the estate exists") and raise the expected draw-site count in `randomness_table_matches_the_draw_sites_in_the_model` (`crates/sim-api/tests/assumptions.rs`) by one; the explorer test also requires every param path to resolve.
-- Money: ledger reconciliation runs inside every simulation test (flights move money only through the carbon charge).
+- Pilot: the pilot is `employed()` and counted in `labour_force()`; household class stays `Worker`; the wage moves exactly `pilot_wage_usd` estate to Worker C with `Purpose::DomesticWages`, wage tax applies, the ledger reconciles; with the estate's savings forced to zero the pilot is let go after `pilot_unpaid_months_max` months and no flight occurs afterwards (the draw count is unchanged); rehire when savings recover; a flight never occurs without an employed pilot; the labour hire loop never hires a staff member into a firm; unemployment is 1/11 at start; the commute route ends at the hangar tile; `staff_of` validation rejects a non-estate employer; a town without `estate` is unchanged.
+- Money: ledger reconciliation runs inside every simulation test (flights move money only through the carbon charge; the pilot's pay is a household to household transfer).
 - Web: lens, tag and band rendering from fixtures; `thin-renderer.test.ts` (every catalog key the code names exists); boundaries test unchanged (the scene imports no panels); a scene unit test for the flight timeline as a pure function (phase by elapsed time).
 
 **Re-blessing goldens.** The state hash changes now (new household, tiles, firm owner, RNG shift). After the Rust agent finishes, in the order of `docs/how-to.md` and `AGENTS.md`: `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice if the two goldens race); `cd web && npm run sync-mock`; the insta snapshot (`INSTA_UPDATE=always cargo test -p sim-engine --test scenarios golden_snapshot_seed_42`); `cargo run -p sim-cli --example statehash` before and after, and the diff of each generated file must be read and explained (new household, new tiles, the Farm owner, new draws). Any params or content change also invalidates saves (`params_mismatch`, a known V6-6 behaviour), and `SCHEMA_VERSION` goes to 4.
 
 ## 9. Delivery plan
 
-1. **Rust agent.** `sim-types` (`TileKind` variants, `Estate`, `Jet`, `Event::PrivateJetFlight`, `EmissionSource::Aviation`, `SystemId::Estate`, `SCHEMA_VERSION` 4); `sim-params` (`estate` params, `initial_town.estate`, household size 1 to 4, `ui.json` tags and bands); `sim-engine/init` (tiles, household, firm owner); `sim-model/estate.rs` + `TICK_ORDER` (13 -> 14 entries, update the const length) + `nature.rs` override + `sim-metrics` jet value + the carbon charge; `sim-checks` (money, no change expected); `sim-api` (wire v1.9, fixtures, assumptions entry, breakdown rows). Content: `initial_town.json`, `params.json`, `ui.json`, `assumptions.json`. Deliver with the Rust and API tests green, goldens re-blessed, `docs/snapshot-contract.md` section 19 and the sim-api notes.
+1. **Rust agent.** `sim-types` (`Person.staff_of`, `Purpose::DomesticWages`, `Event::PilotLetGo`/`PilotHired`, `TileKind` variants, `Estate`, `Jet`, `Event::PrivateJetFlight`, `EmissionSource::Aviation`, `SystemId::Estate`, `SCHEMA_VERSION` 4); `sim-params` (`estate` params, `initial_town.estate`, household size 1 to 4, `ui.json` tags and bands); `sim-engine/init` (tiles, household, firm owner); `sim-model/estate.rs` (flight needs an employed pilot, dismissal and rehire) + `income.rs` (domestic wage transfer) + `labour.rs` and `class.rs` and `space.rs` and `frames.rs` branches + `TICK_ORDER` (13 -> 14 entries, update the const length) + `nature.rs` override + `sim-metrics` jet value + the carbon charge; `sim-checks` (money, no change expected); `sim-api` (wire v1.9, fixtures, assumptions entry, breakdown rows). Content: `initial_town.json`, `params.json`, `ui.json`, `assumptions.json`. Deliver with the Rust and API tests green, goldens re-blessed, `docs/snapshot-contract.md` section 19 and the sim-api notes.
 2. **Web agents, in parallel** once the fixtures exist: (a) scene: estate model, runway, jet, flight timeline, trail, lens support, event log; (b) panels: tag and band, Gini table column, inspector, Finance and Policies rows, explorer topic, mock sync.
-3. **Balance pass.** Re-run baselines A to F over 20 seeds, record in `docs/tuning-log.md` "Town v7"; tune `budget_b0`, `flight_prob_monthly`, `legit_gini` only with the user's decision on each; update `docs/known-issues.md`, `docs/deviations.md`, `docs/glossary.md` (Estate, Jet, Aviation), `AGENTS.md` (people and household counts: 21 people in 9 households), `docs/architecture.md` (tick order and map), the README index.
+3. **Balance pass.** Re-run baselines A to F over 20 seeds, record in `docs/tuning-log.md` "Town v7"; tune `budget_b0`, `flight_prob_monthly`, `legit_gini` only with the user's decision on each; update `docs/known-issues.md`, `docs/deviations.md`, `docs/glossary.md` (Estate, Jet, Aviation), `AGENTS.md` (people and household counts: 22 people in 9 households, 8 homes), `docs/architecture.md` (tick order and map), the README index.
 4. **Review and playtest** with the real wasm build, screenshots of the estate, a flight, the Gini view and the inspector.
 
 ## 10. Risks
@@ -171,6 +219,7 @@ The sim owns the map; the scene only renders what the wire says.
 - Baselines shift in several directions at once (emissions, forest tiles, legitimacy, RNG). Mitigation: one balance pass with a written record; no tuning inside the feature work.
 - The bank identity is tight (section 8, point 5); a too-large estate deposit fails at init.
 - An estate that owns a Farm that defaults becomes class `Dependent` (open question 3).
+- The estate may not afford its pilot (cash margin about $0.9k a month): a dismissal in the baseline would ground the jet and add 8 to 9 points of unemployment. Measure before tuning.
 - The jet's visual weight: animation must not obstruct the playback timing in `app/`; flights are capped at one per month and the scene must be idempotent when frames are skipped.
 - The estate dominates `top_wealth_share` and `political_power` bars; these read as 0.76 from the first frame, which may look like a bug unless the tag explains it.
 - Scene tile kinds are a wire change; older saved wire snapshots in `localStorage` lack them, and fall back to `empty`.
@@ -186,6 +235,15 @@ The sim owns the map; the scene only renders what the wire says.
 7. Wealth tax shortfall: silently capped like today (default) or shown in the Policies tab as "unpaid"?
 8. Road to the town: 7 new tiles at the road upkeep of $10 each (default), or fewer by moving the estate closer?
 
+Questions 1 to 8 are **APPROVED at their defaults** (Farm, $2.1M, `Dependent`, shared stream, no jet cost, 0.5 t replaces 0.12 t, silent cap, 7 road tiles). New, from the pilot, all **[PROPOSED]**:
+
+9. Employment mechanism: domestic wage from the estate household (default, section 5A) or the Farm payroll (rejected, costed)?
+10. Pilot's home: joins Worker C (default, no new tile) or a new one-person household with a new small home?
+11. Pilot wage: $2,400 a month (default) or lower so the estate cash margin is wider?
+12. Dismissal rule: 3 months of short pay (default) and rehire when savings cover 3 months of wages (default), or a permanent dismissal, or no dismissal at all (jet always flies)?
+13. While the jet is grounded, keep the flight draw so the stream never shifts (default) or skip it?
+14. Pilot's own footprint: ordinary 0.12 t (default) or a larger commuter figure?
+
 ## 12. Out of scope
 
-Renaming the `Capitalist` class; a new class; share ownership, several owners per firm, nationalisation and GST (`docs/town-v8.md`); deposit-interest income from a large balance (needs the bank identity relaxed); jet fuel, crew, hangar and maintenance costs; selling or buying the jet, depreciation; more than one flight a month, route or destination choices; a household-level carbon price; elite lobbying weight by wealth; the estate founding firms or buying homes; multiple estates; sound.
+Renaming the `Capitalist` class; a new class; share ownership, several owners per firm, nationalisation and GST (`docs/town-v8.md`); deposit-interest income from a large balance (needs the bank identity relaxed); jet fuel, other crew, hangar and maintenance costs; selling or buying the jet, depreciation; more than one flight a month, route or destination choices; a household-level carbon price; elite lobbying weight by wealth; the estate founding firms or buying homes; multiple estates; sound.
