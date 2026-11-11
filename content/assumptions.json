@@ -1815,7 +1815,7 @@
           {
             "path": "class.skill_threshold",
             "label": "Skill threshold for a Manager",
-            "unit": "skill, 0 to 1"
+            "unit": "0..1"
           },
           {
             "path": "class.skilled_wage_ratio",
@@ -1982,7 +1982,7 @@
           {
             "path": "government.legit_gini_threshold",
             "label": "Gini threshold",
-            "unit": "0 to 1"
+            "unit": "0..1"
           },
           {
             "path": "government.legit_debt",
@@ -2128,12 +2128,12 @@
           {
             "path": "weather.sev_min",
             "label": "Minimum severity",
-            "unit": "0 to 1"
+            "unit": "0..1"
           },
           {
             "path": "weather.sev_span_base",
             "label": "Severity range",
-            "unit": "0 to 1"
+            "unit": "0..1"
           },
           {
             "path": "weather.dur_min",
