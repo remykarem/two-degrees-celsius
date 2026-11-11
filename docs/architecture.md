@@ -44,7 +44,7 @@ Boundaries are enforced (see `AGENTS.md`). `web/src/contract/index.ts` holds the
 
 | Crate | Owns |
 |---|---|
-| sim-types | `State` (people, households, homes, firms, bank, gov, nature, map, plants, pending, policy, effective policy), `Command`, `Event`, `TraceRecord`, `Delta`/`Deltas`, `SCHEMA_VERSION` (2), `MAX_FIRMS` (4) |
+| sim-types | `State` (people, households, homes, firms, bank, gov, nature, map, plants, pending, policy, effective policy), `Command`, `Event`, `TraceRecord`, `Delta`/`Deltas`, `SCHEMA_VERSION` (4 since Town v7), `MAX_FIRMS` (4) |
 | sim-params | `Params` (run, turn, labour, production, space, energy, goods, income, credit, invest, nature, government, class, lobby, wellbeing, metrics, initial town, 3 systems). Content is passed in as JSON text; no file I/O |
 | sim-model | One module per system; `TICK_ORDER`; `space.rs` (map, commute routes); `util.rs` |
 | sim-engine | `init` (builds the town, runs 48 warm-up ticks, then `reset_clock`), `step` (returns events, trace, **transactions** and person earnings, and fails if the ledger does not reconcile), `begin_turn` / `advance_month` / `finish_turn`, `submit_turn_with`, `turn.rs` (validate, preview, queue, activate_due, cancel, regenerate), `apply.rs` (the only place a balance changes; records the transactions), `commands.rs`, `plan.rs` |
@@ -81,8 +81,9 @@ Each system returns `Deltas`; `apply()` applies money operations, then field cha
 | 1 | Policy | `policy.rs` | S0/system | Resets per-tick flows; advances an economic-system transition |
 | 2 | Labour | `labour.rs` | S1 | Individual hiring/firing, wages, job guarantee |
 | 3 | Weather | `weather.rs` | S11 | Town v4: climate stress from the budget remaining, drought, forest fires (ignition, spread, burn, regrow), forest stock loss. Draws from the sim RNG (draw order in the module header). Runs **before** production and nature so they see this tick's drought and burnt forest |
+| 3a | Estate | `estate.rs` | S12 | Town v7: the estate's jet flight draw (one `r.chance` a month while an estate exists), the carbon charge on a flight, the pilot's dismissal and rehire. Runs after Weather and before Production so Nature totals the flight. The pilot's wage is paid in Income, the estate's direct emissions and the flight's tonnes are totalled in Nature |
 | 4 | Production | `production.rs` | S2 | Output from effective labour (skill x commute-adjusted hours; the farm also loses output in a drought, every firm a little in smoke), electricity demand (up in a drought) and rationing, firm direct emissions |
-| 5 | Nature | `nature.rs` | S7 | Emissions by source (firm, households, plants, sink), forest, commons, cumulative emissions, atmosphere |
+| 5 | Nature | `nature.rs` | S7 | Emissions by source (firm, households, aviation, plants, sink), forest, commons, cumulative emissions, atmosphere |
 | 6 | Goods | `goods.rs` | S3 | Household spending, firm sales, housing market, rent, evictions and moves |
 | 7 | Income | `income.rs` | S4 | Wages, dividends by system, rent, interest, taxes on income |
 | 8 | Credit | `credit.rs` | S5 | Lending, repayment, defaults, bank failure/bailout |
@@ -92,7 +93,7 @@ Each system returns `Deltas`; `apply()` applies money operations, then field cha
 | 12 | Lobbying | `lobbying.rs` | S9b | Net lobbying; `effective = nominal x (1 - net_lobby)` for carbon price, profit tax, wealth tax, caps |
 | 13 | Wellbeing | `wellbeing.rs` | S10 | Per-person wellbeing (incl. commute, unhoused, local pollution, smoke from fires) |
 
-Then, in `step()`: `sim_metrics::compute` (indicators), `check_outcome`, a money check, household income by type into the trace, `tick += 1`.
+(`TICK_ORDER` has 14 entries; the estate system is row 3a so the numbering of the other rows is unchanged.) Then, in `step()`: `sim_metrics::compute` (indicators), `check_outcome`, a money check, household income by type into the trace, `tick += 1`.
 
 Note: `SPEC.md` section 11 lists a different, older ordering and "S" numbers do not match tick order (Investment S6 runs after Government S8). The table above is what runs. Effective policy computed at the end of a tick is used from the next tick (`deviations.md` #18).
 
@@ -130,12 +131,12 @@ The UI must never compute economy numbers. The mock is the one exception by desi
 
 | Version | Where | Value | Meaning |
 |---|---|---|---|
-| `SCHEMA_VERSION` (state) | `sim-types/src/lib.rs` | 3 | Layout of `State`. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) is 3 |
+| `SCHEMA_VERSION` (state) | `sim-types/src/lib.rs` | 4 | Layout of `State`. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) was 3, Town v7 (the estate, `Person.staff_of`, two tile kinds) is 4 |
 | `SCHEMA_VERSION` (wire) | `sim-api/src/lib.rs` (sent as `Snapshot.schemaVersion`, written in the save blob) | 5 | Layout of the wire and of the saved wrapper blob. Town v5 (ledger in the blob, finance and energy on the snapshot) was 4; Town v5.2 (wrapper log in the blob: per-tick emissions and legitimacy records, policy history) is 5; before v5 it was the same number as the state's |
 | Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history, ledger, log }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 
-`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the real one (now 3).
+`paramsHash` is FNV-1a 64 over the canonical params JSON, so **any change to `content/` invalidates existing saves** (`params_mismatch`). The mock keeps its own `schemaVersion` constant equal to the wire one (5). Town v7 left the wire version at 5 (contract v1.9 is additive) and raised the state version to 4.
 
 ## 8. Wrapper log, breakdowns and the explorer (Town v5.1/v5.2)
 

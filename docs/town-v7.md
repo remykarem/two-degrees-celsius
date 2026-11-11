@@ -1,6 +1,6 @@
 # Town v7 design: the elite estate (approved)
 
-Status: **APPROVED with defaults, nothing implemented.** The user approved every default in this doc (Farm as the estate's firm, estate savings and wealth $2.1M, `Dependent` fallback, shared random stream, no jet cost beyond the carbon charge, the estate's 0.5 t replaces 0.12 t) and added one agent, the jet's pilot (section 5A). Numbers are placeholders in `content/`. **[DECIDED]** = from the user; **[APPROVED]** = a default the user accepted; **[PROPOSED]** = new since approval (the pilot), for the user to confirm. Every claim about the code below was checked against the checkout at commit 3df5e76; figures marked "measured" come from `cargo run -p sim-cli --example debug -- 2 3` (seed 42, no player action). This release was numbered v8 for GST/state ownership before this doc existed; the GST and state-ownership draft is now `docs/town-v8.md` and daily ticks are `docs/town-v9.md`.
+Status: **APPROVED with defaults. The Rust model, content, wire (contract v1.9), fixtures and mock are IMPLEMENTED (see "As built" at the end, which lists every difference from this draft); the web scene and panels (sections 7, 6 "Where it shows") are NOT implemented yet.** The text below is the design as approved; where it disagrees with the code, the code and the "As built" section win. The user approved every default in this doc (Farm as the estate's firm, estate savings and wealth $2.1M, `Dependent` fallback, shared random stream, no jet cost beyond the carbon charge, the estate's 0.5 t replaces 0.12 t) and added one agent, the jet's pilot (section 5A). Numbers are placeholders in `content/`. **[DECIDED]** = from the user; **[APPROVED]** = a default the user accepted; **[PROPOSED]** = new since approval (the pilot), for the user to confirm. Every claim about the code below was checked against the checkout at commit 3df5e76; figures marked "measured" come from `cargo run -p sim-cli --example debug -- 2 3` (seed 42, no player action). This release was numbered v8 for GST/state ownership before this doc existed; the GST and state-ownership draft is now `docs/town-v8.md` and daily ticks are `docs/town-v9.md`.
 
 ## 1. Goal and decisions
 
@@ -247,3 +247,45 @@ Questions 1 to 8 are **APPROVED at their defaults** (Farm, $2.1M, `Dependent`, s
 ## 12. Out of scope
 
 Renaming the `Capitalist` class; a new class; share ownership, several owners per firm, nationalisation and GST (`docs/town-v8.md`); deposit-interest income from a large balance (needs the bank identity relaxed); jet fuel, other crew, hangar and maintenance costs; selling or buying the jet, depreciation; more than one flight a month, route or destination choices; a household-level carbon price; elite lobbying weight by wealth; the estate founding firms or buying homes; multiple estates; sound.
+
+## 13. As built (Rust, content, wire, mock; verified against the code, run 20 seeds, baselines A to F)
+
+What differs from the draft above, and what was measured.
+
+**Content and numbers changed from the draft (all in `content/`, all logged in `docs/tuning-log.md` "Town v7")**
+| Number | Draft | Built | Why |
+|---|---|---|---|
+| `estate.pilot_wage_usd` | 2,400 | **1,800** | At 2,400 the estate's cash margin (about $0.6k a month) is gone as soon as the carbon price reaches the Farm or a wealth tax starts: the pilot was let go at turn 13 in baseline B and at turn 19 to 33 in C, 20 of 20 seeds each. At 1,800 only C (neglect: the commons collapse starves the Farm) dismisses the pilot (7 of 20 seeds, turns 20 to 31). Draft target met: no dismissal in A, B, D, E, F |
+| Estate household `savings_usd` | 20,000 | **15,000** | The draft's own fallback (section 8, point 5). At 20,000 the bank's lending headroom at the start (raw content) was $15k (it was $215k): the government could not afford a $40k plant in a fresh game (the mock, which starts from raw content, refused every plant). At 15,000 it is $65k raw (about $82k after the settling months); the real game's first-turn builds are not blocked (baseline B places two plants on turns 1 and 2 with no command rejected). It is still far below Town v6's $215k raw: the player's early borrowing for capital projects is tighter (`docs/known-issues.md`) |
+| Shop `price_usd` | 70 | **75** | The Shop is marginal (profit about zero in Town v6: `docs/known-issues.md` WN-2). With the estate, every baseline collapsed on mass unemployment in 20 of 20 seeds after the Shop defaulted (cause: unemployment near 0% lifts wage drift, so the Shop's wage bill rises; a Shop price of 71 collapses, 72 to 75 is stable; 75 chosen for margin) |
+| Worker C `initial_income_usd` | 1,700 | 3,800 | The pilot's wage is part of the household's income |
+| Estate `initial_income_usd` | n/a | 5,000 | |
+
+**Rules as built**
+- `crates/sim-model/src/estate.rs` (`SystemId::Estate`, `TICK_ORDER` now 14 entries, after Weather, before Production): one `r.chance(flight_prob_monthly)` a month while `State.estate` is `Some` (no draw otherwise); dismissal and rehire; the flight and the carbon charge. A flight needs an employed pilot **only when the content has a pilot** (`Estate.pilot` is `Some`); an estate without a pilot flies freely.
+- The pilot's wage is paid in `income.rs` (after the firm loop), out of the estate's **savings plus what it received this tick** (so dividends fund it), capped at that; `Estate.unpaid_months` counts months of short pay. Dismissal and rehire are decided in the next month's estate system.
+- `nature.rs`: the estate household's direct emissions are `estate.household_emissions_t` (0.5); a flight adds `EmissionSource::Aviation` to gross emissions and to the estate household's footprint for the month. `sim-engine`'s CSV counts aviation in the households column.
+- `Person::employed()` is `job || jg || staff_of`; `labour.rs` skips staff in its hire pool and job-guarantee pool; `space::commutes` routes staff to `estate.hangar` (`frames.rs` has `staff_commutes`); `class.rs` pays staff by their actual `wage`.
+- `sim-metrics`: `household_wealth` adds the jet's value; `household_wealth_parts` splits a net worth (net cash, homes, jet, bank, firms) for the wire.
+- `sim-checks`: Estate is a system that may run before the bank is resolved; structure checks: staff work for the estate household only, hold no firm job and are in the labour force; the estate household lives in the estate home.
+- `validate_town`: household size 1 to 4; the estate household must have exactly one person and live in the estate home; `staff_of` must name the estate household; tile conflicts fail (`holds both`).
+- `reset_clock` zeroes the estate's flight counters after the settling months (the jet flies while the town settles).
+- Two small fixes found on the way: `weather.rs` home-damage repair is capped by the payer's savings (the estate holds little cash; with damage on, an uncapped payment violated the strict-flows check), and `apply.rs` rounds bank-failure haircut losses up to a whole cent (a rare run left the bank 2 cents short of the equity the haircut was sized to restore).
+
+**Wire**: `docs/snapshot-contract.md` section 19. **Mock**: carries the content, a labelled copy of the flight and dismissal rules (`web/src/sim-port/mock/estate.ts`).
+
+**Measured, 20 seeds (1 to 20), before (Town v6) and after**
+| | Before | After |
+|---|---|---|
+| People / households / homes | 20 / 8 / 7 | 22 / 9 / 8 |
+| Start Gini (after settling), top wealth share | 0.72, 0.61 | 0.88, 0.79 |
+| Unemployment at start (raw content) | 10.0% | 9.1% |
+| A (no action): half the budget gone, exhausted | turn 14.0, 27.3 (19 of 20 budget, 1 bank failure) | turn 12.0, **24.3** (20 of 20 budget) |
+| B (sensible play): survived, budget left (median), legitimacy minimum (median) | 20 of 20, 30%, 0.61 | 20 of 20, **10%**, **0.24** |
+| C (neglect): first loss tick | 75 to 81 | 66 to 67 |
+| D, E: outcome | budget exhausted (E: 1 bank failure) | budget exhausted, 20 of 20 |
+| F (renewables only): survived | 13 of 20 (65%) | **20 of 20 (100%)** |
+| Jet, per game (A, 120 months) | n/a | about 47 flights, 95 t (expected 0.4 x 120 x 2 = 96 t) |
+| Pilot dismissed | n/a | A, B, D, E, F: 0 of 20 seeds; C: 7 of 20 |
+
+Reading: the estate adds about 12% to gross emissions, so the no-action budget runs out three turns sooner (the draft expected 2.5 to 2.8). Sensible play still wins in every seed, but with about a tenth of the budget left instead of 30%, and legitimacy falls much further (the Gini of about 0.88 against a threshold of 0.45 costs `legit_gini` every month: the draft expected about 0.2 over the game; B's minimum fell by 0.37). F became easier (the Shop's price change keeps a marginal firm alive), which weakens "one tool must not be enough" (`docs/known-issues.md` WN-1). Neither `nature.budget_b0`, `estate.flight_prob_monthly` nor `government.legit_gini` was retuned: the draft says those are the user's decision, and what each would do is measured in `docs/tuning-log.md` "Town v7".

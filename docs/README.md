@@ -11,7 +11,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | The rules of each system and sign tests | `docs/causal-model.md` section 10 (Town v2), then sections 7 and 8 (turn layer, demand side); sections 0-3 are cohort-era |
 | What the code deliberately does differently from the design | `docs/deviations.md`, the "Town v2" table (T1-T23) |
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
-| The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11 and 18 (v1.8), then `docs/sim-api-notes.md` "Town v2" |
+| The wire (JSON shapes) | `web/src/contract/index.ts` and `crates/sim-api`, then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
 | Where UI text, thresholds and bands live | `docs/town-v6.md`, `content/ui.json`, `docs/how-to.md` section 17 |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
 | How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
@@ -20,7 +20,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress (section 10: the 'How it works' explorer is queued as v5.1) | Working on finance/ledger/energy |
 | `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
 | `docs/town-v6.md` | APPROVED (DRY cleanup: the web is a thin renderer; model text, thresholds and UI bands move to `content/` and the wire; contract v1.8) | Changing where text or thresholds live |
-| `docs/town-v7.md` | DRAFT (the elite estate: one very rich household, private jet, runway; contract v1.9). Not implemented | Planning the estate work |
+| `docs/town-v7.md` | APPROVED, Rust/content/wire/mock IMPLEMENTED (the elite estate and its pilot; contract v1.9, `docs/snapshot-contract.md` section 19). The web scene and panels are NOT done yet | Working on the estate in the web, or its rules |
 | `docs/town-v8.md` | DRAFT (GST/VAT and state ownership; was v7). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
 | `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
 | How to make a change | `docs/how-to.md` |
@@ -54,7 +54,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/web-notes-panels2.md` | CURRENT (panels notes) | Working in `web/src/panels` |
 | `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
 | `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
-| `docs/town-v7.md` | DRAFT (the elite estate) | Planning the estate work |
+| `docs/town-v7.md` | CURRENT (approved; Rust, content, wire and mock implemented, web scene and panels pending) | Estate rules and design; the "As built" section lists what differs from the draft |
 | `docs/town-v8.md` | DRAFT (GST and state ownership; was v7) | Planning fiscal and ownership work |
 | `docs/town-v9.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, then v8) | Planning the time-step refactor |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |

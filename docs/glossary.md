@@ -19,22 +19,22 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Active (nominal) vs effective policy** | Active/nominal = what the player set and has taken effect (`State.policy`). Effective = after lobbying (`State.effective`): `nominal x (1 - net_lobby)` for carbon price, profit tax, wealth tax, caps |
 | **Lobbying gap** | The difference between nominal and effective for those four levers (`policyGaps` in a turn result). Capital owners dampen rules that hurt them |
 | **Economic system** | A bundle of ownership and distribution rules: Market, Regulated, Coop (`content/systems/*.json`). Switching is slow (transition months, output penalty, resistance). Not the same as a "tick system" |
-| **Tick system (S0-S10)** | One rule module in `sim-model` (labour, production, ...). See `docs/architecture.md` section 4 |
-| **Person** | One of 20 individuals: age band (child/adult/retired), skill, job, wage, commute, wellbeing. Work, skill, commuting and wellbeing are person-level |
-| **Household** | One of 8 groups of 2-4 people. Money, spending, saving, rent, loans, assets and political power are household-level |
-| **Labour force** | Adults who can be hired. 10 of the 13 adults (owners are outside it). Unemployment is shown "N of 10" |
+| **Tick system (S0-S12)** | One rule module in `sim-model` (labour, production, ...). See `docs/architecture.md` section 4 |
+| **Person** | One of 22 individuals: age band (child/adult/retired), skill, job, wage, commute, wellbeing. Work, skill, commuting and wellbeing are person-level |
+| **Household** | One of 9 groups of 1-4 people (the estate household is one person). Money, spending, saving, rent, loans, assets and political power are household-level |
+| **Labour force** | Adults who look for work. 11 of the 15 adults (owners and the estate owner are outside it; the jet's pilot is in it). Unemployment is shown "N of 11" |
 | **Unemployment (smoothed)** | `unemployment_smooth` is an exponential average (weight 0.05) used for wages, legitimacy and the collapse test, because one job is 10 points |
 | **Class** | Derived per household every tick: Capitalist, Rentier, Manager, Worker, Dependent. Based on ownership, income source, skill and pay |
-| **Home** | A tile holding at most one household. Private homes pay rent to an owner household; public housing pays a fixed rent. 7 homes for 8 households |
+| **Home** | A tile holding at most one household. Private homes pay rent to an owner household; public housing pays a fixed rent. 8 homes for 9 households |
 | **Unhoused** | A household with no home (starts with one). Pays no rent, suffers wellbeing and security penalties. Evicted after 3 months of unpaid rent |
-| **Tile** | One cell of the 12 x 12 map owned by the sim. Holds at most one thing: home, firm, plant, bank, town hall, forest, commons, road or nothing |
+| **Tile** | One cell of the 12 x 12 map owned by the sim. Holds at most one thing: home, firm, plant, bank, town hall, forest, commons, road, estate grounds, runway or nothing |
 | **Road** | A tile that makes commutes faster (`fast_minutes` 2 vs `slow_minutes` 6 per tile). Costs $2,500 and $10 a month upkeep |
 | **Commute** | Tiles and minutes from a person's home to their firm along the cheapest route. Long commutes cut effective hours and wellbeing |
 | **Plant** | A power plant tile: fossil (emits `delivered x factor_fossil`) or renewable (emits 0). $40,000 each. Capacity 5 per plant |
 | **Electricity rationing** | If demand exceeds total plant capacity, all output is scaled by `supply / demand` (`electricity_rationed` event) |
 | **Firm slots** | Factory (goods), Farm (food), Shop (services), plus one dormant slot a household may found a firm in (`MAX_FIRMS` = 4) |
 | **Forest, commons** | Natural stocks. Commons access is `open` or `community`; can be enclosed or collapse |
-| **Budget b0** | `nature.budget_b0`, the town's cumulative-emissions allowance: 4,400 t. Exhausting it ends the game (`budget_exhausted`) |
+| **Budget b0** | `nature.budget_b0`, the town's cumulative-emissions allowance: 900 t. Exhausting it ends the game (`budget_exhausted`) |
 | **Legitimacy** | 0..1 public support. Moves with wellbeing, unemployment, Gini, debt, bailouts. Scales PC regeneration. Zero = collapse |
 | **Collapse** | Loss by `legitimacy_zero`, `mass_unemployment` (smoothed unemployment > 0.35) or `bank_failure_cascade` |
 | **GPI** | Genuine progress indicator: `annual GDP x (1 - Gini) - social cost of carbon x emissions - depletion cost` (`sim-metrics`) |
@@ -68,7 +68,7 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Phase** | UI state machine step: review, plan, playback, results, ended (`store/phase.ts`) |
 | **Lens** | A map colouring mode: none, emissions, class, wealth, employment, flows, commute |
 | **Scene bus** | `store/scene-bus.ts`: channel where the scene publishes hover/selection and panels send camera requests |
-| **Town v1 / v2** | v1: 6 cohorts standing for 1,000 people, UI-owned map. v2 (current): 20 people in 8 households, sim-owned map, roads, plant emissions, Shop. Anything describing cohorts is historical |
+| **Town v1 / v2** | v1: 6 cohorts standing for 1,000 people, UI-owned map. v2 (current; Town v7 made it 22 people in 9 households): 20 people in 8 households, sim-owned map, roads, plant emissions, Shop. Anything describing cohorts is historical |
 | **Agents catalogue** | `content/assumptions.json` `agents` section, served by `agents()` (contract v1.7): agent kinds, what each decides and observes, its rule with live parameters, and the randomness table. Shown in the explorer's Agents tab |
 | **Economic system (Market, Regulated, Coop)** | The town-wide rule set the player can switch (`content/systems/*.json`). Not a kind of firm |
 | **Randomness table** | Every RNG draw in the model (drought, fire, home damage, enclosure, startup) with its distribution and parameter. A test checks it against the source. Everything else is deterministic |
@@ -77,3 +77,8 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **UI catalog (`catalog()`, contract v1.8)** | `content/ui.json` resolved against the live params: UI bands (crisis, health, word bands), lever group order and blurbs, authored text by group and key, and the economic-system cards. The web renders it and keeps no thresholds or model text of its own (`docs/town-v6.md`) |
 | **Thin renderer** | The rule for `web/`: layout, formatting, animation, chart scaling, onboarding copy and the wording of wire ids stay in the web; simulation rules, assumptions, model descriptions, thresholds and explanatory text come over the wire |
 | **Tile fire risk** | `Tile.fireRisk` on standing forest tiles: the model's monthly odds that a fire reaches the tile. The "Fire and drought risk" lens colours tiles by it, scaled to the riskiest tile |
+| **Estate (Town v7)** | One very rich household (label "Estate owner", tag from `catalog.tags.estate_owner`) that does not work, owns the Farm, a 2-storey house, a private jet and a runway, in the south-west corner. `State.estate`; layout in `content/initial_town.json` `estate`; rules in `crates/sim-model/src/estate.rs`. Class is derived: Capitalist |
+| **Jet / flight** | The estate's private jet. Each month one random draw (`estate.flight_prob_monthly`, 0.4) decides whether it flies, only if the pilot is employed. A flight emits `estate.flight_tonnes` (2 t) and costs the estate `carbon price x tonnes`. Event `private_jet_flight` |
+| **Aviation** | The emissions source for jet flights (`EmissionSource::Aviation`, wire source `aviation`): a fourth line in gross emissions beside firms, households and plants |
+| **Pilot / domestic wages** | The jet's pilot is a worker in Worker C's household, employed by the estate household (`Person.staff_of`). The estate pays `estate.pilot_wage_usd` (1,800) a month, household to household (`Purpose::DomesticWages`). Three months of short pay and the pilot is let go (`pilot_let_go`, the jet is grounded); rehired when the estate holds three months of wages |
+| **Wealth band** | A word for a household's net worth ("Ultra-rich" from $1M), from `content/ui.json` `wealth_bands`, evaluated by the wire (`HouseholdView.wealthBand`) |

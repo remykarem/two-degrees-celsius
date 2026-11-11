@@ -426,3 +426,35 @@ interface SimPort { catalog(): Result<Catalog> }                                
 - `breakdowns.emissions.runway`: `perTurn` is the latest month's net emissions (not below zero) times `ticksPerTurn`; `runOutTurn` is the turn on which the remaining budget would be used up at that rate.
 - Params: `government.bank_cascade_unemployment` (0.2) replaces a literal in the engine's `check_outcome`. The params hash changes, so older saves are refused (`params_mismatch`). The state hash is unchanged.
 - Fixture: `docs/fixtures/catalog.json`. The mock serves that real reply (`npm run sync-mock` copies it) and builds its lever table from `content/levers.json`.
+
+## 19. Contract v1.9: the elite estate (Town v7; additive; `schemaVersion` stays 5, the model `State` schema goes 3 to 4)
+
+Design: `docs/town-v7.md` (approved). Everything is additive, so older readers keep working. The wire `schemaVersion` stays 5; the model `State` gained `estate`, `Person.staff_of` and new tile kinds, so `sim_types::SCHEMA_VERSION` is 4 and any save from before Town v7 is refused (state schema check, and `params_mismatch`). The state hash changed (a new household, tiles, the Farm's owner, the draw): goldens were re-blessed on purpose.
+
+```ts
+type TileKind = /* ... */ | 'estate_grounds' | 'runway';                           // fixed scenery; place/remove on them is tile_invalid
+interface HouseholdView { /* ... */ tag?: string;                                   // catalog.tags.estate_owner ("Estate owner"), the estate household only
+                          wealthBand?: { id: string; label: string } }               // every household; from catalog.wealthBands and net worth
+interface PersonView { /* ... */ employer?: { kind: 'household'; household: number; label: string } }  // the pilot; `job` stays null
+interface Snapshot { /* ... */ estate?: Estate }                                    // absent when the content has no estate
+interface Estate {
+  household: number; home: number; groundsTiles: TileRef[]; runwayTiles: TileRef[] /* take-off order */; hangarTile: TileRef; jetName: string;
+  jet: { value: number; flyingThisMonth: boolean };
+  lastFlight?: { turn: number; month: 0 | 1 | 2; tonnes: number }; flightsTotal: number; tonnesTotal: number;   // counted from the start of play (settling flights are not counted)
+  flightTonnes: number; householdEmissionsT: number;                                // params estate.flight_tonnes, household_emissions_t
+  pilot?: { person: number; wage: number; status: 'employed' | 'let_go'; unpaidMonths: number; unpaidMonthsMax: number };
+  finance: { month: EstateMoney; last12: EstateMoney; months: number };            // from the ledger: dividends, wagePaid, wealthTax, carbonCharge (dollars)
+}
+// events (importance 2, 3 for pilot_let_go and 2 for pilot_hired): { type: 'private_jet_flight', household, tonnes } | { type: 'pilot_let_go', person } | { type: 'pilot_hired', person }
+interface MonthFlows { /* ... */ staffCommutes?: { person; household; employer; from: TileRef | null; to: TileRef /* hangar */; tiles; minutes; wage }[] }   // omitted when empty
+type EmissionSource = /* ... */ | 'aviation';                                      // frames' flows.emissions, trace and TickRecord
+interface EmissionsLine { /* ... */ aviation: number }                              // breakdowns.emissions.month/turn; grossTotal = firms + households + plants + aviation
+interface FinanceFlows { householdIncome: { /* ... */ domesticWages: number } }     // the part of `wages` that a household paid to its staff; month and quarter
+interface Breakdowns { gini: { byHousehold: { /* ... */ parts: { id: 'net_cash'|'homes'|'jet'|'bank'|'firms'; value: number }[] }[] } }   // zero parts omitted
+interface Catalog { /* ... */ tags: Record<string, string>; wealthBands: { min: number | null; id: string; label: string }[] /* richest first; the last has min null */ }
+```
+- Rules (crates `sim-model` `estate.rs`, `income.rs`, `nature.rs`; see `docs/causal-model.md` section 12): one Bernoulli draw a month while the estate exists (taken even with the pilot gone); a flight needs an employed pilot when the content has one; it adds `flight_tonnes` as `aviation`, and charges `effective.carbon_price x tonnes` from the estate's savings (`Purpose::CarbonTax`, capped by savings). The estate household's direct emissions are `estate.household_emissions_t` (0.5), replacing the per-person 0.12. The pilot is paid `estate.pilot_wage_usd` household to household (`Purpose::DomesticWages`, ledger detail `domestic wages`, kind `wage`); short pay for `pilot_unpaid_months_max` months in a row lets the pilot go (`staff_of` cleared); rehire when the estate's savings cover `pilot_rehire_months_of_wages` months of wages and the pilot has no other job.
+- The pilot is `employed()` (`staff_of`), in the labour force, class Worker. `indicators.labourForce` is 11 and `employed` 10 at the start (unemployment 9.1%).
+- Ledger: a domestic wage is a household to household `wage` entry, so it appears in both ledgers; `finance.households.income.wages` counts it once as income. `ledger_kind` text and the Finance rows are unchanged; the web shows `domesticWages` as its own row.
+- Also in this version: `catalog().text.estate` (group `estate`) holds the wording for the employer line, the three events and the pilot status; `assumptions()` has the topic `private_jet`; `agents()` has the kind `estate` and the draw `estate_flight` (10 draw sites in `sim-model`).
+- Fixtures: `docs/fixtures/*` regenerated. The mock carries the same fields from `content/` (`npm run sync-mock`; its flights and dismissal are a labelled copy in `web/src/sim-port/mock/estate.ts`).

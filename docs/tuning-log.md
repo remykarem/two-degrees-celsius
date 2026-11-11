@@ -222,3 +222,40 @@ Turn 1: carbon price 50, green subsidy 0.4, resilience spending 500, fire statio
 | F renewables only (2 plants, both fossil closed) | 13 of 20 | 7 mass unemployment | 29% | 0.48 mean | 23.7 |
 
 Honest remainder: F does not fail in most seeds, so "a single tool must not be enough" is met for D and E only (known-issues WN-1). B also sits near a cliff (WN-2). Not claimed: B was not tried by a human, and the Regulated and Coop systems were not tested for a winning plan.
+
+## Town v7: the estate and its pilot
+
+Request: implement `docs/town-v7.md` (approved) and measure baselines A to F before and after; tune content only if the estate breaks stability or makes sensible play unwinnable. Harness: `cargo test -p sim-engine --test scenarios baseline -- --nocapture --test-threads=1` (20 seeds each), `cargo run --release -p sim-cli --example estate_probe` (pilot dismissals, flights, estate savings, Gini for A to F) and `cargo run --release -p sim-cli --example tune_probe -- section.field=value ...` (A exhaustion turn, B survival, budget left and legitimacy minimum under overrides). State hashes changed on purpose (`cargo run -p sim-cli --example statehash` before and after); the wasm golden, fixtures, insta snapshot and mock data were re-blessed.
+
+### What broke first, and what was changed
+With the design's numbers as written (Farm to the estate, pilot $2,400, estate savings $20,000, Shop $70) **every baseline collapsed on mass unemployment in 20 of 20 seeds, in the settling months** (loss at tick 0). Cause, found by switching parts off: the Shop (profit about zero already in Town v6, WN-2) defaulted. Adding the pilot lowers unemployment to about 0% (wage drift up), so the Shop's wage bill rises; with the Farm's dividends moved to the estate the Shop's demand is a little lower. Neither change alone collapsed it (no pilot: survived; Farm kept by the Owner family: survived), both together did.
+
+| Change | From | To | Result (20 seeds) |
+|---|---|---|---|
+| Shop `price_usd` (content/initial_town.json) | 70 | 75 | 70 and 71: collapse in 20 of 20 (A, B, F alike). 72: A 20 of 20 budget, B 19 survived and 1 bank failure, F 20 survived. 73 and 75: A to F all as the design intends. 75 chosen for margin from the cliff at 71/72 |
+| `estate.pilot_wage_usd` | 2,400 | 1,800 | At 2,400 (estate savings 20,000): pilot dismissed in B at turn 13 in 20 of 20 seeds (carbon price 100 reaches the Farm), in C at turns 19 to 33 in 20 of 20; none in A, D, E, F. At 1,800: none in A, B, D, E, F; C 7 to 8 of 20 (turns 20 to 31). At 1,500: C 2 of 20. 1,800 keeps the design target "no dismissal in A to F unless the player raises the wealth tax" and keeps C's neglect to jobs link |
+| Estate household `savings_usd` | 20,000 | 15,000 | Bank headroom at the start 15k to 65k (it was 215k); the mock (which starts from raw content) could not afford any plant at 15k |
+| Worker C `initial_income_usd` | 1,700 | 3,800 | the pilot's wage is part of the household's income |
+
+### Baselines, seeds 1 to 20 (before = Town v6, after = Town v7 as shipped)
+| Script | Before | After |
+|---|---|---|
+| A no action | half the budget gone at turn 14.0, exhausted at **27.3** (min 27.0, max 28.0), 19 budget and 1 bank failure; legitimacy minimum over the game 0.18 to 0.48 | half gone at turn 12.0, exhausted at **24.3** (min 23.7, max 24.7), 20 of 20 budget; legitimacy minimum over the game 0.11 to 0.16 |
+| B sensible with adaptation | 20 of 20 survived, 30% budget left, legitimacy minimum 0.61 | 20 of 20 survived, **10%** left (7% to 12%), legitimacy minimum **0.24** (0.24 lowest) |
+| C neglect | budget exhausted, first loss tick 75 to 81 | first loss tick 66 to 67 |
+| D carbon tax only | 20 of 20 budget exhausted | 20 of 20 budget exhausted |
+| E adaptation only | 19 budget, 1 bank failure | 20 of 20 budget exhausted |
+| F renewables only | 13 of 20 survived (7 mass unemployment) | **20 of 20 survived** |
+
+Start (after settling, seed 42): Gini 0.72 to 0.88, top wealth share 0.61 to 0.79, unemployment (raw content) 10.0% to 9.1%. Jet in A: 47 flights and 95 t per game (expected 96), flights in every seed.
+
+### Not tuned: the user's decisions (design section 9, point 3)
+Measured with `tune_probe` (A exhaustion turn, B survived, B budget left, B legitimacy minimum):
+| Override | A exhausted | B survived | B budget left | B legitimacy min |
+|---|---|---|---|---|
+| none (shipped) | 24.3 | 20 of 20 | 10% | 0.24 |
+| `government.legit_gini` 0.012 to 0.008 | 24.3 | 20 of 20 | 10% | 0.44 |
+| `nature.budget_b0` 900 to 1,050 | 28.0 | 20 of 20 | 23% | 0.24 |
+| `estate.flight_prob_monthly` 0.4 to 0.2 | 25.0 | 20 of 20 | 15% | 0.24 |
+
+So: the budget race is a `budget_b0` or flight-chance choice (1,050 puts A back at about turn 28 and B at 23% left); legitimacy is a `legit_gini` choice. Nothing is unwinnable, so nothing was changed (AGENTS.md: do not tune to hit a number). Logged in `docs/balance-backlog.md` "Town v7" and `docs/known-issues.md` V7-1 to V7-4.

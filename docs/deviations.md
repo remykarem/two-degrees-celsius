@@ -143,3 +143,18 @@ Rust implementation of `docs/town-v4.md`, `docs/causal-model.md` section 11 and 
 | V6-D2 | `Tile.fireRisk` is a derived view of the weather rules (ignition shared over standing tiles plus per-neighbour spread), not a number the model itself draws on. The model rolls one global ignition and then picks a tile uniformly | The "Fire and drought risk" lens needs a per-tile number; the web must not invent one |
 | V6-D3 | `CommandPreview.expectedEffective` is computed at today's net lobbying; the model recomputes lobbying every tick, so the value in force later can differ | The previous web formula (`current + (drafted - current) x (1 - opposition)`) did not match `effective = nominal x (1 - net_lobby)` |
 | V6-D4 | The mock's lever table, labels, groups, arrows and action labels now come from `content/levers.json`; only the invented effect sizes stay in `mock-only.json` (`leverEffects`). The mock's own lobbying `effectiveValue` still blends toward the default (invented dynamics) | Parity with the real wire |
+
+## Town v7 (the estate)
+
+Design: `docs/town-v7.md` (approved). Differences between the design and the code, and readings taken where it was silent.
+
+| # | Deviation or reading | Reason |
+|---|---|---|
+| V7-D1 | `estate.pilot_wage_usd` is 1,800 (design 2,400); the estate household's savings are 15,000 (design 20,000); the Shop's price is 75 (was 70); Worker C's `initial_income_usd` 3,800 | Measured, see `docs/tuning-log.md` "Town v7" and `docs/town-v7.md` section 13 |
+| V7-D2 | A flight needs an employed pilot only if the content has a pilot (`Estate.pilot` is `Some`). The design says "a flight never occurs without an employed pilot" | A town that has an estate but no pilot should still fly; the shipped content has a pilot |
+| V7-D3 | The pilot's wage is paid from the estate's savings **plus what it received this tick**, not savings alone | Otherwise the estate, which spends its savings down each month through the wealth effect on consumption, would show short pay every month and dismiss the pilot at once |
+| V7-D4 | The wire `schemaVersion` stays 5 (contract v1.9 is additive); the state schema is 4 | An older save is refused by the state schema and the params hash anyway; bumping the wire version would force the web wasm guard and the mock to change for no new safety |
+| V7-D5 | `weather.rs` home-damage repair is capped by the payer's savings; `apply.rs` rounds bank-failure haircut losses up to a whole cent | Two latent bugs the estate's content exposed (a payer with no cash; a bank 2 cents short after a haircut). Neither changes a run with the weather defaults and no bank failure |
+| V7-D6 | `TickRecord.aviation` and `EmissionsLine.aviation` are additive wire fields; the sim-engine CSV counts aviation in the households column | Keeps the three CSV columns and the gross reconciliation |
+| V7-D7 | The estate's `Estate.hangar` is a content tile (`estate.hangar_tile`), the first runway tile | The design says "the hangar tile (2,11)" but gives no field |
+| V7-D8 | Wealth bands are served for every household, not only the estate; `tags` has one key | The web renders the band wherever it shows a class chip |

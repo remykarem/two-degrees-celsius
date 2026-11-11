@@ -83,7 +83,7 @@ Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via
 
 ## 5. Add a new tick system (a new rule module)
 
-1. `crates/sim-model/src/<name>.rs` with `pub fn run(s:&State, p:&Params, r:&mut Rng) -> Deltas` (pure; no mutation; `libm`). Declare it in `crates/sim-model/src/lib.rs` and add it to `TICK_ORDER` (the array length is part of the type: update it). Order matters (`TICK_ORDER` has 13 systems; S11 weather runs third, before production and nature, and is the example of a system that draws from the RNG): the engine applies each system's deltas (and runs the checks) before the next system runs, so a later system sees the state the earlier ones produced this tick.
+1. `crates/sim-model/src/<name>.rs` with `pub fn run(s:&State, p:&Params, r:&mut Rng) -> Deltas` (pure; no mutation; `libm`). Declare it in `crates/sim-model/src/lib.rs` and add it to `TICK_ORDER` (the array length is part of the type: update it). Order matters (`TICK_ORDER` has 14 systems since Town v7; S11 weather runs third, before production and nature, and is the example of a system that draws from the RNG): the engine applies each system's deltas (and runs the checks) before the next system runs, so a later system sees the state the earlier ones produced this tick.
 2. `crates/sim-types/src/enums.rs`: add a `SystemId` variant and its `name()` (used in violation messages).
 3. New state: fields in `sim-types/src/state.rs` (and `Deltas` / `Delta` variants in `deltas.rs` plus an arm in `crates/sim-engine/src/apply.rs`), initial values in `sim-engine/src/init.rs`, numbers in `content/params.json` with a struct in `sim-params` (`deny_unknown_fields`).
 4. Invariants: extend `crates/sim-checks/src/lib.rs` if the system adds money or structure that must hold. Money must go through `Delta` money operations so `check_money` stays exact.
@@ -199,3 +199,11 @@ The web is a thin renderer: it must not hold model facts, explanatory text or th
 6. Then: `cargo run -p sim-api --example fixtures` (refreshes `docs/fixtures/catalog.json`), `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`, `cd web && npm run sync-mock && npm run build:wasm`, tests.
 
 What stays in the web: layout, formatting, animation, chart scaling, onboarding/coach copy and the wording of wire ids (event sentences, block-reason text).
+
+## 18. Work with the estate (Town v7)
+
+- **Content:** `content/initial_town.json` `estate` (household and home index, grounds, runway tiles in take-off order, `hangar_tile`, jet name and value), the estate household (the last in `households`) and its home, `staff_of` on the pilot (a person of Worker C's household), and the 7 road and 11 forest tiles in `map`. Rules numbers: `content/params.json` `estate`. Words: `content/ui.json` `tags`, `wealth_bands`, `text.estate`. Explorer: the `private_jet` topic and the `estate` kind and `estate_flight` draw in `content/assumptions.json`.
+- **A town without an estate** still loads and runs: remove the `estate` block, the estate household, its home and the pilot; no flight draw is taken (`tests/estate.rs`).
+- **Measure the estate:** `cargo run --release -p sim-cli --example estate_probe` (dismissals, flights, Gini for baselines A to F, 20 seeds); `cargo run --release -p sim-cli --example tune_probe -- estate.flight_prob_monthly=0.2` (A exhaustion, B survival and margins under overrides of any `section.field`). The pilot is dismissed when the estate's pay is short for `estate.pilot_unpaid_months_max` months: lower `pilot_wage_usd` or raise the Farm's profit to avoid it.
+- **Wire:** `docs/snapshot-contract.md` section 19. The mock's copy of the rules is `web/src/sim-port/mock/estate.ts` (flights use their own seeded stream).
+- **Bank identity:** the estate's savings are deposits, so they reduce bank equity (`equity = loans - deposits`) and the government's lending headroom (`equity / capital ratio - loans`). Check `init` still passes and the first-turn headroom is not below the cost of one plant.

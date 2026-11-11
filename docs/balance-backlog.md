@@ -58,3 +58,15 @@ Item 7: RESOLVED (b0 220000: A exhausted in year 24.9, #44).
 
 ## Framing for Phase 2
 These are mostly **game design questions**, not bugs: the code does what the design says, so the work is deciding how the game should feel and tuning to it. Test every change against baselines A, B and C, not against single numbers.
+
+---
+
+## Town v7 open balance decisions (CURRENT; the rest of this file is HISTORICAL)
+
+Measured in `docs/tuning-log.md` "Town v7". Each needs the user's decision; nothing here was changed.
+
+1. **Carbon budget (`nature.budget_b0`, 900 t).** The estate (about +12% gross emissions) moved A's exhaustion from turn 27.3 to 24.3 and B's final margin from 30% to 10%. `budget_b0` 1,050 gives A at turn 28.0 and B 23% left. Alternative: `estate.flight_prob_monthly` 0.2 (A 25.0, B 15%).
+2. **Legitimacy (`government.legit_gini`, 0.012).** The estate takes the Gini from 0.72 to 0.88; B's minimum legitimacy fell from 0.61 to 0.24, A's to 0.11 to 0.16. `legit_gini` 0.008 puts B at 0.44.
+3. **Baseline F** survives in 20 of 20 seeds (was 13): the "one tool must not be enough" target (known-issues WN-1) is now missed by F as well as being only just met by D and E. The cause is the Shop price (70 to 75) that the estate made necessary (V7-2, V7-3).
+4. **Government borrowing capacity** at the start is $65k from raw content ($215k before; V7-4). Options: lower the estate's savings further, or raise a firm's debt in `initial_town.json`.
+5. **Pilot cash margin.** $1,800 a month leaves a margin of about $1.2k; neglect (C) dismisses the pilot in 7 of 20 seeds. Raise the wage or the estate's income if the user wants no dismissal there.

@@ -6,7 +6,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 
 - A turn-based game: the player runs a small town's economy and must stay under a 1.5 C carbon budget while keeping the town livable.
 - 1 turn = 1 quarter = 3 monthly ticks; a game is 40 turns (10 years, 2026 to 2036; `run.turns`, 900 t budget; weather starts at 75% budget left). Player actions cost political capital (PC) and take effect after a lead time.
-- Town v2 world: 20 people in 8 households, 7 homes, a 12 x 12 tile map owned by the simulation, 3 firms (Factory, Farm, Shop) plus one dormant slot, a bank, a government, forest and commons.
+- Town v2 world (Town v7 adds the estate): 22 people in 9 households, 8 homes, a 12 x 12 tile map owned by the simulation, 3 firms (Factory, Farm, Shop) plus one dormant slot, a bank, a government, forest and commons, and one very rich estate household with a private jet and its pilot (`docs/town-v7.md`).
 - Rust simulation (deterministic, no I/O) -> JSON wire layer -> compiled to wasm -> TypeScript/Svelte/Three.js front end. A TypeScript mock of the sim exists as a fallback.
 - All game numbers live in `content/*.json`. The code holds rules, not values.
 
@@ -88,7 +88,7 @@ Web (in `web/`; needs Node 22+ and `npm install` once):
 
 ```
 npm run dev                # http://localhost:5173 ; ?sim=mock|wasm picks the sim, ?seed=42
-npm test                   # vitest (40 files, 502 tests incl. 12 skipped at last count)
+npm test                   # vitest (41 files, 504 tests incl. 12 skipped at last count)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)
