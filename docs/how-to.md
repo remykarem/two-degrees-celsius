@@ -168,3 +168,15 @@ A figure that comes from a ledger links to it with `game.openLedger(account, kin
 2. Other overrides: `timeout=submit|discard|skip`, `budget=<seconds of pause>`, `pause=0`. Defaults live in `web/src/store/clock-config.json`.
 3. Pressure needs the live-turn calls (`begin_turn`, `advance_month`, `finish_turn`) in the wasm package; rebuild with `npm run build:wasm` if the New game screen says it is unavailable. The mock always has them (`?sim=mock`).
 4. Tests: `web/tests/clock.test.ts` (state machine, fake time), `live.test.ts` (game loop), `live-turn.test.ts` (mock equals `submitTurn`), `panels-v3.test.ts`.
+
+## 14. Add a breakdown (Town v5.2)
+1. Make the headline a small callable function (in `sim-metrics` or the model crate) and have both the indicator and the breakdown call it; never recompute the formula in `sim-api`.
+2. Add a builder in `crates/sim-api/src/breakdowns.rs` using `make(id, title, formula, inputs, result, unit, parts)`; `result` must be the headline value itself and `parts` (if any) must sum to it (tolerance `parts_tolerance`: 1e-9 of the largest magnitude, at least 1e-9). Add the field to `Breakdowns` (camelCase on the wire).
+3. If it needs what the model did inside a tick (not recoverable from the end state), emit an output-only `TraceRecord` from the system, keep it in `log::TickRecord`, and bump `SCHEMA_VERSION` (the log is saved).
+4. Test in `crates/sim-api/tests/transparency.rs` (`check_snapshot`): result equals the headline, parts sum, over several seeds and in live mode. Update `web/src/contract/index.ts`, `docs/snapshot-contract.md`, regenerate fixtures and golden.
+
+## 15. Add an assumptions topic (Town v5.1)
+1. Add an entry to `content/assumptions.json` (fields as in `assumptions::TopicDef`; `group` and `status` are closed sets). `params` are dotted paths into `content/params.json`; units may use `{energy}` for the energy label. Do not copy numbers into the text; they come from `params` and `examples`.
+2. For a worked example, put the formula in a small `pub fn` in the model (not inline in `run`), call it from `run`, and register it in `assumptions::registry()` under a name; the catalog example names it and gives its inputs. Behaviour must not change: check `cargo run -p sim-cli --example statehash` is identical.
+3. `usedBy` lists the metric keys, lever keys and UI anchors (`panel:*`, `finance:*`, `people:*`, `industry:*`, `energy:*`, `place:*`) the topic explains. `crates/sim-api/tests/assumptions.rs` fails if a metric, lever or anchor in its lists has no topic, if a path or function does not exist, or if a registry function has no example. A new metric or lever must be added to those lists and to a topic.
+4. Regenerate fixtures and the golden (`assumptions` hash).
