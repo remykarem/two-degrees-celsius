@@ -28,10 +28,10 @@
       "group": "Taxes",
       "initial": 0.25,
       "active": 0.25,
-      "effective": 0.10667029266895317,
+      "effective": 0.10666085045132512,
       "pending": null,
       "lastChangeTurn": null,
-      "weakenedBy": 0.5733188293241873
+      "weakenedBy": 0.5733565981946995
     },
     {
       "lever": "tax_capital",
@@ -243,7 +243,7 @@
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.1103492135199686,
+      "to": 0.11034547631676436,
       "reason": "lobbying cut it by 56%"
     },
     {
@@ -251,7 +251,7 @@
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.10816995050801265,
+      "to": 0.10815362969755263,
       "reason": "lobbying cut it by 57%"
     },
     {
@@ -274,7 +274,7 @@
       "lever": "tax_profit",
       "kind": "weakened",
       "from": 0.25,
-      "to": 0.10667029266895317,
+      "to": 0.10666085045132512,
       "reason": "lobbying cut it by 57%"
     }
   ],

@@ -60,7 +60,8 @@ pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 /// version and the snapshot's `schemaVersion` honest, and refuses saves made by the old web.
 /// Markets view (contract v2.3, `docs/snapshot-contract.md` section 23) added price series to
 /// `HistoryPoint` and market records to the saved wrapper log: 7.
-pub const SCHEMA_VERSION: u32 = 7;
+/// Weather got its own random stream, stored in the state (state schema 5): 8.
+pub const SCHEMA_VERSION: u32 = 8;
 
 /// Version of the contract text in `docs/snapshot-contract.md` (the newest section). Emitted into
 /// the generated TS so the web compares against it, not a hard-coded copy.

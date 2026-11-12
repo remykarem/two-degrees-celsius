@@ -76,8 +76,9 @@ pub fn export(
 /// Largest magnitude, in cents, any integer in a save may have (10^15 cents is 10 trillion
 /// dollars, far above anything the game produces). `Cents` arithmetic panics on i64 overflow and
 /// a panic traps the wasm module, so a crafted save must be refused before it can reach it.
-/// Summing a few thousand such values still fits in an i64. The RNG words are the only
-/// legitimately huge integers and are not walked.
+/// Summing a few thousand such values still fits in an i64. The RNG words (the top-level
+/// `rngState` and `rngInc`, and any `rng` object inside the state) are the only legitimately
+/// huge integers and are not walked.
 pub const MAX_SAVED_INTEGER: i64 = 1_000_000_000_000_000;
 
 fn bound_integers(blob: &serde_json::Value) -> ApiResult<()> {
@@ -100,8 +101,10 @@ fn bound_integers(blob: &serde_json::Value) -> ApiResult<()> {
                 .iter()
                 .enumerate()
                 .try_for_each(|(i, x)| walk(x, &format!("{path}[{i}]"))),
+            // `rng` holds a random stream's 64-bit words (the weather's), legitimately huge.
             serde_json::Value::Object(o) => o
                 .iter()
+                .filter(|(k, _)| k.as_str() != "rng")
                 .try_for_each(|(k, x)| walk(x, &format!("{path}.{k}"))),
             _ => Ok(()),
         }

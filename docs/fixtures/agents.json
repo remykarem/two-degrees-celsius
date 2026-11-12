@@ -469,6 +469,7 @@
       "id": "drought_onset",
       "event": "A drought starts",
       "system": "weather",
+      "stream": "weather",
       "distribution": "bernoulli",
       "probability": "drought base x (1 + stress gain x climate stress), clamped to 0 to 1",
       "when": "each month with no drought running and climate stress above zero",
@@ -492,6 +493,7 @@
       "id": "drought_size",
       "event": "How severe and how long a drought is",
       "system": "weather",
+      "stream": "weather",
       "distribution": "uniform",
       "probability": "two uniform draws on 0..1: severity = min(1, sev_min + u x (span base + span stress x stress)); months = dur_min + floor(u x (span base + span stress x stress))",
       "when": "only when a drought starts",
@@ -527,6 +529,7 @@
       "id": "fire_spread",
       "event": "A fire spreads to a neighbouring forest tile",
       "system": "weather",
+      "stream": "weather",
       "distribution": "bernoulli",
       "probability": "spread chance x (1 + drought gain x severity) x (1 - station cut if covered)",
       "when": "each month, once for each standing forest tile next to a burning tile",
@@ -556,6 +559,7 @@
       "id": "fire_ignition",
       "event": "A new fire starts",
       "system": "weather",
+      "stream": "weather",
       "distribution": "bernoulli",
       "probability": "fire base x (1 + stress gain x stress) x dryness x standing forest share x (1 - resilience cut)",
       "when": "each month with climate stress above zero and some forest standing",
@@ -579,6 +583,7 @@
       "id": "fire_tile",
       "event": "Which forest tile ignites",
       "system": "weather",
+      "stream": "weather",
       "distribution": "uniform_index",
       "probability": "one uniform pick among the standing forest tiles",
       "when": "only when a new fire starts",
@@ -589,6 +594,7 @@
       "id": "home_damage",
       "event": "A home next to a fire is damaged",
       "system": "weather",
+      "stream": "weather",
       "distribution": "bernoulli",
       "probability": "a fixed chance per home within one tile of a fire",
       "when": "each month for each such home; the draw happens only when the chance is above zero, and in the shipped content it is zero (off)",
@@ -606,9 +612,10 @@
       "id": "enclosure",
       "event": "An owner fences off an open commons",
       "system": "nature",
+      "stream": "shared",
       "distribution": "bernoulli",
       "probability": "the economic system's enclosure chance; the richest Capitalist or Rentier household becomes the owner",
-      "when": "each month while the commons are open and the chance is above zero (Market only in the shipped content)",
+      "when": "each month; the draw is always taken, but it only counts while the commons are open and the chance is above zero (Market only in the shipped content), so the commons rule never shifts the shared stream",
       "params": [
         {
           "path": "systems.market.enclosure_prob",
@@ -635,9 +642,10 @@
       "id": "startup",
       "event": "A household founds a firm in the dormant slot",
       "system": "class",
+      "stream": "shared",
       "distribution": "bernoulli",
       "probability": "mobility rate x max(0, sector return - base rate), clamped to 0..1",
-      "when": "each month when a household has the savings and a dormant slot sits in a sector with enough unmet demand; one draw whatever the odds",
+      "when": "every month the draw is taken (so it never shifts the shared stream); it only counts when a household has the savings and a dormant slot sits in a sector with enough unmet demand",
       "params": [
         {
           "path": "class.mobility_rate",
@@ -664,8 +672,9 @@
       "id": "estate_flight",
       "event": "The estate's jet flies",
       "system": "estate",
+      "stream": "shared",
       "distribution": "bernoulli",
-      "probability": "the fixed monthly flight chance; the flight happens only if the pilot is employed (the draw is taken either way, so a dismissal never shifts the random stream)",
+      "probability": "the fixed monthly flight chance; the flight happens only if the pilot is employed (the draw is taken either way, so a dismissal never shifts the shared random stream)",
       "when": "each month while the estate exists",
       "params": [
         {
@@ -680,7 +689,7 @@
   ],
   "deterministic": [
     "Everything else is deterministic: spending, shop choice, hiring, wages, prices, credit, taxes, lobbying and legitimacy use no random draws.",
-    "The seed fixes one stream of random numbers. Changing it changes when droughts and fires happen and where, whether a commons is fenced off, whether a household founds a firm and when the estate's jet flies; it does not change the starting town.",
+    "The seed fixes two streams of random numbers. The weather stream drives droughts and fires only, so nothing the player does can change when or where they strike; the shared stream drives whether a commons is fenced off, whether a household founds a firm and when the estate's jet flies, and each of those draws is taken every month whether or not it counts. Changing the seed changes both; it does not change the starting town.",
     "The starting differences between households (income, savings, skill, who owns what) are written in content/initial_town.json, not drawn."
   ]
 }

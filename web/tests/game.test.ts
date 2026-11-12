@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SCHEMA_VERSION } from '../src/contract/generated';
 import { createSimPort } from './port';
 import { attachPlayback, type Scheduler } from '../src/app/playback';
 import { createGame, layoutOf, paletteActions, quarterLabel, selectionAt, selectionTile, type Game } from '../src/store';
@@ -227,7 +228,7 @@ describe('v0.3 store behaviour', () => {
     g.setLens('wealth');
     const text = g.exportSave()!;
     const file = JSON.parse(text);
-    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: 7 });
+    expect(file).toMatchObject({ format: 'ecotown-save', saveVersion: 2, schemaVersion: SCHEMA_VERSION });
     expect(Object.keys(file)).toEqual(expect.arrayContaining(['schemaVersion', 'simState', 'lastResult', 'previous', 'uiPrefs']));
     expect(file).not.toHaveProperty('layout');
 

@@ -203,9 +203,12 @@ pub fn forecast(s: &State, p: &Params) -> (RiskLevel, RiskLevel) {
     (fire, drought)
 }
 
-pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
+pub fn run(s: &State, p: &Params, _shared: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let c = &p.weather;
+    // Every draw below comes from the weather's own stream (`s.weather.rng`), never from the
+    // shared one: the player's choices cannot shift when droughts and fires happen.
+    let mut r = Rng::from_parts(s.weather.rng.state, s.weather.rng.inc);
     let stress = climate_stress(s.nature.cumulative, p);
     let mut wx = s.weather.clone();
     wx.stress = stress;
@@ -273,6 +276,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         drought: wx.drought,
         fires: fires.clone(),
         regrowing: regrowing.clone(),
+        rng: wx.rng,
     };
     let survivors = fires.len();
     for i in 0..survivors {
@@ -364,6 +368,8 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
 
     wx.fires = fires;
     wx.regrowing = regrowing;
+    let (state, inc) = r.parts();
+    wx.rng = RngStream { state, inc };
     d.changes.push(Delta::Weather(wx));
     d
 }

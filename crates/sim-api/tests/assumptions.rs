@@ -420,6 +420,21 @@ fn randomness_table_matches_the_draw_sites_in_the_model() {
     );
     // Town v7 added one draw site (the estate's monthly flight, `estate.rs`): 10 in all (9 before).
     assert_eq!(sites, 10, "draw sites in sim-model");
+    // Weather draws use the weather's own stream (stored in the state), everything else the
+    // shared one; the table says which, and the weather system must not touch the shared stream.
+    for d in &a.randomness {
+        let want = if d.system == "weather" {
+            "weather"
+        } else {
+            "shared"
+        };
+        assert_eq!(d.stream, want, "{}: stream", d.id);
+    }
+    let wsrc = std::fs::read_to_string(root.join("crates/sim-model/src/weather.rs")).unwrap();
+    assert!(
+        wsrc.contains("_shared: &mut Rng"),
+        "weather::run must ignore the shared stream"
+    );
     assert!(
         a.randomness.iter().any(|d| d.id == "estate_flight"),
         "the estate flight draw is documented"

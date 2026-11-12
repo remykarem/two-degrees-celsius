@@ -37,14 +37,22 @@ pub struct Sim {
     pub turn_phase: TurnPhase,
 }
 
+/// PCG stream selector of the weather's random stream (the shared stream uses 54).
+pub const WEATHER_STREAM: u64 = 0x57_45_41_54; // "WEAT"
+
 impl Sim {
     /// Start the run clock after settling: tick 0, no emissions or outcome recorded yet.
-    fn reset_clock(&mut self) {
+    fn reset_clock(&mut self, seed: u64) {
         let s = &mut self.state;
         s.tick = 0;
         s.outcome = None;
         s.nature.cumulative = Tonnes::ZERO;
-        s.weather = Weather::default();
+        // Weather starts clean, with its own stream seeded from the run seed (stream id fixed).
+        let (state, inc) = Rng::new(seed, WEATHER_STREAM).parts();
+        s.weather = Weather {
+            rng: RngStream { state, inc },
+            ..Weather::default()
+        };
         s.nature.atmosphere = Tonnes(self.params.nature.atmosphere_start);
         s.gov.legitimacy = Rate(self.params.initial.legitimacy);
         s.bank.failed = false;
@@ -126,7 +134,7 @@ pub fn init(params: Params, seed: u64) -> Result<Sim, String> {
         step(&mut sim).map_err(|v| v.to_string())?;
     }
     sim.params.weather = weather;
-    sim.reset_clock();
+    sim.reset_clock(seed);
     Ok(sim)
 }
 

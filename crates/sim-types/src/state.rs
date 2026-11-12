@@ -307,6 +307,14 @@ pub struct Regrowing {
     pub months_left: u32,
 }
 
+/// The `(state, increment)` pair of a PCG32 stream (`sim_rng::Rng::parts`), kept as plain data so
+/// `sim-types` needs no dependency on `sim-rng`. Used for the weather's own random stream.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RngStream {
+    pub state: u64,
+    pub inc: u64,
+}
+
 /// Weather state (Town v4). A forest tile is `burning` if it is in `fires`, `regrowing` if it is
 /// in `regrowing`, otherwise `standing`; the lists never share a tile.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -316,6 +324,10 @@ pub struct Weather {
     pub drought: Option<Drought>,
     pub fires: Vec<Fire>,
     pub regrowing: Vec<Regrowing>,
+    /// The weather's own random stream (schema 5): every weather draw comes from it, so what
+    /// the player does cannot change when droughts and fires happen. Seeded from the run seed
+    /// at the start of the game clock (`sim_engine::init`).
+    pub rng: RngStream,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

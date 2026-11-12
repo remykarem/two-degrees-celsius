@@ -2,10 +2,10 @@
   "government": {
     "revenue": {
       "wageTax": 5407.47,
-      "profitTax": 1850.3,
-      "capitalTax": 6029.35,
+      "profitTax": 1855.4,
+      "capitalTax": 6045.62,
       "wealthTax": 0.0,
-      "carbon": 134.38,
+      "carbon": 134.37,
       "other": 0.0
     },
     "spending": {
@@ -15,26 +15,26 @@
       "jobGuarantee": 0.0,
       "upkeep": 140.0,
       "subsidy": 0.0,
-      "interest": 259.85,
+      "interest": 259.99,
       "builds": 0.0,
       "other": 0.0
     },
-    "balance": 1021.6499999999996,
-    "cash": 10119.79,
-    "debt": 77719.41,
-    "debtToGdp": 0.1905196253863494,
-    "legitimacy": 0.6532556086597746,
+    "balance": 1042.8700000000026,
+    "cash": 10127.42,
+    "debt": 77759.53,
+    "debtToGdp": 0.1903455683974314,
+    "legitimacy": 0.653304339106135,
     "basis": "month"
   },
   "bank": {
-    "equity": 37788.68,
-    "loans": 297170.28,
-    "deposits": 259381.6,
-    "capitalRatio": 0.1271617067494098,
+    "equity": 37788.83,
+    "loans": 297159.51,
+    "deposits": 259370.68,
+    "capitalRatio": 0.12716682027103896,
     "capitalRatioLimit": 0.1,
-    "headroom": 80716.51999999996,
+    "headroom": 80728.78999999998,
     "defaultRate": 0.0,
-    "interestIncome": 1092.53
+    "interestIncome": 1092.45
   },
   "households": {
     "income": [
@@ -42,7 +42,7 @@
         "id": "wages",
         "label": "Wages",
         "category": "labour",
-        "amount": 18458.21
+        "amount": 18459.02
       },
       {
         "id": "domestic_wages",
@@ -55,7 +55,7 @@
         "id": "dividends",
         "label": "Dividends",
         "category": "capital",
-        "amount": 13162.6
+        "amount": 13203.41
       },
       {
         "id": "rent",
@@ -67,7 +67,7 @@
         "id": "interest",
         "label": "Interest",
         "category": "capital",
-        "amount": 475.68
+        "amount": 475.53
       },
       {
         "id": "benefits",
@@ -76,47 +76,47 @@
         "amount": 4000.0
       }
     ],
-    "taxes": 11436.82,
+    "taxes": 11453.09,
     "rentPaid": 1435.08,
     "loanPayments": 1004.08,
-    "spending": 22551.59,
-    "savingRate": -0.026359675334658262,
+    "spending": 22583.42,
+    "savingRate": -0.026528596035881046,
     "debt": 151821.29,
-    "netWorth": 2735300.358945282
+    "netWorth": 2734635.527389773
   },
   "firms": {
-    "revenue": 31740.32,
+    "revenue": 31773.48,
     "wageBill": 16224.89,
-    "profit": 13255.9,
-    "investment": 1188.73,
-    "debt": 67629.58,
-    "cash": 66200.72
+    "profit": 13284.19,
+    "investment": 1190.06,
+    "debt": 67578.69,
+    "cash": 66262.32
   },
   "money": {
-    "supply": 259381.6,
-    "createdThisTurn": 8104.61,
-    "destroyedThisTurn": 7984.65
+    "supply": 259370.68,
+    "createdThisTurn": 8063.67,
+    "destroyedThisTurn": 7982.49
   },
-  "priceIndex": 0.9762766746344891,
-  "wageShare": 0.5503546546751291,
-  "profitShare": 0.4496453453248708,
+  "priceIndex": 0.9773106540735595,
+  "wageShare": 0.5498270362884915,
+  "profitShare": 0.45017296371150844,
   "quarter": {
     "govRevenue": {
       "wageTax": 16318.42,
-      "profitTax": 5521.97,
-      "capitalTax": 17996.47,
+      "profitTax": 5537.14,
+      "capitalTax": 18045.65,
       "wealthTax": 0.0,
-      "carbon": 311.39,
+      "carbon": 268.42,
       "other": 0.0
     },
     "govSpending": {
       "benefits": 12000.0,
       "ubi": 0.0,
-      "publicSpending": 23849.25,
+      "publicSpending": 23843.33,
       "jobGuarantee": 0.0,
       "upkeep": 409.96,
       "subsidy": 0.0,
-      "interest": 776.07,
+      "interest": 776.65,
       "builds": 2500.04,
       "other": 0.0
     },
@@ -125,7 +125,7 @@
         "id": "wages",
         "label": "Wages",
         "category": "labour",
-        "amount": 58180.14
+        "amount": 58182.6
       },
       {
         "id": "domestic_wages",
@@ -138,7 +138,7 @@
         "id": "dividends",
         "label": "Dividends",
         "category": "capital",
-        "amount": 39275.59
+        "amount": 39399.01
       },
       {
         "id": "rent",
@@ -150,7 +150,7 @@
         "id": "interest",
         "label": "Interest",
         "category": "capital",
-        "amount": 1431.67
+        "amount": 1431.23
       },
       {
         "id": "benefits",
@@ -159,14 +159,14 @@
         "amount": 12000.0
       }
     ],
-    "householdTaxes": 34357.83,
+    "householdTaxes": 34364.07,
     "rentPaid": 4283.88,
-    "loanPayments": 3024.08,
-    "householdSpending": 68849.07,
-    "firmRevenue": 96007.54,
+    "loanPayments": 3024.11,
+    "householdSpending": 68964.04,
+    "firmRevenue": 96117.67,
     "wageBill": 48994.72,
-    "firmProfit": 40400.13,
-    "investment": 3309.22,
-    "bankInterestIncome": 3279.62
+    "firmProfit": 40495.84,
+    "investment": 3310.3,
+    "bankInterestIncome": 3279.51
   }
 }

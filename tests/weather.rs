@@ -52,6 +52,17 @@ fn apply_weather(s: &mut State, d: &Deltas) {
     }
 }
 
+/// One S11 run from `s` with a fresh weather stream drawn from `rng`. The weather draws only from
+/// the stream stored in the state, so statistical tests that call it repeatedly from one state must
+/// give each call its own stream.
+fn run_fresh(s: &mut State, p: &Params, rng: &mut Rng) -> Deltas {
+    s.weather.rng = RngStream {
+        state: rng.next_u64(),
+        inc: rng.next_u64() | 1,
+    };
+    weather::run(s, p, &mut Rng::new(0, 0))
+}
+
 /// Run S11 alone for `ticks`, applying its deltas; counts of (started, spread, burned).
 fn evolve(s: &mut State, p: &Params, rng: &mut Rng, ticks: u32) -> (u32, u32, u32) {
     let (mut a, mut b, mut c) = (0, 0, 0);
@@ -148,7 +159,16 @@ fn no_hazards_before_onset() {
 fn a_new_game_starts_with_calm_weather_even_though_the_warm_up_emits() {
     for seed in 1..=5 {
         let sim = new_sim(seed);
-        assert_eq!(sim.state.weather, Weather::default(), "seed {seed}");
+        // Calm: everything default except the weather's own stream, seeded from the run seed.
+        let (state, inc) = Rng::new(seed, sim_engine::WEATHER_STREAM).parts();
+        assert_eq!(
+            sim.state.weather,
+            Weather {
+                rng: RngStream { state, inc },
+                ..Weather::default()
+            },
+            "seed {seed}"
+        );
         assert_eq!(sim.state.nature.cumulative, Tonnes::ZERO);
         assert_eq!(sim.state.indicators.climate_stress, 0.0);
     }
@@ -171,7 +191,7 @@ fn ignition_frequency_matches_the_formula_and_rises_with_stress() {
         let n = 20_000;
         let mut hits = 0;
         for _ in 0..n {
-            let d = weather::run(&base, &p, &mut rng);
+            let d = run_fresh(&mut base, &p, &mut rng);
             hits += d
                 .events
                 .iter()
@@ -211,7 +231,7 @@ fn spread_frequency_matches_spread_p() {
     let n = 20_000;
     let mut spreads = 0usize;
     for _ in 0..n {
-        let d = weather::run(&s, &p, &mut rng);
+        let d = run_fresh(&mut s, &p, &mut rng);
         spreads += d
             .events
             .iter()
@@ -959,4 +979,46 @@ fn weather_baselines_over_twenty_seeds() {
             "{name}: weather events per game stay visible"
         );
     }
+}
+
+/// Weather draws come from their own stream: whatever the shared stream holds, the same state
+/// gives the same hazards, and the weather stream advances while the shared one is untouched.
+#[test]
+fn weather_draws_ignore_the_shared_stream() {
+    let p = params();
+    let mut s = fresh_sim().state;
+    set_remaining(&mut s, &p, 0.1); // high stress: draws are certain to be taken
+    let mut a = Rng::new(1, 1);
+    let mut b = Rng::new(987_654_321, 77);
+    let (a0, b0) = (a.clone(), b.clone());
+    let da = weather::run(&s, &p, &mut a);
+    let db = weather::run(&s, &p, &mut b);
+    assert_eq!(format!("{da:?}"), format!("{db:?}"));
+    assert_eq!(a, a0, "weather must not touch the shared stream");
+    assert_eq!(b, b0, "weather must not touch the shared stream");
+    let advanced = da.changes.iter().any(|c| match c {
+        Delta::Weather(w) => w.rng != s.weather.rng,
+        _ => false,
+    });
+    assert!(advanced, "the weather stream advanced (draws were taken)");
+}
+
+/// The shared stream's consumers (class, estate, enclosure) take their draw every month, whatever
+/// the player did, so a player action cannot change how many draws later systems see.
+#[test]
+fn shared_stream_use_does_not_depend_on_the_commons_rule() {
+    let run = |access: CommonsAccess| {
+        let mut sim = new_sim(3);
+        sim.state.nature.commons_access = access;
+        for _ in 0..30 {
+            sim_engine::step(&mut sim).expect("checks pass");
+        }
+        sim.rng.parts()
+    };
+    let open = run(CommonsAccess::Open);
+    let community = run(CommonsAccess::Community { cap: Rate(0.5) });
+    assert_eq!(
+        open, community,
+        "the commons rule must not shift the shared stream"
+    );
 }

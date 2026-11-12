@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { SCHEMA_VERSION } from '../src/contract/generated';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { AccountRef, LedgerEntry, LedgerPage, Snapshot } from '../src/contract';
@@ -30,8 +31,8 @@ describe.skipIf(!present)(`the real sim after ${TURNS} turns (wasm)`, async () =
   const gov = pages.get(JSON.stringify({ kind: 'government' }))!;
   const latestTick = Math.max(...gov.entries.map((e) => e.tick));
 
-  it('is schemaVersion 7 with the v1.4 blocks', () => {
-    expect(snap.schemaVersion).toBe(7);
+  it('has the current schemaVersion with the v1.4 blocks', () => {
+    expect(snap.schemaVersion).toBe(SCHEMA_VERSION);
     expect(Array.isArray(snap.energy.supply)).toBe(true);
     expect(snap.finance.quarter.govRevenue).toBeDefined();
     expect(snap.finance.government.cash).toBeGreaterThan(0);

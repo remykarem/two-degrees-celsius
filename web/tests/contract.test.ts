@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { SCHEMA_VERSION } from '../src/contract/generated';
 import type { Command, LeverKey, Result, Snapshot, TurnResult } from '../src/contract';
 import { createSimPort } from './port';
 import { ok } from './helpers';
@@ -40,7 +41,7 @@ describe('contract types', () => {
   });
   it('schemaVersion is 3 (Town v4 weather layout) and there are 3 month frames per turn', () => {
     const sim = createSimPort();
-    expect(ok(sim.init(1)).schemaVersion).toBe(7);
+    expect(ok(sim.init(1)).schemaVersion).toBe(SCHEMA_VERSION);
     expect(ok(sim.submitTurn([])).months).toHaveLength(3);
   });
   it('a failing call is a result, never a thrown exception', () => {

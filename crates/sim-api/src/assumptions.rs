@@ -125,6 +125,8 @@ pub struct DrawDef {
     pub id: String,
     pub event: String,
     pub system: String,
+    /// Which random stream the draw uses: `weather` (its own, stored in the state) or `shared`.
+    pub stream: String,
     pub distribution: Distribution,
     pub probability: String,
     pub when: String,
@@ -175,6 +177,8 @@ pub struct RandomDraw {
     pub id: String,
     pub event: String,
     pub system: String,
+    /// Which random stream the draw uses: `weather` (its own, stored in the state) or `shared`.
+    pub stream: String,
     pub distribution: Distribution,
     pub probability: String,
     pub when: String,
@@ -252,6 +256,7 @@ pub fn resolve_agents(params: &Params, energy_unit: &str) -> ApiResult<AgentsCat
                 id: r.id.clone(),
                 event: r.event.clone(),
                 system: r.system.clone(),
+                stream: r.stream.clone(),
                 distribution: r.distribution,
                 probability: r.probability.clone(),
                 when: r.when.clone(),

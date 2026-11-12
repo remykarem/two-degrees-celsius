@@ -316,7 +316,7 @@ fn snapshot_levers_actions_and_turn_result_round_trip() {
         assert!(j.get(k).is_some(), "snapshot lacks {k}");
     }
     assert_eq!(j["policy"].as_object().unwrap().len(), 20);
-    assert_eq!(j["schemaVersion"], 7);
+    assert_eq!(j["schemaVersion"], sim_api::SCHEMA_VERSION);
     assert_eq!(j["map"]["width"], 12);
     assert_eq!(j["map"]["tiles"].as_array().unwrap().len(), 144);
     for k in [
@@ -669,7 +669,7 @@ fn old_saves_are_refused_with_a_clear_error() {
     let mut api = Api::init(3).unwrap();
     let blob = api.export_state().unwrap();
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    assert_eq!(v["schemaVersion"], 7);
+    assert_eq!(v["schemaVersion"], sim_api::SCHEMA_VERSION);
     v["schemaVersion"] = serde_json::json!(1);
     let e = api.import_state(&v.to_string()).unwrap_err();
     assert_eq!(e.code, "schema_mismatch");

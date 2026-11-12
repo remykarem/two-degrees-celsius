@@ -153,8 +153,10 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
 
     // Enclosure: a wealthy capital-owning cohort may fence off an open commons.
     let c = crate::util::cfg(s, p);
+    // The draw is always taken, so the commons rule the player chose never shifts the shared stream.
+    let enclosure_roll = r.chance(c.enclosure_prob);
     if let CommonsAccess::Open = n.commons_access {
-        if c.enclosure_prob > 0.0 && r.chance(c.enclosure_prob) {
+        if c.enclosure_prob > 0.0 && enclosure_roll {
             if let Some(h) = s
                 .households
                 .iter()

@@ -2,6 +2,7 @@
 // That the recording is current is checked on the Rust side (crates/sim-api/tests/recording.rs, in `cargo test --workspace`; `npm run check:recording`);
 // that it matches the generated contract is checked by `npm run typecheck` (the file is annotated `: Recording`) and by the shape tests here.
 import { readFileSync } from 'node:fs';
+import { SCHEMA_VERSION } from '../src/contract/generated';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Snapshot } from '../src/contract';
@@ -15,7 +16,7 @@ const keysOf = (o: object): string[] => Object.keys(o).sort();
 
 describe('the recording', () => {
   it('is a run of the current wire: schema version, and the same snapshot keys as the checked-in fixture', () => {
-    expect(RECORDING.schemaVersion).toBe(7); // the version the wasm loader (sim-port/wasm) also demands
+    expect(RECORDING.schemaVersion).toBe(SCHEMA_VERSION); // the version the wasm loader (sim-port/wasm) also demands
     const fx = fixture<Snapshot>('snapshot-turn1.json');
     expect(keysOf(RECORDING.initial)).toEqual(keysOf(fx));
     expect(keysOf(RECORDING.turns[0]!.snapshot)).toEqual(keysOf(fx));

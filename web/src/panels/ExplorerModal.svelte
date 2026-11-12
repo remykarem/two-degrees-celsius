@@ -92,7 +92,7 @@
                   {#each found.draws as r (r.id)}
                     <tr>
                       <td><b>{r.event}</b><span class="path">{r.code}</span></td>
-                      <td>{DISTRIBUTION_WORD[r.distribution]}</td>
+                      <td>{DISTRIBUTION_WORD[r.distribution]}<br /><span class="dim">{r.stream === 'weather' ? 'weather stream' : 'shared stream'}</span></td>
                       <td>{r.probability}<br /><span class="dim">{r.when}</span>
                         {#each r.params as p (p.path)}<br /><span class="dim">{p.label}: <span class="n">{val(p.value, p.unit)}</span> <span class="path inl">{p.path}</span></span>{/each}</td>
                     </tr>

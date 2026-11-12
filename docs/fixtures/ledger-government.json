@@ -3,7 +3,7 @@
     "kind": "government"
   },
   "openingBalance": 8000.0,
-  "openingDebt": 75853.01,
+  "openingDebt": 76026.04,
   "entries": [
     {
       "turn": 1,
@@ -21,7 +21,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
       "balanceAfter": 4000.0,
-      "debtAfter": 75853.01
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -39,7 +39,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
       "balanceAfter": 0.0,
-      "debtAfter": 75853.01
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -52,12 +52,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 543.84,
+      "amount": 541.94,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 543.84,
-      "debtAfter": 75853.01
+      "balanceAfter": 541.94,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -70,12 +70,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 945.89,
+      "amount": 949.11,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1489.73,
-      "debtAfter": 75853.01
+      "balanceAfter": 1491.05,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -88,12 +88,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 144.08,
+      "amount": 143.8,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1633.81,
-      "debtAfter": 75853.01
+      "balanceAfter": 1634.85,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -105,12 +105,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 252.84,
+      "amount": 253.42,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1380.97,
-      "debtAfter": 75853.01
+      "balanceAfter": 1381.43,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -123,12 +123,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1526.87,
+      "amount": 1522.8,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 2907.84,
-      "debtAfter": 75853.01
+      "balanceAfter": 2904.23,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -141,12 +141,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 871.78,
+      "amount": 871.15,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 3779.62,
-      "debtAfter": 75853.01
+      "balanceAfter": 3775.38,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -163,8 +163,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 5498.45,
-      "debtAfter": 75853.01
+      "balanceAfter": 5494.21,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -177,12 +177,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 65.97,
+      "amount": 65.99,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 5564.42,
-      "debtAfter": 75853.01
+      "balanceAfter": 5560.2,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -199,8 +199,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7266.39,
-      "debtAfter": 75853.01
+      "balanceAfter": 7262.17,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -213,12 +213,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.14,
+      "amount": 74.16,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7340.53,
-      "debtAfter": 75853.01
+      "balanceAfter": 7336.33,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -235,8 +235,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 8286.45,
-      "debtAfter": 75853.01
+      "balanceAfter": 8282.25,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -249,12 +249,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 12.63,
+      "amount": 12.62,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8299.08,
-      "debtAfter": 75853.01
+      "balanceAfter": 8294.87,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -271,8 +271,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 9237.42,
-      "debtAfter": 75853.01
+      "balanceAfter": 9233.21,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -285,12 +285,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.45,
+      "amount": 7.48,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 9244.87,
-      "debtAfter": 75853.01
+      "balanceAfter": 9240.69,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -307,8 +307,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9604.87,
-      "debtAfter": 75853.01
+      "balanceAfter": 9600.69,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -321,12 +321,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 2.14,
+      "amount": 2.16,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9607.01,
-      "debtAfter": 75853.01
+      "balanceAfter": 9602.85,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -339,12 +339,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 2258.31,
+      "amount": 2268.78,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 11865.32,
-      "debtAfter": 75853.01
+      "balanceAfter": 11871.63,
+      "debtAfter": 76026.04
     },
     {
       "turn": 1,
@@ -357,12 +357,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 264.68,
+      "amount": 258.37,
       "kind": "loan_new",
       "detail": "new loan",
       "memo": "new loan: bank credit creation -> government",
       "balanceAfter": 12130.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -380,7 +380,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
       "balanceAfter": 11330.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -398,7 +398,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
       "balanceAfter": 9730.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -416,7 +416,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
       "balanceAfter": 8930.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -434,7 +434,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
       "balanceAfter": 8130.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -452,7 +452,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
       "balanceAfter": 8106.36,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -470,7 +470,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
       "balanceAfter": 8082.72,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -488,7 +488,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
       "balanceAfter": 8059.08,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -506,7 +506,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
       "balanceAfter": 8035.45,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -524,7 +524,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
       "balanceAfter": 8011.82,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -542,7 +542,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
       "balanceAfter": 8000.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -560,7 +560,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
       "balanceAfter": 4000.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -578,7 +578,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
       "balanceAfter": 0.0,
-      "debtAfter": 76117.69
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -591,12 +591,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 552.08,
+      "amount": 550.43,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 552.08,
-      "debtAfter": 76117.69
+      "balanceAfter": 550.43,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -609,12 +609,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 939.96,
+      "amount": 943.18,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1492.04,
-      "debtAfter": 76117.69
+      "balanceAfter": 1493.61,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -627,12 +627,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 151.84,
+      "amount": 151.61,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1643.88,
-      "debtAfter": 76117.69
+      "balanceAfter": 1645.22,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -644,12 +644,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 253.73,
+      "amount": 254.28,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1390.15,
-      "debtAfter": 76117.69
+      "balanceAfter": 1390.94,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -662,12 +662,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1554.88,
+      "amount": 1551.53,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 2945.03,
-      "debtAfter": 76117.69
+      "balanceAfter": 2942.47,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -680,12 +680,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 894.18,
+      "amount": 893.67,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 3839.21,
-      "debtAfter": 76117.69
+      "balanceAfter": 3836.14,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -702,8 +702,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 5546.75,
-      "debtAfter": 76117.69
+      "balanceAfter": 5543.68,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -716,12 +716,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 66.15,
+      "amount": 66.17,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 5612.9,
-      "debtAfter": 76117.69
+      "balanceAfter": 5609.85,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -738,8 +738,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7303.34,
-      "debtAfter": 76117.69
+      "balanceAfter": 7300.29,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -752,12 +752,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.26,
+      "amount": 74.28,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7377.6,
-      "debtAfter": 76117.69
+      "balanceAfter": 7374.57,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -774,8 +774,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 8317.18,
-      "debtAfter": 76117.69
+      "balanceAfter": 8314.15,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -788,12 +788,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 12.47,
+      "amount": 12.46,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8329.65,
-      "debtAfter": 76117.69
+      "balanceAfter": 8326.61,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -810,8 +810,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 9265.49,
-      "debtAfter": 76117.69
+      "balanceAfter": 9262.45,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -824,12 +824,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.44,
+      "amount": 7.47,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 9272.93,
-      "debtAfter": 76117.69
+      "balanceAfter": 9269.92,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -846,8 +846,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9632.93,
-      "debtAfter": 76117.69
+      "balanceAfter": 9629.92,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -860,12 +860,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 2.08,
+      "amount": 2.1,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9635.01,
-      "debtAfter": 76117.69
+      "balanceAfter": 9632.02,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -878,12 +878,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 2307.22,
+      "amount": 2317.87,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 11942.23,
-      "debtAfter": 76117.69
+      "balanceAfter": 11949.89,
+      "debtAfter": 76284.41
     },
     {
       "turn": 1,
@@ -896,12 +896,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 187.77,
+      "amount": 180.11,
       "kind": "loan_new",
       "detail": "new loan",
       "memo": "new loan: bank credit creation -> government",
       "balanceAfter": 12130.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -919,7 +919,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
       "balanceAfter": 11330.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -937,7 +937,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
       "balanceAfter": 9730.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -955,7 +955,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
       "balanceAfter": 8930.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -973,7 +973,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
       "balanceAfter": 8130.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -991,7 +991,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
       "balanceAfter": 8106.36,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1009,7 +1009,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
       "balanceAfter": 8082.72,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1027,7 +1027,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
       "balanceAfter": 8059.08,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1045,7 +1045,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
       "balanceAfter": 8035.45,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1063,7 +1063,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
       "balanceAfter": 8011.82,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1081,7 +1081,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
       "balanceAfter": 8000.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1099,7 +1099,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
       "balanceAfter": 4000.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1117,7 +1117,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
       "balanceAfter": 0.0,
-      "debtAfter": 76305.46
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1130,12 +1130,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 548.8,
+      "amount": 561.11,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 548.8,
-      "debtAfter": 76305.46
+      "balanceAfter": 561.11,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1148,12 +1148,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1106.3,
+      "amount": 1109.49,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1655.1,
-      "debtAfter": 76305.46
+      "balanceAfter": 1670.6,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1166,12 +1166,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 158.88,
+      "amount": 158.69,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1813.98,
-      "debtAfter": 76305.46
+      "balanceAfter": 1829.29,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1183,12 +1183,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 254.35,
+      "amount": 254.88,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1559.63,
-      "debtAfter": 76305.46
+      "balanceAfter": 1574.41,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1201,12 +1201,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1540.59,
+      "amount": 1571.39,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 3100.22,
-      "debtAfter": 76305.46
+      "balanceAfter": 3145.8,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1219,12 +1219,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 915.36,
+      "amount": 914.94,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 4015.58,
-      "debtAfter": 76305.46
+      "balanceAfter": 4060.74,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1241,8 +1241,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 5711.99,
-      "debtAfter": 76305.46
+      "balanceAfter": 5757.15,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1255,12 +1255,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 66.33,
+      "amount": 66.35,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 5778.32,
-      "debtAfter": 76305.46
+      "balanceAfter": 5823.5,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1277,8 +1277,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7457.4,
-      "debtAfter": 76305.46
+      "balanceAfter": 7502.58,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1291,12 +1291,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.39,
+      "amount": 74.41,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7531.79,
-      "debtAfter": 76305.46
+      "balanceAfter": 7576.99,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1313,8 +1313,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 7998.45,
-      "debtAfter": 76305.46
+      "balanceAfter": 8043.65,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1327,12 +1327,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 10.75,
+      "amount": 10.73,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8009.2,
-      "debtAfter": 76305.46
+      "balanceAfter": 8054.38,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1349,8 +1349,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 8942.57,
-      "debtAfter": 76305.46
+      "balanceAfter": 8987.75,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1363,12 +1363,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.43,
+      "amount": 7.46,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 8950.0,
-      "debtAfter": 76305.46
+      "balanceAfter": 8995.21,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1385,8 +1385,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9310.0,
-      "debtAfter": 76305.46
+      "balanceAfter": 9355.21,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1399,12 +1399,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 2.03,
+      "amount": 2.04,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9312.03,
-      "debtAfter": 76305.46
+      "balanceAfter": 9357.25,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1417,12 +1417,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3191.89,
+      "amount": 3202.65,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 12503.92,
-      "debtAfter": 76305.46
+      "balanceAfter": 12559.9,
+      "debtAfter": 76464.52
     },
     {
       "turn": 1,
@@ -1435,12 +1435,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 426.08,
+      "amount": 370.1,
       "kind": "loan_new",
       "detail": "new loan",
       "memo": "new loan: bank credit creation -> government",
       "balanceAfter": 12930.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1458,7 +1458,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
       "balanceAfter": 12130.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1476,7 +1476,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
       "balanceAfter": 10530.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1494,7 +1494,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 5",
       "balanceAfter": 9730.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1512,7 +1512,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
       "balanceAfter": 8930.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1530,7 +1530,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
       "balanceAfter": 8130.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1548,7 +1548,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
       "balanceAfter": 8106.36,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1566,7 +1566,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
       "balanceAfter": 8082.72,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1584,7 +1584,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
       "balanceAfter": 8059.08,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1602,7 +1602,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
       "balanceAfter": 8035.45,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1620,7 +1620,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
       "balanceAfter": 8011.82,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 1,
@@ -1638,7 +1638,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
       "balanceAfter": 8000.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1656,7 +1656,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
       "balanceAfter": 4000.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1674,7 +1674,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
       "balanceAfter": 0.0,
-      "debtAfter": 76731.54
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1687,12 +1687,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 593.82,
+      "amount": 589.23,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 593.82,
-      "debtAfter": 76731.54
+      "balanceAfter": 589.23,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1705,12 +1705,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1088.6,
+      "amount": 1092.23,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1682.42,
-      "debtAfter": 76731.54
+      "balanceAfter": 1681.46,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1723,12 +1723,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 229.95,
+      "amount": 230.77,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1912.37,
-      "debtAfter": 76731.54
+      "balanceAfter": 1912.23,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1740,12 +1740,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 255.77,
+      "amount": 256.12,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1656.6,
-      "debtAfter": 76731.54
+      "balanceAfter": 1656.11,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1758,12 +1758,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1630.1,
+      "amount": 1621.34,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 3286.7,
-      "debtAfter": 76731.54
+      "balanceAfter": 3277.45,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1776,12 +1776,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1081.68,
+      "amount": 1083.56,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 4368.38,
-      "debtAfter": 76731.54
+      "balanceAfter": 4361.01,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1798,8 +1798,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 6053.05,
-      "debtAfter": 76731.54
+      "balanceAfter": 6045.68,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1812,12 +1812,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 66.51,
+      "amount": 66.53,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 6119.56,
-      "debtAfter": 76731.54
+      "balanceAfter": 6112.21,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1834,8 +1834,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7786.68,
-      "debtAfter": 76731.54
+      "balanceAfter": 7779.33,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1848,12 +1848,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.51,
+      "amount": 74.53,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7861.19,
-      "debtAfter": 76731.54
+      "balanceAfter": 7853.86,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1870,8 +1870,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 8324.56,
-      "debtAfter": 76731.54
+      "balanceAfter": 8317.23,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1884,12 +1884,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 10.3,
+      "amount": 10.28,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8334.86,
-      "debtAfter": 76731.54
+      "balanceAfter": 8327.51,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1906,8 +1906,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 9265.62,
-      "debtAfter": 76731.54
+      "balanceAfter": 9258.27,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1920,12 +1920,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.42,
+      "amount": 7.45,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 9273.04,
-      "debtAfter": 76731.54
+      "balanceAfter": 9265.72,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1942,8 +1942,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9633.04,
-      "debtAfter": 76731.54
+      "balanceAfter": 9625.72,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1960,8 +1960,8 @@
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9635.03,
-      "debtAfter": 76731.54
+      "balanceAfter": 9627.71,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1974,12 +1974,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3175.65,
+      "amount": 3187.54,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 12810.68,
-      "debtAfter": 76731.54
+      "balanceAfter": 12815.25,
+      "debtAfter": 76834.62
     },
     {
       "turn": 2,
@@ -1992,12 +1992,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 119.32,
+      "amount": 114.75,
       "kind": "loan_new",
       "detail": "new loan",
       "memo": "new loan: bank credit creation -> government",
       "balanceAfter": 12930.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2015,7 +2015,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
       "balanceAfter": 12130.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2033,7 +2033,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
       "balanceAfter": 10530.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2051,7 +2051,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 5",
       "balanceAfter": 9730.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2069,7 +2069,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
       "balanceAfter": 8930.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2087,7 +2087,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
       "balanceAfter": 8130.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2105,7 +2105,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
       "balanceAfter": 8106.36,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2123,7 +2123,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
       "balanceAfter": 8082.72,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2141,7 +2141,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
       "balanceAfter": 8059.08,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2159,7 +2159,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
       "balanceAfter": 8035.45,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2177,7 +2177,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
       "balanceAfter": 8011.82,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2195,7 +2195,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
       "balanceAfter": 8000.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2213,7 +2213,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
       "balanceAfter": 4000.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2231,7 +2231,7 @@
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
       "balanceAfter": 0.0,
-      "debtAfter": 76850.86
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2244,12 +2244,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 321.06,
+      "amount": 325.24,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 321.06,
-      "debtAfter": 76850.86
+      "balanceAfter": 325.24,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2262,12 +2262,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1064.14,
+      "amount": 1066.88,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1385.2,
-      "debtAfter": 76850.86
+      "balanceAfter": 1392.12,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2280,12 +2280,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 246.85,
+      "amount": 246.59,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1632.05,
-      "debtAfter": 76850.86
+      "balanceAfter": 1638.71,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2297,12 +2297,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 256.17,
+      "amount": 256.5,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1375.88,
-      "debtAfter": 76850.86
+      "balanceAfter": 1382.21,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2315,12 +2315,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1024.05,
+      "amount": 1035.4,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 2399.93,
-      "debtAfter": 76850.86
+      "balanceAfter": 2417.61,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2333,12 +2333,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1131.29,
+      "amount": 1130.89,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 3531.22,
-      "debtAfter": 76850.86
+      "balanceAfter": 3548.5,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2355,8 +2355,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 5203.58,
-      "debtAfter": 76850.86
+      "balanceAfter": 5220.86,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2369,12 +2369,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 66.69,
+      "amount": 66.71,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 5270.27,
-      "debtAfter": 76850.86
+      "balanceAfter": 5287.57,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2391,8 +2391,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 6924.88,
-      "debtAfter": 76850.86
+      "balanceAfter": 6942.18,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2405,12 +2405,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.64,
+      "amount": 74.65,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 6999.52,
-      "debtAfter": 76850.86
+      "balanceAfter": 7016.83,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2427,8 +2427,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 7922.81,
-      "debtAfter": 76850.86
+      "balanceAfter": 7940.12,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2441,12 +2441,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 11.42,
+      "amount": 11.39,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 7934.23,
-      "debtAfter": 76850.86
+      "balanceAfter": 7951.51,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2463,8 +2463,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 8862.25,
-      "debtAfter": 76850.86
+      "balanceAfter": 8879.53,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2477,12 +2477,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.41,
+      "amount": 7.44,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 8869.66,
-      "debtAfter": 76850.86
+      "balanceAfter": 8886.97,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2499,8 +2499,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9229.66,
-      "debtAfter": 76850.86
+      "balanceAfter": 9246.97,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2517,8 +2517,8 @@
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9231.62,
-      "debtAfter": 76850.86
+      "balanceAfter": 9248.93,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2531,12 +2531,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3161.01,
+      "amount": 3171.83,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 12392.63,
-      "debtAfter": 76850.86
+      "balanceAfter": 12420.76,
+      "debtAfter": 76949.37
     },
     {
       "turn": 2,
@@ -2549,12 +2549,12 @@
         "kind": "external",
         "label": "bank credit destruction"
       },
-      "amount": 26.26,
+      "amount": 29.08,
       "kind": "loan_repay",
       "detail": "loan repayment",
       "memo": "loan repayment: government -> bank credit destruction",
-      "balanceAfter": 12366.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 12391.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2571,8 +2571,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
-      "balanceAfter": 11566.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 11591.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2589,8 +2589,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
-      "balanceAfter": 9966.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 9991.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2607,8 +2607,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
-      "balanceAfter": 9166.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 9191.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2625,8 +2625,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
-      "balanceAfter": 8366.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 8391.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2643,8 +2643,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
-      "balanceAfter": 8342.73,
-      "debtAfter": 76824.6
+      "balanceAfter": 8368.04,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2661,8 +2661,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
-      "balanceAfter": 8319.09,
-      "debtAfter": 76824.6
+      "balanceAfter": 8344.4,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2679,8 +2679,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
-      "balanceAfter": 8295.45,
-      "debtAfter": 76824.6
+      "balanceAfter": 8320.76,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2697,8 +2697,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
-      "balanceAfter": 8271.82,
-      "debtAfter": 76824.6
+      "balanceAfter": 8297.13,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2715,8 +2715,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
-      "balanceAfter": 8248.19,
-      "debtAfter": 76824.6
+      "balanceAfter": 8273.5,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2733,8 +2733,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
-      "balanceAfter": 8236.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 8261.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2751,8 +2751,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
-      "balanceAfter": 4236.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 4261.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2769,8 +2769,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
-      "balanceAfter": 236.37,
-      "debtAfter": 76824.6
+      "balanceAfter": 261.68,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2783,12 +2783,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 389.7,
+      "amount": 388.66,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 626.07,
-      "debtAfter": 76824.6
+      "balanceAfter": 650.34,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2801,12 +2801,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1045.5,
+      "amount": 1048.59,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1671.57,
-      "debtAfter": 76824.6
+      "balanceAfter": 1698.93,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2819,12 +2819,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 231.55,
+      "amount": 231.82,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 1903.12,
-      "debtAfter": 76824.6
+      "balanceAfter": 1930.75,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2836,12 +2836,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 256.08,
+      "amount": 256.4,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1647.04,
-      "debtAfter": 76824.6
+      "balanceAfter": 1674.35,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2854,12 +2854,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1181.4,
+      "amount": 1179.19,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 2828.44,
-      "debtAfter": 76824.6
+      "balanceAfter": 2853.54,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2872,12 +2872,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1103.92,
+      "amount": 1104.57,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 3932.36,
-      "debtAfter": 76824.6
+      "balanceAfter": 3958.11,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2894,8 +2894,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 5592.66,
-      "debtAfter": 76824.6
+      "balanceAfter": 5618.41,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2908,12 +2908,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 66.86,
+      "amount": 66.88,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 5659.52,
-      "debtAfter": 76824.6
+      "balanceAfter": 5685.29,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2930,8 +2930,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7301.86,
-      "debtAfter": 76824.6
+      "balanceAfter": 7327.63,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2944,12 +2944,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.76,
+      "amount": 74.77,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7376.62,
-      "debtAfter": 76824.6
+      "balanceAfter": 7402.4,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2966,8 +2966,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 8293.31,
-      "debtAfter": 76824.6
+      "balanceAfter": 8319.09,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -2980,12 +2980,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 11.26,
+      "amount": 11.23,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8304.57,
-      "debtAfter": 76824.6
+      "balanceAfter": 8330.32,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3002,8 +3002,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 9229.91,
-      "debtAfter": 76824.6
+      "balanceAfter": 9255.66,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3016,12 +3016,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.4,
+      "amount": 7.42,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 9237.31,
-      "debtAfter": 76824.6
+      "balanceAfter": 9263.08,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3038,8 +3038,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 9597.31,
-      "debtAfter": 76824.6
+      "balanceAfter": 9623.08,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3056,8 +3056,8 @@
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 9599.25,
-      "debtAfter": 76824.6
+      "balanceAfter": 9625.02,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3070,12 +3070,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3142.8,
+      "amount": 3153.51,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 12742.05,
-      "debtAfter": 76824.6
+      "balanceAfter": 12778.53,
+      "debtAfter": 76920.29
     },
     {
       "turn": 2,
@@ -3088,12 +3088,12 @@
         "kind": "external",
         "label": "bank credit destruction"
       },
-      "amount": 61.21,
+      "amount": 64.85,
       "kind": "loan_repay",
       "detail": "loan repayment",
       "memo": "loan repayment: government -> bank credit destruction",
-      "balanceAfter": 12680.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 12713.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3110,8 +3110,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
-      "balanceAfter": 11880.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 11913.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3128,8 +3128,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
-      "balanceAfter": 10280.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 10313.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3146,8 +3146,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
-      "balanceAfter": 9480.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 9513.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3164,8 +3164,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
-      "balanceAfter": 8680.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 8713.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3182,8 +3182,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
-      "balanceAfter": 8657.2,
-      "debtAfter": 76763.39
+      "balanceAfter": 8690.04,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3200,8 +3200,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
-      "balanceAfter": 8633.56,
-      "debtAfter": 76763.39
+      "balanceAfter": 8666.4,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3218,8 +3218,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
-      "balanceAfter": 8609.92,
-      "debtAfter": 76763.39
+      "balanceAfter": 8642.76,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3236,8 +3236,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
-      "balanceAfter": 8586.29,
-      "debtAfter": 76763.39
+      "balanceAfter": 8619.13,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3254,8 +3254,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
-      "balanceAfter": 8562.66,
-      "debtAfter": 76763.39
+      "balanceAfter": 8595.5,
+      "debtAfter": 76855.44
     },
     {
       "turn": 2,
@@ -3272,8 +3272,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
-      "balanceAfter": 8550.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 8583.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3290,8 +3290,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
-      "balanceAfter": 4550.84,
-      "debtAfter": 76763.39
+      "balanceAfter": 4583.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3304,12 +3304,12 @@
         "kind": "firm",
         "id": 2
       },
-      "amount": 3999.99,
+      "amount": 4000.0,
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
-      "balanceAfter": 550.85,
-      "debtAfter": 76763.39
+      "balanceAfter": 583.68,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3322,12 +3322,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 469.73,
+      "amount": 471.62,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 1020.58,
-      "debtAfter": 76763.39
+      "balanceAfter": 1055.3,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3340,12 +3340,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1037.59,
+      "amount": 1040.52,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 2058.17,
-      "debtAfter": 76763.39
+      "balanceAfter": 2095.82,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3358,12 +3358,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 239.61,
+      "amount": 239.44,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 2297.78,
-      "debtAfter": 76763.39
+      "balanceAfter": 2335.26,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3375,12 +3375,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 255.88,
+      "amount": 256.18,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 2041.9,
-      "debtAfter": 76763.39
+      "balanceAfter": 2079.08,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3393,12 +3393,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1370.26,
+      "amount": 1375.13,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 3412.16,
-      "debtAfter": 76763.39
+      "balanceAfter": 3454.21,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3411,12 +3411,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1124.29,
+      "amount": 1124.0,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 4536.45,
-      "debtAfter": 76763.39
+      "balanceAfter": 4578.21,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3433,8 +3433,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 6184.91,
-      "debtAfter": 76763.39
+      "balanceAfter": 6226.67,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3447,12 +3447,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 67.04,
+      "amount": 67.06,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 6251.95,
-      "debtAfter": 76763.39
+      "balanceAfter": 6293.73,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3469,8 +3469,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 7882.25,
-      "debtAfter": 76763.39
+      "balanceAfter": 7924.03,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3483,12 +3483,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 74.88,
+      "amount": 74.89,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 7957.13,
-      "debtAfter": 76763.39
+      "balanceAfter": 7998.92,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3505,8 +3505,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 8867.34,
-      "debtAfter": 76763.39
+      "balanceAfter": 8909.13,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3519,12 +3519,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 11.12,
+      "amount": 11.08,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 8878.46,
-      "debtAfter": 76763.39
+      "balanceAfter": 8920.21,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3541,8 +3541,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 9801.16,
-      "debtAfter": 76763.39
+      "balanceAfter": 9842.91,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3555,12 +3555,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.38,
+      "amount": 7.42,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 9808.54,
-      "debtAfter": 76763.39
+      "balanceAfter": 9850.33,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3577,8 +3577,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 10168.54,
-      "debtAfter": 76763.39
+      "balanceAfter": 10210.33,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3591,12 +3591,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1.94,
+      "amount": 1.93,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 10170.48,
-      "debtAfter": 76763.39
+      "balanceAfter": 10212.26,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3609,12 +3609,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3119.78,
+      "amount": 3130.5,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 13290.26,
-      "debtAfter": 76763.39
+      "balanceAfter": 13342.76,
+      "debtAfter": 76855.44
     },
     {
       "turn": 3,
@@ -3627,12 +3627,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1339.74,
+      "amount": 1287.24,
       "kind": "loan_new",
       "detail": "new loan",
       "memo": "new loan: bank credit creation -> government",
       "balanceAfter": 14630.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3650,7 +3650,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
       "balanceAfter": 13830.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3668,7 +3668,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
       "balanceAfter": 12230.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3686,7 +3686,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
       "balanceAfter": 11430.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3704,7 +3704,7 @@
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
       "balanceAfter": 10630.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3722,7 +3722,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
       "balanceAfter": 10606.37,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3740,7 +3740,7 @@
       "detail": "build",
       "memo": "build: government -> household 2",
       "balanceAfter": 10151.81,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3758,7 +3758,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
       "balanceAfter": 10128.18,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3776,7 +3776,7 @@
       "detail": "build",
       "memo": "build: government -> household 3",
       "balanceAfter": 9673.63,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3794,7 +3794,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
       "balanceAfter": 9650.0,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3812,7 +3812,7 @@
       "detail": "build",
       "memo": "build: government -> household 4",
       "balanceAfter": 9195.45,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3830,7 +3830,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
       "balanceAfter": 9171.82,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3848,7 +3848,7 @@
       "detail": "build",
       "memo": "build: government -> household 5",
       "balanceAfter": 8717.27,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3866,7 +3866,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
       "balanceAfter": 8693.64,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3884,7 +3884,7 @@
       "detail": "build",
       "memo": "build: government -> household 6",
       "balanceAfter": 8239.09,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3902,7 +3902,7 @@
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
       "balanceAfter": 8227.28,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3920,25 +3920,7 @@
       "detail": "build",
       "memo": "build: government -> household 7",
       "balanceAfter": 8000.0,
-      "debtAfter": 78103.13
-    },
-    {
-      "turn": 3,
-      "month": 1,
-      "tick": 7,
-      "from": {
-        "kind": "household",
-        "id": 8
-      },
-      "to": {
-        "kind": "government"
-      },
-      "amount": 42.94,
-      "kind": "tax",
-      "detail": "carbon price",
-      "memo": "carbon price: household 8 -> government",
-      "balanceAfter": 8042.94,
-      "debtAfter": 78103.13
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3955,8 +3937,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
-      "balanceAfter": 4042.94,
-      "debtAfter": 78103.13
+      "balanceAfter": 4000.0,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3969,12 +3951,12 @@
         "kind": "firm",
         "id": 2
       },
-      "amount": 3849.26,
+      "amount": 3843.33,
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
-      "balanceAfter": 193.68,
-      "debtAfter": 78103.13
+      "balanceAfter": 156.67,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -3987,12 +3969,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 85.03,
+      "amount": 85.01,
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 0 -> government",
-      "balanceAfter": 278.71,
-      "debtAfter": 78103.13
+      "balanceAfter": 241.68,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4005,12 +3987,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 569.22,
+      "amount": 571.06,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 847.93,
-      "debtAfter": 78103.13
+      "balanceAfter": 812.74,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4027,8 +4009,8 @@
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 1 -> government",
-      "balanceAfter": 892.02,
-      "debtAfter": 78103.13
+      "balanceAfter": 856.83,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4041,12 +4023,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1047.19,
+      "amount": 1050.68,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 1939.21,
-      "debtAfter": 78103.13
+      "balanceAfter": 1907.51,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4063,8 +4045,8 @@
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 2 -> government",
-      "balanceAfter": 1944.16,
-      "debtAfter": 78103.13
+      "balanceAfter": 1912.46,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4077,12 +4059,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 308.33,
+      "amount": 308.42,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 2252.49,
-      "debtAfter": 78103.13
+      "balanceAfter": 2220.88,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4094,12 +4076,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 260.34,
+      "amount": 260.48,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 1992.15,
-      "debtAfter": 78103.13
+      "balanceAfter": 1960.4,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4112,12 +4094,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1571.56,
+      "amount": 1577.05,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 3563.71,
-      "debtAfter": 78103.13
+      "balanceAfter": 3537.45,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4130,12 +4112,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1292.11,
+      "amount": 1292.35,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 4855.82,
-      "debtAfter": 78103.13
+      "balanceAfter": 4829.8,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4152,8 +4134,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 6492.66,
-      "debtAfter": 78103.13
+      "balanceAfter": 6466.64,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4166,12 +4148,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 67.3,
+      "amount": 67.32,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 6559.96,
-      "debtAfter": 78103.13
+      "balanceAfter": 6533.96,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4188,8 +4170,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 8178.44,
-      "debtAfter": 78103.13
+      "balanceAfter": 8152.44,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4202,12 +4184,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 75.07,
+      "amount": 75.09,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 8253.51,
-      "debtAfter": 78103.13
+      "balanceAfter": 8227.53,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4224,8 +4206,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 9157.36,
-      "debtAfter": 78103.13
+      "balanceAfter": 9131.38,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4238,12 +4220,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 11.1,
+      "amount": 11.06,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 9168.46,
-      "debtAfter": 78103.13
+      "balanceAfter": 9142.44,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4260,8 +4242,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 10088.57,
-      "debtAfter": 78103.13
+      "balanceAfter": 10062.55,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4274,12 +4256,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.4,
+      "amount": 7.42,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 10095.97,
-      "debtAfter": 78103.13
+      "balanceAfter": 10069.97,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4296,8 +4278,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 10455.97,
-      "debtAfter": 78103.13
+      "balanceAfter": 10429.97,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4310,12 +4292,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1.94,
+      "amount": 1.93,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 10457.91,
-      "debtAfter": 78103.13
+      "balanceAfter": 10431.9,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4328,12 +4310,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3163.95,
+      "amount": 3175.8,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 13621.86,
-      "debtAfter": 78103.13
+      "balanceAfter": 13607.7,
+      "debtAfter": 78142.68
     },
     {
       "turn": 3,
@@ -4346,12 +4328,12 @@
         "kind": "external",
         "label": "bank credit destruction"
       },
-      "amount": 148.19,
+      "amount": 146.77,
       "kind": "loan_repay",
       "detail": "loan repayment",
       "memo": "loan repayment: government -> bank credit destruction",
-      "balanceAfter": 13473.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 13460.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4368,8 +4350,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
-      "balanceAfter": 12673.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 12660.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4386,8 +4368,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
-      "balanceAfter": 11073.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 11060.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4404,8 +4386,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
-      "balanceAfter": 10273.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 10260.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4422,8 +4404,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
-      "balanceAfter": 9473.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 9460.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4440,8 +4422,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
-      "balanceAfter": 9448.21,
-      "debtAfter": 77954.94
+      "balanceAfter": 9435.47,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4458,8 +4440,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
-      "balanceAfter": 9422.75,
-      "debtAfter": 77954.94
+      "balanceAfter": 9410.01,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4476,8 +4458,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
-      "balanceAfter": 9397.3,
-      "debtAfter": 77954.94
+      "balanceAfter": 9384.56,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4494,8 +4476,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
-      "balanceAfter": 9371.85,
-      "debtAfter": 77954.94
+      "balanceAfter": 9359.11,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4512,8 +4494,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
-      "balanceAfter": 9346.4,
-      "debtAfter": 77954.94
+      "balanceAfter": 9333.66,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4530,8 +4512,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
-      "balanceAfter": 9333.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 9320.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4548,8 +4530,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 0",
-      "balanceAfter": 5333.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 5320.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4566,8 +4548,8 @@
       "kind": "purchase",
       "detail": "public spending",
       "memo": "public spending: government -> firm 2",
-      "balanceAfter": 1333.67,
-      "debtAfter": 77954.94
+      "balanceAfter": 1320.93,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4580,12 +4562,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 85.27,
+      "amount": 85.25,
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 0 -> government",
-      "balanceAfter": 1418.94,
-      "debtAfter": 77954.94
+      "balanceAfter": 1406.18,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4598,12 +4580,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 563.59,
+      "amount": 565.58,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 0 -> government",
-      "balanceAfter": 1982.53,
-      "debtAfter": 77954.94
+      "balanceAfter": 1971.76,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4616,12 +4598,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 44.15,
+      "amount": 44.16,
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 1 -> government",
-      "balanceAfter": 2026.68,
-      "debtAfter": 77954.94
+      "balanceAfter": 2015.92,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4634,12 +4616,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1007.3,
+      "amount": 1010.27,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 1 -> government",
-      "balanceAfter": 3033.98,
-      "debtAfter": 77954.94
+      "balanceAfter": 3026.19,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4656,8 +4638,8 @@
       "kind": "tax",
       "detail": "carbon price",
       "memo": "carbon price: firm 2 -> government",
-      "balanceAfter": 3038.94,
-      "debtAfter": 77954.94
+      "balanceAfter": 3031.15,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4670,12 +4652,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 279.41,
+      "amount": 279.55,
       "kind": "tax",
       "detail": "profit tax",
       "memo": "profit tax: firm 2 -> government",
-      "balanceAfter": 3318.35,
-      "debtAfter": 77954.94
+      "balanceAfter": 3310.7,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4687,12 +4669,12 @@
       "to": {
         "kind": "bank"
       },
-      "amount": 259.85,
+      "amount": 259.99,
       "kind": "interest",
       "detail": "loan interest",
       "memo": "loan interest: government -> bank",
-      "balanceAfter": 3058.5,
-      "debtAfter": 77954.94
+      "balanceAfter": 3050.71,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4705,12 +4687,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1574.46,
+      "amount": 1579.64,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 0 -> government",
-      "balanceAfter": 4632.96,
-      "debtAfter": 77954.94
+      "balanceAfter": 4630.35,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4723,12 +4705,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1226.98,
+      "amount": 1227.36,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 1 -> government",
-      "balanceAfter": 5859.94,
-      "debtAfter": 77954.94
+      "balanceAfter": 5857.71,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4745,8 +4727,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 2 -> government",
-      "balanceAfter": 7485.37,
-      "debtAfter": 77954.94
+      "balanceAfter": 7483.14,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4759,12 +4741,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 67.48,
+      "amount": 67.5,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 2 -> government",
-      "balanceAfter": 7552.85,
-      "debtAfter": 77954.94
+      "balanceAfter": 7550.64,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4781,8 +4763,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 3 -> government",
-      "balanceAfter": 9159.72,
-      "debtAfter": 77954.94
+      "balanceAfter": 9157.51,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4795,12 +4777,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 75.19,
+      "amount": 75.21,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 3 -> government",
-      "balanceAfter": 9234.91,
-      "debtAfter": 77954.94
+      "balanceAfter": 9232.72,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4817,8 +4799,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 5 -> government",
-      "balanceAfter": 10132.51,
-      "debtAfter": 77954.94
+      "balanceAfter": 10130.32,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4831,12 +4813,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 10.96,
+      "amount": 10.92,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 5 -> government",
-      "balanceAfter": 10143.47,
-      "debtAfter": 77954.94
+      "balanceAfter": 10141.24,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4853,8 +4835,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 6 -> government",
-      "balanceAfter": 11061.04,
-      "debtAfter": 77954.94
+      "balanceAfter": 11058.81,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4867,12 +4849,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 7.38,
+      "amount": 7.42,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 6 -> government",
-      "balanceAfter": 11068.42,
-      "debtAfter": 77954.94
+      "balanceAfter": 11066.23,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4889,8 +4871,8 @@
       "kind": "tax",
       "detail": "wage tax",
       "memo": "wage tax: household 7 -> government",
-      "balanceAfter": 11428.42,
-      "debtAfter": 77954.94
+      "balanceAfter": 11426.23,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4903,12 +4885,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 1.94,
+      "amount": 1.93,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 7 -> government",
-      "balanceAfter": 11430.36,
-      "debtAfter": 77954.94
+      "balanceAfter": 11428.16,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4921,12 +4903,12 @@
       "to": {
         "kind": "government"
       },
-      "amount": 3064.96,
+      "amount": 3075.64,
       "kind": "tax",
       "detail": "capital tax",
       "memo": "capital tax: household 8 -> government",
-      "balanceAfter": 14495.32,
-      "debtAfter": 77954.94
+      "balanceAfter": 14503.8,
+      "debtAfter": 77995.91
     },
     {
       "turn": 3,
@@ -4939,12 +4921,12 @@
         "kind": "external",
         "label": "bank credit destruction"
       },
-      "amount": 235.53,
+      "amount": 236.38,
       "kind": "loan_repay",
       "detail": "loan repayment",
       "memo": "loan repayment: government -> bank credit destruction",
-      "balanceAfter": 14259.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 14267.42,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -4961,8 +4943,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 1",
-      "balanceAfter": 13459.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 13467.42,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -4979,8 +4961,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 4",
-      "balanceAfter": 11859.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 11867.42,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -4997,8 +4979,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 6",
-      "balanceAfter": 11059.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 11067.42,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5015,8 +4997,8 @@
       "kind": "benefit",
       "detail": "benefit",
       "memo": "benefit: government -> household 7",
-      "balanceAfter": 10259.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 10267.42,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5033,8 +5015,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 2",
-      "balanceAfter": 10234.33,
-      "debtAfter": 77719.41
+      "balanceAfter": 10241.96,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5051,8 +5033,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 3",
-      "balanceAfter": 10208.87,
-      "debtAfter": 77719.41
+      "balanceAfter": 10216.5,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5069,8 +5051,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 4",
-      "balanceAfter": 10183.42,
-      "debtAfter": 77719.41
+      "balanceAfter": 10191.05,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5087,8 +5069,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 5",
-      "balanceAfter": 10157.97,
-      "debtAfter": 77719.41
+      "balanceAfter": 10165.6,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5105,8 +5087,8 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 6",
-      "balanceAfter": 10132.52,
-      "debtAfter": 77719.41
+      "balanceAfter": 10140.15,
+      "debtAfter": 77759.53
     },
     {
       "turn": 3,
@@ -5123,13 +5105,13 @@
       "kind": "upkeep",
       "detail": "upkeep",
       "memo": "upkeep: government -> household 7",
-      "balanceAfter": 10119.79,
-      "debtAfter": 77719.41
+      "balanceAfter": 10127.42,
+      "debtAfter": 77759.53
     }
   ],
   "summary": [],
-  "closingBalance": 10119.79,
-  "closingDebt": 77719.41,
+  "closingBalance": 10127.42,
+  "closingDebt": 77759.53,
   "reconciles": true,
   "detailFromTurn": 1
 }

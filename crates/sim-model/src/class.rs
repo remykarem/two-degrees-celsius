@@ -160,9 +160,11 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                 .find(|t| s.map.kind_at(*t) == Some(TileKind::Empty))
         }
     };
+    // The draw is always taken (like the estate's), so whether a firm could be founded this month
+    // never shifts the shared stream for the draws that follow.
+    let roll = r.next_f64();
     if let (Some(src), Some((slot, ret))) = (source, slot) {
         let prob = (cp.mobility_rate * (ret - base_rate).max(0.0)).clamp(0.0, 1.0);
-        let roll = r.next_f64();
         let startup = Cents::from_dollars(cp.startup_cost_usd);
         if let (true, Some(tile)) = (roll < prob, site(slot)) {
             // Fund the firm: part cash, part construction of its first capital.

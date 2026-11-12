@@ -211,7 +211,7 @@ fn old_saves_and_corrupt_ledgers_are_refused() {
     play(&mut a, 3);
     let blob = a.export_state().unwrap();
     let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
-    assert_eq!(v["schemaVersion"], 7);
+    assert_eq!(v["schemaVersion"], sim_api::SCHEMA_VERSION);
     // A schema 3 save (no ledger).
     let mut old = v.clone();
     old["schemaVersion"] = 3.into();
@@ -590,7 +590,7 @@ fn history_points_carry_the_new_fields_and_energy_is_labelled() {
     assert_eq!(s.energy.supply.len(), s.plants.len());
     let d = &s.energy.demand;
     assert!((d.firms + d.households - d.total).abs() < 1e-9);
-    assert_eq!(s.schema_version, 7);
+    assert_eq!(s.schema_version, sim_api::SCHEMA_VERSION);
 }
 
 /// V7-6: the estate's wealth tax owed is on the wire (`estate.finance.wealthTaxOwed`), so the web
