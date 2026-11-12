@@ -42,7 +42,10 @@ fn every_ts_type_is_listed_and_every_name_resolves() {
     let out = sim_api::contract_ts::generate();
     let defined: BTreeSet<&str> = out
         .lines()
-        .filter_map(|l| l.strip_prefix("export type "))
+        .filter_map(|l| {
+            l.strip_prefix("export type ")
+                .or_else(|| l.strip_prefix("export const "))
+        })
         .filter_map(|l| l.split([' ', '<']).next())
         .collect();
     let builtin = [

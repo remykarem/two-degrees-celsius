@@ -1,4 +1,5 @@
 import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, MarketTrades, TradesQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
+import { CONTRACT_VERSION, SCHEMA_VERSION } from '../../contract/generated';
 import type { SimPort } from '../port';
 
 /**
@@ -39,6 +40,9 @@ export interface WasmModuleLike {
   install_panic_hook(): void;
   last_panic(): string;
 }
+
+/** Calls the current UI needs from the package; a package without one is older than this contract. */
+const REQUIRED_EXPORTS = ['ledger', 'person_ledger', 'market_trades', 'assumptions', 'agents', 'catalog', 'begin_turn', 'advance_month', 'finish_turn', 'valid_tiles'];
 
 const fail = (code: string, message: string) => ({ ok: false as const, error: { code, message } });
 
@@ -116,11 +120,15 @@ export async function loadWasmPort(): Promise<SimPort> {
   const mod = await load();
   await mod.default({ module_or_path: await wasmUrl() });
   const port = createWasmPort(mod);
-  // A package built before contract v1.4 (schemaVersion 4: ledger in the saved blob, new `energy` and `finance` shapes) must not drive this UI: refuse, and the caller falls back to the mock.
+  // A package built for another contract must not drive this UI: refuse, and the caller falls back to the recorded demo.
+  const missing = REQUIRED_EXPORTS.filter((name) => typeof (mod.WasmSim.prototype as unknown as Record<string, unknown>)[name] !== 'function');
+  if (missing.length > 0) {
+    throw new Error(`the wasm package lacks ${missing.join(', ')} (it was built before contract v${CONTRACT_VERSION}); rebuild it with npm run build:wasm`);
+  }
   const probe = port.init(1);
   const e = probe.ok ? (probe.value.energy as unknown as { supply?: unknown } | undefined) : undefined;
-  if (!probe.ok || probe.value.schemaVersion !== 7 || !probe.value.breakdowns || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
-    throw new Error('the wasm package does not match contract v2.3 (expected schemaVersion 7, with breakdowns, policies, industry and markets); rebuild it with npm run build:wasm');
+  if (!probe.ok || probe.value.schemaVersion !== SCHEMA_VERSION || !probe.value.breakdowns || !probe.value.map || !Array.isArray(e?.supply) || !probe.value.finance) {
+    throw new Error(`the wasm package does not match contract v${CONTRACT_VERSION} (expected schemaVersion ${SCHEMA_VERSION}, with breakdowns, policies, industry and markets); rebuild it with npm run build:wasm`);
   }
   return port;
 }

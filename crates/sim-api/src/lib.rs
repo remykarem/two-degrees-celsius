@@ -61,3 +61,7 @@ pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 /// Markets view (contract v2.3, `docs/snapshot-contract.md` section 23) added price series to
 /// `HistoryPoint` and market records to the saved wrapper log: 7.
 pub const SCHEMA_VERSION: u32 = 7;
+
+/// Version of the contract text in `docs/snapshot-contract.md` (the newest section). Emitted into
+/// the generated TS so the web compares against it, not a hard-coded copy.
+pub const CONTRACT_VERSION: &str = "2.4";

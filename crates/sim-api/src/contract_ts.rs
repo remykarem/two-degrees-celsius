@@ -440,6 +440,11 @@ pub fn generate() -> String {
         .collect();
     v.sort();
     let mut out = String::from(HEADER);
+    out.push_str(&format!(
+        "export const SCHEMA_VERSION = {};\n\nexport const CONTRACT_VERSION = \"{}\";\n\n",
+        crate::SCHEMA_VERSION,
+        crate::CONTRACT_VERSION
+    ));
     for d in v {
         out.push_str(&d);
         out.push_str("\n\n");
