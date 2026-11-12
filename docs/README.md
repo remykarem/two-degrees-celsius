@@ -28,6 +28,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/features/market-trades.md` | APPROVED, IMPLEMENTED (the list of individual trades behind each market, "See all trades"; contract v2.4, `docs/snapshot-contract.md` section 24, recipe `docs/how-to.md` section 25) | Planning market or ledger drill-downs |
 | `docs/features/inflation.md` | DRAFT for review (measure inflation: CPI from household spending, real wages, and an exact cost pass-through decomposition; output only; contract v2.5 proposed) | Planning inflation, price indices or real wages |
 | `docs/features/farm-from-nature.md` | DRAFT for review (food physically drawn from the commons: Schaefer-style stock cap, a sustainable-yield view of overconsumption and the tragedy of the commons; contract v2.6 proposed; not implemented) | Planning nature limits on food, the commons or overconsumption |
+| `docs/features/firm-agency.md` | DRAFT for review (let the player act as firms: inventory of today's firm decisions, gap analysis against real firms, options A directives, B play one firm, C role switch) | Planning firm actions, firm-side play or firm lobbying |
 | `docs/features/registry-driven-sim.md` | PARKED (idea: the simulation reads `content/entities.json`, not only Rust enums) | Planning the sim/registry link |
 | **Naming convention** | From now on new work is a named **feature**, not a version: `docs/features/<name>.md`. The old `town-vN.md` files stay as history | Starting new work |
 | How to make a change | `docs/how-to.md` |
