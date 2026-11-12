@@ -135,8 +135,8 @@ The UI must never compute economy numbers, and there is no second implementation
 
 | Version | Where | Value | Meaning |
 |---|---|---|---|
-| `SCHEMA_VERSION` (state) | `sim-types/src/lib.rs` | 4 | Layout of `State`. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) was 3, Town v7 (the estate, `Person.staff_of`, two tile kinds) is 4 |
-| `SCHEMA_VERSION` (wire) | `sim-api/src/lib.rs` (sent as `Snapshot.schemaVersion`, written in the save blob) | 5 | Layout of the wire and of the saved wrapper blob. Town v5 (ledger in the blob, finance and energy on the snapshot) was 4; Town v5.2 (wrapper log in the blob: per-tick emissions and legitimacy records, policy history) is 5; before v5 it was the same number as the state's |
+| `SCHEMA_VERSION` (state) | `sim-types/src/lib.rs` | 5 | Layout of `State`. Town v1 was 1, Town v2 and v3 were 2, Town v4 (weather in `State`) was 3, Town v7 (the estate, `Person.staff_of`, two tile kinds) was 4, the weather's own random stream (`Weather.rng`) is 5 |
+| `SCHEMA_VERSION` (wire) | `sim-api/src/lib.rs` (sent as `Snapshot.schemaVersion`, written in the save blob) | 8 | Layout of the wire and of the saved wrapper blob (6 and 7: contract v2.0 and v2.3; 8: the state schema 5 change). Town v5 (ledger in the blob, finance and energy on the snapshot) was 4; Town v5.2 (wrapper log in the blob: per-tick emissions and legitimacy records, policy history) is 5; before v5 it was the same number as the state's |
 | Sim blob | `Api::export_state` | `{ schemaVersion, paramsHash, rngState, rngInc, initialPopulation, clampedTotal, state, history, ledger, log }` | Import refuses other versions (`schema_mismatch`), a different params hash (`params_mismatch`), and malformed structure or failed invariants (`bad_state`). A failed import leaves the game untouched |
 | `SAVE_VERSION` | `web/src/store/save.ts` | 2 | The browser save file (`format: "ecotown-save"`) around the sim blob. `parseSave` returns plain-language errors |
 

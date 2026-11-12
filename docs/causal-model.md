@@ -365,7 +365,7 @@ Approved design: `docs/town-v2.md`. Where this section conflicts with earlier te
 
 ## 11. Town v4 amendment: S11 weather (fires and drought)
 
-Approved design: `docs/town-v4.md`. A new pure system **S11 weather** runs each tick **before nature (S7) and production (S2)**. It returns deltas, draws from the sim RNG (so seeds finally differ), and its parameters live under `weather` in `content/params.json`.
+Approved design: `docs/town-v4.md`. A new pure system **S11 weather** runs each tick **before nature (S7) and production (S2)**. It returns deltas, draws from its OWN random stream (state schema 5: `State.weather.rng`, a PCG32 stream seeded from the run seed with the fixed stream id `WEATHER_STREAM`; before that it shared the one stream with class, estate and enclosure draws), so seeds differ and nothing the player does can shift when droughts and fires strike (only the stress, which the player does influence through emissions, changes the odds). Its parameters live under `weather` in `content/params.json`.
 
 - **Climate stress:** `s = clamp((onset - r) / (onset - full), 0, 1) ^ curve`, with `r` = carbon budget remaining as a share of `budget_b0`. Placeholders `onset 0.50`, `full 0.10`, `curve 1.5`. No hazards at `s = 0`.
 - **Drought:** monthly ignition `p = base x (1 + b x s)`; severity `d` in 0..1 and duration `D` months drawn from ranges widening with `s`. While active: commons regrowth `x (1 - a_c x d x (1 - community_buffer))` where `community_buffer` applies to a community-managed commons; farm productivity `x (1 - a_f x d)`; electricity demand `x (1 + a_e x d)`; wildfire dryness `+ d`. Food price rises through the existing price rule (lower farm output).

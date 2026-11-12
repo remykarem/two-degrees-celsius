@@ -233,7 +233,7 @@ The sim owns the map; the scene only renders what the wire says.
 2. Wealth figures: home $1.2M, jet $0.8M, savings $20k (default), or smaller (net worth about $1M) so Gini rises less?
 3. If the Farm closes: accept `Dependent` (default) or add `class.asset_wealth_threshold_usd`?
 4. Should the jet cost anything besides the carbon price (default: no)?
-5. Shared RNG stream (default) or a dedicated estate stream to keep old weather sequences?
+5. Shared RNG stream (default) or a dedicated estate stream to keep old weather sequences? **RESOLVED later (independent review F3): the estate stays on the shared stream and WEATHER got its own stream** (state schema 5, `State.weather.rng`), which fixes the underlying problem from the other side: fire and drought timing no longer depends on whether the jet, a startup or a commons enclosure drew. The class, estate and enclosure draws are now taken every month whether or not they count.
 6. Should the estate's 0.5 t a month replace the per-person 0.12 (default) or be added to it?
 7. Wealth tax shortfall: silently capped like today (default) or shown in the Policies tab as "unpaid"?
 8. Road to the town: 7 new tiles at the road upkeep of $10 each (default), or fewer by moving the estate closer?

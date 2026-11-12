@@ -555,3 +555,10 @@ Review finding F8 (thin renderer). The state hash is unchanged.
 - Catalog `text.rules.budget_spent`, `text.rules.budget_hint`, `text.rules.start_pitch` (`{years}`, `{limit}`).
 - The web reads the budget total from `breakdowns.emissions.cumulative.budget` instead of dividing `remainingBudget` by `budgetShare`.
 - `CONTRACT_VERSION` ("2.4.1"; the draft `docs/features/inflation.md` keeps v2.5 for itself) and `SCHEMA_VERSION` are emitted into the generated `web/src/contract/generated.ts`; the wasm loader compares against them (F7).
+
+## 26. SCHEMA_VERSION 8: the weather has its own random stream (review finding F3; no wire shape change except one field)
+
+- `State.weather.rng` (`sim_types::RngStream {state, inc}`), state schema 4 to 5; wire `SCHEMA_VERSION` 7 to 8. Saves from before are refused with `schema_mismatch` ("start a new game"). The recorded demo, fixtures, wasm golden and the insta snapshot were re-blessed on purpose: THE STATE HASH CHANGED.
+- Seeding: `Rng::new(run seed, WEATHER_STREAM)` at the end of the warm-up (`sim_engine::init`, `reset_clock`); `WEATHER_STREAM = 0x57454154`. The shared stream is stream 54.
+- `AgentsCatalog.randomness[].stream`: `"weather"` or `"shared"` (shown in the Explorer's randomness table).
+- Import bound: the 64-bit words of an `rng` object inside the saved state are exempt from the integer bound (`persist::MAX_SAVED_INTEGER`).

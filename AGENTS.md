@@ -76,7 +76,7 @@ Enforced by ESLint (`web/eslint.config.js`, `no-restricted-imports` plus a local
 Rust (repo root):
 
 ```
-cargo test --workspace                          # all simulation, wire and golden tests
+cargo test --workspace                          # all simulation, wire and golden tests (238 tests at last count)
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p sim-cli -- --seed 42 --turns 40    # headless run; --plan <json>, --csv <file>, --set a.b=v, --quiet
@@ -88,7 +88,7 @@ Web (in `web/`; needs Node 22+ and `npm install` once):
 
 ```
 npm run dev                # http://localhost:5173 ; wasm when built, else the recorded demo; ?sim=replay forces the demo, ?seed=42
-npm test                   # vitest (43 files, 468 tests plus 12 skipped at last count with the wasm package built; without it the files that need the real sim are left out and the run says so)
+npm test                   # vitest (45 files, 486 tests plus 12 skipped at last count with the wasm package built; without it the files that need the real sim are left out and the run says so)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)

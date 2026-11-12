@@ -259,3 +259,18 @@ Measured with `tune_probe` (A exhaustion turn, B survived, B budget left, B legi
 | `estate.flight_prob_monthly` 0.4 to 0.2 | 25.0 | 20 of 20 | 15% | 0.24 |
 
 So: the budget race is a `budget_b0` or flight-chance choice (1,050 puts A back at about turn 28 and B at 23% left); legitimacy is a `legit_gini` choice. Nothing is unwinnable, so nothing was changed (AGENTS.md: do not tune to hit a number). Logged in `docs/balance-backlog.md` "Town v7" and `docs/known-issues.md` V7-1 to V7-4.
+
+## Independent review F3: the weather's own random stream
+
+Request: give weather its own stream (state schema 5), so player actions that change whether the class, estate or enclosure draw cannot shift fire and drought timing; take those other draws every month. The state hash changed on purpose (fixtures, golden, recording and the insta snapshot re-blessed). Harness: `cargo run --release -p sim-cli --example baselines` (A to F, seeds 1 to 20). No content was retuned.
+
+| Script | Before (survived; budget run-out turn median; budget left median) | After |
+|---|---|---|
+| A none | 0 of 20 (budget); 24.33; -0.57 | 0 of 20 (budget); 24.00; -0.58 |
+| B sensible | 20 of 20; no run-out; 0.10 | 20 of 20; no run-out; 0.10 |
+| C neglect | 0 of 20 (budget); 22.33; -0.62 | 0 of 20 (budget); 22.33; -0.68 |
+| D carbon tax | 0 of 20 (budget); 24.67; -0.52 | 0 of 20 (budget); 24.67; -0.52 |
+| E adaptation | 0 of 20 (budget); 24.00; -0.58 | 0 of 20 (budget); 24.00; -0.58 |
+| F renewables | 20 of 20; no run-out; 0.09 | 20 of 20; no run-out; 0.09 |
+
+Result: stability and winnability are unchanged within seed noise (win rates identical, run-out turns within one third of a turn). F still survives in every seed (known-issues WN-1, unchanged).
