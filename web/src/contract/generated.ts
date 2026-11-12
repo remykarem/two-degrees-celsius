@@ -333,6 +333,8 @@ export type GameOutcome = PlainOutcome | { collapse: CollapseReason, };
 
 export type GameOver = { turn: number, outcome: GameOutcome, };
 
+export type GapKind = "none" | "short" | "glut" | "both";
+
 export type GiniBreakdown = { lorenz: Array<LorenzPoint>, byHousehold: Array<HouseholdWealth>, 
 /**
  * Contract v2.2: the town's net worth by holder, reconciled to the headline.
@@ -642,7 +644,7 @@ demandText: string, supplyText: string, tradedText: string,
 /**
  * The gaps in words, for example `30 units went without`; one line saying there is none otherwise.
  */
-gapWords: Array<string>, 
+gapWords: Array<string>, gapKind: GapKind, 
 /**
  * One plain-English sentence on this month, built from the figures.
  */

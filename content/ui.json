@@ -303,6 +303,7 @@
       "gap_title": "The gap",
       "short_title": "Who is short",
       "none_short": "Nobody is short.",
+      "see_markets": "See the Markets view: who is short, and why prices follow costs here.",
       "how_label": "how?",
       "series_title": "Over the turns",
       "no_series": "A trend appears after the first full turn.",

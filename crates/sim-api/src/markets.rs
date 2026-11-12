@@ -73,6 +73,21 @@ pub enum AmountKind {
 }
 
 /// How a price is written: dollars, an annual rate, or no price.
+/// Which gaps a market has this month.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GapKind {
+    /// Wanted and available match.
+    None,
+    /// Something wanted went without.
+    Short,
+    /// Something available stayed unsold.
+    Glut,
+    /// Both at once (different sellers or buyers).
+    Both,
+}
+
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -323,6 +338,7 @@ pub struct MarketView {
     pub traded_text: String,
     /// The gaps in words, for example `30 units went without`; one line saying there is none otherwise.
     pub gap_words: Vec<String>,
+    pub gap_kind: GapKind,
     /// One plain-English sentence on this month, built from the figures.
     pub verdict: String,
     pub price_kind: PriceKind,
@@ -896,6 +912,12 @@ fn view(
         supply_text: amount(raw.supply, kind),
         traded_text: amount(raw.traded, kind),
         gap_words,
+        gap_kind: match (short, glut) {
+            (true, true) => GapKind::Both,
+            (true, false) => GapKind::Short,
+            (false, true) => GapKind::Glut,
+            (false, false) => GapKind::None,
+        },
         verdict,
         price_kind: def.price_kind,
         price_label: def.price_label.clone(),

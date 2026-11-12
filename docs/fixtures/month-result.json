@@ -4906,6 +4906,7 @@
         "gapWords": [
           "1,116 units unsold"
         ],
+        "gapKind": "glut",
         "verdict": "Shoppers wanted 531 units and the shops had 1,647: 1,116 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
         "priceKind": "money",
         "priceLabel": "Price",
@@ -4965,6 +4966,7 @@
         "gapWords": [
           "75.7 units unsold"
         ],
+        "gapKind": "glut",
         "verdict": "Shoppers wanted 111 units and the shops had 187: 75.7 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
         "priceKind": "money",
         "priceLabel": "Price",
@@ -5024,6 +5026,7 @@
         "gapWords": [
           "20.7 units unsold"
         ],
+        "gapKind": "glut",
         "verdict": "Shoppers wanted 94 units and the shops had 115: 20.7 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
         "priceKind": "money",
         "priceLabel": "Price",
@@ -5084,6 +5087,7 @@
         "gapWords": [
           "People without a firm job: 2"
         ],
+        "gapKind": "glut",
         "verdict": "Firms offered 8 jobs and 10 people could work: 2 people without a firm job.",
         "priceKind": "money",
         "priceLabel": "Average wage",
@@ -5145,6 +5149,7 @@
         "gapWords": [
           "Households without a home: 1"
         ],
+        "gapKind": "short",
         "verdict": "9 households needed a home and the town has 8: 1 home short, so some households have no home.",
         "priceKind": "money",
         "priceLabel": "Private rent",
@@ -5210,6 +5215,7 @@
         "gapWords": [
           "Bank room unused: $89,850"
         ],
+        "gapKind": "glut",
         "verdict": "Firms asked for $0 and the bank had $89,850 of room: $89,850 of its room went unused.",
         "priceKind": "rate",
         "priceLabel": "Average loan rate",
@@ -5259,6 +5265,7 @@
         "gapWords": [
           "2.8 MWh of capacity idle"
         ],
+        "gapKind": "glut",
         "verdict": "Firms and homes wanted 7.2 MWh and the plants could supply 10: 2.8 MWh of capacity sat idle.",
         "priceKind": "none",
         "priceLabel": "Price",

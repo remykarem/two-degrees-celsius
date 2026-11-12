@@ -393,6 +393,7 @@ pub fn decls() -> Vec<(&'static str, String)> {
             <crate::networth::TownNetWorth as TS>::decl(&cfg),
         ),
         ("markets", <crate::markets::AmountKind as TS>::decl(&cfg)),
+        ("markets", <crate::markets::GapKind as TS>::decl(&cfg)),
         ("markets", <crate::markets::PriceKind as TS>::decl(&cfg)),
         ("markets", <crate::markets::Verdict as TS>::decl(&cfg)),
         ("markets", <crate::markets::ShortText as TS>::decl(&cfg)),
