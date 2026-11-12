@@ -194,3 +194,16 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 | MK-5 | A card is one month (the latest tick). The sparkline is one point per finished turn (plus the open month in live mode). No unmet or unsold series is kept | open | `crates/sim-api/src/history.rs` |
 | MK-6 | The Markets view is read-only: nothing on a card changes the simulation. There is no centrally planned system, so shortages and queues under planning are not shown (a later feature) | by design | `docs/features/markets.md` pedagogy section |
 | MK-7 | Playwright checks (`web/playwright/markets-shots.mjs`) were run at 1440 wide on the real sim and the recorded demo; no mobile or narrow layout was checked, and the panel is narrow (about 290 px), so cards are tall | info | `web/playwright/markets-shots.mjs` |
+
+## Market trades (contract v2.4)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| TR-1 | The recorded demo has no trade lists (the replay port refuses, like the ledger); the button says so. Real sim only | by design | `web/src/sim-port/replay/index.ts` |
+| TR-2 | A firm can buy its own output (for example the Factory buying machines from itself). The units are in the card's "bought" and shown as rows marked "no money moves", so the list's money can exceed what the ledger moved by exactly those rows | by design | `crates/sim-api/tests/market_trades.rs` |
+| TR-3 | Goods units per buyer are the shop's sold units times the buyer's share of its revenue (so they add up to the card), not an independent count; amount and units times price can differ by a cent or so | by design | `crates/sim-model/src/goods.rs` |
+| TR-4 | Older turns are summed per turn (count = months seen), so their month and per-month price are gone; wages and rents are shown per month worked and a unit price is total money over total units | by design | `crates/sim-api/src/trades.rs` |
+| TR-5 | A save from before this feature loads with an empty trade list that starts at the load point; `reconciles` is only evaluated for the latest month | by design | `crates/sim-api/tests/market_trades.rs` |
+| TR-6 | Energy has no list: the model keeps one town-wide supply and demand | by design | `content/ui.json` |
+| TR-7 | Every reply repeats the column help and intro text (about 5 KB of 5 to 8 KB); not worth a separate catalog call yet | open | `crates/sim-api/src/trades.rs` |
+| TR-8 | Checked in a browser at 1440 wide only, on seed 7 (real sim) and the recorded demo; no narrow layout, no screen reader | info | `web/playwright/trades-shots.mjs` |

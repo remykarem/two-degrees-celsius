@@ -11,7 +11,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | The rules of each system and sign tests | `docs/causal-model.md` section 10 (Town v2), then sections 7 and 8 (turn layer, demand side); sections 0-3 are cohort-era |
 | What the code deliberately does differently from the design | `docs/deviations.md`, the "Town v2" table (T1-T23) |
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
-| The wire (JSON shapes) | `crates/sim-api` (Rust types) and the TS generated from them, `web/src/contract/generated.ts` (do not edit; `index.ts` holds aliases), then `docs/snapshot-contract.md` section 23 (v2.3, the Markets view), section 22 (v2.2, the net worth statement), section 21 (v2.1, the entity registry), section 20 (v2.0, sources as lists), then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
+| The wire (JSON shapes) | `crates/sim-api` (Rust types) and the TS generated from them, `web/src/contract/generated.ts` (do not edit; `index.ts` holds aliases), then `docs/snapshot-contract.md` section 24 (v2.4, trade lists) and section 23 (v2.3, the Markets view), section 22 (v2.2, the net worth statement), section 21 (v2.1, the entity registry), section 20 (v2.0, sources as lists), then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
 | Where UI text, thresholds and bands live | `docs/town-v6.md`, `content/ui.json`, `docs/how-to.md` section 17 |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
 | How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
@@ -25,6 +25,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST/VAT and state ownership; was v7, then v8). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
 | `docs/features/markets.md` | APPROVED, scope A IMPLEMENTED (Markets view: supply, demand, price and who is short per market, information only; contract v2.3, `docs/snapshot-contract.md` section 23, recipe `docs/how-to.md` section 24). Scope B, demand-responsive goods prices, not approved | Planning the Markets tab or price rules |
+| `docs/features/market-trades.md` | APPROVED, IMPLEMENTED (the list of individual trades behind each market, "See all trades"; contract v2.4, `docs/snapshot-contract.md` section 24, recipe `docs/how-to.md` section 25) | Planning market or ledger drill-downs |
 | `docs/features/registry-driven-sim.md` | PARKED (idea: the simulation reads `content/entities.json`, not only Rust enums) | Planning the sim/registry link |
 | **Naming convention** | From now on new work is a named **feature**, not a version: `docs/features/<name>.md`. The old `town-vN.md` files stay as history | Starting new work |
 | How to make a change | `docs/how-to.md` |
@@ -63,6 +64,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST and state ownership; was v7, then v8) | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
 | `docs/features/markets.md` | APPROVED scope A, IMPLEMENTED (Markets view; contract v2.3) | Planning the Markets tab or price rules |
+| `docs/features/market-trades.md` | APPROVED, IMPLEMENTED (trade lists behind each market; contract v2.4) | Planning market or ledger drill-downs |
 | `docs/taxonomy.md` | APPROVED (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Phases 1 and 2 of the platform cleanup are implemented (section 12 has the status per step) | Planning shared abstractions, the entity registry, or vocabulary renames |
 | `docs/web-notes-v7.md` | CURRENT (Town v7 web notes: Panels and Scene sections) | Working on the estate in `web/src` |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |
