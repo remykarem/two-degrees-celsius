@@ -2,11 +2,13 @@
   import type { Snapshot } from '../contract';
   import type { Game } from '../store';
   import { estateCard } from './estate';
+  import NetWorthStatement from './NetWorthStatement.svelte';
+  import { statementModel } from './networth';
 
   let { game, snap, compact = false }: { game: Game; snap: Snapshot; compact?: boolean } = $props();
   const c = $derived(estateCard(snap));
-  const maxPart = $derived(Math.max(1, ...(c?.wealthParts ?? []).map((p) => Math.abs(p.value))));
   const hid = $derived(snap.estate?.household ?? null);
+  const st = $derived(hid !== null ? statementModel(snap, hid) : null);
 </script>
 
 {#if c}
@@ -16,11 +18,7 @@
     <p class="nw">Net worth <b>{c.netWorth}</b>
       {#if hid !== null}<button type="button" class="lnk" onclick={() => game.select({ kind: 'household', id: hid })}>show on the map</button>{/if}</p>
 
-    {#if !compact && c.wealthParts.length}
-      <h4>What it owns</h4>
-      <ul class="bars">{#each c.wealthParts as p (p.label)}
-        <li><span>{p.label}</span><span class="track" aria-hidden="true"><span class="bar" class:neg={p.value < 0} style:width="{(Math.abs(p.value) / maxPart) * 100}%"></span></span><span class="v">{p.text}</span></li>{/each}</ul>
-    {/if}
+    {#if !compact && st}<NetWorthStatement model={st} />{/if}
 
     <h4>Income, per month ({c.incomeTotal})</h4>
     <ul class="bars">{#each c.income as p (p.label)}<li class="i"><span>{p.label}</span><span class="v">{p.text}</span></li>{:else}<li class="i dim">none</li>{/each}</ul>
@@ -55,7 +53,6 @@
   dl { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; margin: 0; font-size: 12px; } dt { color: var(--text-dim); } dd { margin: 0; text-align: right; font-family: var(--font-mono); }
   .bars { list-style: none; margin: 0; padding: 0; font-size: 12px; display: grid; gap: 2px; }
   .bars li { display: grid; grid-template-columns: 110px 1fr 64px; gap: 6px; align-items: center; } .bars li.i { grid-template-columns: 1fr auto; }
-  .track { height: 8px; background: var(--surface); border-radius: 2px; overflow: hidden; display: block; } .bar { display: block; height: 100%; background: var(--series-2); } .bar.neg { background: var(--bad); }
   .v { text-align: right; font-family: var(--font-mono); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; } thead th { font-size: 10px; text-transform: uppercase; color: var(--text-dim); } th[scope='row'] { text-align: left; font-weight: 400; } .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
   .lnk { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0; font: inherit; font-size: 11px; margin-left: 6px; }

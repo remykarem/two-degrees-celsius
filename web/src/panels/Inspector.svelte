@@ -8,6 +8,7 @@
   import { selectionAccount } from './ledger';
   import LedgerPreview from './LedgerPreview.svelte';
   import PersonEarnings from './PersonEarnings.svelte';
+  import NetWorthStatement from './NetWorthStatement.svelte';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -55,6 +56,8 @@
         <dl>{#each sec.rows as r (r.label)}<dt title={r.hint}>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>
       </section>
     {/each}
+
+    {#if model.statement}<NetWorthStatement model={model.statement} />{/if}
 
     {#if model.household}
       <p class="link"><button class="lnk" onclick={() => open(model.household!.selection)}>{model.household.label} ({model.household.detail})</button></p>

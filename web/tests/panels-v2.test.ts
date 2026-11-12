@@ -51,7 +51,8 @@ describe('household and person lists', () => {
     const un = snap.households.find((h) => h.home === null)!;
     const hm = resolveSelection(snap, layout, { kind: 'household', id: un.id }, [])!;
     expect(JSON.stringify(hm)).toMatch(/UNHOUSED/);
-    expect(hm.sections.map((s) => s.heading)).toEqual(expect.arrayContaining(['Home', 'Wealth', 'Money (per month)']));
+    expect(hm.sections.map((s) => s.heading)).toEqual(expect.arrayContaining(['Home', 'Money (per month)']));
+    expect(hm.statement?.groups.length).toBe(2); // Town v8: the Wealth rows became the net worth statement
     expect(hm.members!.length).toBe(un.members.length);
     const pm = resolveSelection(snap, layout, { kind: 'person', id: snap.people[0]!.id }, [])!;
     expect(pm.household?.selection).toEqual({ kind: 'household', id: snap.people[0]!.household });

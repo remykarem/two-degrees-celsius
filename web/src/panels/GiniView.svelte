@@ -3,6 +3,9 @@
   import { lorenzPath } from './lorenz';
   import BreakdownTable from './BreakdownTable.svelte';
   import { giniRows, topHouseholdLine } from './estate';
+  import NetWorthStatement from './NetWorthStatement.svelte';
+  import WhoHoldsWhat from './WhoHoldsWhat.svelte';
+  import { statementModel } from './networth';
 
   let { snap }: { snap: Snapshot } = $props();
   const g = $derived(snap.breakdowns?.gini ?? null);
@@ -32,10 +35,12 @@
       <caption>Wealth by household, richest first (net worth = savings + property - debt)</caption>
       <thead><tr><th scope="col">Household</th><th scope="col" class="n">People</th><th scope="col" class="n">Net worth</th><th scope="col" class="n">Per person</th><th scope="col" class="n">Share of the town's wealth</th></tr></thead>
       <tbody>{#each rows as h (h.household)}
-        <tr class:estate={!!h.tag}><th scope="row">{h.label}{#if h.tag && h.tag !== h.label} <span class="chip">{h.tag}</span>{/if}{#if h.band} <span class="band">{h.band}</span>{/if}
-          {#if h.parts}<span class="parts">{h.parts}</span>{/if}</th>
-          <td class="n">{h.people}</td><td class="n">{h.netWorth}</td><td class="n">{h.perPerson}</td><td class="n">{h.shareText}</td></tr>{/each}</tbody>
+        <tr class:estate={!!h.tag}><th scope="row">{h.label}{#if h.tag && h.tag !== h.label} <span class="chip">{h.tag}</span>{/if}{#if h.band} <span class="band">{h.band}</span>{/if}</th>
+          <td class="n">{h.people}</td><td class="n">{h.netWorth}</td><td class="n">{h.perPerson}</td><td class="n">{h.shareText}</td></tr>
+        {@const st = statementModel(snap, h.household)}
+        {#if st}<tr class="st"><td colspan="5"><details data-testid="gini-statement-{h.household}"><summary>Net worth statement: {st.groups[0]!.rows.length} assets, {st.groups[1]!.rows.length} liabilities, {st.reconciles ? 'reconciles' : 'does not reconcile'}</summary><NetWorthStatement model={st} compact /></details></td></tr>{/if}{/each}</tbody>
     </table>
+    <WhoHoldsWhat {snap} />
   </div>
 {/if}
 
@@ -47,6 +52,7 @@
   .top { margin: 0; font-weight: 600; font-size: 13px; }
   .chip { font-size: 10px; font-weight: 700; background: var(--series-2); color: var(--accent-text); border-radius: 8px; padding: 0 6px; }
   .band { font-size: 10px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 0 5px; }
-  .parts { display: block; font-size: 10.5px; color: var(--text-dim); } tr.estate { background: var(--surface-2); } tr.estate th { font-weight: 700; }
+  tr.estate { background: var(--surface-2); } tr.estate th { font-weight: 700; }
+  tr.st { border-top: 0; } summary { font-size: 11px; color: var(--text-dim); cursor: pointer; }
   .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
 </style>

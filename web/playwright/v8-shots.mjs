@@ -1,0 +1,51 @@
+// Usage: node playwright/v8-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. Town v8: the net worth statement (inspector for the estate owner, the pilot,
+// a worker household and a firm owner), the Society tab ("Who holds what", estate card) and the Gini modal. Pass `?sim=replay` for the recorded demo.
+import { chromium } from '@playwright/test';
+import { mkdirSync } from 'node:fs';
+
+const out = process.argv[2];
+const url = process.argv[3] ?? 'http://localhost:5190/?sim=wasm&seed=7';
+mkdirSync(out, { recursive: true });
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const errors = [];
+const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+page.on('pageerror', (e) => errors.push(String(e)));
+await page.goto(url);
+await page.evaluate(() => localStorage.setItem('panels.coach.done', '1'));
+await page.reload();
+await page.waitForSelector('canvas');
+await page.waitForTimeout(1500);
+await page.getByRole('button', { name: 'Start game' }).click({ timeout: 1500 }).catch(() => {});
+await page.waitForTimeout(500);
+console.log('sim:', await page.evaluate(() => document.documentElement.dataset.sim));
+const shot = (n) => page.screenshot({ path: `${out}/${n}.png` });
+const info = await page.evaluate(() => {
+  const s = window.__game.state.get().snapshot;
+  const g = s.breakdowns.gini.byHousehold;
+  const pilot = s.estate.pilot.person;
+  const firm = g.find((w) => w.holder === 'firm_owners');
+  const worker = s.households.find((h) => h.class === 'worker');
+  const person = (hh) => s.people.find((p) => p.household === hh).id;
+  return { estate: s.estate.household, estatePerson: s.people.find((p) => p.household === s.estate.household && !p.employer).id, pilot, firm: firm.household, firmPerson: person(firm.household), worker: worker.id, workerPerson: person(worker.id) };
+});
+console.log(info);
+await page.getByRole('tab', { name: 'Society' }).click();
+await page.waitForTimeout(300);
+await shot('1-society');
+const sel = async (n, s) => { await page.evaluate((x) => window.__game.select(x), s); await page.waitForTimeout(300); await shot(n); };
+await sel('2-inspector-estate-household', { kind: 'household', id: info.estate });
+await sel('3-inspector-estate-person', { kind: 'person', id: info.estatePerson });
+await sel('4-inspector-pilot', { kind: 'person', id: info.pilot });
+await sel('5-inspector-worker-household', { kind: 'household', id: info.worker });
+await sel('6-inspector-worker-person', { kind: 'person', id: info.workerPerson });
+await sel('7-inspector-firm-owner', { kind: 'household', id: info.firm });
+await page.evaluate(() => window.__game.select(null));
+await page.getByTestId('how-gini').first().click().catch(() => console.log('no gini how'));
+await page.waitForTimeout(400);
+await shot('8-gini-modal');
+await page.evaluate(() => document.querySelectorAll('details').forEach((d) => (d.open = true)));
+await page.waitForTimeout(200);
+await shot('9-gini-modal-open');
+console.log(errors.length ? errors.join('\n') : 'no console errors');
+await browser.close();

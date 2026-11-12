@@ -10,6 +10,7 @@ import { debtBacking, forestTiles, legitimacyBacking, pctWith, stockOf } from '.
 import { compact, money, tonnes, turnsUntil } from './format';
 import { doesNotWorkText, employerLine, estateOwnerSections, isEstatePerson, isPilot, pilotSections } from './estate';
 import { SECTOR_WORD } from './industry';
+import { statementModel, type StatementModel } from './networth';
 
 export interface Row { label: string; value: string; hint?: string }
 export interface Section { heading: string; rows: Row[] }
@@ -23,6 +24,8 @@ export interface InspectModel {
   subtitle: string;
   sections: Section[];
   income?: IncomePart[];
+  /** Person and household cards: the net worth statement from the wire (a person's card shows each line per person). */
+  statement?: StatementModel;
   /** People of a household (opens the person card). */
   members?: Link[];
   /** Person card: the household they belong to. */
@@ -94,7 +97,7 @@ function householdHome({ s, household: h, home }: Ctx): Section[] {
     ...(owns.length ? [{ label: 'Lets out', value: `${owns.length} ${owns.length === 1 ? 'home' : 'homes'}` }] : []),
     { label: 'Rent arrears', value: `${h.arrearsMonths} ${h.arrearsMonths === 1 ? 'month' : 'months'}` }] }];
 }
-const householdWealth = ({ household: h }: Ctx): Section[] => !h ? [] : [{ heading: 'Wealth', rows: [
+const householdWealth = ({ s, household: h }: Ctx): Section[] => !h || s.breakdowns ? [] : [{ heading: 'Wealth', rows: [
   { label: 'Savings', value: money(h.savings) }, { label: 'Debt', value: money(h.debt) }, { label: 'Net worth', value: money(h.netWorth) }] }];
 const householdMoney = ({ household: h }: Ctx): Section[] => !h ? [] : [{ heading: 'Money (per month)', rows: [
   { label: 'Income, all sources', value: money(incomeTotal(h.income.sources)) },
@@ -182,6 +185,11 @@ export function resolveSelection(snap: Snapshot, layout: MapLayout, sel: Selecti
   }
 }
 
+const statementOf = (s: Snapshot, household: number, person?: { name: string }): { statement?: StatementModel } => {
+  const m = statementModel(s, household, person);
+  return m ? { statement: m } : {};
+};
+
 function personModel(s: Snapshot, id: number): InspectModel | null {
   const p = s.people.find((x) => x.id === id);
   if (!p) return null;
@@ -191,6 +199,7 @@ function personModel(s: Snapshot, id: number): InspectModel | null {
     kind: 'person', title: `${h?.label ?? 'Household'}, ${p.label}`, subtitle: `${h?.tag ? `${h.tag}. ` : ''}${AGE_LABEL[p.ageBand]}${h ? `. ${classLabel(h.class)} household` : ''}${h?.wealthBand ? `. ${h.wealthBand.label}` : ''}`,
     ...(h ? { household: { label: h.label, detail: `${h.members.length} people`, selection: { kind: 'household' as const, id: h.id } } } : {}),
     sections: sectionsFor(c),
+    ...statementOf(s, p.household, { name: p.label }),
   };
 }
 
@@ -205,6 +214,7 @@ function householdModel(s: Snapshot, id: number, home?: HomeView): InspectModel 
     kind: 'household', title: h.label, subtitle: `${h.tag ? `${h.tag}. ` : ''}${h.wealthBand ? `${h.wealthBand.label}. ` : ''}${classLabel(h.class)} household. ${theHome ? at(theHome.tile) : 'UNHOUSED: no home'}`, income: parts,
     members: members.map((p) => ({ label: p.label, detail: p.job ? `works${p.wage > 0 ? `, ${money(p.wage)}/month` : ''}` : AGE_LABEL[p.ageBand].toLowerCase(), selection: { kind: 'person' as const, id: p.id } })),
     sections: sectionsFor({ s, entity: householdEntity(s, h), household: h, ...(home ? { home } : {}) }),
+    ...statementOf(s, h.id),
   };
 }
 

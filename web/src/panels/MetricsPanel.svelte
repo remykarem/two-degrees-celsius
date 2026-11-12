@@ -14,6 +14,7 @@
   import { setUi } from './ui';
   import EmissionsPanel from './EmissionsPanel.svelte';
   import EstateCard from './EstateCard.svelte';
+  import WhoHoldsWhat from './WhoHoldsWhat.svelte';
   import HowButton from './HowButton.svelte';
   import IndustryPanel from './IndustryPanel.svelte';
   import PoliciesPanel from './PoliciesPanel.svelte';
@@ -85,7 +86,7 @@
         <EmissionsPanel {snap} />
       {/if}
 
-      {#if tab === 'Society'}<EstateCard {game} {snap} />{/if}
+      {#if tab === 'Society'}<EstateCard {game} {snap} /><WhoHoldsWhat {snap} />{/if}
 
       {#if tab === 'Finance'}
         <FinancePanel {game} />
