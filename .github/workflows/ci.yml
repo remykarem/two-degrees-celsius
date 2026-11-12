@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # rust-toolchain.toml pins the compiler, components and the wasm target; rustup installs them on first use.
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+      - name: Install wasm-bindgen-cli (version pinned in Cargo.lock)
+        run: |
+          VERSION=$(grep -A1 'name = "wasm-bindgen"$' Cargo.lock | grep version | cut -d'"' -f2)
+          cargo install wasm-bindgen-cli --version "$VERSION" --locked
+
+      - name: Install wasm-opt (binaryen; build:wasm only warns when it is missing)
+        run: sudo apt-get update && sudo apt-get install -y binaryen
+
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Also fails when the generated TS contract or the recorded demo is stale (crates/sim-api/tests/contract_ts.rs, recording.rs).
+      - name: Test simulation
+        run: cargo test --workspace
+
+      - name: Generated files are current (contract, recording)
+        working-directory: web
+        run: |
+          npm run check:contract
+          npm run check:recording
+
+      - name: Build wasm
+        working-directory: web
+        run: npm run build:wasm
+
+      - name: Test, typecheck and lint the web (real simulation)
+        working-directory: web
+        run: |
+          npm test
+          npm run typecheck
+          npm run lint
+
+      - name: Build the web
+        working-directory: web
+        env:
+          VITE_SIM: wasm
+        run: npm run build
+
+  # Advisory only: a new advisory should not block unrelated work. Read the log.
+  audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: npm audit (production dependencies)
+        working-directory: web
+        run: npm audit --omit=dev
+
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: cargo audit
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit

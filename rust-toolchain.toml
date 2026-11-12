@@ -1,0 +1,6 @@
+# Pinned so CI and every machine build with the same compiler (bump on purpose).
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

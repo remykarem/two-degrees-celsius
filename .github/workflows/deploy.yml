@@ -5,8 +5,9 @@ on:
     branches:
       - main
 
+# Read-only by default; only the deploy job may write (it pushes gh-pages).
 permissions:
-  contents: write
+  contents: read
 
 # Allow only one concurrent deployment
 concurrency:
@@ -16,52 +17,47 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install Rust (with wasm target)
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
+      # rust-toolchain.toml pins the compiler, components and the wasm target; rustup installs them on first use.
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
 
       - name: Cache Rust build
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
       - name: Install wasm-bindgen-cli (version pinned in Cargo.lock)
         run: |
           VERSION=$(grep -A1 'name = "wasm-bindgen"$' Cargo.lock | grep version | cut -d'"' -f2)
           cargo install wasm-bindgen-cli --version "$VERSION" --locked
 
+      - name: Install wasm-opt (binaryen; build:wasm only warns when it is missing)
+        run: sudo apt-get update && sudo apt-get install -y binaryen
+
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      # cargo test also fails when the generated TS contract or the recorded demo (web/src/sim-port/replay) is stale.
-      - name: Test simulation
-        run: cargo test --workspace
-
       - name: Install web dependencies
         working-directory: web
         run: npm ci
 
-      # No wasm package yet: this is what a contributor without the wasm toolchain gets. The tests that need the real
-      # simulation are left out (the run says so); the recorded-demo path, boundaries, contract and pure logic run.
-      - name: Test web without the wasm package (recorded demo path)
-        working-directory: web
-        run: |
-          npm test
-          npm run typecheck
-          npm run lint
+      # Also fails when the generated TS contract or the recorded demo (web/src/sim-port/replay) is stale.
+      - name: Test simulation
+        run: cargo test --workspace
 
       - name: Build wasm
         working-directory: web
         run: npm run build:wasm
 
-      - name: Test web with the real simulation
+      - name: Test, typecheck and lint the web (real simulation)
         working-directory: web
         run: |
           npm test
@@ -76,7 +72,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./web/dist

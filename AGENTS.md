@@ -28,7 +28,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `tests/` | `scenarios.rs` (engine suite, run as a test of sim-engine), `golden/` (wasm golden), `snapshots/` (insta) | n/a |
 | `docs/` | Design docs, contract, notes, generated `fixtures/`. Index: `docs/README.md` | n/a |
 | `web/` | Browser app (Vite, Svelte 5, Three.js, Vitest). See below | n/a |
-| `.github/workflows/deploy.yml` | On push to `main`: cargo test, web test/typecheck/lint without the wasm package (the recorded-demo path), build wasm, web test again with it, build, publish `web/dist` to `gh-pages` | n/a |
+| `.github/workflows/` | `ci.yml` (every pull request): `cargo fmt --check`, clippy `-D warnings`, `cargo test --workspace`, contract and recording staleness, build wasm, web test/typecheck/lint/build; plus a non-blocking `audit` job (`npm audit --omit=dev`, `cargo audit`). `deploy.yml` (push to `main`): cargo test, build wasm, web test/typecheck/lint, build, publish `web/dist` to `gh-pages` (only this job has `contents: write`). Actions are pinned to commit SHAs; `rust-toolchain.toml` pins the compiler | n/a |
 | `.idea/` | IDE files. Tracked by accident. Never edit or commit | n/a |
 
 `web/src` folders:
@@ -120,7 +120,7 @@ Playwright scripts in `web/playwright/*.mjs` are manual screenshot and check too
 3. Wire or contract touched: derive `TS` on the type and run `npm run gen:contract` (see `docs/how-to.md` section 19), `docs/snapshot-contract.md`, `docs/fixtures/` (see `docs/how-to.md`, "Change the contract").
 4. Web touched or Rust sim touched: `cd web && npm run build:wasm` (so the wasm golden test actually runs), then `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 5. `git status` shows only files you meant to change; no `.idea/`, no `pkg/`, no `target/`, no `dist/`.
-6. CI (`deploy.yml`) runs tests, typecheck, lint and build, but not `cargo fmt` or `clippy`. Run those yourself.
+6. CI (`ci.yml` on pull requests) runs `cargo fmt --check` and clippy as well as the tests; `deploy.yml` on `main` does not repeat them, so run them before pushing to `main`.
 
 ## Git conventions
 
