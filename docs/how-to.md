@@ -155,6 +155,7 @@ Real example: the Shop and tent models in commit `aa5939c`.
 3. `web/src/scene/entityLayer.ts` draws descriptions; colours come from `palette.ts`; lens tints from `lenses.ts`.
 4. Test the planning, not the pixels: `web/tests/scene-entities.test.ts`. For a visual check run `npm run dev` and `node playwright/scene-shots2.mjs <outDir>` (manual; needs `npx playwright install chromium`).
 Town v4 weather meshes: `forest_burning`, `forest_regrowing`, `fire_station` in `models.ts`; the model for a forest tile's state is `forestModelFor` in `scene/weatherLook.ts`; flames, smoke columns, haze over people and the coverage ring live in `scene/weather.ts` (`WeatherLayer`, capped instanced pools). Data for them is derived in `store/scene-weather.ts`.
+Instanced scenery that depends on a stock (commons corn): keep the stock-to-look mapping pure in a module like `scene/corn.ts` (named visual constants, seeded by tile coordinates, unit-tested) and draw it with one `InstancedMesh` for all tiles in a layer like `scene/cornLayer.ts`; see `docs/web-notes-corn.md`.
 The scene may import only three, store and contract. Anything the scene needs from panels goes through `store/scene-bus.ts`.
 
 ## 12. Add a panel

@@ -63,6 +63,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
 | `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
 | `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, recorded demo, web panels and scene implemented; see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
+| `docs/web-notes-corn.md` | CURRENT (scene only: the commons drawn as a corn field that thins with the commons stock) | Changing the commons look, or adding stock-driven instanced scenery |
 | `docs/town-v8.md` | APPROVED (net worth breakdown; contract v2.2). IMPLEMENTED (`docs/snapshot-contract.md` section 22, `docs/how-to.md` section 23) | Net worth, wealth, Who holds what |
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST and state ownership; was v7, then v8) | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
