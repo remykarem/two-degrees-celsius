@@ -541,6 +541,33 @@ pub enum TraceRecord {
     /// The legitimacy update of one tick, term by term (Town v5.2). Output only: nothing in the
     /// model reads it.
     Legitimacy(LegitStep),
+    /// Markets view (output only; nothing in the model reads these). One shop's month: what
+    /// buyers would have bought at its price before the stock limit (`demand_units`), what it
+    /// had on the shelf at the start of the goods step (`stock_units`) and what it sold.
+    GoodsFirm {
+        firm: FirmId,
+        demand_units: f64,
+        stock_units: f64,
+        sold_units: f64,
+    },
+    /// Markets view: one firm's job postings this month. `posted` is the headcount gap before
+    /// hiring, `filled` how many of them were hired (the rest stay open).
+    Vacancies {
+        firm: FirmId,
+        posted: u32,
+        filled: u32,
+    },
+    /// Markets view: what the bank could still lend, before this month's decisions on requests.
+    CreditRoom { headroom: Cents },
+    /// Markets view: one firm's loan request this month and what the bank approved.
+    CreditDecision {
+        firm: FirmId,
+        requested: Cents,
+        approved: Cents,
+    },
+    /// Markets view: the mean share of renters' disposable income that goes to rent, and how
+    /// many renting households it is over.
+    RentBurden { burden: f64, renters: u32 },
 }
 
 /// One tick's legitimacy update: `after = clamp(before + wellbeing - unemployment - inequality

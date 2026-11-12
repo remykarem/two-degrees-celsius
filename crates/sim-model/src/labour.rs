@@ -10,6 +10,12 @@ use sim_rng::Rng;
 use sim_types::*;
 use std::cmp::Ordering;
 
+/// A firm's monthly wage change: the trend plus a response to unemployment against the
+/// reference rate, capped each month. Wages, unlike goods prices, respond to slack.
+pub fn wage_step(lp: &sim_params::LabourParams, trend: f64, unemployment: f64) -> f64 {
+    (trend + lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap)
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let c = cfg(s, p);
@@ -58,6 +64,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 
         // Hire: the cheapest unemployed people of the right tier, up to the monthly cap.
         let mut unfilled = false;
+        let posted = (skilled_vacancies + general_vacancies) as u32;
+        let mut open_after = 0u32;
         let mut hires_left = lp.max_hire_per_month;
         let mut hired_now = 0.0;
         for (want_skilled, vac) in [(true, skilled_vacancies), (false, general_vacancies)] {
@@ -97,7 +105,13 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             if vacancies > 0 {
                 unfilled = true;
             }
+            open_after += vacancies;
         }
+        d.trace.push(TraceRecord::Vacancies {
+            firm: f.id,
+            posted,
+            filled: posted.saturating_sub(open_after),
+        });
 
         // Fire after a sustained surplus: the least skilled go first.
         let mut over = f.over_target_months;
@@ -142,7 +156,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     Sector::Food => p.production.tfp_growth_food,
                     Sector::Services => p.production.tfp_growth_services,
                 };
-        let step = (trend + lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap);
+        let step = wage_step(lp, trend, unemployment);
         let wage = Cents::from_f64(f.wage.as_f64() * (1.0 + step)).max(min_wage);
         d.firm(
             f.id,

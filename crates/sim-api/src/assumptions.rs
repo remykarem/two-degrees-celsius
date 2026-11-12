@@ -481,6 +481,15 @@ pub fn registry() -> Vec<(&'static str, ExampleFn)> {
                 i.get("footprint")?,
             ))
         }),
+        ("price_target", |_, i, _| {
+            let v = sim_model::goods::price_target(i.get("markup")?, i.get("unit_cost_usd")?);
+            Some((v, "$ per unit".to_string()))
+        }),
+        ("wage_step", |p, i, _| {
+            let v =
+                sim_model::labour::wage_step(&p.labour, i.get("trend")?, i.get("unemployment")?);
+            Some((v, "change in the wage per month (a share)".to_string()))
+        }),
         ("max_loans", |_, i, _| {
             usd(util::max_loans(
                 Cents::from_dollars(i.get("equity")?),

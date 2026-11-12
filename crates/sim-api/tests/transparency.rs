@@ -354,6 +354,16 @@ fn emission_and_income_sources_come_from_content_and_validate() {
         sim_api::networth::NetWorthDefs {
             lines: Vec::new(),
             holders: Vec::new()
+        },
+        sim_api::markets::MarketsContent {
+            steady_band: 0.0,
+            gap_none: String::new(),
+            fully_met: 0.0,
+            directions: Default::default(),
+            causes: Default::default(),
+            categories: Vec::new(),
+            mechanisms: Vec::new(),
+            list: Vec::new(),
         }
     )
     .is_err());

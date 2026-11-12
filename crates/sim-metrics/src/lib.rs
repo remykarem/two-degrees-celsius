@@ -423,6 +423,112 @@ pub fn compute(s: &State, p: &Params, base_prices: &[f64]) -> Indicators {
     }
 }
 
+// ---- Markets view (contract v2.3): pure functions of the state ----
+
+/// Average shelf price of a sector in cents: weighted by the stock on the shelf, or the plain
+/// mean when nothing is in stock; 0 when the sector has no active firm. The goods step uses
+/// the same function for the food price that sets household food budgets.
+pub fn sector_price(s: &State, sector: Sector) -> f64 {
+    let fs: Vec<&Firm> = s
+        .firms
+        .iter()
+        .filter(|f| f.active && f.sector == sector)
+        .collect();
+    let q: f64 = fs.iter().map(|f| f.inventory.0).sum();
+    if q > 0.0 {
+        fs.iter()
+            .map(|f| f.inventory.0 * f.price.as_f64())
+            .sum::<f64>()
+            / q
+    } else if !fs.is_empty() {
+        fs.iter().map(|f| f.price.as_f64()).sum::<f64>() / fs.len() as f64
+    } else {
+        0.0
+    }
+}
+
+/// Mean monthly wage of the active firms in cents, weighted by their workers (plain mean when
+/// nobody is employed); `None` with no active firm.
+pub fn average_wage(s: &State) -> Option<f64> {
+    let fs: Vec<&Firm> = s.firms.iter().filter(|f| f.active).collect();
+    if fs.is_empty() {
+        return None;
+    }
+    let w: f64 = fs.iter().map(|f| f.workers.0).sum();
+    Some(if w > 0.0 {
+        fs.iter()
+            .map(|f| f.workers.0 * f.wage.as_f64())
+            .sum::<f64>()
+            / w
+    } else {
+        fs.iter().map(|f| f.wage.as_f64()).sum::<f64>() / fs.len() as f64
+    })
+}
+
+/// Mean annual loan rate over the active firms (as a fraction); `None` with no active firm.
+pub fn average_loan_rate(s: &State) -> Option<f64> {
+    let fs: Vec<&Firm> = s.firms.iter().filter(|f| f.active).collect();
+    (!fs.is_empty()).then(|| fs.iter().map(|f| f.loan_rate.0).sum::<f64>() / fs.len() as f64)
+}
+
+/// The labour market in people. `labour_force` = `firm_jobs` + `jobless`; `guarantee` of the
+/// jobless are in the government job guarantee. Domestic staff are outside the pool.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LabourFigures {
+    pub labour_force: u32,
+    pub firm_jobs: u32,
+    pub jobless: u32,
+    pub guarantee: u32,
+}
+
+pub fn labour_figures(s: &State) -> LabourFigures {
+    let pool = s
+        .persons
+        .iter()
+        .filter(|x| x.in_labour_force && x.staff_of.is_none());
+    let (mut labour_force, mut firm_jobs, mut guarantee) = (0, 0, 0);
+    for x in pool {
+        labour_force += 1;
+        if x.job.is_some() {
+            firm_jobs += 1;
+        } else if x.jg {
+            guarantee += 1;
+        }
+    }
+    LabourFigures {
+        labour_force,
+        firm_jobs,
+        jobless: labour_force - firm_jobs,
+        guarantee,
+    }
+}
+
+/// Homes and households. `homes` = `occupied` + `vacant`; `households` = `housed` + `unhoused`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HousingFigures {
+    pub homes: u32,
+    pub occupied: u32,
+    pub vacant: u32,
+    pub households: u32,
+    pub housed: u32,
+    pub unhoused: u32,
+}
+
+pub fn housing_figures(s: &State) -> HousingFigures {
+    let homes = s.homes.len() as u32;
+    let occupied = s.homes.iter().filter(|h| h.household.is_some()).count() as u32;
+    let households = s.households.len() as u32;
+    let housed = s.households.iter().filter(|h| h.home.is_some()).count() as u32;
+    HousingFigures {
+        homes,
+        occupied,
+        vacant: homes - occupied,
+        households,
+        housed,
+        unhoused: households - housed,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

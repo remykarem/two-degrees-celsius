@@ -113,6 +113,8 @@ pub struct Sources {
     pub income: Vec<IncomeSourceDef>,
     /// Town v8: the net worth statement lines and holders.
     pub net_worth: crate::networth::NetWorthDefs,
+    /// Markets view: the market cards, mechanisms and cause words.
+    pub markets: crate::markets::MarketsContent,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -125,6 +127,7 @@ impl Sources {
         emission: Vec<EmissionSourceDef>,
         income: Vec<IncomeSourceDef>,
         net_worth: crate::networth::NetWorthDefs,
+        markets: crate::markets::MarketsContent,
     ) -> ApiResult<Self> {
         for id in EMISSION_IDS {
             if emission.iter().filter(|d| d.id == id).count() != 1 {
@@ -159,6 +162,7 @@ impl Sources {
             emission,
             income,
             net_worth,
+            markets: markets.validated()?,
         })
     }
 

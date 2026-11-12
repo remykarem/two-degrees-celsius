@@ -14,6 +14,33 @@ use sim_engine::{Sim, StepOutput};
 use sim_types::{EmissionSource, LegitStep, TraceRecord};
 use std::collections::BTreeMap;
 
+/// One shop's month, from the goods step (Markets view).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoodsFirmTrace {
+    pub firm: u32,
+    /// Units buyers would have bought at this shop's price, before its stock limit.
+    pub demand_units: f64,
+    /// Units on the shelf at the start of the goods step.
+    pub stock_units: f64,
+    pub sold_units: f64,
+}
+
+/// What the markets did in one tick (Markets view, contract v2.3). Output only.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketTrace {
+    pub goods: Vec<GoodsFirmTrace>,
+    /// `(firm id, posted, filled)`: job postings and how many were filled this month.
+    pub vacancies: Vec<(u32, u32, u32)>,
+    /// What the bank could lend before this month's requests, cents.
+    pub credit_room: i64,
+    /// `(firm id, requested cents, approved cents)`.
+    pub credit: Vec<(u32, i64, i64)>,
+    pub rent_burden: f64,
+    pub renters: u32,
+}
+
 /// One monthly tick, as the trace reported it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,6 +64,9 @@ pub struct TickRecord {
     pub gross_state: f64,
     pub net_state: f64,
     pub legitimacy: Option<LegitStep>,
+    /// Contract v2.3: what the markets did this tick.
+    #[serde(default)]
+    pub markets: MarketTrace,
 }
 
 impl TickRecord {
@@ -53,6 +83,7 @@ impl TickRecord {
             gross_state: sim.state.nature.gross_emissions.0,
             net_state: sim.state.nature.net_emissions.0,
             legitimacy: None,
+            markets: MarketTrace::default(),
         };
         for t in &out.trace {
             match *t {
@@ -65,6 +96,32 @@ impl TickRecord {
                     EmissionSource::FireSinkLoss => r.fire_sink_loss += tonnes.0,
                 },
                 TraceRecord::Legitimacy(l) => r.legitimacy = Some(l),
+                TraceRecord::GoodsFirm {
+                    firm,
+                    demand_units,
+                    stock_units,
+                    sold_units,
+                } => r.markets.goods.push(GoodsFirmTrace {
+                    firm: firm.0,
+                    demand_units,
+                    stock_units,
+                    sold_units,
+                }),
+                TraceRecord::Vacancies {
+                    firm,
+                    posted,
+                    filled,
+                } => r.markets.vacancies.push((firm.0, posted, filled)),
+                TraceRecord::CreditRoom { headroom } => r.markets.credit_room = headroom.0,
+                TraceRecord::CreditDecision {
+                    firm,
+                    requested,
+                    approved,
+                } => r.markets.credit.push((firm.0, requested.0, approved.0)),
+                TraceRecord::RentBurden { burden, renters } => {
+                    r.markets.rent_burden = burden;
+                    r.markets.renters = renters;
+                }
                 TraceRecord::Income { .. } | TraceRecord::PolicyGap { .. } => {}
             }
         }

@@ -283,6 +283,31 @@
       "holder_none": "no households",
       "memo": "Memo"
     },
+    "markets": {
+      "title": "Markets",
+      "overview_tab": "Overview",
+      "markets_tab": "Markets",
+      "empty": "The markets appear once the first month has been played.",
+      "intro_title": "A market is one way to run an economy",
+      "intro_body": "Every society has to decide what to make, how to make it and who gets it, when nobody knows everything. A market answers with prices: buyers and sellers adjust to what is scarce. It is one way of coordinating an economy, not the only one. This town uses several, and each card below says which ones it leans on.",
+      "intro_not_capitalism": "A market does not mean capitalism. Who owns the firms is a separate question.",
+      "intro_link": "How an economy is coordinated",
+      "mechanisms_title": "Ways an economy can be coordinated",
+      "mechanisms_foot": "Real economies mix all of these.",
+      "example_prefix": "For example:",
+      "cost_plus_title": "How prices are set in this town",
+      "cost_plus_body": "Firms set prices from their costs plus a markup. They do not raise a price when shelves empty. Empty shelves make a firm hire and produce more instead, so the quantity adjusts and the price does not. Wages and rents do respond to scarcity. A textbook market lets every price move with scarcity; this model is simpler on purpose, and each card says which rule it follows.",
+      "small_town_note": "The town is small, often one seller per market, so a gap is all or nothing. The cards show it as it is.",
+      "tags_title": "Leans on",
+      "since_last_turn": "since last turn",
+      "gap_title": "The gap",
+      "short_title": "Who is short",
+      "none_short": "Nobody is short.",
+      "how_label": "how?",
+      "series_title": "Over the turns",
+      "no_series": "A trend appears after the first full turn.",
+      "also_here": "Also in this town"
+    },
     "estate": {
       "employer_line": "Employer: {label} (household)",
       "employs_line": "Employs: {name}",
@@ -312,6 +337,7 @@
   "system_cards": [
     {
       "key": "market",
+      "coordination": "Leans on markets for prices, wages, homes and loans. The state sets taxes and rules around them.",
       "tagline": "Owners keep the profits; wages follow the labour market.",
       "facts": [
         {
@@ -354,6 +380,7 @@
     },
     {
       "key": "regulated",
+      "coordination": "Still market prices, but more rules: a higher wage floor, a cap on lobbying and room for community management of the commons.",
       "tagline": "Owners still profit, but wages have a higher floor and lobbying is capped.",
       "facts": [
         {
@@ -406,6 +433,7 @@
     },
     {
       "key": "coop",
+      "coordination": "Markets still price goods and jobs, but inside each firm the workers who own it decide together how to share the surplus, and the commons is managed by the community.",
       "tagline": "Employees share the surplus and own the firms.",
       "facts": [
         {
@@ -548,5 +576,378 @@
       "id": "in_debt",
       "label": "In debt"
     }
-  ]
+  ],
+  "markets": {
+    "steadyBand": 0.005,
+    "gapNone": "Nothing missing and nothing left over.",
+    "fullyMet": 0.99,
+    "directions": {
+      "rising": "rising",
+      "steady": "steady",
+      "falling": "falling",
+      "none": "no price",
+      "unknown": "too early to say"
+    },
+    "causes": {
+      "cost": "cost-driven",
+      "slack": "driven by unemployment",
+      "scarcity": "driven by empty homes",
+      "risk": "driven by borrowing risk",
+      "none": "not a price"
+    },
+    "categories": [
+      {
+        "id": "products",
+        "label": "Things people buy",
+        "blurb": "Food, goods and services. Prices here are set by firms from their costs."
+      },
+      {
+        "id": "factors",
+        "label": "Work and housing",
+        "blurb": "People's time and homes. These prices respond to scarcity."
+      },
+      {
+        "id": "capital",
+        "label": "Money to invest",
+        "blurb": "Loans to firms. A limit, not an auction."
+      },
+      {
+        "id": "resources",
+        "label": "Shared resources",
+        "blurb": "Power with no price: supply is a limit."
+      }
+    ],
+    "mechanisms": [
+      {
+        "id": "market",
+        "label": "Market",
+        "blurb": "Buyers and sellers meet and prices signal what is scarce. Shops, jobs, homes and loans in this town work this way.",
+        "example": "A shop, a job advert, a flat to rent."
+      },
+      {
+        "id": "rules",
+        "label": "Rules and planning",
+        "blurb": "An authority sets quantities, prices or limits instead of letting prices decide: public housing rents, the minimum wage, the carbon price, the bank's capital rule, and the sharing-out of electricity when there is not enough.",
+        "example": "Wartime rationing, public housing, the central plans of the Soviet system."
+      },
+      {
+        "id": "hierarchy",
+        "label": "Firm (hierarchy)",
+        "blurb": "Inside a firm, managers direct work instead of buying every step on a market. How many people a firm tries to hire is decided this way.",
+        "example": "A factory manager deciding how many shifts to run (Ronald Coase)."
+      },
+      {
+        "id": "commons",
+        "label": "Community rules",
+        "blurb": "People share a resource under rules they set and enforce together, without prices or an owner. The town commons can work this way.",
+        "example": "A village pasture, a co-operative (Elinor Ostrom)."
+      }
+    ],
+    "list": [
+      {
+        "id": "food",
+        "label": "Food",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households must eat. Each person needs a set amount of food a month, and the Farm is the only seller.",
+        "unit": "units",
+        "unitOne": "unit",
+        "amount": "count",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "priceKind": "money",
+        "priceCause": "cost",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapFloor": 1.0,
+        "gapUnmet": "{unmet} {unmet_unit} went without",
+        "gapUnsold": "{unsold} {unsold_unit} unsold",
+        "howId": "markets:food",
+        "verdict": {
+          "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
+          "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
+          "glut": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: {unsold} {unsold_unit} stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+          "both": "Shoppers wanted {demand} {demand_unit}; the shops had {supply}. {unmet} {unmet_unit} went without at one shop while {unsold} {unsold_unit} stayed unsold at another."
+        },
+        "short": {
+          "sold_out": {
+            "one": "{firm} ran out of stock",
+            "other": "{firm} ran out of stock"
+          },
+          "unsold": {
+            "one": "{firm} has unsold stock",
+            "other": "{firm} has unsold stock"
+          },
+          "households_short": {
+            "one": "{count} household could not buy all the food it needed",
+            "other": "{count} households could not buy all the food they needed"
+          }
+        },
+        "drivers": {
+          "markup": "Markup firms add to their costs"
+        }
+      },
+      {
+        "id": "goods",
+        "label": "Goods",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households buy goods with what is left after food, and firms buy machinery from the Factory. The government buys goods too.",
+        "unit": "units",
+        "unitOne": "unit",
+        "amount": "count",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "priceKind": "money",
+        "priceCause": "cost",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapFloor": 1.0,
+        "gapUnmet": "{unmet} {unmet_unit} went without",
+        "gapUnsold": "{unsold} {unsold_unit} unsold",
+        "howId": "markets:goods",
+        "verdict": {
+          "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
+          "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
+          "glut": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: {unsold} {unsold_unit} stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+          "both": "Shoppers wanted {demand} {demand_unit}; the shops had {supply}. {unmet} {unmet_unit} went without at one shop while {unsold} {unsold_unit} stayed unsold at another."
+        },
+        "short": {
+          "sold_out": {
+            "one": "{firm} ran out of stock",
+            "other": "{firm} ran out of stock"
+          },
+          "unsold": {
+            "one": "{firm} has unsold stock",
+            "other": "{firm} has unsold stock"
+          }
+        },
+        "drivers": {
+          "markup": "Markup firms add to their costs"
+        }
+      },
+      {
+        "id": "services",
+        "label": "Services",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households spend part of their spare money on services, and the government buys some. The Shop is the seller.",
+        "unit": "units",
+        "unitOne": "unit",
+        "amount": "count",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "priceKind": "money",
+        "priceCause": "cost",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapFloor": 1.0,
+        "gapUnmet": "{unmet} {unmet_unit} went without",
+        "gapUnsold": "{unsold} {unsold_unit} unsold",
+        "howId": "markets:services",
+        "verdict": {
+          "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
+          "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
+          "glut": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: {unsold} {unsold_unit} stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+          "both": "Shoppers wanted {demand} {demand_unit}; the shops had {supply}. {unmet} {unmet_unit} went without at one shop while {unsold} {unsold_unit} stayed unsold at another."
+        },
+        "short": {
+          "sold_out": {
+            "one": "{firm} ran out of stock",
+            "other": "{firm} ran out of stock"
+          },
+          "unsold": {
+            "one": "{firm} has unsold stock",
+            "other": "{firm} has unsold stock"
+          }
+        },
+        "drivers": {
+          "markup": "Markup firms add to their costs"
+        }
+      },
+      {
+        "id": "labour",
+        "label": "Labour",
+        "category": "factors",
+        "mechanisms": [
+          "market",
+          "hierarchy"
+        ],
+        "blurb": "Firms decide how many people they want (a decision made inside the firm, by managers). Workers without a job apply to the firms that have openings, the cheapest first.",
+        "unit": "people",
+        "unitOne": "person",
+        "amount": "count",
+        "priceLabel": "Average wage",
+        "priceUnit": "a month",
+        "priceKind": "money",
+        "priceCause": "slack",
+        "priceNote": "Wages respond to scarcity: they drift up when few people are out of work and down when many are.",
+        "demandLabel": "Jobs on offer",
+        "supplyLabel": "People who can work",
+        "tradedLabel": "In a firm job",
+        "gapFloor": 0.5,
+        "gapUnmet": "Jobs still open: {unmet}",
+        "gapUnsold": "People without a firm job: {unsold}",
+        "howId": "markets:labour",
+        "verdict": {
+          "balanced": "Firms offered {demand} jobs and {supply} people could work: every job is filled and everyone who can work has a firm job.",
+          "short": "Firms offered {demand} jobs but only {traded} are filled: {unmet} still open. Firms hire only a few people a month, so openings can stay open.",
+          "glut": "Firms offered {demand} jobs and {supply} people could work: {unsold} {unsold_unit} without a firm job.",
+          "both": "Firms offered {demand} jobs and {traded} are filled, {unmet} still open, while {unsold} {unsold_unit} without a firm job. Hiring is limited each month, so both can be true."
+        },
+        "short": {
+          "jobless": {
+            "one": "{count} person looking for work",
+            "other": "{count} people looking for work"
+          },
+          "guarantee": {
+            "one": "{count} person is in the job guarantee",
+            "other": "{count} people are in the job guarantee"
+          },
+          "open_jobs": {
+            "one": "{firm} has {count} open job",
+            "other": "{firm} has {count} open jobs"
+          }
+        },
+        "drivers": {
+          "unemployment": "Unemployment (smoothed)",
+          "u_ref": "Unemployment at which wages hold steady"
+        }
+      },
+      {
+        "id": "housing",
+        "label": "Housing",
+        "category": "factors",
+        "mechanisms": [
+          "market",
+          "rules"
+        ],
+        "blurb": "Each household needs one home. Households without a home move into the cheapest empty one they can afford.",
+        "unit": "homes",
+        "unitOne": "home",
+        "amount": "count",
+        "priceLabel": "Private rent",
+        "priceUnit": "a month",
+        "priceKind": "money",
+        "priceCause": "scarcity",
+        "priceNote": "Rent responds to scarcity: it rises while almost every home is taken and renters can bear it, and falls otherwise. Public rent is set by the government.",
+        "demandLabel": "Households needing a home",
+        "supplyLabel": "Homes in town",
+        "tradedLabel": "Homes lived in",
+        "gapFloor": 0.5,
+        "gapUnmet": "Households without a home: {unmet}",
+        "gapUnsold": "Homes standing empty: {unsold}",
+        "howId": "markets:housing",
+        "verdict": {
+          "balanced": "{demand} households needed a home and the town has {supply}: every household is housed.",
+          "short": "{demand} households needed a home and the town has {supply}: {unmet} {unmet_unit} short, so some households have no home.",
+          "glut": "{demand} households needed a home and the town has {supply}: {unsold} {unsold_unit} stand empty.",
+          "both": "Some households have no home ({unmet}) while {unsold} {unsold_unit} stand empty. The empty homes may cost more than those households can afford, or they were only just evicted: an evicted household does not move at once."
+        },
+        "short": {
+          "unhoused": {
+            "one": "{count} household has no home",
+            "other": "{count} households have no home"
+          },
+          "vacant": {
+            "one": "{count} home stands empty",
+            "other": "{count} homes stand empty"
+          }
+        },
+        "drivers": {
+          "rent_burden": "Rent as a share of renters' income",
+          "rent_burden_cap": "Rent stops rising above"
+        }
+      },
+      {
+        "id": "credit",
+        "label": "Credit",
+        "category": "capital",
+        "mechanisms": [
+          "market",
+          "rules"
+        ],
+        "blurb": "Firms ask for loans to invest. The bank lends within a limit set by its own capital, and no single firm may borrow beyond a share of what it owns. A request is the firm's plan after its investment rule, not a free wish to borrow.",
+        "unit": "dollars",
+        "unitOne": "dollar",
+        "amount": "money",
+        "priceLabel": "Average loan rate",
+        "priceUnit": "a year",
+        "priceKind": "rate",
+        "priceCause": "risk",
+        "priceNote": "The rate is the bank's base rate plus a margin that grows as a firm borrows more. It is not raised to ration loans: when the bank runs short of room it lends less.",
+        "demandLabel": "Firms asked to borrow",
+        "supplyLabel": "Room the bank has to lend",
+        "tradedLabel": "Lent",
+        "gapFloor": 1.0,
+        "gapUnmet": "Refused or cut back: {unmet}",
+        "gapUnsold": "Bank room unused: {unsold}",
+        "howId": "markets:credit",
+        "verdict": {
+          "balanced": "Firms asked for {demand} and the bank had {supply} of room: every request was met.",
+          "short": "Firms asked for {demand} and the bank lent {traded}: {unmet} was refused or cut back, either because the bank was out of room or because the firm already owed as much as it may.",
+          "glut": "Firms asked for {demand} and the bank had {supply} of room: {unsold} of its room went unused.",
+          "both": "Firms asked for {demand} and the bank lent {traded}: {unmet} was refused or cut back while {unsold} of the bank's room went unused, because the firms that asked were at their own borrowing limit."
+        },
+        "short": {
+          "refused": {
+            "one": "{firm} was refused or cut back",
+            "other": "{firm} was refused or cut back"
+          }
+        },
+        "drivers": {
+          "base_rate": "Bank base rate"
+        }
+      },
+      {
+        "id": "energy",
+        "label": "Electricity",
+        "category": "resources",
+        "mechanisms": [
+          "rules"
+        ],
+        "blurb": "Firms and households use electricity. The power plants can produce only so much each month.",
+        "unit": "{energy}",
+        "unitOne": "{energy}",
+        "amount": "energy",
+        "priceLabel": "Price",
+        "priceUnit": "",
+        "priceKind": "none",
+        "priceCause": "none",
+        "priceNote": "Electricity has no price in this model. It is a quantity limit: if demand is higher than the plants can supply, everyone's use is cut back in the same proportion. The commons is the other resource with no price; see Ecology.",
+        "demandLabel": "Wanted by firms and homes",
+        "supplyLabel": "Plant capacity",
+        "tradedLabel": "Delivered",
+        "gapFloor": 0.5,
+        "gapUnmet": "{unmet} {unmet_unit} not delivered",
+        "gapUnsold": "{unsold} {unsold_unit} of capacity idle",
+        "howId": "markets:energy",
+        "verdict": {
+          "balanced": "Firms and homes wanted {demand} {demand_unit} and the plants could supply {supply}: everyone was served in full.",
+          "short": "Firms and homes wanted {demand} {demand_unit} but the plants could supply {supply}: {unmet} {unmet_unit} were not delivered, so output and comfort were cut back in proportion.",
+          "glut": "Firms and homes wanted {demand} {demand_unit} and the plants could supply {supply}: {unsold} {unsold_unit} of capacity sat idle.",
+          "both": "Firms and homes wanted {demand} {demand_unit}; {unmet} {unmet_unit} were not delivered while {unsold} {unsold_unit} sat idle."
+        },
+        "short": {
+          "unserved": {
+            "one": "{count} {unit} not delivered",
+            "other": "{count} {unit} not delivered"
+          }
+        },
+        "drivers": {}
+      }
+    ]
+  }
 }

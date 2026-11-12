@@ -1,5 +1,7 @@
-//! S3 goods and housing. Households buy food (a need), goods and services (discretionary);
-//! prices follow unit cost and excess demand. Housing is by home: rents follow occupancy and
+//! S3 goods and housing. Households buy food (a need), goods and services (discretionary).
+//! Prices are cost-plus: each firm closes a share of the gap to `(1 + markup) x unit cost` every
+//! month. Excess demand is stored but feeds only `expected_sales` (so hiring and production),
+//! never the price. Housing is by home: rents follow occupancy and
 //! affordability, a household that cannot pay rent for months loses its home, and a household
 //! without a home moves into a vacant one it can afford.
 
@@ -189,6 +191,14 @@ fn housing(s: &State, p: &Params, d: &mut Deltas) {
             )
         })
         .collect();
+    d.trace.push(TraceRecord::RentBurden {
+        burden: if burdens.is_empty() {
+            0.0
+        } else {
+            burdens.iter().sum::<f64>() / burdens.len() as f64
+        },
+        renters: burdens.len() as u32,
+    });
     let burden = if burdens.is_empty() {
         0.0
     } else {
@@ -224,6 +234,12 @@ fn housing(s: &State, p: &Params, d: &mut Deltas) {
     }
 }
 
+/// The price a firm moves toward: unit cost plus its markup (cents, any unit that unit cost uses).
+/// Demand never enters: this is the whole price rule of the goods markets.
+pub fn price_target(markup: f64, unit_cost: f64) -> f64 {
+    (1.0 + markup) * unit_cost
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let gp = &p.goods;
@@ -232,25 +248,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     housing(s, p, &mut d);
 
     // ---- Prices and budgets ----
-    let avg_price = |sector: Sector| -> f64 {
-        let fs: Vec<&Firm> = s
-            .firms
-            .iter()
-            .filter(|f| f.active && f.sector == sector)
-            .collect();
-        let q: f64 = fs.iter().map(|f| f.inventory.0).sum();
-        if q > 0.0 {
-            fs.iter()
-                .map(|f| f.inventory.0 * f.price.as_f64())
-                .sum::<f64>()
-                / q
-        } else if !fs.is_empty() {
-            fs.iter().map(|f| f.price.as_f64()).sum::<f64>() / fs.len() as f64
-        } else {
-            0.0
-        }
-    };
-    let p_food = avg_price(Sector::Food);
+    let p_food = sim_metrics::sector_price(s, Sector::Food);
     let wealth = household_wealth(s, p);
     let mut food_budget = vec![0.0; n_h];
     let mut goods_budget = vec![0.0; n_h];
@@ -392,7 +390,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 f.output.0,
                 0.0,
             );
-            let target = (1.0 + f.markup.0) * unit_cost;
+            let target = price_target(f.markup.0, unit_cost);
             let new_price = if unit_cost > 0.0 {
                 Cents::from_f64(price + gp.price_adjust * (target - price))
                     .max(Cents::from_f64(min_price))
@@ -412,6 +410,12 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             let lam = p.labour.expected_smoothing;
             let expected = lam * alloc.demand_units[i] + (1.0 - lam) * f.expected_sales.0;
             let h = f.sales_hist;
+            d.trace.push(TraceRecord::GoodsFirm {
+                firm: f.id,
+                demand_units: alloc.demand_units[i],
+                stock_units: f.inventory.0,
+                sold_units,
+            });
             d.firm(
                 f.id,
                 FirmPatch {

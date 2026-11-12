@@ -26,6 +26,7 @@ pub mod industry;
 pub mod keys;
 pub mod ledger;
 pub mod log;
+pub mod markets;
 pub mod meta;
 pub mod networth;
 pub mod persist;
@@ -55,4 +56,6 @@ pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 /// (contract v2.0, `docs/snapshot-contract.md` section 20) reshaped emissions and income into
 /// source lists: 6. The saved blob itself did not change shape; the bump keeps the contract
 /// version and the snapshot's `schemaVersion` honest, and refuses saves made by the old web.
-pub const SCHEMA_VERSION: u32 = 6;
+/// Markets view (contract v2.3, `docs/snapshot-contract.md` section 23) added price series to
+/// `HistoryPoint` and market records to the saved wrapper log: 7.
+pub const SCHEMA_VERSION: u32 = 7;

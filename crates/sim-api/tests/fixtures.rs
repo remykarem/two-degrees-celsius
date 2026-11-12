@@ -41,7 +41,7 @@ fn fixtures_have_the_documented_content() {
         .unwrap()
         .is_empty());
     let snap = read("snapshot-turn1.json");
-    assert_eq!(snap["schemaVersion"], 6);
+    assert_eq!(snap["schemaVersion"], 7);
     // Contract v1.4: finance and energy are on every snapshot.
     assert_eq!(snap["energy"]["unit"], "MWh");
     assert!(snap["finance"]["government"]["revenue"]["wageTax"].is_number());

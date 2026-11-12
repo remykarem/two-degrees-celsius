@@ -392,6 +392,28 @@ pub fn decls() -> Vec<(&'static str, String)> {
             "networth",
             <crate::networth::TownNetWorth as TS>::decl(&cfg),
         ),
+        ("markets", <crate::markets::AmountKind as TS>::decl(&cfg)),
+        ("markets", <crate::markets::PriceKind as TS>::decl(&cfg)),
+        ("markets", <crate::markets::Verdict as TS>::decl(&cfg)),
+        ("markets", <crate::markets::ShortText as TS>::decl(&cfg)),
+        ("markets", <crate::markets::MarketDef as TS>::decl(&cfg)),
+        (
+            "markets",
+            <crate::markets::MarketCategoryDef as TS>::decl(&cfg),
+        ),
+        ("markets", <crate::markets::MechanismDef as TS>::decl(&cfg)),
+        (
+            "markets",
+            <crate::markets::MarketsContent as TS>::decl(&cfg),
+        ),
+        (
+            "markets",
+            <crate::markets::MarketEntityKind as TS>::decl(&cfg),
+        ),
+        ("markets", <crate::markets::MarketEntity as TS>::decl(&cfg)),
+        ("markets", <crate::markets::MarketShort as TS>::decl(&cfg)),
+        ("markets", <crate::markets::MarketDriver as TS>::decl(&cfg)),
+        ("markets", <crate::markets::MarketView as TS>::decl(&cfg)),
     ]
 }
 

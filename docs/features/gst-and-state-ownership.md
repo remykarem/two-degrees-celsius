@@ -9,7 +9,7 @@ Both are **fiscal and ownership levers on the same circular flow**: GST raises r
 - Taxes: income (`tax_wage`), profit (`tax_profit`, applied to firm profit before dividends), capital (`tax_capital`, on dividends, rent, interest), wealth, carbon. **No sales tax.**
 - `Owner` is a single value per firm: `Household(id) | Workers | State | Bank`. `Owner::State` already routes dividends to the government (`Purpose::StateFirmDividend`), but no system sets it, and **a firm cannot be partly owned** (no shares).
 - `EconomicSystem` is `Market | Regulated | Coop`; system files are `content/systems/{market,regulated,coop}.json` with a `dividend_rule` (`Owner` or `Employees`).
-- Households buy food, goods and services from firms each month with their budget (`goods.rs`); firm prices adjust with demand; purchases already generate ledger entries and `Purchase` events.
+- Households buy food, goods and services from firms each month with their budget (`goods.rs`); firm prices are cost-plus (each firm moves its price toward unit cost times one plus its markup; demand does not enter the price, only hiring and production; see `docs/features/markets.md` section 2.1); purchases already generate ledger entries and `Purchase` events.
 
 ## 3. GST / VAT
 

@@ -39,6 +39,37 @@ pub struct HistoryPoint {
     /// emissions in tonnes, at the end of the turn.
     pub gross_emissions: f64,
     pub cumulative_emissions: f64,
+    /// Contract v2.3 (Markets view): the price of each market at the end of the turn. Shelf
+    /// prices in dollars per unit, the average monthly wage and the private rent in dollars, the
+    /// average annual loan rate as a fraction. `None` when there was nothing to average (no
+    /// active firm); a saved game from before v2.3 is refused (`SCHEMA_VERSION` 7), so the
+    /// optional fields only keep hand-built histories loading.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub price_food: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub price_goods: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub price_services: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub wage_avg: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub rent_private: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub loan_rate_avg: Option<f64>,
+}
+
+/// Average shelf price of a sector in dollars; `None` when the sector has no active firm.
+pub fn shelf_price(s: &State, sector: sim_types::Sector) -> Option<f64> {
+    s.firms
+        .iter()
+        .any(|f| f.active && f.sector == sector)
+        .then(|| sim_metrics::sector_price(s, sector) / 100.0)
 }
 
 /// Government debt over annual GDP, 0 when GDP is not positive.
@@ -97,5 +128,11 @@ pub fn point(
         grid_served: s.energy.served.0,
         gross_emissions: s.nature.gross_emissions.0,
         cumulative_emissions: s.nature.cumulative.0,
+        price_food: shelf_price(s, sim_types::Sector::Food),
+        price_goods: shelf_price(s, sim_types::Sector::Goods),
+        price_services: shelf_price(s, sim_types::Sector::Services),
+        wage_avg: sim_metrics::average_wage(s).map(|c| c / 100.0),
+        rent_private: Some(s.housing.rent_private.dollars()),
+        loan_rate_avg: sim_metrics::average_loan_rate(s),
     }
 }

@@ -104,6 +104,8 @@ pub struct SystemCard {
     /// `params.systems.<key>.name`.
     pub name: String,
     pub tagline: String,
+    /// Contract v2.3: which coordination mechanisms this system leans on, in a sentence.
+    pub coordination: String,
     pub facts: Vec<Fact>,
     /// Numbers read from `params.systems.<key>`.
     pub params: Vec<SystemParam>,
@@ -146,6 +148,8 @@ pub struct Catalog {
     pub net_worth_lines: Vec<crate::networth::NetWorthLineDef>,
     /// Contract v2.2: the holder groups of the town's net worth.
     pub net_worth_holders: Vec<crate::networth::NetWorthHolderDef>,
+    /// Contract v2.3: the Markets view's cards, categories, cause words and coordination mechanisms.
+    pub markets: crate::markets::MarketsContent,
     /// Contract v2.1: the entity registry (`content/entities.json`).
     pub entities: Vec<crate::entities::EntityKind>,
 }
@@ -155,6 +159,7 @@ pub struct Catalog {
 struct CardDef {
     key: String,
     tagline: String,
+    coordination: String,
     facts: Vec<Fact>,
     params: Vec<String>,
     resistance: String,
@@ -182,6 +187,7 @@ struct UiFile {
     income_sources: Vec<crate::sources::IncomeSourceDef>,
     net_worth_lines: Vec<crate::networth::NetWorthLineDef>,
     net_worth_holders: Vec<crate::networth::NetWorthHolderDef>,
+    markets: crate::markets::MarketsContent,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -192,7 +198,7 @@ fn bad(msg: String) -> ApiError {
 pub fn sources() -> ApiResult<crate::sources::Sources> {
     let f: UiFile = serde_json::from_str(UI).map_err(|e| bad(e.to_string()))?;
     let net_worth = crate::networth::NetWorthDefs::new(f.net_worth_lines, f.net_worth_holders)?;
-    crate::sources::Sources::new(f.emission_sources, f.income_sources, net_worth)
+    crate::sources::Sources::new(f.emission_sources, f.income_sources, net_worth, f.markets)
 }
 
 /// Parse `content/ui.json` and resolve the system cards against `params`.
@@ -235,6 +241,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
             key: c.key,
             name,
             tagline: c.tagline,
+            coordination: c.coordination,
             facts: c.facts,
             params: ps,
             resistance: c.resistance,
@@ -262,6 +269,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         income_sources: f.income_sources,
         net_worth_lines: nw.lines,
         net_worth_holders: nw.holders,
+        markets: f.markets.validated()?,
         entities: crate::entities::load()?,
     })
 }

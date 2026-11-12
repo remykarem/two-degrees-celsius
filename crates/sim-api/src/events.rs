@@ -442,7 +442,12 @@ impl TraceRecord {
                 net_lobby: net_lobby.0,
             },
             // Internal bookkeeping for the breakdowns; not part of the wire trace.
-            st::TraceRecord::Legitimacy(_) => return None,
+            st::TraceRecord::Legitimacy(_)
+            | st::TraceRecord::GoodsFirm { .. }
+            | st::TraceRecord::Vacancies { .. }
+            | st::TraceRecord::CreditRoom { .. }
+            | st::TraceRecord::CreditDecision { .. }
+            | st::TraceRecord::RentBurden { .. } => return None,
         })
     }
 }

@@ -517,6 +517,8 @@ pub struct Snapshot {
     pub breakdowns: crate::breakdowns::Breakdowns,
     pub policies: crate::policies::Policies,
     pub industry: crate::industry::Industry,
+    /// Contract v2.3: one card per market for the latest month (empty before the first month).
+    pub markets: Vec<crate::markets::MarketView>,
     pub history: Vec<HistoryPoint>,
     /// Contract v1.9: the elite estate; absent when the town has none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1132,6 +1134,7 @@ pub fn build(
         energy: crate::finance::energy(sim, &meta.energy_unit),
         breakdowns: crate::breakdowns::build(sim, &finance, log, &meta.sources),
         industry: crate::industry::build(sim, &finance),
+        markets: crate::markets::build(sim, history, log, &meta.sources.markets, &meta.energy_unit),
         finance,
         history: history.to_vec(),
         estate: estate_view(sim, ledger),

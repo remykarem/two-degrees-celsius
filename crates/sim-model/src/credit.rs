@@ -234,6 +234,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     };
     let mut headroom = (max_loans - loans).max(Cents::ZERO);
     let mut lent = Cents::ZERO;
+    d.trace.push(TraceRecord::CreditRoom { headroom });
     for f in s.firms.iter().filter(|f| f.active) {
         let i = f.id.idx();
         if closed[i] {
@@ -246,6 +247,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             .min(headroom)
             .min(lev_cap.max(Cents::ZERO))
             .max(Cents::ZERO);
+        d.trace.push(TraceRecord::CreditDecision {
+            firm: f.id,
+            requested: f.loan_request.max(Cents::ZERO),
+            approved: approve,
+        });
         if approve > Cents::ZERO {
             d.money.push(MoneyOp::Lend {
                 to: Account::Firm(f.id),
