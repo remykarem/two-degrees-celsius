@@ -29,6 +29,15 @@ function fence(x0: number, z0: number, x1: number, z1: number, n: number): Part[
   return out;
 }
 
+/** Dark soil furrows under the corn rows (they show through where the field has thinned). Row z matches ROW_Z in corn.ts. */
+function furrows(): Part[] {
+  return [-0.3, -0.18, -0.06, 0.06, 0.18, 0.3].map((z) => box(0, 0.04, z, 0.8, 0.012, 0.035, 0x8a6a46));
+}
+/** A crack in dry earth: a thin dark strip at (x, z), `len` long, turned by `ry`. */
+function crack(x: number, z: number, len: number, ry: number): Part[] {
+  return [P('box', x, 0.04, z, len, 0.012, 0.018, 0x6f5638, { ry })];
+}
+
 export const MODELS = {
   // Homes: one silhouette and one rooftop marker per class.
   home_capitalist: model([
@@ -97,22 +106,20 @@ export const MODELS = {
     box(0, 0, 0, 0.92, 0.03, 0.92, 0x5b4a3b), box(-0.25, 0.03, -0.22, 0.07, 0.1, 0.07, 0x2b2320), box(0.26, 0.03, 0.2, 0.08, 0.13, 0.08, 0x2b2320), box(0.2, 0.03, -0.3, 0.06, 0.08, 0.06, 0x2b2320),
     ...[[-0.05, 0.05], [0.28, -0.1], [-0.28, 0.25], [0.05, 0.3]].flatMap(([x, z]) => [cyl(x!, 0.03, z!, 0.025, 0.1, WOOD), cone(x!, 0.1, z!, 0.14, 0.16, 0x8cc46f)]),
   ]),
-  commons_open: model([
-    box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), box(-0.2, 0.04, 0.1, 0.2, 0.12, 0.12, 0xf2f0e8), box(0.2, 0.04, -0.15, 0.18, 0.11, 0.11, 0xf2f0e8),
-    ball(-0.3, 0.1, 0.1, 0.1, DARK), ...treeParts(0.28, 0.28, 0.7),
-  ]),
+  // Commons (a corn field: the stalks are instanced in cornLayer.ts from the commons stock; the models are the tile, furrows and the access cues).
+  commons_open: model([box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), ...furrows()]),
   commons_community: model([
-    box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), box(-0.15, 0.04, 0.0, 0.2, 0.12, 0.12, 0xf2f0e8), box(0.15, 0.04, -0.12, 0.18, 0.11, 0.11, 0xf2f0e8),
-    box(0.35, 0, 0.35, 0.04, 0.3, 0.04, WOOD), box(0.35, 0.22, 0.35, 0.16, 0.1, 0.02, 0xf3e8d4), ...fence(-0.4, 0.42, 0.2, 0.42, 3),
+    box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), ...furrows(),
+    box(0.38, 0, 0.38, 0.04, 0.34, 0.04, WOOD), box(0.38, 0.24, 0.38, 0.18, 0.12, 0.02, 0xf3e8d4), box(0.38, 0.28, 0.38, 0.1, 0.03, 0.025, 0x2f9e5b), ...fence(-0.42, 0.43, 0.3, 0.43, 4),
   ]),
   commons_enclosed: model([
-    box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), ...fence(-0.42, -0.42, 0.42, -0.42, 6), ...fence(-0.42, 0.42, 0.42, 0.42, 6),
+    box(0, 0, 0, 0.9, 0.04, 0.9, GRASS, true), ...furrows(), ...fence(-0.42, -0.42, 0.42, -0.42, 6), ...fence(-0.42, 0.42, 0.42, 0.42, 6),
     ...fence(-0.42, -0.42, -0.42, 0.42, 6), ...fence(0.42, -0.42, 0.42, 0.42, 6), box(0, 0.16, -0.42, 0.9, 0.03, 0.03, WOOD), box(0, 0.16, 0.42, 0.9, 0.03, 0.03, WOOD),
-    box(-0.42, 0.16, 0, 0.03, 0.03, 0.9, WOOD), box(0.42, 0.16, 0, 0.03, 0.03, 0.9, WOOD), box(0, 0.04, 0, 0.14, 0.34, 0.02, 0xd1432f),
+    box(-0.42, 0.16, 0, 0.03, 0.03, 0.9, WOOD), box(0.42, 0.16, 0, 0.03, 0.03, 0.9, WOOD), box(0, 0.04, 0.42, 0.14, 0.34, 0.02, 0xd1432f),
   ]),
+  // Collapsed: bare cracked earth (the stubble is still drawn by cornLayer.ts).
   commons_collapsed: model([
-    box(0, 0, 0, 0.9, 0.04, 0.9, 0xb89a6a, true), box(-0.2, 0.04, 0.15, 0.2, 0.05, 0.2, 0x9c8458), box(0.22, 0.04, -0.2, 0.16, 0.04, 0.16, 0x9c8458),
-    box(0.05, 0.04, 0.0, 0.03, 0.2, 0.03, WOOD),
+    box(0, 0, 0, 0.9, 0.04, 0.9, 0xb89a6a, true), ...crack(-0.3, -0.25, 0.55, 0.3), ...crack(0.05, 0.2, 0.5, -0.5), ...crack(-0.15, 0.3, 0.4, 0.9), ...crack(0.2, -0.3, 0.35, 1.2), ...crack(-0.3, 0.05, 0.3, -0.2),
   ]),
 
   // Infrastructure

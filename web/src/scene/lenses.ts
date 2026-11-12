@@ -100,7 +100,7 @@ export function entityTints(lens: Lens, ctx: LensCtx): Map<string, number> {
     const h = d.household;
     if (lens === 'none') {
       // Forest and commons show their stock: lush green when healthy, dry straw when depleted.
-      if (d.stock !== undefined) c = tileHasRole(d.ref.kind, 'sink') ? mix(0xc9a85a, 0x6fb061, clamp01((d.stock - 0.15) / 0.7)) : mix(0xc9b27a, 0xb4d891, clamp01(d.stock / 0.6));
+      if (d.stock !== undefined) c = tileHasRole(d.ref.kind, 'sink') ? mix(0xc9a85a, 0x6fb061, clamp01((d.stock - 0.15) / 0.7)) : mix(0xa98a5c, 0xb4d891, clamp01(d.stock / 0.6));
     } else if (lens === 'emissions') {
       const estateHome = !!h && ctx.snapshot?.estate?.household === h.id;
       const e = estateHome ? (h?.footprintTonnes ?? 0) / Math.max(1e-9, ...(ctx.snapshot?.households.map((q) => q.footprintTonnes) ?? [0])) : d.firm?.active ? d.firm.emissions / ex.maxEmission : tileHasRole(d.ref.kind, 'emitter') ? w.find((q) => q.x === d.x && q.z === d.z)?.w : tileHasRole(d.ref.kind, 'energy_producer') ? 0 : undefined;

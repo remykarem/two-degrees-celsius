@@ -22,6 +22,7 @@ import { EstateLayer } from './estate';
 import { jetPoseAt, jetRestPose, jetTrail } from './jetPath';
 import { aviationTonnes, estateTilesOf, isEstateTile, jetFlightIn, type EstateTiles } from '../store/scene-estate';
 import { WeatherLayer } from './weather';
+import { CornLayer } from './cornLayer';
 import { droughtLook } from './weatherLook';
 import { MODELS } from './models';
 import { pathTiles } from './paths';
@@ -120,7 +121,8 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   const people = new PeopleLayer();
   const weather = new WeatherLayer();
   const estateLayer = new EstateLayer();
-  scene.add(estateLayer.group, layer.group, fx.group, people.group, weather.group);
+  const corn = new CornLayer();
+  scene.add(estateLayer.group, layer.group, corn.group, fx.group, people.group, weather.group);
   const haze = new THREE.Fog(0xffffff, 1000, 2000);
   let look: WeatherLook = weatherLook(null);
 
@@ -210,6 +212,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     people.setStands(stands, s.snapshot ? campTiles(layout, s.snapshot) : [], size);
     if (reducedMotion()) layer.finishPops();
     look = weatherLook(s.snapshot);
+    corn.setTiles(descs, look.drought, reducedMotion());
     weather.setLook(look, stands, size);
     // Drought: ground tint (paintTiles), haze, warmer and dimmer sun; all scaled by severity. No drought leaves the scene exactly as before.
     const dl = droughtLook(look.drought);
@@ -221,7 +224,9 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
   }
 
   function applyLens(s: GameState) {
-    layer.setTints(entityTints(s.lens, lensCtx(s)));
+    const tints = entityTints(s.lens, lensCtx(s));
+    layer.setTints(tints);
+    corn.setTints(tints, s.lens !== 'none');
     people.setTints(personTints(s.lens, s.snapshot, stands));
     paintTiles(s);
     bus.legend.set(legendFor(s.lens, lensCtx(s)));
@@ -494,14 +499,15 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
     const s = game.state.get();
     const moving = rig.tick(dt);
     const popping = layer.update(dt / 1000, sec);
+    const cornMoving = corn.update(dt / 1000, sec, reducedMotion());
     const playing = !!plan;
     const feed = liveSeq !== -1 ? liveClock.get() : null;
     // Pressure mode: the month lasts as long as the clock says (it stretches with 1x/2x/4x and freezes on pause).
     const monthT = feed ? (feed.active ? feed.monthT : 1) : playing ? (now - monthStart) / TIMING.monthMs : 0;
     const looping = s.lens === 'flows' && flowLoop.length > 0 && !playing;
     if (contextLost) return;
-    const animating = moving || popping || playing || dirty;
-    const ambientNeeded = ambient.length > 0 || layer.hasSpinners || looping || (weather.active && !reducedMotion());
+    const animating = moving || popping || cornMoving || playing || dirty;
+    const ambientNeeded = ambient.length > 0 || layer.hasSpinners || corn.swaying || looping || (weather.active && !reducedMotion());
     if (!animating && !(ambientNeeded && now - lastPaint > 40)) return;
     fx.update(plan, monthT, sec, ambient, looping ? flowLoop : [], (sec / 3) % 1, s.lens === 'emissions');
     weather.update(sec, !reducedMotion());
@@ -562,6 +568,7 @@ export function createScene(container: HTMLElement, game: Game, bus: SceneBus = 
       fx.dispose();
       estateLayer.dispose();
       weather.dispose();
+      corn.dispose();
       scene.fog = null;
       people.dispose();
       island.dispose();
