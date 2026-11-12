@@ -37,3 +37,13 @@ sim-api = { path = "crates/sim-api" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+# Size-tuned profile for the browser build only (`npm run build:wasm`). The native release
+# profile is untouched, so the tuning CLI keeps its speed. The model uses no fast-math and only
+# libm transcendentals, so results do not depend on the optimisation level; the native golden
+# and the wasm golden test both guard that.
+[profile.wasm]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1

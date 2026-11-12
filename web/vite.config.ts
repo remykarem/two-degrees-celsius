@@ -11,5 +11,7 @@ export default defineConfig({
   // GitHub Pages serves a project site from /<repo>/, so CI sets VITE_BASE=/<repo>/.
   base: process.env.VITE_BASE ?? '/',
   plugins: [svelte()],
+  // three.js is the bulk of the app bundle and changes rarely: its own chunk caches across deploys.
+  build: { rolldownOptions: { output: { codeSplitting: { groups: [{ name: 'three', test: /node_modules[\\/]three/ }] } } } },
   test: { setupFiles: ['tests/setup.ts'], include: ['tests/**/*.test.ts'], exclude: wasmBuilt ? ['node_modules/**'] : ['node_modules/**', ...needsWasm], environment: 'node', testTimeout: 30000, hookTimeout: 30000 },
 });

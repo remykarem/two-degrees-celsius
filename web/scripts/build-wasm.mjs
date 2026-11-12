@@ -10,7 +10,7 @@ import { gzipSync } from 'node:zlib';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const out = resolve(root, 'web/src/sim-port/wasm/pkg');
-const raw = resolve(root, 'target/wasm32-unknown-unknown/release/sim_wasm.wasm');
+const raw = resolve(root, 'target/wasm32-unknown-unknown/wasm/sim_wasm.wasm');
 
 const lock = readFileSync(resolve(root, 'Cargo.lock'), 'utf8');
 const version = /name = "wasm-bindgen"\nversion = "([^"]+)"/.exec(lock)?.[1];
@@ -34,12 +34,12 @@ if (wbVersion !== version) {
     `wasm-bindgen-cli ${version} is required (found: ${wbVersion ?? 'none'}).\n` +
       `  Install it with:\n    cargo install wasm-bindgen-cli --version ${version} --locked\n` +
       `  and the target with:\n    rustup target add wasm32-unknown-unknown\n` +
-      `  The app still runs on the mock simulation without the wasm package.`,
+      `  The app still runs on the recorded demo without the wasm package.`,
   );
 }
 
-console.log(`> cargo build --release --target wasm32-unknown-unknown -p sim-wasm`);
-const built = run('cargo', ['build', '--release', '--target', 'wasm32-unknown-unknown', '-p', 'sim-wasm']);
+console.log(`> cargo build --profile wasm --target wasm32-unknown-unknown -p sim-wasm`);
+const built = run('cargo', ['build', '--profile', 'wasm', '--target', 'wasm32-unknown-unknown', '-p', 'sim-wasm']);
 if (!built) fail('cargo build failed (is the wasm32-unknown-unknown target installed? rustup target add wasm32-unknown-unknown).');
 
 rmSync(out, { recursive: true, force: true });
@@ -55,7 +55,7 @@ if (opt.status === 0) {
   console.log('> wasm-opt -Oz');
   if (!run('wasm-opt', ['-Oz', '--enable-bulk-memory', '--enable-nontrapping-float-to-int', '--enable-sign-ext', '--enable-mutable-globals', bin, '-o', bin])) console.warn('wasm-opt failed; keeping the unoptimised file.');
 } else {
-  console.log('(wasm-opt not installed: skipping. Install binaryen for a smaller file.)');
+  console.warn('WARNING: wasm-opt (binaryen) is not installed, so the wasm is larger than it needs to be (the build still works). Install it: brew install binaryen, or apt-get install binaryen.');
 }
 const kb = (n) => `${(n / 1024).toFixed(0)} KiB`;
 console.log(`\nsize: ${kb(before)} raw${size(bin) !== before ? `, ${kb(size(bin))} after wasm-opt` : ''}, ${kb(gzipSync(readFileSync(bin)).length)} gzipped`);
