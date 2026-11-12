@@ -24,7 +24,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v8.md` | APPROVED (net worth breakdown: per-household and per-person statement, town split by holder, reconciled to the Gini; contract v2.2). IMPLEMENTED | Working on net worth, wealth or the Who holds what view |
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST/VAT and state ownership; was v7, then v8). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
-| `docs/features/markets.md` | DRAFT (Markets view: supply, demand, price and who is short per market; scope A info-only, scope B optional demand-responsive goods prices). Not implemented | Planning the Markets tab or price rules |
+| `docs/features/markets.md` | APPROVED, scope A only (Markets view: supply, demand, price and who is short per market, information only; scope B, demand-responsive goods prices, not approved). In progress | Planning the Markets tab or price rules |
 | `docs/features/registry-driven-sim.md` | PARKED (idea: the simulation reads `content/entities.json`, not only Rust enums) | Planning the sim/registry link |
 | **Naming convention** | From now on new work is a named **feature**, not a version: `docs/features/<name>.md`. The old `town-vN.md` files stay as history | Starting new work |
 | How to make a change | `docs/how-to.md` |
@@ -62,7 +62,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/town-v8.md` | APPROVED (net worth breakdown; contract v2.2). IMPLEMENTED (`docs/snapshot-contract.md` section 22, `docs/how-to.md` section 23) | Net worth, wealth, Who holds what |
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST and state ownership; was v7, then v8) | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
-| `docs/features/markets.md` | DRAFT (Markets view; contract v2.3 proposed) | Planning the Markets tab or price rules |
+| `docs/features/markets.md` | APPROVED scope A (Markets view; contract v2.3) | Planning the Markets tab or price rules |
 | `docs/taxonomy.md` | APPROVED (axes and roles classification of every entity; migration plan; ts-rs and mock-replay interaction). Phases 1 and 2 of the platform cleanup are implemented (section 12 has the status per step) | Planning shared abstractions, the entity registry, or vocabulary renames |
 | `docs/web-notes-v7.md` | CURRENT (Town v7 web notes: Panels and Scene sections) | Working on the estate in `web/src` |
 | `docs/architecture.md` | CURRENT | Understanding the system end to end |

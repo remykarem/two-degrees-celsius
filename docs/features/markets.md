@@ -1,6 +1,6 @@
 # Feature: Markets view (supply and demand made visible)
 
-Status: **DRAFT for review.** Nothing implemented. Written from the code at commit `f29ca4a` (`crates/sim-model/src/{goods,labour,credit,production,...}.rs`, `content/params.json`). Where this doc and code disagree, code wins (`docs/README.md`). This doc changes no code. Scope A is information only (state hash byte-identical); scope B is an optional, balance-changing modelling decision, flagged as such.
+Status: **APPROVED by the user, scope A only (the information-only Markets view), with every open-question default (Q1 to Q7) and the pedagogy section. Scope B (price response to excess demand) is NOT approved and not in scope.** Implementation in progress. Written from the code at commit `f29ca4a` (`crates/sim-model/src/{goods,labour,credit,production,...}.rs`, `content/params.json`). Where this doc and code disagree, code wins (`docs/README.md`). This doc changes no code. Scope A is information only (state hash byte-identical); scope B is an optional, balance-changing modelling decision, flagged as such.
 
 ## 1. Why
 The user is new to economics and cannot see supply and demand or markets anywhere in the game. The model does have markets, but each is spread over a system module and surfaces only as a number (a price, a wage, a rent). A Markets view shows, per market, what people want, what is on offer, the gap, the price and which way it is moving, and who is left short. It must also say honestly how this model sets prices, because it is not the textbook way (section 2.1).
