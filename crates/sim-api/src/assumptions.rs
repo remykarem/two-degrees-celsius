@@ -417,6 +417,21 @@ pub fn registry() -> Vec<(&'static str, ExampleFn)> {
                 "t CO2 per month".to_string(),
             ))
         }),
+        ("commons_regrowth", |p, i, _| {
+            Some((
+                sim_metrics::commons_regrowth(p, i.get("stock")?, i.get("drought_factor")?),
+                "units of commons per month".to_string(),
+            ))
+        }),
+        ("food_cap_commons", |p, i, _| {
+            let v = sim_metrics::food_cap_commons(
+                p,
+                i.get("stock")?,
+                sim_types::CommonsAccess::Open,
+                i.get("lever")?,
+            )?;
+            Some((v, "units of food per month".to_string()))
+        }),
         ("cobb_douglas", |p, i, _| {
             let v = production::cobb_douglas(p, i.get("tfp")?, i.get("capital")?, i.get("labour")?);
             Some((v, "units per month".to_string()))

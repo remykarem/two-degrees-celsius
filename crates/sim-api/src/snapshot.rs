@@ -519,6 +519,8 @@ pub struct Snapshot {
     pub industry: crate::industry::Industry,
     /// Contract v2.3: one card per market for the latest month (empty before the first month).
     pub markets: Vec<crate::markets::MarketView>,
+    /// Contract v2.6: the sustainable-yield view of the commons and the forest (always present).
+    pub nature_yield: Vec<crate::yields::YieldView>,
     pub history: Vec<HistoryPoint>,
     /// Contract v1.9: the elite estate; absent when the town has none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1050,6 +1052,9 @@ pub fn build(
     ledger: &crate::ledger::LedgerStore,
     log: &crate::log::WrapperLog,
 ) -> Snapshot {
+    let markets =
+        crate::markets::build(sim, history, log, &meta.sources.markets, &meta.energy_unit);
+    let food_wanted = markets.iter().find(|m| m.id == "food").map(|m| m.demand);
     let s = &sim.state;
     let finance = crate::finance::build(sim, ledger, &meta.sources);
     let policy = policy_map(s);
@@ -1134,7 +1139,14 @@ pub fn build(
         energy: crate::finance::energy(sim, &meta.energy_unit),
         breakdowns: crate::breakdowns::build(sim, &finance, log, &meta.sources),
         industry: crate::industry::build(sim, &finance),
-        markets: crate::markets::build(sim, history, log, &meta.sources.markets, &meta.energy_unit),
+        nature_yield: crate::yields::build(
+            sim,
+            history,
+            &meta.sources.yields,
+            &meta.sources.markets.mechanisms,
+            food_wanted,
+        ),
+        markets,
         finance,
         history: history.to_vec(),
         estate: estate_view(sim, ledger),

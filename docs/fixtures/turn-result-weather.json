@@ -7009,6 +7009,10 @@
           }
         ],
         "howId": "markets:food",
+        "link": {
+          "label": "See how much food the commons and the forest can supply",
+          "target": "panel:ecology"
+        },
         "reconciles": true
       },
       {
@@ -7421,6 +7425,361 @@
         "reconciles": true
       }
     ],
+    "natureYield": [
+      {
+        "id": "commons",
+        "title": "The commons: taken against regrown",
+        "blurb": "The commons is a shared stock of land, water and wild food that nobody owns. The Farm takes from it to grow food. The size of the stock caps the food the town can grow.",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum) x drought factor; taken = Farm output x commons taken per unit of food x the harvest lever; next month the Farm cannot grow more food than a set share of the stock allows.",
+        "headline": "1.2 taken for every 1 regrown",
+        "overLine": true,
+        "verdict": "The Farm took 3.5 units of commons this month, but the commons only regrows 3 a month at this size. At this rate it collapses in 1,403 months, and food then runs short.",
+        "monthsToCollapse": 1403.3408209327667,
+        "rows": [
+          {
+            "key": "stock",
+            "label": "Stock now",
+            "value": 755.7570680190993,
+            "unit": "units of commons",
+            "text": "756 units of commons"
+          },
+          {
+            "key": "regrowth",
+            "label": "Regrowth a month at this stock",
+            "value": 2.9655083161299984,
+            "unit": "units of commons a month",
+            "text": "3 units of commons a month"
+          },
+          {
+            "key": "msy",
+            "label": "Best possible regrowth (maximum sustainable yield)",
+            "value": 5.0,
+            "unit": "units of commons a month",
+            "text": "5 units of commons a month"
+          },
+          {
+            "key": "taken",
+            "label": "Taken this month",
+            "value": 3.4969238189751395,
+            "unit": "units of commons a month",
+            "text": "3.5 units of commons a month"
+          },
+          {
+            "key": "ratio",
+            "label": "Taken compared with regrown",
+            "value": 1.1791987902899024,
+            "unit": "ratio",
+            "text": "1.2 taken for every 1 regrown"
+          },
+          {
+            "key": "over",
+            "label": "Over the sustainable line?",
+            "value": 1.0,
+            "unit": "flag",
+            "text": "Yes: more is taken than regrows"
+          },
+          {
+            "key": "months",
+            "label": "Time until the commons collapses at this rate",
+            "value": 1403.3408209327667,
+            "unit": "months",
+            "text": "1,403 months"
+          },
+          {
+            "key": "food_cap",
+            "label": "Most food the commons can supply next month",
+            "value": 971.687658881699,
+            "unit": "units of food a month",
+            "text": "972 units of food a month"
+          },
+          {
+            "key": "food_wanted",
+            "label": "Food the town wanted this month",
+            "value": 548.0444444444445,
+            "unit": "units of food a month",
+            "text": "548 units of food a month"
+          }
+        ],
+        "parts": [
+          {
+            "label": "Regrown",
+            "value": 2.9655083161299984,
+            "unit": "units of commons a month"
+          },
+          {
+            "label": "Taken",
+            "value": -3.4969238189751395,
+            "unit": "units of commons a month"
+          }
+        ],
+        "change": -0.531415502845141,
+        "changeUnit": "units of commons a month",
+        "changeLabel": "Change a month at this rate",
+        "series": [
+          {
+            "stock": 772.8063576344892,
+            "regrowth": 3.5115338246840633,
+            "taken": 3.577033073418957
+          },
+          {
+            "stock": 772.5889144281263,
+            "regrowth": 3.5139056746179134,
+            "taken": 3.588231847225487
+          },
+          {
+            "stock": 772.3519029340778,
+            "regrowth": 3.5164888193637345,
+            "taken": 3.5962744779474973
+          },
+          {
+            "stock": 772.1032367232606,
+            "regrowth": 3.519196571294505,
+            "taken": 3.6019330804176155
+          },
+          {
+            "stock": 771.8545207143039,
+            "regrowth": 3.521902391343922,
+            "taken": 3.603556993652118
+          },
+          {
+            "stock": 771.6175232699418,
+            "regrowth": 3.5244784210540523,
+            "taken": 3.6004144595784626
+          },
+          {
+            "stock": 770.7754408596742,
+            "regrowth": 3.5336132125449815,
+            "taken": 4.224179525751065
+          },
+          {
+            "stock": 768.7924939568421,
+            "regrowth": 3.55501190384922,
+            "taken": 4.184579794382199
+          },
+          {
+            "stock": 765.0730726977924,
+            "regrowth": 3.5947253226110165,
+            "taken": 4.747812797389189
+          },
+          {
+            "stock": 762.3049668807699,
+            "regrowth": 3.6239220869935633,
+            "taken": 4.121238479022789
+          },
+          {
+            "stock": 760.4813419231374,
+            "regrowth": 2.948922279956032,
+            "taken": 3.801799348308186
+          },
+          {
+            "stock": 758.4696725101327,
+            "regrowth": 3.6638685678500957,
+            "taken": 4.031040582191661
+          },
+          {
+            "stock": 757.4436163982025,
+            "regrowth": 3.674455687516304,
+            "taken": 3.9982532311179595
+          },
+          {
+            "stock": 756.6352523645892,
+            "regrowth": 3.6827669448752727,
+            "taken": 3.9156549329323855
+          },
+          {
+            "stock": 755.7570680190993,
+            "regrowth": 2.9655083161299984,
+            "taken": 3.4969238189751395
+          }
+        ],
+        "seriesLabels": [
+          "Stock",
+          "Regrown a month",
+          "Taken a month"
+        ],
+        "howId": "ecology:commons",
+        "access": {
+          "id": "open",
+          "label": "Open to everyone",
+          "mechanism": "market",
+          "mechanism_label": "Market"
+        },
+        "reconciles": true
+      },
+      {
+        "id": "forest",
+        "title": "The forest: taken against regrown",
+        "blurb": "The forest is also drawn on for food, and it is the town's carbon sink: standing trees absorb CO2. Taking forest for food and clearing it for building lowers the sink and speeds up the carbon budget.",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum); taken = Farm output x forest taken per unit of food; the sink absorbs a fixed amount of CO2 per unit of standing forest.",
+        "headline": "0.5 taken for every 1 regrown",
+        "overLine": false,
+        "verdict": "The Farm took 1 units of forest this month and the forest regrows 2 a month at this size, so the stock is holding or growing.",
+        "monthsToCollapse": null,
+        "rows": [
+          {
+            "key": "stock",
+            "label": "Stock now",
+            "value": 1117.3280552278707,
+            "unit": "units of forest",
+            "text": "1,117 units of forest"
+          },
+          {
+            "key": "regrowth",
+            "label": "Regrowth a month at this stock",
+            "value": 1.9724682549128916,
+            "unit": "units of forest a month",
+            "text": "2 units of forest a month"
+          },
+          {
+            "key": "msy",
+            "label": "Best possible regrowth (maximum sustainable yield)",
+            "value": 2.0,
+            "unit": "units of forest a month",
+            "text": "2 units of forest a month"
+          },
+          {
+            "key": "taken",
+            "label": "Taken this month",
+            "value": 0.9991210911357541,
+            "unit": "units of forest a month",
+            "text": "1 units of forest a month"
+          },
+          {
+            "key": "ratio",
+            "label": "Taken compared with regrown",
+            "value": 0.506533420067578,
+            "unit": "ratio",
+            "text": "0.5 taken for every 1 regrown"
+          },
+          {
+            "key": "over",
+            "label": "Over the sustainable line?",
+            "value": 0.0,
+            "unit": "flag",
+            "text": "No: no more is taken than regrows"
+          },
+          {
+            "key": "months",
+            "label": "Time until the forest is gone at this rate",
+            "unit": "months",
+            "text": "Not shrinking at this rate"
+          },
+          {
+            "key": "food_cap",
+            "label": "Most food the forest can supply next month",
+            "value": 1452.5264717962318,
+            "unit": "units of food a month",
+            "text": "1,453 units of food a month"
+          },
+          {
+            "key": "sink",
+            "label": "CO2 the forest absorbs",
+            "value": 1.1173280552278706,
+            "unit": "tonnes of CO2 a month",
+            "text": "1.1 tonnes of CO2 a month"
+          }
+        ],
+        "parts": [
+          {
+            "label": "Regrown",
+            "value": 1.9724682549128916,
+            "unit": "units of forest a month"
+          },
+          {
+            "label": "Taken",
+            "value": -0.9991210911357541,
+            "unit": "units of forest a month"
+          }
+        ],
+        "change": 0.9733471637771375,
+        "changeUnit": "units of forest a month",
+        "changeLabel": "Change a month at this rate",
+        "series": [
+          {
+            "stock": 1411.388576755157,
+            "regrowth": 1.661518877830733,
+            "taken": 1.0220094495482734
+          },
+          {
+            "stock": 1412.0090826025328,
+            "regrowth": 1.660497031706039,
+            "taken": 1.025209099207282
+          },
+          {
+            "stock": 1412.4115077118372,
+            "regrowth": 1.659833496613699,
+            "taken": 1.0275069936992849
+          },
+          {
+            "stock": 1412.4753481267828,
+            "regrowth": 1.6597281743753785,
+            "taken": 1.0291237372621758
+          },
+          {
+            "stock": 1412.3018903304492,
+            "regrowth": 1.6600143024598766,
+            "taken": 1.0295877124720336
+          },
+          {
+            "stock": 1411.895666307693,
+            "regrowth": 1.660683920153883,
+            "taken": 1.0286898455938465
+          },
+          {
+            "stock": 1411.5642043898088,
+            "regrowth": 1.661229811329968,
+            "taken": 1.206908435928876
+          },
+          {
+            "stock": 1378.439744025111,
+            "regrowth": 1.713566720284417,
+            "taken": 1.1955942269663427
+          },
+          {
+            "stock": 1361.9718470349796,
+            "regrowth": 1.7379527639081704,
+            "taken": 1.3565179421111968
+          },
+          {
+            "stock": 1361.2956048074036,
+            "regrowth": 1.738930971893705,
+            "taken": 1.1774967082922256
+          },
+          {
+            "stock": 1361.5794860563296,
+            "regrowth": 1.738520550526481,
+            "taken": 1.0862283852309105
+          },
+          {
+            "stock": 1315.375573744762,
+            "regrowth": 1.8010764949703242,
+            "taken": 1.151725880626189
+          },
+          {
+            "stock": 1315.7259088072772,
+            "regrowth": 1.8006343010156378,
+            "taken": 1.1423580660337027
+          },
+          {
+            "stock": 1256.291367078005,
+            "regrowth": 1.8686294703225748,
+            "taken": 1.1187585522663959
+          },
+          {
+            "stock": 1117.3280552278707,
+            "regrowth": 1.9724682549128916,
+            "taken": 0.9991210911357541
+          }
+        ],
+        "seriesLabels": [
+          "Stock",
+          "Regrown a month",
+          "Taken a month"
+        ],
+        "howId": "ecology:forest",
+        "reconciles": true
+      }
+    ],
     "history": [
       {
         "turn": 1,
@@ -7452,7 +7811,13 @@
         "priceServices": 73.61,
         "wageAvg": 1480.267142857143,
         "rentPrivate": 348.19,
-        "loanRateAvg": 0.04901470941288164
+        "loanRateAvg": 0.04901470941288164,
+        "commonsStock": 772.8063576344892,
+        "commonsRegrowth": 3.5115338246840633,
+        "commonsTaken": 3.577033073418957,
+        "forestStock": 1411.388576755157,
+        "forestRegrowth": 1.661518877830733,
+        "forestTaken": 1.0220094495482734
       },
       {
         "turn": 2,
@@ -7484,7 +7849,13 @@
         "priceServices": 72.56,
         "wageAvg": 1446.19,
         "rentPrivate": 353.44,
-        "loanRateAvg": 0.04892873741062608
+        "loanRateAvg": 0.04892873741062608,
+        "commonsStock": 772.5889144281263,
+        "commonsRegrowth": 3.5139056746179134,
+        "commonsTaken": 3.588231847225487,
+        "forestStock": 1412.0090826025328,
+        "forestRegrowth": 1.660497031706039,
+        "forestTaken": 1.025209099207282
       },
       {
         "turn": 3,
@@ -7516,7 +7887,13 @@
         "priceServices": 71.41999999999999,
         "wageAvg": 1411.245,
         "rentPrivate": 358.77,
-        "loanRateAvg": 0.04884990296210771
+        "loanRateAvg": 0.04884990296210771,
+        "commonsStock": 772.3519029340778,
+        "commonsRegrowth": 3.5164888193637345,
+        "commonsTaken": 3.5962744779474973,
+        "forestStock": 1412.4115077118372,
+        "forestRegrowth": 1.659833496613699,
+        "forestTaken": 1.0275069936992849
       },
       {
         "turn": 4,
@@ -7548,7 +7925,13 @@
         "priceServices": 70.19,
         "wageAvg": 1378.06,
         "rentPrivate": 364.17,
-        "loanRateAvg": 0.04877811122271645
+        "loanRateAvg": 0.04877811122271645,
+        "commonsStock": 772.1032367232606,
+        "commonsRegrowth": 3.519196571294505,
+        "commonsTaken": 3.6019330804176155,
+        "forestStock": 1412.4753481267828,
+        "forestRegrowth": 1.6597281743753785,
+        "forestTaken": 1.0291237372621758
       },
       {
         "turn": 5,
@@ -7580,7 +7963,13 @@
         "priceServices": 68.9,
         "wageAvg": 1346.425,
         "rentPrivate": 369.66,
-        "loanRateAvg": 0.048714586607838915
+        "loanRateAvg": 0.048714586607838915,
+        "commonsStock": 771.8545207143039,
+        "commonsRegrowth": 3.521902391343922,
+        "commonsTaken": 3.603556993652118,
+        "forestStock": 1412.3018903304492,
+        "forestRegrowth": 1.6600143024598766,
+        "forestTaken": 1.0295877124720336
       },
       {
         "turn": 6,
@@ -7612,7 +8001,13 @@
         "priceServices": 67.54,
         "wageAvg": 1318.1,
         "rentPrivate": 375.24,
-        "loanRateAvg": 0.04865580873452922
+        "loanRateAvg": 0.04865580873452922,
+        "commonsStock": 771.6175232699418,
+        "commonsRegrowth": 3.5244784210540523,
+        "commonsTaken": 3.6004144595784626,
+        "forestStock": 1411.895666307693,
+        "forestRegrowth": 1.660683920153883,
+        "forestTaken": 1.0286898455938465
       },
       {
         "turn": 7,
@@ -7644,7 +8039,13 @@
         "priceServices": 66.16,
         "wageAvg": 1290.545,
         "rentPrivate": 377.11,
-        "loanRateAvg": 0.04862393667698541
+        "loanRateAvg": 0.04862393667698541,
+        "commonsStock": 770.7754408596742,
+        "commonsRegrowth": 3.5336132125449815,
+        "commonsTaken": 4.224179525751065,
+        "forestStock": 1411.5642043898088,
+        "forestRegrowth": 1.661229811329968,
+        "forestTaken": 1.206908435928876
       },
       {
         "turn": 8,
@@ -7676,7 +8077,13 @@
         "priceServices": 64.79,
         "wageAvg": 1273.725,
         "rentPrivate": 375.21,
-        "loanRateAvg": 0.04858774357881679
+        "loanRateAvg": 0.04858774357881679,
+        "commonsStock": 768.7924939568421,
+        "commonsRegrowth": 3.55501190384922,
+        "commonsTaken": 4.184579794382199,
+        "forestStock": 1378.439744025111,
+        "forestRegrowth": 1.713566720284417,
+        "forestTaken": 1.1955942269663427
       },
       {
         "turn": 9,
@@ -7708,7 +8115,13 @@
         "priceServices": 63.5,
         "wageAvg": 1260.278,
         "rentPrivate": 369.6,
-        "loanRateAvg": 0.0485282611347928
+        "loanRateAvg": 0.0485282611347928,
+        "commonsStock": 765.0730726977924,
+        "commonsRegrowth": 3.5947253226110165,
+        "commonsTaken": 4.747812797389189,
+        "forestStock": 1361.9718470349796,
+        "forestRegrowth": 1.7379527639081704,
+        "forestTaken": 1.3565179421111968
       },
       {
         "turn": 10,
@@ -7740,7 +8153,13 @@
         "priceServices": 62.34,
         "wageAvg": 1258.35,
         "rentPrivate": 375.18,
-        "loanRateAvg": 0.04848212536728044
+        "loanRateAvg": 0.04848212536728044,
+        "commonsStock": 762.3049668807699,
+        "commonsRegrowth": 3.6239220869935633,
+        "commonsTaken": 4.121238479022789,
+        "forestStock": 1361.2956048074036,
+        "forestRegrowth": 1.738930971893705,
+        "forestTaken": 1.1774967082922256
       },
       {
         "turn": 11,
@@ -7772,7 +8191,13 @@
         "priceServices": 61.32,
         "wageAvg": 1255.32875,
         "rentPrivate": 369.57,
-        "loanRateAvg": 0.04842128103365795
+        "loanRateAvg": 0.04842128103365795,
+        "commonsStock": 760.4813419231374,
+        "commonsRegrowth": 2.948922279956032,
+        "commonsTaken": 3.801799348308186,
+        "forestStock": 1361.5794860563296,
+        "forestRegrowth": 1.738520550526481,
+        "forestTaken": 1.0862283852309105
       },
       {
         "turn": 12,
@@ -7804,7 +8229,13 @@
         "priceServices": 60.44,
         "wageAvg": 1253.09875,
         "rentPrivate": 371.41,
-        "loanRateAvg": 0.0483240181728189
+        "loanRateAvg": 0.0483240181728189,
+        "commonsStock": 758.4696725101327,
+        "commonsRegrowth": 3.6638685678500957,
+        "commonsTaken": 4.031040582191661,
+        "forestStock": 1315.375573744762,
+        "forestRegrowth": 1.8010764949703242,
+        "forestTaken": 1.151725880626189
       },
       {
         "turn": 13,
@@ -7836,7 +8267,13 @@
         "priceServices": 59.63,
         "wageAvg": 1247.6375,
         "rentPrivate": 369.54,
-        "loanRateAvg": 0.04824279960054398
+        "loanRateAvg": 0.04824279960054398,
+        "commonsStock": 757.4436163982025,
+        "commonsRegrowth": 3.674455687516304,
+        "commonsTaken": 3.9982532311179595,
+        "forestStock": 1315.7259088072772,
+        "forestRegrowth": 1.8006343010156378,
+        "forestTaken": 1.1423580660337027
       },
       {
         "turn": 14,
@@ -7868,7 +8305,13 @@
         "priceServices": 58.87000000000001,
         "wageAvg": 1239.45125,
         "rentPrivate": 371.38,
-        "loanRateAvg": 0.048170196825605645
+        "loanRateAvg": 0.048170196825605645,
+        "commonsStock": 756.6352523645892,
+        "commonsRegrowth": 3.6827669448752727,
+        "commonsTaken": 3.9156549329323855,
+        "forestStock": 1256.291367078005,
+        "forestRegrowth": 1.8686294703225748,
+        "forestTaken": 1.1187585522663959
       },
       {
         "turn": 15,
@@ -7900,7 +8343,13 @@
         "priceServices": 58.12,
         "wageAvg": 1228.9875,
         "rentPrivate": 369.51,
-        "loanRateAvg": 0.048106534791484745
+        "loanRateAvg": 0.048106534791484745,
+        "commonsStock": 755.7570680190993,
+        "commonsRegrowth": 2.9655083161299984,
+        "commonsTaken": 3.4969238189751395,
+        "forestStock": 1117.3280552278707,
+        "forestRegrowth": 1.9724682549128916,
+        "forestTaken": 0.9991210911357541
       }
     ],
     "estate": {

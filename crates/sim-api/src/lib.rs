@@ -36,6 +36,7 @@ pub mod snapshot;
 pub mod sources;
 pub mod trades;
 pub mod turn;
+pub mod yields;
 
 pub use api::Api;
 pub use assumptions::AssumptionTopic;

@@ -194,6 +194,7 @@ struct UiFile {
     net_worth_lines: Vec<crate::networth::NetWorthLineDef>,
     net_worth_holders: Vec<crate::networth::NetWorthHolderDef>,
     markets: crate::markets::MarketsContent,
+    nature_yield: crate::yields::YieldContent,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -204,7 +205,13 @@ fn bad(msg: String) -> ApiError {
 pub fn sources() -> ApiResult<crate::sources::Sources> {
     let f: UiFile = serde_json::from_str(UI).map_err(|e| bad(e.to_string()))?;
     let net_worth = crate::networth::NetWorthDefs::new(f.net_worth_lines, f.net_worth_holders)?;
-    crate::sources::Sources::new(f.emission_sources, f.income_sources, net_worth, f.markets)
+    crate::sources::Sources::new(
+        f.emission_sources,
+        f.income_sources,
+        net_worth,
+        f.markets,
+        f.nature_yield.validated()?,
+    )
 }
 
 /// Parse `content/ui.json` and resolve the system cards against `params`.

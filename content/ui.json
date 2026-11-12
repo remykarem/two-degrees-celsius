@@ -707,6 +707,10 @@
         "gapUnmet": "{unmet} {unmet_unit} went without",
         "gapUnsold": "{unsold} {unsold_unit} unsold",
         "howId": "markets:food",
+        "link": {
+          "label": "See how much food the commons and the forest can supply",
+          "target": "panel:ecology"
+        },
         "trades": {
           "intro": "Each row is one purchase of food this month: who bought, who sold it, how many units and at what price. Buyers are households, and also firms (buying machines and materials) and the government.",
           "empty": "Nobody bought food in this month.",
@@ -778,6 +782,11 @@
           "households_short": {
             "one": "{count} household could not buy all the food it needed",
             "other": "{count} households could not buy all the food they needed"
+          },
+          "commons_limit": {
+            "one": "The commons and forest can supply at most {count} {unit} of food next month",
+            "other": "The commons and forest can supply at most {count} {unit} of food next month"
+          
           }
         },
         "drivers": {
@@ -1303,6 +1312,83 @@
           }
         },
         "drivers": {}
+      }
+    ]
+  },
+  "nature_yield": {
+    "words": {
+      "access": {
+        "open": { "label": "Open to everyone", "mechanism": "market" },
+        "enclosed": { "label": "Fenced off by an owner who charges a fee", "mechanism": "market" },
+        "community": { "label": "Run by the community under an agreed limit", "mechanism": "commons" }
+      },
+      "intro": "A shared stock (the commons, the forest) regrows a little every month. The most it can regrow in a month, at its best, is its maximum sustainable yield, and it regrows that much only when it is about half full. Taking more than it regrows shrinks the stock, which shrinks the regrowth, which makes the same harvest even further over the line.",
+      "ratio": "{taken} taken for every {regrown} regrown",
+      "ratioNone": "Taken, but nothing regrows",
+      "overYes": "Yes: more is taken than regrows",
+      "overNo": "No: no more is taken than regrows",
+      "monthsNone": "Not shrinking at this rate",
+      "months": "{months} months",
+      "noLimit": "No limit from this stock",
+      "seriesLabelStock": "Stock",
+      "seriesLabelRegrowth": "Regrown a month",
+      "seriesLabelTaken": "Taken a month",
+      "changeLabel": "Change a month at this rate",
+      "partsRegrowth": "Regrown",
+      "partsTaken": "Taken"
+    },
+    "stocks": [
+      {
+        "id": "commons",
+        "title": "The commons: taken against regrown",
+        "blurb": "The commons is a shared stock of land, water and wild food that nobody owns. The Farm takes from it to grow food. The size of the stock caps the food the town can grow.",
+        "stockUnit": "units of commons",
+        "flowUnit": "units of commons a month",
+        "foodUnit": "units of food a month",
+        "monthsUnit": "months",
+        "tonnesUnit": "tonnes of CO2 a month",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum) x drought factor; taken = Farm output x commons taken per unit of food x the harvest lever; next month the Farm cannot grow more food than a set share of the stock allows.",
+        "rows": {
+          "stock": "Stock now",
+          "regrowth": "Regrowth a month at this stock",
+          "msy": "Best possible regrowth (maximum sustainable yield)",
+          "taken": "Taken this month",
+          "ratio": "Taken compared with regrown",
+          "over": "Over the sustainable line?",
+          "months": "Time until the commons collapses at this rate",
+          "food_cap": "Most food the commons can supply next month",
+          "food_wanted": "Food the town wanted this month"
+        },
+        "verdictOver": "The Farm took {taken} units of commons this month, but the commons only regrows {regrowth} a month at this size. At this rate it collapses in {months} months, and food then runs short.",
+        "verdictUnder": "The Farm took {taken} units of commons this month and the commons regrows {regrowth} a month at this size, so the stock is holding or growing.",
+        "verdictEmpty": "The commons is gone or nearly gone. It cannot supply the food the Farm would otherwise grow, and the town goes short.",
+        "howId": "ecology:commons"
+      },
+      {
+        "id": "forest",
+        "title": "The forest: taken against regrown",
+        "blurb": "The forest is also drawn on for food, and it is the town's carbon sink: standing trees absorb CO2. Taking forest for food and clearing it for building lowers the sink and speeds up the carbon budget.",
+        "stockUnit": "units of forest",
+        "flowUnit": "units of forest a month",
+        "foodUnit": "units of food a month",
+        "monthsUnit": "months",
+        "tonnesUnit": "tonnes of CO2 a month",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum); taken = Farm output x forest taken per unit of food; the sink absorbs a fixed amount of CO2 per unit of standing forest.",
+        "rows": {
+          "stock": "Stock now",
+          "regrowth": "Regrowth a month at this stock",
+          "msy": "Best possible regrowth (maximum sustainable yield)",
+          "taken": "Taken this month",
+          "ratio": "Taken compared with regrown",
+          "over": "Over the sustainable line?",
+          "months": "Time until the forest is gone at this rate",
+          "food_cap": "Most food the forest can supply next month",
+          "sink": "CO2 the forest absorbs"
+        },
+        "verdictOver": "The Farm took {taken} units of forest this month, but the forest only regrows {regrowth} a month at this size. At this rate it is gone in {months} months, and the sink goes with it.",
+        "verdictUnder": "The Farm took {taken} units of forest this month and the forest regrows {regrowth} a month at this size, so the stock is holding or growing.",
+        "verdictEmpty": "The forest is gone. It no longer absorbs CO2 or supplies food.",
+        "howId": "ecology:forest"
       }
     ]
   }

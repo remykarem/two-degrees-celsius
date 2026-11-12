@@ -6760,6 +6760,10 @@
           }
         ],
         "howId": "markets:food",
+        "link": {
+          "label": "See how much food the commons and the forest can supply",
+          "target": "panel:ecology"
+        },
         "reconciles": true
       },
       {
@@ -7102,6 +7106,221 @@
         "reconciles": true
       }
     ],
+    "natureYield": [
+      {
+        "id": "commons",
+        "title": "The commons: taken against regrown",
+        "blurb": "The commons is a shared stock of land, water and wild food that nobody owns. The Farm takes from it to grow food. The size of the stock caps the food the town can grow.",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum) x drought factor; taken = Farm output x commons taken per unit of food x the harvest lever; next month the Farm cannot grow more food than a set share of the stock allows.",
+        "headline": "1 taken for every 1 regrown",
+        "overLine": true,
+        "verdict": "The Farm took 3.6 units of commons this month, but the commons only regrows 3.5 a month at this size. At this rate it collapses in 11,646 months, and food then runs short.",
+        "monthsToCollapse": 11646.032166291365,
+        "rows": [
+          {
+            "key": "stock",
+            "label": "Stock now",
+            "value": 772.8063576344892,
+            "unit": "units of commons",
+            "text": "773 units of commons"
+          },
+          {
+            "key": "regrowth",
+            "label": "Regrowth a month at this stock",
+            "value": 3.5115338246840633,
+            "unit": "units of commons a month",
+            "text": "3.5 units of commons a month"
+          },
+          {
+            "key": "msy",
+            "label": "Best possible regrowth (maximum sustainable yield)",
+            "value": 5.0,
+            "unit": "units of commons a month",
+            "text": "5 units of commons a month"
+          },
+          {
+            "key": "taken",
+            "label": "Taken this month",
+            "value": 3.577033073418957,
+            "unit": "units of commons a month",
+            "text": "3.6 units of commons a month"
+          },
+          {
+            "key": "ratio",
+            "label": "Taken compared with regrown",
+            "value": 1.0186526036783332,
+            "unit": "ratio",
+            "text": "1 taken for every 1 regrown"
+          },
+          {
+            "key": "over",
+            "label": "Over the sustainable line?",
+            "value": 1.0,
+            "unit": "flag",
+            "text": "Yes: more is taken than regrows"
+          },
+          {
+            "key": "months",
+            "label": "Time until the commons collapses at this rate",
+            "value": 11646.032166291365,
+            "unit": "months",
+            "text": "11,646 months"
+          },
+          {
+            "key": "food_cap",
+            "label": "Most food the commons can supply next month",
+            "value": 993.608174101486,
+            "unit": "units of food a month",
+            "text": "994 units of food a month"
+          },
+          {
+            "key": "food_wanted",
+            "label": "Food the town wanted this month",
+            "value": 535.0743218134522,
+            "unit": "units of food a month",
+            "text": "535 units of food a month"
+          }
+        ],
+        "parts": [
+          {
+            "label": "Regrown",
+            "value": 3.5115338246840633,
+            "unit": "units of commons a month"
+          },
+          {
+            "label": "Taken",
+            "value": -3.577033073418957,
+            "unit": "units of commons a month"
+          }
+        ],
+        "change": -0.06549924873489354,
+        "changeUnit": "units of commons a month",
+        "changeLabel": "Change a month at this rate",
+        "series": [
+          {
+            "stock": 772.8063576344892,
+            "regrowth": 3.5115338246840633,
+            "taken": 3.577033073418957
+          }
+        ],
+        "seriesLabels": [
+          "Stock",
+          "Regrown a month",
+          "Taken a month"
+        ],
+        "howId": "ecology:commons",
+        "access": {
+          "id": "open",
+          "label": "Open to everyone",
+          "mechanism": "market",
+          "mechanism_label": "Market"
+        },
+        "reconciles": true
+      },
+      {
+        "id": "forest",
+        "title": "The forest: taken against regrown",
+        "blurb": "The forest is also drawn on for food, and it is the town's carbon sink: standing trees absorb CO2. Taking forest for food and clearing it for building lowers the sink and speeds up the carbon budget.",
+        "formula": "regrowth = growth rate x stock x (1 - stock / maximum); taken = Farm output x forest taken per unit of food; the sink absorbs a fixed amount of CO2 per unit of standing forest.",
+        "headline": "0.6 taken for every 1 regrown",
+        "overLine": false,
+        "verdict": "The Farm took 1 units of forest this month and the forest regrows 1.7 a month at this size, so the stock is holding or growing.",
+        "monthsToCollapse": null,
+        "rows": [
+          {
+            "key": "stock",
+            "label": "Stock now",
+            "value": 1411.388576755157,
+            "unit": "units of forest",
+            "text": "1,411 units of forest"
+          },
+          {
+            "key": "regrowth",
+            "label": "Regrowth a month at this stock",
+            "value": 1.661518877830733,
+            "unit": "units of forest a month",
+            "text": "1.7 units of forest a month"
+          },
+          {
+            "key": "msy",
+            "label": "Best possible regrowth (maximum sustainable yield)",
+            "value": 2.0,
+            "unit": "units of forest a month",
+            "text": "2 units of forest a month"
+          },
+          {
+            "key": "taken",
+            "label": "Taken this month",
+            "value": 1.0220094495482734,
+            "unit": "units of forest a month",
+            "text": "1 units of forest a month"
+          },
+          {
+            "key": "ratio",
+            "label": "Taken compared with regrown",
+            "value": 0.6151055297563646,
+            "unit": "ratio",
+            "text": "0.6 taken for every 1 regrown"
+          },
+          {
+            "key": "over",
+            "label": "Over the sustainable line?",
+            "value": 0.0,
+            "unit": "flag",
+            "text": "No: no more is taken than regrows"
+          },
+          {
+            "key": "months",
+            "label": "Time until the forest is gone at this rate",
+            "unit": "months",
+            "text": "Not shrinking at this rate"
+          },
+          {
+            "key": "food_cap",
+            "label": "Most food the forest can supply next month",
+            "value": 1834.805149781704,
+            "unit": "units of food a month",
+            "text": "1,835 units of food a month"
+          },
+          {
+            "key": "sink",
+            "label": "CO2 the forest absorbs",
+            "value": 1.411388576755157,
+            "unit": "tonnes of CO2 a month",
+            "text": "1.4 tonnes of CO2 a month"
+          }
+        ],
+        "parts": [
+          {
+            "label": "Regrown",
+            "value": 1.661518877830733,
+            "unit": "units of forest a month"
+          },
+          {
+            "label": "Taken",
+            "value": -1.0220094495482734,
+            "unit": "units of forest a month"
+          }
+        ],
+        "change": 0.6395094282824596,
+        "changeUnit": "units of forest a month",
+        "changeLabel": "Change a month at this rate",
+        "series": [
+          {
+            "stock": 1411.388576755157,
+            "regrowth": 1.661518877830733,
+            "taken": 1.0220094495482734
+          }
+        ],
+        "seriesLabels": [
+          "Stock",
+          "Regrown a month",
+          "Taken a month"
+        ],
+        "howId": "ecology:forest",
+        "reconciles": true
+      }
+    ],
     "history": [
       {
         "turn": 1,
@@ -7133,7 +7352,13 @@
         "priceServices": 73.61,
         "wageAvg": 1480.267142857143,
         "rentPrivate": 348.19,
-        "loanRateAvg": 0.04901470941288164
+        "loanRateAvg": 0.04901470941288164,
+        "commonsStock": 772.8063576344892,
+        "commonsRegrowth": 3.5115338246840633,
+        "commonsTaken": 3.577033073418957,
+        "forestStock": 1411.388576755157,
+        "forestRegrowth": 1.661518877830733,
+        "forestTaken": 1.0220094495482734
       }
     ],
     "estate": {

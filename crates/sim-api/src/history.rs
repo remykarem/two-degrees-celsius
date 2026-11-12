@@ -62,6 +62,26 @@ pub struct HistoryPoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub loan_rate_avg: Option<f64>,
+    /// Contract v2.6 (sustainable-yield view): the commons and forest stock, what each would
+    /// regrow from that stock, and what the farm took, at the end of the turn (units, per month).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub commons_stock: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub commons_regrowth: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub commons_taken: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub forest_stock: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub forest_regrowth: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub forest_taken: Option<f64>,
 }
 
 /// Average shelf price of a sector in dollars; `None` when the sector has no active firm.
@@ -91,6 +111,8 @@ pub fn point(
     gov_spending: f64,
 ) -> HistoryPoint {
     let i = &s.indicators;
+    let commons = crate::yields::commons_figures(s, p);
+    let forest = crate::yields::forest_figures(s, p);
     let (fossil, renewable) = (
         s.capacity(sim_types::PlantKind::Fossil),
         s.capacity(sim_types::PlantKind::Renewable),
@@ -134,5 +156,11 @@ pub fn point(
         wage_avg: sim_metrics::average_wage(s).map(|c| c / 100.0),
         rent_private: Some(s.housing.rent_private.dollars()),
         loan_rate_avg: sim_metrics::average_loan_rate(s),
+        commons_stock: Some(commons.stock),
+        commons_regrowth: Some(commons.regrowth),
+        commons_taken: Some(commons.taken),
+        forest_stock: Some(forest.stock),
+        forest_regrowth: Some(forest.regrowth),
+        forest_taken: Some(forest.taken),
     }
 }

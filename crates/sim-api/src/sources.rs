@@ -115,6 +115,8 @@ pub struct Sources {
     pub net_worth: crate::networth::NetWorthDefs,
     /// Markets view: the market cards, mechanisms and cause words.
     pub markets: crate::markets::MarketsContent,
+    /// Farm-from-nature: the sustainable-yield view's words.
+    pub yields: crate::yields::YieldContent,
 }
 
 fn bad(msg: String) -> ApiError {
@@ -128,6 +130,7 @@ impl Sources {
         income: Vec<IncomeSourceDef>,
         net_worth: crate::networth::NetWorthDefs,
         markets: crate::markets::MarketsContent,
+        yields: crate::yields::YieldContent,
     ) -> ApiResult<Self> {
         for id in EMISSION_IDS {
             if emission.iter().filter(|d| d.id == id).count() != 1 {
@@ -159,6 +162,7 @@ impl Sources {
             }
         }
         Ok(Self {
+            yields,
             emission,
             income,
             net_worth,

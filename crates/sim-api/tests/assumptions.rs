@@ -110,6 +110,8 @@ fn all_groups_have_an_entry() {
 const ANCHORS: &[&str] = &[
     "panel:economy",
     "panel:ecology",
+    "ecology:commons",
+    "ecology:forest",
     "panel:society",
     "panel:finance",
     "panel:people",

@@ -1480,6 +1480,177 @@
       ]
     },
     {
+      "id": "max_sustainable_yield",
+      "title": "Maximum sustainable yield: the most you can take every month",
+      "group": "nature_climate",
+      "summary": "A stock that regrows, like a pond of fish or the town's commons, makes new growth every month. The growth is small when the stock is nearly empty (few left to breed) and small when it is nearly full (crowded, no room), so it is largest when the stock is about half full. That largest monthly regrowth is the maximum sustainable yield: take no more than that every month and the stock can hold steady forever. Taking less is safer; taking more only works for a while. Note that 'under the maximum' is not the same as 'sustainable at this stock': what counts is how much the stock regrows at its present size, and that can be less than the maximum.",
+      "formula": "regrowth = growth rate x stock x (1 - stock / maximum); best possible regrowth (maximum sustainable yield) = growth rate x maximum / 4, reached at half the maximum",
+      "params": [
+        {
+          "path": "nature.commons_growth",
+          "label": "Commons growth rate",
+          "unit": "per month"
+        },
+        {
+          "path": "nature.commons_max",
+          "label": "Commons maximum",
+          "unit": "units"
+        }
+      ],
+      "examples": [
+        {
+          "function": "commons_regrowth",
+          "label": "The commons at half its maximum, no drought",
+          "inputs": {
+            "stock": 500.0,
+            "drought_factor": 1.0
+          }
+        }
+      ],
+      "status": "rough_real_world",
+      "statusNote": "The logistic curve and its quarter-of-the-maximum peak are textbook (the Schaefer fishery model); the growth rate is a game value.",
+      "leavesOut": [
+        "Real stocks have age structure, migration and thresholds below which they do not recover; here one number stands for the whole stock."
+      ],
+      "code": [
+        "crates/sim-metrics/src/lib.rs",
+        "crates/sim-api/src/yields.rs"
+      ],
+      "related": [
+        "nature_forest_commons",
+        "overshoot_and_collapse"
+      ],
+      "usedBy": [
+        "ecology:commons",
+        "ecology:forest",
+        "panel:ecology"
+      ]
+    },
+    {
+      "id": "overshoot_and_collapse",
+      "title": "Overshoot and collapse: why over-taking gets worse",
+      "group": "nature_climate",
+      "summary": "If more is taken each month than the stock regrows, the stock shrinks. A smaller stock regrows less, so the same harvest is now even further over the line, and the stock shrinks faster. Below a low level it can no longer recover and the stock collapses. The Ecology view shows the months left until that happens at the present rate. In this game a shrinking stock also caps the food the Farm can grow next month (a set share of last month's stock), so the town feels it as a shortage, not as a price rise: shops here set prices from their costs, so an empty shelf does not push the price up.",
+      "formula": "months until collapse = (stock - collapse level) / (taken - regrowth), when taken is more than regrowth; most food next month = share of stock / commons taken per unit of food",
+      "params": [
+        {
+          "path": "nature.commons_collapse_share",
+          "label": "Commons count as collapsed below this share of the maximum",
+          "unit": "share"
+        },
+        {
+          "path": "nature.farm_cap_share_commons",
+          "label": "Share of the commons stock the Farm can take in a month",
+          "unit": "share"
+        },
+        {
+          "path": "nature.farm_harvest_commons",
+          "label": "Commons taken per unit of food",
+          "unit": "units"
+        }
+      ],
+      "examples": [
+        {
+          "function": "food_cap_commons",
+          "label": "The commons at 100 units, harvest lever at 1",
+          "inputs": {
+            "stock": 100.0,
+            "lever": 1.0
+          }
+        }
+      ],
+      "status": "tuned",
+      "statusNote": "The cap share is a game value, set so the cap does not bind in the starting town.",
+      "leavesOut": [
+        "No new farmland, imports or substitutes: when the commons is gone the Farm simply cannot grow the food."
+      ],
+      "code": [
+        "crates/sim-model/src/production.rs",
+        "crates/sim-metrics/src/lib.rs"
+      ],
+      "related": [
+        "max_sustainable_yield",
+        "tragedy_of_the_commons"
+      ],
+      "usedBy": [
+        "commons",
+        "forest"
+      ]
+    },
+    {
+      "id": "tragedy_of_the_commons",
+      "title": "The tragedy of the commons",
+      "group": "nature_climate",
+      "summary": "When nobody owns a stock, each user gains the whole benefit of taking more but shares the cost of a smaller stock with everyone. So each has a reason to take more, and together they can ruin what they all depend on. In this town the Farm does not decide to over-take: how much it takes follows from the food the town wants and from the harvest lever (how much of the commons each unit of food costs). Raising the lever buys food now and costs food later, because the stock shrinks and caps next month's food. The way out is not always an owner: a community that agrees its own limit can protect the stock too (Elinor Ostrom).",
+      "formula": "taken = Farm output x commons taken per unit of food x harvest lever",
+      "params": [
+        {
+          "path": "nature.farm_harvest_commons",
+          "label": "Commons taken per unit of food",
+          "unit": "units"
+        }
+      ],
+      "examples": [],
+      "status": "placeholder",
+      "statusNote": "A teaching frame over the model's harvest rule.",
+      "leavesOut": [
+        "The Farm is one firm, so there is no competition between harvesters; the 'each takes more' step is stood in for by demand and the lever."
+      ],
+      "code": [
+        "crates/sim-model/src/nature.rs"
+      ],
+      "related": [
+        "max_sustainable_yield",
+        "commons_access_rules",
+        "coordination_mechanisms"
+      ],
+      "usedBy": [
+        "commons_harvest",
+        "markets:food"
+      ]
+    },
+    {
+      "id": "commons_access_rules",
+      "title": "Open, enclosed or community commons",
+      "group": "nature_climate",
+      "summary": "Open: anyone may take, there is no rule, and the limit is only what the stock can supply. Enclosed: a rich owner fences it off and charges a fee for every unit taken; the Farm can take more each month, so there is more food now, a faster-falling stock, and more income for the owner. Community: the town agrees a cap on what may be taken, pays a small coordination cost in output, and keeps part of the regrowth through a drought. A rule that limits yourself protects both the stock and the food in a bad year. The fee an owner charges is not added to the Farm's costs in this model, so it does not push the food price up (a known gap).",
+      "formula": "most taken a month: open = share of stock; enclosed = share of stock x the enclosure multiplier; community = the smaller of share of stock and the agreed cap x best possible regrowth",
+      "params": [
+        {
+          "path": "nature.enclosure_harvest_multiplier",
+          "label": "Enclosed commons: harvest multiplier",
+          "unit": "x"
+        },
+        {
+          "path": "nature.enclosure_fee_usd",
+          "label": "Enclosed commons: fee per unit taken",
+          "unit": "$"
+        },
+        {
+          "path": "nature.community_coord_cost",
+          "label": "Community commons: output lost to coordination",
+          "unit": "share"
+        }
+      ],
+      "examples": [],
+      "status": "tuned",
+      "statusNote": "Game values; the three rules are the stylised cases from the commons literature.",
+      "leavesOut": [
+        "Enforcement, cheating and monitoring costs are not modelled."
+      ],
+      "code": [
+        "crates/sim-model/src/nature.rs",
+        "crates/sim-metrics/src/lib.rs"
+      ],
+      "related": [
+        "tragedy_of_the_commons",
+        "coordination_mechanisms"
+      ],
+      "usedBy": [
+        "commons_access"
+      ]
+    },
+    {
       "id": "weather_stress",
       "title": "Weather: climate stress, drought and fire",
       "group": "weather",

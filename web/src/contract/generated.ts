@@ -419,7 +419,12 @@ grossEmissions: number, cumulativeEmissions: number,
  * active firm); a saved game from before v2.3 is refused (`SCHEMA_VERSION` 7), so the
  * optional fields only keep hand-built histories loading.
  */
-priceFood?: number, priceGoods?: number, priceServices?: number, wageAvg?: number, rentPrivate?: number, loanRateAvg?: number, };
+priceFood?: number, priceGoods?: number, priceServices?: number, wageAvg?: number, rentPrivate?: number, loanRateAvg?: number, 
+/**
+ * Contract v2.6 (sustainable-yield view): the commons and forest stock, what each would
+ * regrow from that stock, and what the farm took, at the end of the turn (units, per month).
+ */
+commonsStock?: number, commonsRegrowth?: number, commonsTaken?: number, forestStock?: number, forestRegrowth?: number, forestTaken?: number, };
 
 export type HomeOwnerView = number | PublicOwner;
 
@@ -636,7 +641,11 @@ verdict: Verdict, short: { [key in string]: ShortText }, drivers: { [key in stri
 /**
  * Contract v2.4: the list of trades behind this market.
  */
-trades: TradesDef, };
+trades: TradesDef, 
+/**
+ * Contract v2.6: an optional link to another view (the food card links to the Ecology view).
+ */
+link?: MarketLink, };
 
 export type MarketDriver = { id: string, label: string, 
 /**
@@ -647,6 +656,8 @@ value: string, };
 export type MarketEntity = { kind: MarketEntityKind, id: number, };
 
 export type MarketEntityKind = "firm" | "household" | "home" | "person" | "government" | "bank";
+
+export type MarketLink = { label: string, target: string, };
 
 export type MarketShort = { id: string, 
 /**
@@ -706,6 +717,10 @@ priceCause: string, priceCauseWord: string, priceNote: string,
  * The price at the end of each finished turn, oldest first, then this month if the turn is open.
  */
 priceSeries: Array<number>, drivers: Array<MarketDriver>, short: Array<MarketShort>, howId: string, 
+/**
+ * Contract v2.6: a link to another view, from the card's content.
+ */
+link?: MarketLink, 
 /**
  * The figures agree with the end state and with each other (see the module comment).
  */
@@ -971,7 +986,11 @@ breakdowns: Breakdowns, policies: Policies, industry: Industry,
 /**
  * Contract v2.3: one card per market for the latest month (empty before the first month).
  */
-markets: Array<MarketView>, history: Array<HistoryPoint>, 
+markets: Array<MarketView>, 
+/**
+ * Contract v2.6: the sustainable-yield view of the commons and the forest (always present).
+ */
+natureYield: Array<YieldView>, history: Array<HistoryPoint>, 
 /**
  * Contract v1.9: the elite estate; absent when the town has none.
  */
@@ -1216,4 +1235,41 @@ coverageRadius: number, smokeRadius: number, drought: DroughtView | null, fires:
 export type WordBand = { below: number, word: string, };
 
 export type WordBands = { bands: Array<WordBand>, top: string, };
+
+export type YieldPoint = { stock: number, regrowth: number, taken: number, };
+
+export type YieldRow = { key: string, label: string, value?: number, unit: string, text: string, };
+
+export type YieldTag = { 
+/**
+ * `open`, `enclosed` or `community`.
+ */
+id: string, label: string, 
+/**
+ * An id of the Markets mechanisms (`market`, `commons`, ...).
+ */
+mechanism: string, mechanism_label: string, };
+
+export type YieldView = { id: string, title: string, blurb: string, formula: string, 
+/**
+ * "1.1 taken for every 1 regrown".
+ */
+headline: string, overLine: boolean, 
+/**
+ * One sentence on the state of the stock, from the figures.
+ */
+verdict: string, monthsToCollapse: number | null, rows: Array<YieldRow>, 
+/**
+ * Regrowth and taken (taken is negative); they sum to `change`.
+ */
+parts: Array<Part>, change: number, changeUnit: string, changeLabel: string, series: Array<YieldPoint>, 
+/**
+ * Labels of the series lines, in the order stock, regrowth, taken.
+ */
+seriesLabels: Array<string>, howId: string, 
+/**
+ * Commons only: how it is run now and the coordination mechanism that implies (label from the
+ * Markets mechanisms).
+ */
+access?: YieldTag, reconciles: boolean, };
 

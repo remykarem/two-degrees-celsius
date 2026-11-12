@@ -34,7 +34,7 @@ pub const MARKET_IDS: [&str; 7] = [
 /// What the "who is short" chips of a market can be (content must give each a sentence).
 pub fn chip_ids(market: &str) -> &'static [&'static str] {
     match market {
-        "food" => &["sold_out", "unsold", "households_short"],
+        "food" => &["sold_out", "unsold", "households_short", "commons_limit"],
         "goods" | "services" => &["sold_out", "unsold"],
         "labour" => &["jobless", "guarantee", "open_jobs"],
         "housing" => &["unhoused", "vacant"],
@@ -142,6 +142,15 @@ pub struct Verdict {
     pub both: String,
 }
 
+/// A link from a card to another view (contract v2.6): a label and an anchor such as `panel:ecology`.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MarketLink {
+    pub label: String,
+    pub target: String,
+}
+
 /// A chip sentence, singular and plural. Placeholders: `{count}`, `{firm}`, `{unit}`.
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -189,6 +198,10 @@ pub struct MarketDef {
     pub drivers: BTreeMap<String, String>,
     /// Contract v2.4: the list of trades behind this market.
     pub trades: TradesDef,
+    /// Contract v2.6: an optional link to another view (the food card links to the Ecology view).
+    #[serde(default)]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub link: Option<MarketLink>,
 }
 
 /// One column of a market's trade list.
@@ -477,6 +490,10 @@ pub struct MarketView {
     pub drivers: Vec<MarketDriver>,
     pub short: Vec<MarketShort>,
     pub how_id: String,
+    /// Contract v2.6: a link to another view, from the card's content.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub link: Option<MarketLink>,
     /// The figures agree with the end state and with each other (see the module comment).
     pub reconciles: bool,
 }
@@ -636,6 +653,26 @@ fn goods_raw(
                     id: first.id.0,
                 }),
             });
+        }
+    }
+    // Farm-from-nature: when the stocks left cap next month's food below what the farm made this
+    // month, say so (the count is the most food the commons and forest can supply).
+    if sector == Sector::Food {
+        let made: f64 = s
+            .firms
+            .iter()
+            .filter(|f| f.active && in_sector(f))
+            .map(|f| f.output.0)
+            .sum();
+        if let Some(cap) = sim_metrics::food_cap(s, &sim.params) {
+            if cap + floor < made {
+                chips.push(Chip {
+                    id: "commons_limit",
+                    count: cap,
+                    firm: None,
+                    entity: None,
+                });
+            }
         }
     }
     let firms: Vec<&Firm> = s
@@ -1045,6 +1082,7 @@ fn view(
         drivers,
         short: shorts,
         how_id: def.how_id.clone(),
+        link: def.link.clone(),
         reconciles: raw.ok
             && close(raw.demand, raw.traded + raw.unmet)
             && close(raw.supply, raw.traded + raw.unsold)
