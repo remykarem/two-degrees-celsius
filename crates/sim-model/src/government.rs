@@ -319,7 +319,7 @@ pub fn legitimacy_terms(
     debt_to_gdp: f64,
 ) -> (f64, f64, f64, f64) {
     (
-        gp.legit_wellbeing * (wellbeing - 0.5),
+        gp.legit_wellbeing * (wellbeing - gp.legit_wellbeing_neutral),
         gp.legit_unemployment * (unemployment_smooth - gp.legit_unemployment_threshold).max(0.0),
         gp.legit_gini * (gini - gp.legit_gini_threshold).max(0.0),
         gp.legit_debt * (debt_to_gdp - 1.0).max(0.0),

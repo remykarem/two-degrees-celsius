@@ -53,7 +53,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         };
         // Workers needed, in people. A firm hires up to the next whole person once the gap
         // exceeds `hire_slack`, and fires only when it is `fire_slack` people overstaffed.
-        let x = l_need / avg_eff.max(1e-9);
+        let x = l_need / avg_eff.max(crate::util::TINY_DIVISOR);
         let target = (x - lp.hire_slack).ceil().max(lp.min_target_workers);
         let target_skilled = (lp.skilled_share * target).round();
         let have_skilled = mine.iter().filter(|x| skilled(x)).count() as f64;

@@ -293,7 +293,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 
     let rate_now = defaults as f64 / active as f64;
     d.changes.push(Delta::Bank(BankPatch {
-        default_rate: Some(Rate(0.9 * s.bank.default_rate.0 + 0.1 * rate_now)),
+        default_rate: Some(Rate(
+            cp.default_rate_old_weight * s.bank.default_rate.0
+                + cp.default_rate_new_weight * rate_now,
+        )),
         lent_this_tick: Some(lent),
         ..BankPatch::default()
     }));

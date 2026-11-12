@@ -2,7 +2,9 @@
 //! beats the loan rate plus a hurdle; carbon costs and regulation trigger green investment;
 //! (Private housing is not built by the model in Town v2: new homes are public, placed by the player.)
 
-use crate::util::{announced_carbon_price, apportion, cash_reserve, cfg, labour_weights};
+use crate::util::{
+    announced_carbon_price, apportion, cash_reserve, cfg, labour_weights, MONTHS_PER_YEAR,
+};
 use libm::pow;
 use sim_params::Params;
 use sim_rng::Rng;
@@ -34,14 +36,14 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         // Green investment: pays off when the carbon bill over the payback period exceeds the cost,
         // or when an emissions cap binds.
         // Firms read an announced (pending) carbon price with a discount.
-        let annual_carbon = f.footprint.0 * 12.0 * announced_carbon_price(s, p).as_f64();
-        let full_cost = f.revenue.scale(12.0 * ip.green_cost_share);
+        let annual_carbon = f.footprint.0 * MONTHS_PER_YEAR * announced_carbon_price(s, p).as_f64();
+        let full_cost = f.revenue.scale(MONTHS_PER_YEAR * ip.green_cost_share);
         // Spread over months: a tick buys the share `part` of a step, never more than a set
         // fraction of the month's revenue (smooth transition, no lump).
         let cost = full_cost.min(f.revenue.scale(ip.green_spend_share));
         let part = safe_div(cost.as_f64(), full_cost.as_f64(), 0.0);
         let cap = s.effective.emissions_cap.0;
-        let cap_binding = cap > 0.0 && f.footprint.0 >= 0.999 * cap;
+        let cap_binding = cap > 0.0 && f.footprint.0 >= ip.cap_binding_share * cap;
         let worthwhile = (annual_carbon * ip.green_payback_years > full_cost.as_f64()
             || cap_binding)
             && f.green_tech.0 < ip.green_max
@@ -86,7 +88,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let profit_ema = Cents::from_f64(
             (1.0 - ip.smoothing) * f.profit_ema.as_f64() + ip.smoothing * f.profit.as_f64(),
         );
-        let ret = 12.0 * profit_ema.as_f64() / k_value;
+        let ret = MONTHS_PER_YEAR * profit_ema.as_f64() / k_value;
         let thr = f.loan_rate.0 + c.invest_hurdle;
         let gate = (0.5 + (ret - thr) / (2.0 * ip.return_scale)).clamp(0.0, 1.0);
         let distressed = f.distress_months > 0 || f.wage_shortfall;

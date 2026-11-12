@@ -4,6 +4,10 @@ use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
 
+/// Maximum sustainable yield of logistic growth `r * K * x * (1 - x)` is `r * K / 4`: a
+/// mathematical identity of that curve, not a game number.
+const LOGISTIC_MSY_DIVISOR: f64 = 4.0;
+
 /// Tonnes of CO2 the forest absorbs per month: `sink_sigma` per unit of standing forest.
 pub fn forest_sink(p: &Params, forest: f64) -> f64 {
     p.nature.sink_sigma * forest
@@ -70,7 +74,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     }
 
     // Harvests by the farm, under the commons access rule.
-    let msy = np.commons_growth * np.commons_max / 4.0;
+    let msy = np.commons_growth * np.commons_max / LOGISTIC_MSY_DIVISOR;
     let mut harvest_c = 0.0;
     let mut harvest_f = 0.0;
     let mut enclosure_firms: Vec<FirmId> = Vec::new();
@@ -138,10 +142,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
         tonnes: Tonnes(-sink),
     });
 
-    if n.forest.0 < 0.995 * f0 && f0 > 0.0 {
+    if n.forest.0 < np.forest_shrank_share * f0 && f0 > 0.0 {
         d.events.push(Event::ForestShrank { stock: n.forest });
     }
-    if n.commons.0 < 0.01 * np.commons_max && c0 >= 0.01 * np.commons_max {
+    if n.commons.0 < np.commons_collapse_share * np.commons_max
+        && c0 >= np.commons_collapse_share * np.commons_max
+    {
         d.events.push(Event::CommonsCollapsed);
     }
 

@@ -235,6 +235,7 @@
     "beta_n": 0.7,
     "farm_health_exp": 0.5,
     "climate_damage": 0.3,
+    "climate_ratio_cap": 1.5,
     "tfp_growth_goods": 0.0012,
     "tfp_growth_food": 0.0008,
     "tfp_growth_services": 0.0008
@@ -253,7 +254,8 @@
     "plant_capacity": 5.0,
     "hh_energy_base_pc": 0.1,
     "hh_energy_consumption_pc": 0.15,
-    "hh_ref_consumption_usd": 2000.0
+    "hh_ref_consumption_usd": 2000.0,
+    "rationed_below": 0.999
   },
   "goods": {
     "price_adjust": 0.05,
@@ -297,7 +299,9 @@
     "bailout_target_ratio": 0.12,
     "max_firm_leverage": 0.6,
     "household_credit": false,
-    "haircut_margin": 1.01
+    "haircut_margin": 1.01,
+    "default_rate_old_weight": 0.9,
+    "default_rate_new_weight": 0.1
   },
   "invest": {
     "retain_share": 0.7,
@@ -309,6 +313,7 @@
     "green_spend_share": 0.1,
     "green_payback_years": 5.0,
     "green_max": 0.8,
+    "cap_binding_share": 0.999,
     "min_cash_months": 1.0,
     "return_scale": 0.3,
     "smoothing": 0.15,
@@ -330,7 +335,9 @@
     "budget_b0": 900.0,
     "t0": 1.3,
     "t_limit": 1.5,
-    "atmosphere_start": 60000.0
+    "atmosphere_start": 60000.0,
+    "forest_shrank_share": 0.995,
+    "commons_collapse_share": 0.01
   },
   "weather": {
     "onset": 0.75,
@@ -385,6 +392,7 @@
     "public_housing_cost_usd": 40000.0,
     "plant_cost_usd": 40000.0,
     "legit_wellbeing": 0.01,
+    "legit_wellbeing_neutral": 0.5,
     "legit_unemployment": 0.02,
     "legit_unemployment_threshold": 0.1,
     "legit_gini": 0.012,
@@ -407,7 +415,8 @@
     "startup_hurdle_floor": 0.0,
     "skilled_wage_ratio": 1.5,
     "history_months": 6,
-    "startup_min_excess_demand": 0.2
+    "startup_min_excess_demand": 0.2,
+    "new_firm_sales_share": 0.15
   },
   "lobby": {
     "spend_rate": 0.02,

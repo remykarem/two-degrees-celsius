@@ -101,7 +101,7 @@ fn sector_return(s: &State, p: &Params, sector: Sector) -> Option<f64> {
     Some(
         firms
             .iter()
-            .map(|f| 12.0 * f.profit.as_f64() / (f.capital.0 * kp))
+            .map(|f| crate::util::MONTHS_PER_YEAR * f.profit.as_f64() / (f.capital.0 * kp))
             .sum::<f64>()
             / n,
     )
@@ -198,7 +198,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
                 .collect();
             let n = peers.len() as f64;
             let avg = |g: &dyn Fn(&Firm) -> f64| peers.iter().map(|f| g(f)).sum::<f64>() / n;
-            let sales0 = 0.15 * avg(&|f| f.expected_sales.0);
+            let sales0 = p.class.new_firm_sales_share * avg(&|f| f.expected_sales.0);
             // The ruin of an earlier firm in this slot is cleared before the new one is built.
             if tile != slot.tile && s.map.kind_at(slot.tile) == Some(TileKind::Firm) {
                 d.changes.push(Delta::SetTile(slot.tile, MapTile::EMPTY));

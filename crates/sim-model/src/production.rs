@@ -12,9 +12,11 @@ pub fn resource_health(s: &State, p: &Params) -> f64 {
     sim_metrics::farm_health(s, p)
 }
 
-/// Share of farm output lost to climate damage: 0.3 * (CE/B0)^2.
+/// Share of farm output lost to climate damage: `climate_damage` * (CE/B0)^2, where the ratio
+/// CE/B0 is capped at `climate_ratio_cap`.
 pub fn climate_factor(s: &State, p: &Params) -> f64 {
-    let ratio = (s.nature.cumulative.0 / p.nature.budget_b0).clamp(0.0, 1.5);
+    let ratio =
+        (s.nature.cumulative.0 / p.nature.budget_b0).clamp(0.0, p.production.climate_ratio_cap);
     1.0 - p.production.climate_damage * ratio * ratio
 }
 
@@ -31,7 +33,7 @@ pub fn capacity(s: &State, p: &Params, f: &Firm, l: f64) -> f64 {
     let mut y = cobb_douglas(p, f.tfp.0, f.capital.0, l);
     if f.sector == Sector::Food {
         y *= pow(
-            resource_health(s, p).max(1e-6),
+            resource_health(s, p).max(crate::util::NUMERIC_FLOOR),
             p.production.farm_health_exp,
         );
         y *= climate_factor(s, p).max(0.0);
@@ -144,7 +146,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     } else {
         1.0
     };
-    if served < 0.999 {
+    if served < p.energy.rationed_below {
         d.events.push(Event::ElectricityRationed {
             served: Rate(served),
         });

@@ -7,9 +7,18 @@ pub fn cfg<'a>(s: &State, p: &'a Params) -> &'a SystemConfig {
     p.systems.get(s.system)
 }
 
+/// Months in a year (the tick is a month); a unit conversion, not a game number.
+pub const MONTHS_PER_YEAR: f64 = 12.0;
+
+/// Floor that keeps a divisor or a power base away from exactly zero (numerical guard only).
+pub const NUMERIC_FLOOR: f64 = 1e-6;
+
+/// Smaller floor for dividing by an average of positive quantities (numerical guard only).
+pub const TINY_DIVISOR: f64 = 1e-9;
+
 /// Firm monthly interest rate factor helper: annual rate to monthly.
 pub fn monthly(rate: f64) -> f64 {
-    rate / 12.0
+    rate / MONTHS_PER_YEAR
 }
 
 /// Pay multiple of a person with this skill: 1 at the reference skill, rising with skill.
@@ -140,7 +149,7 @@ pub fn profit_tax_due(pre_tax: Cents, rate: f64) -> Cents {
 /// what is above the threshold, one twelfth a month.
 pub fn wealth_tax_monthly(wealth_cents: f64, threshold: Cents, annual_rate: f64) -> Cents {
     let over = (wealth_cents / 100.0 - threshold.dollars()).max(0.0);
-    Cents::from_dollars(over * annual_rate / 12.0)
+    Cents::from_dollars(over * annual_rate / MONTHS_PER_YEAR)
 }
 
 /// Carbon price paid on a footprint (tonnes of CO2).

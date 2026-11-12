@@ -116,6 +116,9 @@ pub struct ProductionParams {
     pub beta_n: f64,
     pub farm_health_exp: f64,
     pub climate_damage: f64,
+    /// The climate damage ratio (cumulative emissions over the budget) is capped here, so
+    /// overshoot beyond this multiple of the budget stops adding damage.
+    pub climate_ratio_cap: f64,
     /// Monthly TFP growth by sector.
     pub tfp_growth_goods: f64,
     pub tfp_growth_food: f64,
@@ -154,6 +157,9 @@ pub struct EnergyParams {
     /// Extra electricity per person at the reference consumption.
     pub hh_energy_consumption_pc: f64,
     pub hh_ref_consumption_usd: f64,
+    /// Electricity counts as rationed (event, and the `rationed` flag on the wire) when the
+    /// served share falls below this.
+    pub rationed_below: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -243,6 +249,10 @@ pub struct CreditParams {
     pub household_credit: bool,
     /// Depositor haircut = shortfall / deposits x this margin, so equity is restored.
     pub haircut_margin: f64,
+    /// The bank's smoothed default rate keeps this weight of last month's value ...
+    pub default_rate_old_weight: f64,
+    /// ... and takes this weight of this month's default rate.
+    pub default_rate_new_weight: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -262,6 +272,9 @@ pub struct InvestParams {
     pub green_spend_share: f64,
     pub green_payback_years: f64,
     pub green_max: f64,
+    /// A firm counts as carbon-capped (so green investment is worthwhile) once its footprint
+    /// reaches this share of its emissions cap.
+    pub cap_binding_share: f64,
     /// Only invest in capital if the firm's cash is above this many months of payroll.
     pub min_cash_months: f64,
     /// Excess return over the hurdle at which investment reaches its maximum.
@@ -291,6 +304,10 @@ pub struct NatureParams {
     pub t0: f64,
     pub t_limit: f64,
     pub atmosphere_start: f64,
+    /// A `ForestShrank` event fires when the forest falls below this share of last tick's stock.
+    pub forest_shrank_share: f64,
+    /// The commons count as collapsed below this share of `commons_max`.
+    pub commons_collapse_share: f64,
 }
 
 /// Town v4 weather: forest fires and drought (docs/town-v4.md, docs/causal-model.md section 11).
@@ -385,6 +402,8 @@ pub struct GovParams {
     pub plant_cost_usd: f64,
     pub road_cost_usd: f64,
     pub legit_wellbeing: f64,
+    /// Wellbeing at which it neither raises nor lowers legitimacy.
+    pub legit_wellbeing_neutral: f64,
     pub legit_unemployment: f64,
     pub legit_unemployment_threshold: f64,
     pub legit_gini: f64,
@@ -417,6 +436,8 @@ pub struct ClassParams {
     /// (the sector's average excess demand); a second firm in a saturated sector would only
     /// split the sales of the first.
     pub startup_min_excess_demand: f64,
+    /// A new firm starts with this share of its sector peers' average expected sales.
+    pub new_firm_sales_share: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

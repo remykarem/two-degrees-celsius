@@ -24,6 +24,9 @@ use sim_rng::Rng;
 use sim_types::*;
 
 /// Share (0..1) of the maximum effect that the current resilience spending buys.
+/// A forest tile has four orthogonal neighbours (north, east, south, west): grid geometry.
+const GRID_NEIGHBOURS: f64 = 4.0;
+
 pub fn resilience_share(s: &State, p: &Params) -> f64 {
     let spend = s.policy.resilience_spending.dollars().max(0.0);
     1.0 - exp(-spend / p.weather.resilience_scale_usd)
@@ -181,7 +184,7 @@ pub fn forecast(s: &State, p: &Params) -> (RiskLevel, RiskLevel) {
         let spread = c.spread_p * (1.0 + c.spread_drought * d) * (1.0 - c.station_spread_cut * cov);
         let dur = c.duration_months as f64 * (1.0 - c.station_duration_cut * cov);
         // Four neighbours; each is reached with `spread` odds per burning month.
-        let size = 1.0 + c.forecast_size_gain * 4.0 * spread * dur;
+        let size = 1.0 + c.forecast_size_gain * GRID_NEIGHBOURS * spread * dur;
         level(
             quarter * ignition_p(s, p, w, stress) * size,
             c.forecast_fire_medium,
