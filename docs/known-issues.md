@@ -46,12 +46,14 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | # | Issue | Status | Source |
 |---|---|---|---|
 | T1 | **`web/src/store/save.ts` `parseSave` allows lens values `none, emissions, class, wealth, employment, flows` but not `commute`** (`Lens` in `store/types.ts` has it). By reading the code, a save made with the Commute lens is refused ("damaged view settings"). Not reproduced in a browser | open (found while writing docs) | own finding |
-| T2 | CI (`deploy.yml`) does not run `cargo fmt --check` or `cargo clippy`; both pass locally now | open | own finding |
-| T3 | `.idea/` files are tracked in git | open | git ls-files |
-| T4 | The Vite build warns that a chunk exceeds 500 kB (Three.js and the app in one bundle) | open | own finding (`npm run build`) |
+| T2 | CI (`deploy.yml`) did not run `cargo fmt --check` or `cargo clippy` | resolved (`ci.yml` runs both on pull requests) | own finding |
+| T3 | `.idea/` files were tracked in git | resolved (untracked, in `.gitignore`) | git ls-files |
+| T4 | The Vite build warned that a chunk exceeds 500 kB (Three.js and the app in one bundle). Now three.js is its own chunk (589 kB, 148 kB gzipped; app 438 kB, 145 kB gzipped; was one 1,028 kB, 292 kB gzipped chunk). The warning remains for the three chunk and the lazy recorded-demo chunk (1,278 kB) | partly resolved | own finding (`npm run build`) |
 | T5 | Playwright scripts (`web/playwright/*.mjs`) are manual, not in `npm test` or CI, and need a dev server and a browser download | open | web notes |
-| T6 | `wasm-opt` is not installed by default; the wasm is 1,376 KiB raw / 347 KiB gzipped without it | open (cosmetic) | integration-notes.md |
+| T6 | `wasm-opt` is not installed by default (see T11 for current sizes) | open (cosmetic) | integration-notes.md |
 | T7 | The wasm golden web test is silently skipped when `pkg/` is not built, so `npm test` can pass without exercising it | open | web/tests/wasm-golden.test.ts |
+| T10 | **Save size grows about 56 KB per turn** (the ledger and wrapper log are saved whole). Measured with `Api::export_state` on seed 7: 91 KB after turn 1, 0.70 MB after turn 10, 1.25 MB after turn 20, 1.45 MB when the no-action game ended at turn 25, 1.94 MB when a game with a carbon price, green subsidy and two renewable plants ended at turn 33. A full 40 turn save is therefore about 2.3 MB by extrapolation (not measured directly: no scripted plan used here survived 40 turns). Fine for a downloaded file; not for localStorage. Report only, no fix | open (report) | independent review F15 |
+| T11 | Wasm size: with the size profile (`[profile.wasm]`, opt-level s, lto) the package is 3375 KiB raw, 664 KiB gzipped (769 KiB gzipped before the profile). `wasm-opt` is still not installed on the dev machine; `npm run build:wasm` warns loudly and CI installs binaryen. The size is mostly embedded content and serde, not measured further | open (report) | independent review F16 |
 | T9 | The second sector-balance identity in `sim-checks` (`check_sector_balance`) is implied by the first, so it is not an independent check. Independent guards: money conservation, `check_ledger`, the bank balance sheet. Documented, not replaced | doc-fixed | independent review F2 |
 | T8 | The scenario insta snapshot refresh command in these docs (`INSTA_UPDATE=always`) was not run; `cargo-insta` is not installed | unverified | own finding |
 
