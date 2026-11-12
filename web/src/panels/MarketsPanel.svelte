@@ -16,16 +16,18 @@
   <section class="intro" aria-labelledby="mk-intro">
     <h3 id="mk-intro">{m.intro.title}</h3>
     <p>{m.intro.body}</p>
-    <ul class="mechs" aria-label={m.mechanisms.title}>
-      {#each m.mechanisms.items as x (x.id)}<li data-testid="mechanism-{x.id}"><b>{x.label}.</b> {x.blurb} <span class="ex">{m.mechanisms.examplePrefix} {x.example}</span></li>{/each}
-    </ul>
-    <p class="dim">{m.mechanisms.foot} {m.intro.notCapitalism} <HowLink anchor={m.intro.linkAnchor} text={m.intro.link} /></p>
-  </section>
-
-  <section class="cp" aria-labelledby="mk-cp">
-    <h3 id="mk-cp">{m.costPlus.title}</h3>
-    <p>{m.costPlus.body} <HowLink anchor={m.costPlus.anchor} text={text('markets', 'how_label')} /></p>
-    <p class="dim">{m.smallTown}</p>
+    <details data-testid="mechanisms">
+      <summary>{m.mechanisms.title}</summary>
+      <ul class="mechs">
+        {#each m.mechanisms.items as x (x.id)}<li data-testid="mechanism-{x.id}"><b>{x.label}.</b> {x.blurb} <span class="ex">{m.mechanisms.examplePrefix} {x.example}</span></li>{/each}
+      </ul>
+      <p class="dim">{m.mechanisms.foot} {m.intro.notCapitalism} <HowLink anchor={m.intro.linkAnchor} text={m.intro.link} /></p>
+    </details>
+    <details data-testid="cost-plus">
+      <summary>{m.costPlus.title}</summary>
+      <p>{m.costPlus.body} <HowLink anchor={m.costPlus.anchor} text={text('markets', 'how_label')} /></p>
+      <p class="dim">{m.smallTown}</p>
+    </details>
   </section>
 
   {#if m.ready}
@@ -43,6 +45,7 @@
   .mk { display: block; }
   h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); margin: 10px 0 4px; }
   p { margin: 3px 0; font-size: 12.5px; } .dim { color: var(--text-dim); font-size: 12px; }
-  .intro, .cp { border: 1px solid var(--border); border-radius: var(--radius); background: var(--info-bg); padding: 4px 10px 8px; margin: 8px 0; }
+  .intro { border: 1px solid var(--border); border-radius: var(--radius); background: var(--info-bg); padding: 4px 10px 8px; margin: 8px 0; }
+  summary { cursor: pointer; font-size: 12.5px; font-weight: 600; margin: 4px 0; color: var(--accent); }
   .mechs { margin: 4px 0; padding-left: 16px; font-size: 12px; } .mechs li { margin: 2px 0; } .ex { color: var(--text-dim); }
 </style>

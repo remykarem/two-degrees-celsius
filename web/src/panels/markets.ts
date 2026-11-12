@@ -24,7 +24,9 @@ export interface MarketCardModel {
   gap: string[];
   gapKind: GapKind;
   verdict: string;
-  price: { text: string; unit: string; label: string; arrow: string; direction: string; word: string; cause: string; note: string } | null;
+  /** How this price is really set (the wire's sentence), also for a market with no price. */
+  note: string;
+  price: { text: string; unit: string; label: string; arrow: string; direction: string; word: string; cause: string } | null;
   series: number[];
   drivers: { id: string; label: string; value: string }[];
   chips: ShortChip[];
@@ -62,8 +64,9 @@ export function cardModel(m: MarketView, mechanisms: MechanismDef[]): MarketCard
     gap: m.gapWords, gapKind: m.gapKind, verdict: m.verdict,
     price: m.priceText === undefined ? null : {
       text: m.priceText, unit: m.priceUnit, label: m.priceLabel, arrow: DIRECTION_ARROW[m.priceDirection] ?? '', direction: m.priceDirection, word: m.priceDirectionWord,
-      cause: m.priceCauseWord, note: m.priceNote,
+      cause: m.priceCauseWord,
     },
+    note: m.priceNote,
     series: m.priceSeries,
     drivers: m.drivers, chips: m.short.map((s) => ({ id: s.id, label: s.label, selection: selectionOf(s) })),
     mechanisms: tags(m, mechanisms), how: m.howId, reconciles: m.reconciles,

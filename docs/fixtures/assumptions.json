@@ -2190,7 +2190,7 @@
     "id": "market_goods",
     "title": "The goods, food and services markets",
     "group": "production_prices",
-    "summary": "Households must eat: each person needs a set amount of food a month and spends on it first. What is left after food, and after saving, is split between goods and services. Firms buy machinery from the Factory and the government buys goods and services too. All of this is a budget set before looking at any shop. The budget is then shared out among the sector's shops, favouring those with more stock and lower prices, in two passes so that nobody buys more than a shop has. What buyers would have bought is demand; what was bought is sales; the difference is what went without, and stock minus sales is what stayed unsold. The sector has one shop in this town, so a gap is all or nothing.",
+    "summary": "Households must eat: each person needs a set amount of food a month and spends on it first. What is left after food, and after saving, is split between goods and services. Firms buy machinery from the Factory and the government buys goods and services too. All of this is a budget set before looking at any shop. The budget is then shared out among the sector's shops, favouring those with more stock and lower prices, in two passes so that nobody buys more than a shop has. What buyers would have bought is demand; what was bought is sales; the difference is what went without, and stock minus sales is what stayed unsold. In the starting town each sector has one shop, so a gap is all or nothing.",
     "formula": "demand units = budget share / price; sold = min(demand, stock) over two passes; unmet = demand - sold; unsold = stock - sold",
     "params": [
       {

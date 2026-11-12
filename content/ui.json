@@ -804,7 +804,7 @@
         "howId": "markets:labour",
         "verdict": {
           "balanced": "Firms offered {demand} jobs and {supply} people could work: every job is filled and everyone who can work has a firm job.",
-          "short": "Firms offered {demand} jobs but only {traded} are filled: {unmet} still open. Firms hire only a few people a month, so openings can stay open.",
+          "short": "Firms offered {demand} jobs but only {traded} are filled: {unmet} still open, and nobody is left looking for work. The town has run out of people to hire.",
           "glut": "Firms offered {demand} jobs and {supply} people could work: {unsold} {unsold_unit} without a firm job.",
           "both": "Firms offered {demand} jobs and {traded} are filled, {unmet} still open, while {unsold} {unsold_unit} without a firm job. Hiring is limited each month, so both can be true."
         },

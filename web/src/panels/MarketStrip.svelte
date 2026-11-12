@@ -35,6 +35,8 @@
     <div class="price" data-testid="price-{card.id}">
       <span class="pl">{card.price.label}</span>
       <b class="pv">{card.price.text}</b> <span class="pu">{card.price.unit}</span>
+    </div>
+    <div class="trend">
       {#if card.price.direction !== 'none'}
         <span class="dir {card.price.direction}"><span aria-hidden="true">{card.price.arrow}</span> {card.price.word}</span>
         <span class="cause">({card.price.cause})</span>
@@ -42,7 +44,7 @@
       {#if card.series.length > 1}<Sparkline label="{card.price.label}, {card.label}" values={card.series} w={90} h={22} />{:else}<span class="ns">{noSeries}</span>{/if}
     </div>
   {/if}
-  <p class="note" data-testid="note-{card.id}">{card.price?.note}</p>
+  <p class="note" data-testid="note-{card.id}">{card.note}</p>
 
   <p class="verdict">{card.verdict}</p>
 
@@ -83,10 +85,11 @@
   .gap.none li { background: var(--good-bg); color: var(--good); }
   .price { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; font-size: 12px; margin-top: 6px; }
   .pl { color: var(--text-dim); } .pv { font-family: var(--font-mono); font-size: 14px; } .pu { color: var(--text-dim); }
+  .trend { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; font-size: 12px; }
   .dir { font-weight: 600; } .dir.rising { color: var(--bad); } .dir.falling { color: var(--good); } .cause { color: var(--text-dim); } .ns { color: var(--text-dim); font-size: 11px; }
   .note { margin: 3px 0 0; font-size: 11.5px; color: var(--text-dim); font-style: italic; } .note:empty { display: none; }
   .verdict { margin: 6px 0 0; font-size: 12.5px; }
-  .drivers { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; font-size: 11.5px; } dt { color: var(--text-dim); } dd { margin: 0; }
+  .drivers { margin: 6px 0 0; display: grid; grid-template-columns: 1fr; gap: 0; font-size: 11.5px; } dt { color: var(--text-dim); margin-top: 3px; } dd { margin: 0; font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .chip { font: inherit; font-size: 11.5px; border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; background: var(--surface); color: var(--text); }
   button.chip { cursor: pointer; color: var(--accent); } button.chip:hover { background: var(--surface-2); }
