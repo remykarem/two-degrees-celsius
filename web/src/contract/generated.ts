@@ -636,6 +636,10 @@ unmet: number,
  */
 unsold: number, demandLabel: string, supplyLabel: string, tradedLabel: string, 
 /**
+ * The quantities written out, with money as dollars (units are in `unit`).
+ */
+demandText: string, supplyText: string, tradedText: string, 
+/**
  * The gaps in words, for example `30 units went without`; one line saying there is none otherwise.
  */
 gapWords: Array<string>, 
@@ -647,6 +651,11 @@ verdict: string, priceKind: PriceKind, priceLabel: string, priceUnit: string,
  * Dollars (a shelf price, a monthly wage, a monthly rent) or an annual rate as a fraction.
  */
 price?: number, 
+/**
+ * The price written out (`$23.09`); a loan rate is the dollars a year that $100 of borrowing
+ * costs, so the page never shows a bare percentage.
+ */
+priceText?: string, 
 /**
  * `rising`, `steady`, `falling`, `unknown` (no earlier turn yet) or `none` (no price).
  */

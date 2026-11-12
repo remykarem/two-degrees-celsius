@@ -4900,6 +4900,9 @@
         "demandLabel": "Wanted",
         "supplyLabel": "On the shelves",
         "tradedLabel": "Bought",
+        "demandText": "531",
+        "supplyText": "1,647",
+        "tradedText": "531",
         "gapWords": [
           "1,116 units unsold"
         ],
@@ -4908,6 +4911,7 @@
         "priceLabel": "Price",
         "priceUnit": "per unit",
         "price": 27.02,
+        "priceText": "$27.02",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "cost",
@@ -4920,7 +4924,7 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "152% of their costs"
+            "value": "$1.52 on top of every $1 of cost"
           }
         ],
         "short": [
@@ -4955,6 +4959,9 @@
         "demandLabel": "Wanted",
         "supplyLabel": "On the shelves",
         "tradedLabel": "Bought",
+        "demandText": "111",
+        "supplyText": "187",
+        "tradedText": "111",
         "gapWords": [
           "75.7 units unsold"
         ],
@@ -4963,6 +4970,7 @@
         "priceLabel": "Price",
         "priceUnit": "per unit",
         "price": 93.37,
+        "priceText": "$93.37",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "cost",
@@ -4975,7 +4983,7 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "71% of their costs"
+            "value": "$0.71 on top of every $1 of cost"
           }
         ],
         "short": [
@@ -5010,6 +5018,9 @@
         "demandLabel": "Wanted",
         "supplyLabel": "On the shelves",
         "tradedLabel": "Bought",
+        "demandText": "94",
+        "supplyText": "115",
+        "tradedText": "94",
         "gapWords": [
           "20.7 units unsold"
         ],
@@ -5018,6 +5029,7 @@
         "priceLabel": "Price",
         "priceUnit": "per unit",
         "price": 74.24000000000001,
+        "priceText": "$74.24",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "cost",
@@ -5030,7 +5042,7 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "38% of their costs"
+            "value": "$0.38 on top of every $1 of cost"
           }
         ],
         "short": [
@@ -5066,6 +5078,9 @@
         "demandLabel": "Jobs on offer",
         "supplyLabel": "People who can work",
         "tradedLabel": "In a firm job",
+        "demandText": "8",
+        "supplyText": "10",
+        "tradedText": "8",
         "gapWords": [
           "People without a firm job: 2"
         ],
@@ -5074,6 +5089,7 @@
         "priceLabel": "Average wage",
         "priceUnit": "a month",
         "price": 1501.57375,
+        "priceText": "$1,502",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "slack",
@@ -5086,12 +5102,12 @@
           {
             "id": "unemployment",
             "label": "Unemployment (smoothed)",
-            "value": "19% of the labour force"
+            "value": "19 of every 100 people in the labour force"
           },
           {
             "id": "u_ref",
             "label": "Unemployment at which wages hold steady",
-            "value": "9% of the labour force"
+            "value": "9 of every 100 people in the labour force"
           }
         ],
         "short": [
@@ -5123,6 +5139,9 @@
         "demandLabel": "Households needing a home",
         "supplyLabel": "Homes in town",
         "tradedLabel": "Homes lived in",
+        "demandText": "9",
+        "supplyText": "8",
+        "tradedText": "8",
         "gapWords": [
           "Households without a home: 1"
         ],
@@ -5131,6 +5150,7 @@
         "priceLabel": "Private rent",
         "priceUnit": "a month",
         "price": 344.74,
+        "priceText": "$345",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "scarcity",
@@ -5143,12 +5163,12 @@
           {
             "id": "rent_burden",
             "label": "Rent as a share of renters' income",
-            "value": "17% of their income"
+            "value": "17 of every 100 dollars of their income"
           },
           {
             "id": "rent_burden_cap",
             "label": "Rent stops rising above",
-            "value": "20% of their income"
+            "value": "20 of every 100 dollars of their income"
           }
         ],
         "short": [
@@ -5184,14 +5204,18 @@
         "demandLabel": "Firms asked to borrow",
         "supplyLabel": "Room the bank has to lend",
         "tradedLabel": "Lent",
+        "demandText": "$0",
+        "supplyText": "$89,850",
+        "tradedText": "$0",
         "gapWords": [
           "Bank room unused: $89,850"
         ],
         "verdict": "Firms asked for $0 and the bank had $89,850 of room: $89,850 of its room went unused.",
         "priceKind": "rate",
         "priceLabel": "Average loan rate",
-        "priceUnit": "a year",
+        "priceUnit": "a year for every $100 borrowed",
         "price": 0.04909601264504374,
+        "priceText": "$4.91",
         "priceDirection": "unknown",
         "priceDirectionWord": "too early to say",
         "priceCause": "risk",
@@ -5204,7 +5228,7 @@
           {
             "id": "base_rate",
             "label": "Bank base rate",
-            "value": "4% a year"
+            "value": "$4.00 a year for every $100 borrowed"
           }
         ],
         "short": [],
@@ -5229,6 +5253,9 @@
         "demandLabel": "Wanted by firms and homes",
         "supplyLabel": "Plant capacity",
         "tradedLabel": "Delivered",
+        "demandText": "7.2",
+        "supplyText": "10",
+        "tradedText": "7.2",
         "gapWords": [
           "2.8 MWh of capacity idle"
         ],

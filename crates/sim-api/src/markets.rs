@@ -317,6 +317,10 @@ pub struct MarketView {
     pub demand_label: String,
     pub supply_label: String,
     pub traded_label: String,
+    /// The quantities written out, with money as dollars (units are in `unit`).
+    pub demand_text: String,
+    pub supply_text: String,
+    pub traded_text: String,
     /// The gaps in words, for example `30 units went without`; one line saying there is none otherwise.
     pub gap_words: Vec<String>,
     /// One plain-English sentence on this month, built from the figures.
@@ -328,6 +332,11 @@ pub struct MarketView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub price: Option<f64>,
+    /// The price written out (`$23.09`); a loan rate is the dollars a year that $100 of borrowing
+    /// costs, so the page never shows a bare percentage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub price_text: Option<String>,
     /// `rising`, `steady`, `falling`, `unknown` (no earlier turn yet) or `none` (no price).
     pub price_direction: String,
     pub price_direction_word: String,
@@ -397,8 +406,21 @@ fn amount(v: f64, kind: AmountKind) -> String {
     }
 }
 
-fn percent(share: f64, tail: &str) -> String {
-    format!("{:.0}% {tail}", share * 100.0)
+/// A share as a count out of a hundred ("19 of every 100 people"): the page never shows a bare
+/// percentage.
+fn per_hundred(share: f64, tail: &str) -> String {
+    format!("{:.0} of every 100 {tail}", share * 100.0)
+}
+
+/// A price written for the page: dollars (cents below $100), or an annual rate as the dollars a
+/// year that $100 of borrowing costs.
+fn price_text(kind: PriceKind, v: f64) -> Option<String> {
+    match kind {
+        PriceKind::None => None,
+        PriceKind::Rate => Some(format!("${:.2}", v * 100.0)),
+        PriceKind::Money if v.abs() < 100.0 => Some(format!("${v:.2}")),
+        PriceKind::Money => Some(format!("${}", thousands(v.round() as i64))),
+    }
 }
 
 fn fill(template: &str, vars: &[(&str, String)]) -> String {
@@ -507,7 +529,7 @@ fn goods_raw(
         price: crate::history::shelf_price(s, sector),
         ok: close(sold, stored) && shelves_ok,
         chips,
-        drivers: vec![("markup", percent(markup, "of their costs"))],
+        drivers: vec![("markup", format!("${markup:.2} on top of every $1 of cost"))],
     }
 }
 
@@ -562,11 +584,14 @@ fn labour_raw(sim: &Sim, tick: &crate::log::TickRecord, names: &BTreeMap<u32, St
         drivers: vec![
             (
                 "unemployment",
-                percent(s.indicators.unemployment_smooth.0, "of the labour force"),
+                per_hundred(
+                    s.indicators.unemployment_smooth.0,
+                    "people in the labour force",
+                ),
             ),
             (
                 "u_ref",
-                percent(sim.params.labour.u_ref, "of the labour force"),
+                per_hundred(sim.params.labour.u_ref, "people in the labour force"),
             ),
         ],
     }
@@ -610,11 +635,11 @@ fn housing_raw(sim: &Sim, tick: &crate::log::TickRecord) -> Raw {
         drivers: vec![
             (
                 "rent_burden",
-                percent(tick.markets.rent_burden, "of their income"),
+                per_hundred(tick.markets.rent_burden, "dollars of their income"),
             ),
             (
                 "rent_burden_cap",
-                percent(sim.params.goods.rent_burden_cap, "of their income"),
+                per_hundred(sim.params.goods.rent_burden_cap, "dollars of their income"),
             ),
         ],
     }
@@ -651,7 +676,13 @@ fn credit_raw(sim: &Sim, tick: &crate::log::TickRecord, names: &BTreeMap<u32, St
             && approved <= m.credit_room.max(0)
             && approved <= requested,
         chips,
-        drivers: vec![("base_rate", percent(s.policy.base_rate.0, "a year"))],
+        drivers: vec![(
+            "base_rate",
+            format!(
+                "${:.2} a year for every $100 borrowed",
+                s.policy.base_rate.0 * 100.0
+            ),
+        )],
     }
 }
 
@@ -861,11 +892,15 @@ fn view(
         demand_label: def.demand_label.clone(),
         supply_label: def.supply_label.clone(),
         traded_label: def.traded_label.clone(),
+        demand_text: amount(raw.demand, kind),
+        supply_text: amount(raw.supply, kind),
+        traded_text: amount(raw.traded, kind),
         gap_words,
         verdict,
         price_kind: def.price_kind,
         price_label: def.price_label.clone(),
         price_unit: def.price_unit.clone(),
+        price_text: raw.price.and_then(|v| price_text(def.price_kind, v)),
         price: raw.price,
         price_direction: dir.to_string(),
         price_direction_word: word(&c.directions, dir),

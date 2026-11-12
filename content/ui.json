@@ -884,7 +884,7 @@
         "unitOne": "dollar",
         "amount": "money",
         "priceLabel": "Average loan rate",
-        "priceUnit": "a year",
+        "priceUnit": "a year for every $100 borrowed",
         "priceKind": "rate",
         "priceCause": "risk",
         "priceNote": "The rate is the bank's base rate plus a margin that grows as a firm borrows more. It is not raised to ration loans: when the bank runs short of room it lends less.",

@@ -44,17 +44,11 @@ fn one(m: &MarketView, what: &str) {
         );
         assert!(!t.contains("NaN") && !t.contains("inf"), "{w}: {t:?}");
     }
-    for d in &m.drivers {
-        if d.value.contains('%') {
-            assert!(
-                d.value.contains(" of ")
-                    || d.value.contains(" on top ")
-                    || d.value.contains(" a year"),
-                "{w}: bare percentage {:?}",
-                d.value
-            );
-        }
+    // No bare percentages anywhere: shares are written as counts out of a hundred, rates as dollars.
+    for t in texts.iter().chain(m.price_text.iter()) {
+        assert!(!t.contains('%'), "{w}: percentage in {t:?}");
     }
+    assert_eq!(m.price_text.is_some(), m.price.is_some(), "{w}");
     assert!(!m.gap_words.is_empty() && !m.verdict.is_empty(), "{w}");
     // The direction word matches the series the card draws.
     if m.price.is_some() {
