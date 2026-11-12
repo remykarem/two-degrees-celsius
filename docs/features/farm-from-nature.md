@@ -1,6 +1,6 @@
 # Feature: the farm draws its food from nature (overconsumption and the tragedy of the commons)
 
-Status: **DRAFT for review.** Not approved, not implemented. This doc changes no code. Written from the code at commit `30b7959` (`crates/sim-model/src/{production,nature,goods,weather}.rs`, `crates/sim-metrics`, `content/params.json`) and one throwaway run of `cargo run --release -p sim-cli --example debug -- 40 4` (seed 42, no actions). Where this doc and the code disagree, the code wins (`docs/README.md`).
+Status: **APPROVED by the user with ALL open-question defaults (Q1 to Q8); being implemented.** Written from the code at commit `30b7959`. Where this doc and the code disagree, the code wins (`docs/README.md`).
 
 The game is pedagogical and the user is new to economics: this feature exists so the player can SEE overconsumption (taking from a shared stock faster than it regrows) and the tragedy of the commons. Thin UI / DRY applies (`docs/town-v6.md`): every number, sentence and flag below is computed in Rust or authored in `content/`; the web only renders.
 
