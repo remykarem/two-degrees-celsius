@@ -153,6 +153,14 @@ impl SectorBalances {
 /// liability, so the sector net positions sum to zero at all times, and therefore household
 /// saving = firm financing need (investment) + government deficit + change in bank equity.
 /// Computed from state before and after a system, independent of the apply ledger.
+///
+/// Honest scope: the second equation (saving = firm need + deficit - bank gain) is
+/// algebraically implied by the first. If the sector totals are zero before and after (the
+/// `check_state` bank and deposit identities plus this check's first test), the changes sum to
+/// zero, so the second test cannot fail on its own; it restates the first in flow form for a
+/// clearer message. The independent money checks are `check_money` (apply-level
+/// conservation), `check_ledger` (per-account reconciliation of the transaction ledger)
+/// and the bank balance sheet in `check_state`.
 pub fn check_sector_balance(
     before: &SectorBalances,
     after: &SectorBalances,

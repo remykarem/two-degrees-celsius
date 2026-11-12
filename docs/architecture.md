@@ -76,6 +76,8 @@ Game over: the first `Outcome` (`budget_exhausted`, or a collapse: `legitimacy_z
 
 Each system returns `Deltas`; `apply()` applies money operations, then field changes, then events and trace; `sim-checks` then runs (state invariants, money conservation, sector balance, unfunded-payment check when `strict_flows`).
 
+Which checks are independent: the second sector-balance equation (saving = firm need + deficit - bank gain) is implied by the first (sector net positions sum to zero before and after), so it adds a clearer message, not coverage. The independent guards are money conservation in `apply`, the per-account ledger reconciliation (`check_ledger`) and the bank balance sheet identities in `check_state`.
+
 | # | `SystemId` | Module | Doc label | Does |
 |---|---|---|---|---|
 | 1 | Policy | `policy.rs` | S0/system | Resets per-tick flows; advances an economic-system transition |

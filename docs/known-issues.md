@@ -52,6 +52,7 @@ Verified clean at the time of writing: `docs/fixtures/*` regenerate with no diff
 | T5 | Playwright scripts (`web/playwright/*.mjs`) are manual, not in `npm test` or CI, and need a dev server and a browser download | open | web notes |
 | T6 | `wasm-opt` is not installed by default; the wasm is 1,376 KiB raw / 347 KiB gzipped without it | open (cosmetic) | integration-notes.md |
 | T7 | The wasm golden web test is silently skipped when `pkg/` is not built, so `npm test` can pass without exercising it | open | web/tests/wasm-golden.test.ts |
+| T9 | The second sector-balance identity in `sim-checks` (`check_sector_balance`) is implied by the first, so it is not an independent check. Independent guards: money conservation, `check_ledger`, the bank balance sheet. Documented, not replaced | doc-fixed | independent review F2 |
 | T8 | The scenario insta snapshot refresh command in these docs (`INSTA_UPDATE=always`) was not run; `cargo-insta` is not installed | unverified | own finding |
 
 ## Docs
