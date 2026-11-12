@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "game": {
     "startYear": 2026,
     "firstTurn": 1,
@@ -4115,6 +4115,7 @@
     ],
     "note": "No state shareholding in the current economic systems (Market, Regulated, Co-op): the state's ownership share is 0% for every firm. The state-owned variant exists in the model but no system uses it yet."
   },
+  "markets": [],
   "history": [],
   "estate": {
     "household": 8,

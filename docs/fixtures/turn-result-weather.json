@@ -2761,7 +2761,7 @@
     }
   ],
   "snapshot": {
-    "schemaVersion": 6,
+    "schemaVersion": 7,
     "game": {
       "startYear": 2026,
       "firstTurn": 1,
@@ -7032,6 +7032,409 @@
       ],
       "note": "No state shareholding in the current economic systems (Market, Regulated, Co-op): the state's ownership share is 0% for every firm. The state-owned variant exists in the model but no system uses it yet."
     },
+    "markets": [
+      {
+        "id": "food",
+        "label": "Food",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households must eat. Each person needs a set amount of food a month, and the Farm is the only seller.",
+        "unit": "units",
+        "amount": "count",
+        "demand": 549.6722838137472,
+        "supply": 1030.0638705545737,
+        "traded": 549.6722838137472,
+        "unmet": 0.0,
+        "unsold": 480.3915867408265,
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapWords": [
+          "480 units unsold"
+        ],
+        "verdict": "Shoppers wanted 550 units and the shops had 1,030: 480 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+        "priceKind": "money",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "price": 22.58,
+        "priceDirection": "steady",
+        "priceDirectionWord": "steady",
+        "priceCause": "cost",
+        "priceCauseWord": "cost-driven",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "priceSeries": [
+          26.57,
+          25.79,
+          25.05,
+          24.35,
+          23.69,
+          23.07,
+          22.6,
+          22.58
+        ],
+        "drivers": [
+          {
+            "id": "markup",
+            "label": "Markup firms add to their costs",
+            "value": "152% of their costs"
+          }
+        ],
+        "short": [
+          {
+            "id": "unsold",
+            "label": "Farm has unsold stock",
+            "count": 1.0,
+            "entity": {
+              "kind": "firm",
+              "id": 1
+            }
+          }
+        ],
+        "howId": "markets:food",
+        "reconciles": true
+      },
+      {
+        "id": "goods",
+        "label": "Goods",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households buy goods with what is left after food, and firms buy machinery from the Factory. The government buys goods too.",
+        "unit": "units",
+        "amount": "count",
+        "demand": 130.7822262631532,
+        "supply": 311.35077745440447,
+        "traded": 130.7822262631532,
+        "unmet": 0.0,
+        "unsold": 180.56855119125126,
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapWords": [
+          "181 units unsold"
+        ],
+        "verdict": "Shoppers wanted 131 units and the shops had 311: 181 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+        "priceKind": "money",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "price": 87.13,
+        "priceDirection": "falling",
+        "priceDirectionWord": "falling",
+        "priceCause": "cost",
+        "priceCauseWord": "cost-driven",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "priceSeries": [
+          92.5,
+          91.73,
+          91.08,
+          90.24,
+          89.23,
+          88.33,
+          87.78,
+          87.13
+        ],
+        "drivers": [
+          {
+            "id": "markup",
+            "label": "Markup firms add to their costs",
+            "value": "71% of their costs"
+          }
+        ],
+        "short": [
+          {
+            "id": "unsold",
+            "label": "Factory has unsold stock",
+            "count": 1.0,
+            "entity": {
+              "kind": "firm",
+              "id": 0
+            }
+          }
+        ],
+        "howId": "markets:goods",
+        "reconciles": true
+      },
+      {
+        "id": "services",
+        "label": "Services",
+        "category": "products",
+        "mechanisms": [
+          "market"
+        ],
+        "blurb": "Households spend part of their spare money on services, and the government buys some. The Shop is the seller.",
+        "unit": "units",
+        "amount": "count",
+        "demand": 111.17207099994128,
+        "supply": 120.14807305276115,
+        "traded": 111.17207099994128,
+        "unmet": 0.0,
+        "unsold": 8.976002052819865,
+        "demandLabel": "Wanted",
+        "supplyLabel": "On the shelves",
+        "tradedLabel": "Bought",
+        "gapWords": [
+          "9 units unsold"
+        ],
+        "verdict": "Shoppers wanted 111 units and the shops had 120: 9 units stayed unsold. Unsold stock does not push the price down, because firms set prices from their costs. They respond by hiring less.",
+        "priceKind": "money",
+        "priceLabel": "Price",
+        "priceUnit": "per unit",
+        "price": 64.77,
+        "priceDirection": "falling",
+        "priceDirectionWord": "falling",
+        "priceCause": "cost",
+        "priceCauseWord": "cost-driven",
+        "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
+        "priceSeries": [
+          73.59,
+          72.54,
+          71.4,
+          70.17,
+          68.88,
+          67.52,
+          66.14,
+          64.77
+        ],
+        "drivers": [
+          {
+            "id": "markup",
+            "label": "Markup firms add to their costs",
+            "value": "38% of their costs"
+          }
+        ],
+        "short": [
+          {
+            "id": "unsold",
+            "label": "Shop has unsold stock",
+            "count": 1.0,
+            "entity": {
+              "kind": "firm",
+              "id": 2
+            }
+          }
+        ],
+        "howId": "markets:services",
+        "reconciles": true
+      },
+      {
+        "id": "labour",
+        "label": "Labour",
+        "category": "factors",
+        "mechanisms": [
+          "market",
+          "hierarchy"
+        ],
+        "blurb": "Firms decide how many people they want (a decision made inside the firm, by managers). Workers without a job apply to the firms that have openings, the cheapest first.",
+        "unit": "people",
+        "amount": "count",
+        "demand": 10.0,
+        "supply": 10.0,
+        "traded": 10.0,
+        "unmet": 0.0,
+        "unsold": 0.0,
+        "demandLabel": "Jobs on offer",
+        "supplyLabel": "People who can work",
+        "tradedLabel": "In a firm job",
+        "gapWords": [
+          "Nothing missing and nothing left over."
+        ],
+        "verdict": "Firms offered 10 jobs and 10 people could work: every job is filled and everyone who can work has a firm job.",
+        "priceKind": "money",
+        "priceLabel": "Average wage",
+        "priceUnit": "a month",
+        "price": 1273.725,
+        "priceDirection": "falling",
+        "priceDirectionWord": "falling",
+        "priceCause": "slack",
+        "priceCauseWord": "driven by unemployment",
+        "priceNote": "Wages respond to scarcity: they drift up when few people are out of work and down when many are.",
+        "priceSeries": [
+          1480.267142857143,
+          1446.19,
+          1411.245,
+          1378.06,
+          1346.425,
+          1318.1,
+          1290.545,
+          1273.725
+        ],
+        "drivers": [
+          {
+            "id": "unemployment",
+            "label": "Unemployment (smoothed)",
+            "value": "14% of the labour force"
+          },
+          {
+            "id": "u_ref",
+            "label": "Unemployment at which wages hold steady",
+            "value": "9% of the labour force"
+          }
+        ],
+        "short": [],
+        "howId": "markets:labour",
+        "reconciles": true
+      },
+      {
+        "id": "housing",
+        "label": "Housing",
+        "category": "factors",
+        "mechanisms": [
+          "market",
+          "rules"
+        ],
+        "blurb": "Each household needs one home. Households without a home move into the cheapest empty one they can afford.",
+        "unit": "homes",
+        "amount": "count",
+        "demand": 9.0,
+        "supply": 8.0,
+        "traded": 8.0,
+        "unmet": 1.0,
+        "unsold": 0.0,
+        "demandLabel": "Households needing a home",
+        "supplyLabel": "Homes in town",
+        "tradedLabel": "Homes lived in",
+        "gapWords": [
+          "Households without a home: 1"
+        ],
+        "verdict": "9 households needed a home and the town has 8: 1 home short, so some households have no home.",
+        "priceKind": "money",
+        "priceLabel": "Private rent",
+        "priceUnit": "a month",
+        "price": 375.21,
+        "priceDirection": "falling",
+        "priceDirectionWord": "falling",
+        "priceCause": "scarcity",
+        "priceCauseWord": "driven by empty homes",
+        "priceNote": "Rent responds to scarcity: it rises while almost every home is taken and renters can bear it, and falls otherwise. Public rent is set by the government.",
+        "priceSeries": [
+          348.19,
+          353.44,
+          358.77,
+          364.17,
+          369.66,
+          375.24,
+          377.11,
+          375.21
+        ],
+        "drivers": [
+          {
+            "id": "rent_burden",
+            "label": "Rent as a share of renters' income",
+            "value": "20% of their income"
+          },
+          {
+            "id": "rent_burden_cap",
+            "label": "Rent stops rising above",
+            "value": "20% of their income"
+          }
+        ],
+        "short": [
+          {
+            "id": "unhoused",
+            "label": "1 household has no home",
+            "count": 1.0,
+            "entity": {
+              "kind": "household",
+              "id": 4
+            }
+          }
+        ],
+        "howId": "markets:housing",
+        "reconciles": true
+      },
+      {
+        "id": "credit",
+        "label": "Credit",
+        "category": "capital",
+        "mechanisms": [
+          "market",
+          "rules"
+        ],
+        "blurb": "Firms ask for loans to invest. The bank lends within a limit set by its own capital, and no single firm may borrow beyond a share of what it owns. A request is the firm's plan after its investment rule, not a free wish to borrow.",
+        "unit": "dollars",
+        "amount": "money",
+        "demand": 1894.41,
+        "supply": 89019.95,
+        "traded": 1894.41,
+        "unmet": 0.0,
+        "unsold": 87125.54,
+        "demandLabel": "Firms asked to borrow",
+        "supplyLabel": "Room the bank has to lend",
+        "tradedLabel": "Lent",
+        "gapWords": [
+          "Bank room unused: $87,126"
+        ],
+        "verdict": "Firms asked for $1,894 and the bank had $89,020 of room: $87,126 of its room went unused.",
+        "priceKind": "rate",
+        "priceLabel": "Average loan rate",
+        "priceUnit": "a year",
+        "price": 0.04858657216828591,
+        "priceDirection": "steady",
+        "priceDirectionWord": "steady",
+        "priceCause": "risk",
+        "priceCauseWord": "driven by borrowing risk",
+        "priceNote": "The rate is the bank's base rate plus a margin that grows as a firm borrows more. It is not raised to ration loans: when the bank runs short of room it lends less.",
+        "priceSeries": [
+          0.049014676737757897,
+          0.04892831337121648,
+          0.04884925549752752,
+          0.048777281900823526,
+          0.048713621547892466,
+          0.04865471624168197,
+          0.04862272543437531,
+          0.04858657216828591
+        ],
+        "drivers": [
+          {
+            "id": "base_rate",
+            "label": "Bank base rate",
+            "value": "4% a year"
+          }
+        ],
+        "short": [],
+        "howId": "markets:credit",
+        "reconciles": true
+      },
+      {
+        "id": "energy",
+        "label": "Electricity",
+        "category": "resources",
+        "mechanisms": [
+          "rules"
+        ],
+        "blurb": "Firms and households use electricity. The power plants can produce only so much each month.",
+        "unit": "MWh",
+        "amount": "energy",
+        "demand": 8.022079615936644,
+        "supply": 10.0,
+        "traded": 8.022079615936644,
+        "unmet": 0.0,
+        "unsold": 1.9779203840633564,
+        "demandLabel": "Wanted by firms and homes",
+        "supplyLabel": "Plant capacity",
+        "tradedLabel": "Delivered",
+        "gapWords": [
+          "2 MWh of capacity idle"
+        ],
+        "verdict": "Firms and homes wanted 8 MWh and the plants could supply 10: 2 MWh of capacity sat idle.",
+        "priceKind": "none",
+        "priceLabel": "Price",
+        "priceUnit": "",
+        "priceDirection": "none",
+        "priceDirectionWord": "no price",
+        "priceCause": "none",
+        "priceCauseWord": "not a price",
+        "priceNote": "Electricity has no price in this model. It is a quantity limit: if demand is higher than the plants can supply, everyone's use is cut back in the same proportion. The commons is the other resource with no price; see Ecology.",
+        "priceSeries": [],
+        "drivers": [],
+        "short": [],
+        "howId": "markets:energy",
+        "reconciles": true
+      }
+    ],
     "history": [
       {
         "turn": 1,
@@ -7057,7 +7460,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 14.353854642139085,
-        "cumulativeEmissions": 37.80343405214059
+        "cumulativeEmissions": 37.80343405214059,
+        "priceFood": 26.57,
+        "priceGoods": 92.5,
+        "priceServices": 73.59,
+        "wageAvg": 1480.267142857143,
+        "rentPrivate": 348.19,
+        "loanRateAvg": 0.049014676737757897
       },
       {
         "turn": 2,
@@ -7083,7 +7492,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 13.14557707708195,
-        "cumulativeEmissions": 74.21065794191301
+        "cumulativeEmissions": 74.21065794191301,
+        "priceFood": 25.79,
+        "priceGoods": 91.73,
+        "priceServices": 72.54,
+        "wageAvg": 1446.19,
+        "rentPrivate": 353.44,
+        "loanRateAvg": 0.04892831337121648
       },
       {
         "turn": 3,
@@ -7109,7 +7524,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 13.133586325156273,
-        "cumulativeEmissions": 113.34587508736533
+        "cumulativeEmissions": 113.34587508736533,
+        "priceFood": 25.05,
+        "priceGoods": 91.08,
+        "priceServices": 71.4,
+        "wageAvg": 1411.245,
+        "rentPrivate": 358.77,
+        "loanRateAvg": 0.04884925549752752
       },
       {
         "turn": 4,
@@ -7135,7 +7556,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 15.154180863740576,
-        "cumulativeEmissions": 150.54915065782262
+        "cumulativeEmissions": 150.54915065782262,
+        "priceFood": 24.35,
+        "priceGoods": 90.24,
+        "priceServices": 70.17,
+        "wageAvg": 1378.06,
+        "rentPrivate": 364.17,
+        "loanRateAvg": 0.048777281900823526
       },
       {
         "turn": 5,
@@ -7161,7 +7588,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 13.179240387763707,
-        "cumulativeEmissions": 185.82407909634836
+        "cumulativeEmissions": 185.82407909634836,
+        "priceFood": 23.69,
+        "priceGoods": 89.23,
+        "priceServices": 68.88,
+        "wageAvg": 1346.425,
+        "rentPrivate": 369.66,
+        "loanRateAvg": 0.048713621547892466
       },
       {
         "turn": 6,
@@ -7187,7 +7620,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 13.694175253895164,
-        "cumulativeEmissions": 223.6683307867918
+        "cumulativeEmissions": 223.6683307867918,
+        "priceFood": 23.07,
+        "priceGoods": 88.33,
+        "priceServices": 67.52,
+        "wageAvg": 1318.1,
+        "rentPrivate": 375.24,
+        "loanRateAvg": 0.04865471624168197
       },
       {
         "turn": 7,
@@ -7213,7 +7652,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 14.04615421893498,
-        "cumulativeEmissions": 262.85418734602246
+        "cumulativeEmissions": 262.85418734602246,
+        "priceFood": 22.6,
+        "priceGoods": 87.78,
+        "priceServices": 66.14,
+        "wageAvg": 1290.545,
+        "rentPrivate": 377.11,
+        "loanRateAvg": 0.04862272543437531
       },
       {
         "turn": 8,
@@ -7239,7 +7684,13 @@
         "renewableShare": 0.0,
         "gridServed": 1.0,
         "grossEmissions": 15.990853498079213,
-        "cumulativeEmissions": 304.7222729656035
+        "cumulativeEmissions": 304.7222729656035,
+        "priceFood": 22.58,
+        "priceGoods": 87.13,
+        "priceServices": 64.77,
+        "wageAvg": 1273.725,
+        "rentPrivate": 375.21,
+        "loanRateAvg": 0.04858657216828591
       }
     ],
     "estate": {

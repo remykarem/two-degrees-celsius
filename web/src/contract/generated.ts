@@ -35,6 +35,8 @@ id: string, label: string, decision: string, rule: string, };
 
 export type AgentsCatalog = { kinds: Array<AgentKindInfo>, randomness: Array<RandomDraw>, deterministic: Array<string>, };
 
+export type AmountKind = "count" | "money" | "energy";
+
 export type Arrow = { metric: MetricKey, direction: Direction, };
 
 export type AssumptionExample = { label: string, inputs: { [key in string]: number }, result: ExampleResult, note?: string, 
@@ -102,6 +104,10 @@ netWorthLines: Array<NetWorthLineDef>,
  * Contract v2.2: the holder groups of the town's net worth.
  */
 netWorthHolders: Array<NetWorthHolderDef>, 
+/**
+ * Contract v2.3: the Markets view's cards, categories, cause words and coordination mechanisms.
+ */
+markets: MarketsContent, 
 /**
  * Contract v2.1: the entity registry (`content/entities.json`).
  */
@@ -381,7 +387,15 @@ govRevenue: number, govSpending: number, bankCapitalRatio: number, renewableShar
  * Contract v1.6: gross emissions (tonnes per month, before the sink) and the cumulative net
  * emissions in tonnes, at the end of the turn.
  */
-grossEmissions: number, cumulativeEmissions: number, };
+grossEmissions: number, cumulativeEmissions: number, 
+/**
+ * Contract v2.3 (Markets view): the price of each market at the end of the turn. Shelf
+ * prices in dollars per unit, the average monthly wage and the private rent in dollars, the
+ * average annual loan rate as a fraction. `None` when there was nothing to average (no
+ * active firm); a saved game from before v2.3 is refused (`SCHEMA_VERSION` 7), so the
+ * optional fields only keep hand-built histories loading.
+ */
+priceFood?: number, priceGoods?: number, priceServices?: number, wageAvg?: number, rentPrivate?: number, loanRateAvg?: number, };
 
 export type HomeOwnerView = number | PublicOwner;
 
@@ -555,6 +569,112 @@ export type MapView = { width: number, height: number,
  * Row-major: `tiles[y * width + x]`.
  */
 tiles: Array<TileView>, };
+
+export type MarketCategoryDef = { id: string, label: string, blurb: string, };
+
+export type MarketDef = { id: string, label: string, 
+/**
+ * One of `MarketsContent.categories`.
+ */
+category: string, 
+/**
+ * Coordination mechanisms this market leans on (ids of `MarketsContent.mechanisms`).
+ */
+mechanisms: Array<string>, 
+/**
+ * A plain description of who is on each side.
+ */
+blurb: string, 
+/**
+ * Plural unit word; `{energy}` becomes the energy unit label.
+ */
+unit: string, unitOne: string, amount: AmountKind, priceLabel: string, priceUnit: string, priceKind: PriceKind, 
+/**
+ * One of `MarketsContent.causes`.
+ */
+priceCause: string, 
+/**
+ * An honest sentence on how this price is really set.
+ */
+priceNote: string, demandLabel: string, supplyLabel: string, tradedLabel: string, 
+/**
+ * A gap at or below this (in the market's own unit) counts as no gap.
+ */
+gapFloor: number, gapUnmet: string, gapUnsold: string, 
+/**
+ * The explorer anchor behind this card's "how?" (a `usedBy` entry of an assumptions topic).
+ */
+howId: string, 
+/**
+ * Placeholders: `{demand}`, `{supply}`, `{traded}`, `{unmet}`, `{unsold}`, `{unit}`.
+ */
+verdict: Verdict, short: { [key in string]: ShortText }, drivers: { [key in string]: string }, };
+
+export type MarketDriver = { id: string, label: string, 
+/**
+ * Already written out, with its unit (for example `14% of income`).
+ */
+value: string, };
+
+export type MarketEntity = { kind: MarketEntityKind, id: number, };
+
+export type MarketEntityKind = "firm" | "household" | "home";
+
+export type MarketShort = { id: string, 
+/**
+ * The finished sentence from the content template.
+ */
+label: string, count: number, entity?: MarketEntity, };
+
+export type MarketView = { id: string, label: string, category: string, mechanisms: Array<string>, blurb: string, unit: string, amount: AmountKind, demand: number, supply: number, traded: number, 
+/**
+ * Wanted but not traded.
+ */
+unmet: number, 
+/**
+ * Available but not traded.
+ */
+unsold: number, demandLabel: string, supplyLabel: string, tradedLabel: string, 
+/**
+ * The gaps in words, for example `30 units went without`; one line saying there is none otherwise.
+ */
+gapWords: Array<string>, 
+/**
+ * One plain-English sentence on this month, built from the figures.
+ */
+verdict: string, priceKind: PriceKind, priceLabel: string, priceUnit: string, 
+/**
+ * Dollars (a shelf price, a monthly wage, a monthly rent) or an annual rate as a fraction.
+ */
+price?: number, 
+/**
+ * `rising`, `steady`, `falling`, `unknown` (no earlier turn yet) or `none` (no price).
+ */
+priceDirection: string, priceDirectionWord: string, 
+/**
+ * What the model really lets move this price: `cost`, `slack`, `scarcity`, `risk` or `none`.
+ */
+priceCause: string, priceCauseWord: string, priceNote: string, 
+/**
+ * The price at the end of each finished turn, oldest first, then this month if the turn is open.
+ */
+priceSeries: Array<number>, drivers: Array<MarketDriver>, short: Array<MarketShort>, howId: string, 
+/**
+ * The figures agree with the end state and with each other (see the module comment).
+ */
+reconciles: boolean, };
+
+export type MarketsContent = { 
+/**
+ * A price that moved by less than this share since the last turn counts as steady.
+ */
+steadyBand: number, gapNone: string, 
+/**
+ * A household whose food need was met at or above this share counts as fed.
+ */
+fullyMet: number, directions: { [key in string]: string }, causes: { [key in string]: string }, categories: Array<MarketCategoryDef>, mechanisms: Array<MechanismDef>, list: Array<MarketDef>, };
+
+export type MechanismDef = { id: string, label: string, blurb: string, example: string, };
 
 export type MeterBands = { low: number, high: number, };
 
@@ -734,6 +854,8 @@ weakenedBy: number | null, };
 
 export type PolicyScalar = boolean | number | string;
 
+export type PriceKind = "money" | "rate" | "none";
+
 export type PublicGood = { id: string, label: string, spendingMonthly: number, buys: string, };
 
 export type PublicOwner = "public";
@@ -780,6 +902,8 @@ runsOutBeforeEnd: boolean, };
 
 export type SectorKey = "goods" | "food" | "services";
 
+export type ShortText = { one: string, other: string, };
+
 export type SimEvent = { importance: 1 | 2 | 3, } & ({ "type": "commuted", person: number, firm: number, tiles: number, minutes: number, } | { "type": "person_hired", person: number, firm: number, } | { "type": "person_fired", person: number, firm: number, } | { "type": "purchase", household: number, firm: number, amount: number, } | { "type": "household_moved", household: number, to: number, } | { "type": "household_evicted", household: number, } | { "type": "built", kind: InfraKind, tile: Tile, } | { "type": "removed", tile: Tile, } | { "type": "electricity_rationed", served: number, } | { "type": "loan_defaulted", firm: number, } | { "type": "firm_founded", firm: number, } | { "type": "firm_closed", firm: number, } | { "type": "forest_shrank", stock: number, } | { "type": "commons_collapsed" } | { "type": "commons_enclosed", owner: number, } | { "type": "policy_blocked", reason: BlockReason, } | { "type": "command_activated", id: number, } | { "type": "bank_failed" } | { "type": "rent_shortfall", household: number, amount: number, } | { "type": "spending_cut", shortfall: number, } | { "type": "bank_bailout", amount: number, } | { "type": "class_changed", household: number, to: ClassKey, } | { "type": "system_switch_started", to: SystemKey, } | { "type": "system_switch_completed", to: SystemKey, } | { "type": "budget_exhausted" } | { "type": "collapse", reason: CollapseReason, } | { "type": "fire_started", tile: Tile, } | { "type": "fire_spread", from: Tile, to: Tile, } | { "type": "fire_out", tile: Tile, } | { "type": "forest_burned", tile: Tile, } | { "type": "drought_started", severity: number, months: number, } | { "type": "drought_ended" } | { "type": "home_damaged", home: number, } | { "type": "private_jet_flight", household: number, tonnes: number, } | { "type": "pilot_let_go", person: number, } | { "type": "pilot_hired", person: number, });
 
 export type SimEventKind = { "type": "commuted", person: number, firm: number, tiles: number, minutes: number, } | { "type": "person_hired", person: number, firm: number, } | { "type": "person_fired", person: number, firm: number, } | { "type": "purchase", household: number, firm: number, amount: number, } | { "type": "household_moved", household: number, to: number, } | { "type": "household_evicted", household: number, } | { "type": "built", kind: InfraKind, tile: Tile, } | { "type": "removed", tile: Tile, } | { "type": "electricity_rationed", served: number, } | { "type": "loan_defaulted", firm: number, } | { "type": "firm_founded", firm: number, } | { "type": "firm_closed", firm: number, } | { "type": "forest_shrank", stock: number, } | { "type": "commons_collapsed" } | { "type": "commons_enclosed", owner: number, } | { "type": "policy_blocked", reason: BlockReason, } | { "type": "command_activated", id: number, } | { "type": "bank_failed" } | { "type": "rent_shortfall", household: number, amount: number, } | { "type": "spending_cut", shortfall: number, } | { "type": "bank_bailout", amount: number, } | { "type": "class_changed", household: number, to: ClassKey, } | { "type": "system_switch_started", to: SystemKey, } | { "type": "system_switch_completed", to: SystemKey, } | { "type": "budget_exhausted" } | { "type": "collapse", reason: CollapseReason, } | { "type": "fire_started", tile: Tile, } | { "type": "fire_spread", from: Tile, to: Tile, } | { "type": "fire_out", tile: Tile, } | { "type": "forest_burned", tile: Tile, } | { "type": "drought_started", severity: number, months: number, } | { "type": "drought_ended" } | { "type": "home_damaged", home: number, } | { "type": "private_jet_flight", household: number, tonnes: number, } | { "type": "pilot_let_go", person: number, } | { "type": "pilot_hired", person: number, };
@@ -792,7 +916,11 @@ finance: Finance,
 /**
  * Contract v1.6 (section 16).
  */
-breakdowns: Breakdowns, policies: Policies, industry: Industry, history: Array<HistoryPoint>, 
+breakdowns: Breakdowns, policies: Policies, industry: Industry, 
+/**
+ * Contract v2.3: one card per market for the latest month (empty before the first month).
+ */
+markets: Array<MarketView>, history: Array<HistoryPoint>, 
 /**
  * Contract v1.9: the elite estate; absent when the town has none.
  */
@@ -826,7 +954,11 @@ export type SystemCard = { key: SystemKey,
 /**
  * `params.systems.<key>.name`.
  */
-name: string, tagline: string, facts: Array<Fact>, 
+name: string, tagline: string, 
+/**
+ * Contract v2.3: which coordination mechanisms this system leans on, in a sentence.
+ */
+coordination: string, facts: Array<Fact>, 
 /**
  * Numbers read from `params.systems.<key>`.
  */
@@ -906,6 +1038,8 @@ export type TurnResult = { turn: number, accepted: Array<PendingItem>, rejected:
 export type TurnStart = { turn: number, accepted: Array<PendingItem>, rejected: Array<RejectedCommand>, activated: Array<PendingItem>, pcBefore: number, snapshot: Snapshot, };
 
 export type Value = { value: number, unit: string, };
+
+export type Verdict = { balanced: string, short: string, glut: string, both: string, };
 
 export type WageFlow = { person: number, household: number, firm: number, amount: number, };
 

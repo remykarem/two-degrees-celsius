@@ -575,8 +575,8 @@
     "id": "income_wages_prices",
     "title": "Wages, prices and profit",
     "group": "production_prices",
-    "summary": "Firms pay wages first, then the carbon price and profit tax, then dividends to their owners. Wages drift with unemployment (a Phillips-curve style rule) and with skill. Prices move toward clearing the market: up when inventory runs low, down when it piles up. A firm that cannot cover wages pays what it can and falls behind.",
-    "formula": "wage moves by k x (reference unemployment - unemployment); price moves by an adjustment x inventory gap; profit = revenue - wages - interest - carbon cost - profit tax",
+    "summary": "Firms pay wages first, then the carbon price and profit tax, then dividends to their owners. Wages drift with unemployment (a Phillips-curve style rule) and with skill. Goods prices are cost-plus: each firm moves its price a share of the way toward its unit cost plus a markup every month, and demand does not enter that rule (shortages and gluts change how much a firm hires and makes, not what it charges; see the market price setting topic). A firm that cannot cover wages pays what it can and falls behind.",
+    "formula": "wage moves by k x (reference unemployment - unemployment); price moves by an adjustment x (unit cost x (1 + markup) - price); profit = revenue - wages - interest - carbon cost - profit tax",
     "params": [
       {
         "path": "labour.wage_k",
@@ -597,23 +597,23 @@
         "unit": "share per month"
       },
       {
-        "path": "goods.price_elasticity",
-        "label": "Price elasticity of demand",
-        "value": 2.0,
-        "unit": "elasticity"
-      },
-      {
         "path": "income.cash_reserve_months",
         "label": "Months of payroll kept as a cash reserve",
         "value": 1.0,
         "unit": "months"
+      },
+      {
+        "path": "goods.price_elasticity",
+        "label": "How strongly buyers favour the cheaper shop",
+        "value": 2.0,
+        "unit": "elasticity"
       }
     ],
     "examples": [],
     "status": "tuned",
     "statusNote": "Rules of thumb tuned until the town behaves plausibly; not estimated.",
     "leavesOut": [
-      "No bargaining, unions setting wages directly, or contracts; prices are not set by market power."
+      "No bargaining, unions setting wages directly, or contracts; goods prices do not respond to excess demand (a modelling choice, see the market price setting topic)."
     ],
     "code": [
       "crates/sim-model/src/labour.rs",
@@ -623,7 +623,8 @@
     "related": [
       "production_output",
       "gdp",
-      "wage_profit_share"
+      "wage_profit_share",
+      "market_price_setting"
     ],
     "usedBy": [
       "wage_share",
@@ -2066,6 +2067,343 @@
       "networth:firm_cash",
       "networth:firm_inventory",
       "networth:firm_loans"
+    ]
+  },
+  {
+    "id": "coordination_mechanisms",
+    "title": "How an economy is coordinated: markets are one way",
+    "group": "production_prices",
+    "summary": "Resources are scarce, so a society must decide what to produce, how to produce it and who gets it, and the people deciding each know only a small part of what is needed. A coordination mechanism is a way of making those decisions without anyone knowing everything. A market does it with prices: buyers and sellers adjust to what is scarce. Planning or rules do it with an authority that sets quantities, prices or limits (public housing, rationing, the Soviet system). A firm does it with managers directing work instead of buying every step on a market (the point of Ronald Coase). Community rules do it with shared norms and trust (the commons and co-operatives, studied by Elinor Ostrom). Real economies mix all four. A market does not mean capitalism: who owns the firms is a separate question from how decisions are coordinated. In this town goods, jobs, homes and loans are markets with some rules on top; hiring is decided inside the firm; electricity is shared out by a rule; the commons can be run by the community.",
+    "formula": "Markets: prices signal scarcity. Rules or planning: an authority sets quantities or prices. Firms: managers direct work. Community rules: shared norms manage a shared resource.",
+    "params": [],
+    "examples": [],
+    "status": "placeholder",
+    "statusNote": "A teaching frame, not a model rule: it names which mechanism each part of the town leans on.",
+    "leavesOut": [
+      "The model has no centrally planned economy: a planned system, where the Markets view would show shortages and queues instead of price moves, is a later feature.",
+      "Real economies are not split cleanly into four boxes; most institutions mix several."
+    ],
+    "code": [
+      "content/ui.json",
+      "crates/sim-api/src/markets.rs"
+    ],
+    "related": [
+      "market_price_setting",
+      "economic_systems",
+      "nature_forest_commons"
+    ],
+    "usedBy": [
+      "markets:intro",
+      "panel:markets"
+    ]
+  },
+  {
+    "id": "market_price_setting",
+    "title": "How prices are set in this town: cost-plus, not scarcity",
+    "group": "production_prices",
+    "summary": "Goods and services prices follow costs, not shelves. Every month each firm moves its price a share of the way toward its unit cost (wages plus carbon cost, per unit made) times one plus its markup. Demand never enters that rule. When buyers want more than a shop has, the gap is recorded as unmet demand and the firm responds by hiring and producing more over the next months: the quantity adjusts and the price does not. When stock piles up, the firm hires less. A carbon price therefore passes through to shelf prices even in a slump. Wages and rents are different: a firm's wage drifts with a trend and with unemployment against a reference rate, and the private rent rises while homes are nearly all taken and renters can bear it, and falls otherwise. Loan rates follow the bank's base rate and how much a firm already owes. A textbook market lets every price move with scarcity; this town does not, and that is a modelling choice, not a discovery about the real world.",
+    "formula": "goods: price moves a share of the way to (1 + markup) x unit cost; labour: wage step = trend + k x (reference unemployment - unemployment), capped; housing: rent up while occupancy is high and burden is low, else down; credit: rate = base + margin + leverage term",
+    "params": [
+      {
+        "path": "goods.price_adjust",
+        "label": "Share of the gap to the target price closed per month",
+        "value": 0.05,
+        "unit": "share per month"
+      },
+      {
+        "path": "labour.wage_k",
+        "label": "Wage sensitivity to unemployment",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "labour.u_ref",
+        "label": "Reference unemployment",
+        "value": 0.09,
+        "unit": "share"
+      },
+      {
+        "path": "goods.occupancy_trigger",
+        "label": "Occupancy at which rents may rise",
+        "value": 0.95,
+        "unit": "share"
+      },
+      {
+        "path": "goods.rent_burden_cap",
+        "label": "Rent burden above which rents stop rising",
+        "value": 0.2,
+        "unit": "share"
+      }
+    ],
+    "examples": [
+      {
+        "label": "A firm whose unit cost is $20 and whose markup is 40 percent of cost",
+        "inputs": {
+          "markup": 0.4,
+          "unit_cost_usd": 20.0
+        },
+        "result": {
+          "value": 28.0,
+          "unit": "$ per unit"
+        },
+        "note": "The price moves toward this figure whatever buyers want.",
+        "function": "price_target"
+      },
+      {
+        "label": "Unemployment at 15 percent and a trend of 0.2 percent a month",
+        "inputs": {
+          "trend": 0.002,
+          "unemployment": 0.15
+        },
+        "result": {
+          "value": -0.004,
+          "unit": "change in the wage per month (a share)"
+        },
+        "note": "Above the reference rate, so the wage step is below the trend (and can be negative).",
+        "function": "wage_step"
+      }
+    ],
+    "status": "tuned",
+    "statusNote": "Rules of thumb tuned until the town behaves plausibly. Goods prices ignoring demand is a deliberate simplification; changing it is a balance decision (docs/features/markets.md, scope B).",
+    "leavesOut": [
+      "Goods prices do not respond to excess demand or to unsold stock.",
+      "No market power, no bargaining, no search costs, no price differences inside a sector other than by shop."
+    ],
+    "code": [
+      "crates/sim-model/src/goods.rs",
+      "crates/sim-model/src/labour.rs",
+      "crates/sim-model/src/credit.rs"
+    ],
+    "related": [
+      "market_goods",
+      "market_labour",
+      "market_housing",
+      "market_credit",
+      "income_wages_prices",
+      "coordination_mechanisms"
+    ],
+    "usedBy": [
+      "markets:prices"
+    ]
+  },
+  {
+    "id": "market_goods",
+    "title": "The goods, food and services markets",
+    "group": "production_prices",
+    "summary": "Households must eat: each person needs a set amount of food a month and spends on it first. What is left after food, and after saving, is split between goods and services. Firms buy machinery from the Factory and the government buys goods and services too. All of this is a budget set before looking at any shop. The budget is then shared out among the sector's shops, favouring those with more stock and lower prices, in two passes so that nobody buys more than a shop has. What buyers would have bought is demand; what was bought is sales; the difference is what went without, and stock minus sales is what stayed unsold. The sector has one shop in this town, so a gap is all or nothing.",
+    "formula": "demand units = budget share / price; sold = min(demand, stock) over two passes; unmet = demand - sold; unsold = stock - sold",
+    "params": [
+      {
+        "path": "goods.food_need_units_pc",
+        "label": "Food each person needs a month",
+        "value": 25.0,
+        "unit": "units per person per month"
+      },
+      {
+        "path": "goods.services_share",
+        "label": "Share of spare spending that goes to services",
+        "value": 0.45,
+        "unit": "share"
+      },
+      {
+        "path": "goods.price_elasticity",
+        "label": "How strongly buyers favour the cheaper shop",
+        "value": 2.0,
+        "unit": "elasticity"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Household budgets are rules of thumb by class. Only the shop split uses a price response.",
+    "leavesOut": [
+      "No shopping around between towns, no brands, no queueing: unmet demand simply goes without."
+    ],
+    "code": [
+      "crates/sim-model/src/goods.rs"
+    ],
+    "related": [
+      "market_price_setting",
+      "household_spending",
+      "production_output"
+    ],
+    "usedBy": [
+      "markets:food",
+      "markets:goods",
+      "markets:services"
+    ]
+  },
+  {
+    "id": "market_labour",
+    "title": "The labour market",
+    "group": "production_prices",
+    "summary": "Each firm decides how many people it wants from the sales it expects and its stock (a decision made inside the firm, by managers). The gap between that headcount and who it already employs is its job openings. Unemployed people apply to firms with openings, the cheapest first, and a firm hires at most a few people a month, so an opening can stay open while people are out of work. A firm lets people go only after months of sustained surplus. The government's job guarantee employs a share of those left without a firm job. The wage drifts with a trend and with unemployment against a reference rate.",
+    "formula": "openings = target headcount - current workers; hires = min(openings, monthly cap, people available); wage step = trend + k x (u_ref - u)",
+    "params": [
+      {
+        "path": "labour.max_hire_per_month",
+        "label": "Most people a firm hires in a month",
+        "value": 1.0,
+        "unit": "people"
+      },
+      {
+        "path": "labour.wage_k",
+        "label": "Wage sensitivity to unemployment",
+        "value": 0.1,
+        "unit": "share"
+      },
+      {
+        "path": "labour.u_ref",
+        "label": "Reference unemployment",
+        "value": 0.09,
+        "unit": "share"
+      },
+      {
+        "path": "labour.wage_cap",
+        "label": "Largest monthly wage change",
+        "value": 0.01,
+        "unit": "share per month"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Rules of thumb tuned to behave plausibly.",
+    "leavesOut": [
+      "No job search effort, no vacancies posted for skills the unemployed lack beyond a two-tier skill split, no quitting for a better job."
+    ],
+    "code": [
+      "crates/sim-model/src/labour.rs"
+    ],
+    "related": [
+      "market_price_setting",
+      "wellbeing_unemployment",
+      "benefits_labour"
+    ],
+    "usedBy": [
+      "markets:labour"
+    ]
+  },
+  {
+    "id": "market_housing",
+    "title": "The housing market",
+    "group": "people_households",
+    "summary": "Each household needs one home. Households without a home, richest first, move into the cheapest empty home whose rent is within a share of their income; a household that falls months behind on rent loses its home (an evicted household does not move at once). Private rent rises while almost every home is occupied and renters spend less than a cap of their income on rent, and falls otherwise. Public rent is a policy lever set by the government, a rule rather than a market price.",
+    "formula": "rent up if occupancy >= trigger and mean burden < cap, else down; burden = private rent / renters' disposable income",
+    "params": [
+      {
+        "path": "goods.occupancy_trigger",
+        "label": "Occupancy at which rents may rise",
+        "value": 0.95,
+        "unit": "share"
+      },
+      {
+        "path": "goods.rent_burden_cap",
+        "label": "Rent burden above which rents stop rising",
+        "value": 0.2,
+        "unit": "share"
+      },
+      {
+        "path": "goods.rent_up",
+        "label": "Monthly rise in rent",
+        "value": 0.005,
+        "unit": "share"
+      },
+      {
+        "path": "goods.rent_down",
+        "label": "Monthly fall in rent",
+        "value": 0.005,
+        "unit": "share"
+      },
+      {
+        "path": "goods.move_rent_share",
+        "label": "Largest share of income a household will spend on rent when moving",
+        "value": 0.35,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Rules of thumb; there is no bidding between households for the same home.",
+    "leavesOut": [
+      "No building by developers in response to rents, no mortgages, no moving between towns."
+    ],
+    "code": [
+      "crates/sim-model/src/goods.rs"
+    ],
+    "related": [
+      "market_price_setting",
+      "wage_profit_share"
+    ],
+    "usedBy": [
+      "markets:housing"
+    ]
+  },
+  {
+    "id": "market_credit",
+    "title": "The credit market",
+    "group": "finance_credit",
+    "summary": "Firms ask the bank for loans when their investment plan needs more than they have. The bank may lend up to its capital divided by the required capital ratio, minus what it has already lent, and no single firm may owe more than a share of what it owns. A request is the firm's plan after its investment rule, not a free wish to borrow. The loan rate is the base rate plus a fixed margin plus a margin that grows with how much the firm owes; it is not raised to ration loans, so when the bank runs short of room it simply lends less.",
+    "formula": "approved = min(request, bank headroom, firm's leverage limit); rate = base + spread + leverage x leverage margin + system credit spread",
+    "params": [
+      {
+        "path": "credit.spread_base",
+        "label": "Fixed margin over the base rate",
+        "value": 0.005,
+        "unit": "share per year"
+      },
+      {
+        "path": "credit.spread_leverage",
+        "label": "Extra margin per unit of leverage",
+        "value": 0.02,
+        "unit": "share per year"
+      },
+      {
+        "path": "credit.max_firm_leverage",
+        "label": "Most a firm may owe, as a share of what it owns",
+        "value": 0.6,
+        "unit": "share"
+      }
+    ],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "Rules of thumb; the bank does not assess individual projects.",
+    "leavesOut": [
+      "No credit rating, no collateral choice, no loans to households beyond the existing ones."
+    ],
+    "code": [
+      "crates/sim-model/src/credit.rs",
+      "crates/sim-model/src/investment.rs"
+    ],
+    "related": [
+      "market_price_setting",
+      "money_credit",
+      "capital_ratio"
+    ],
+    "usedBy": [
+      "markets:credit"
+    ]
+  },
+  {
+    "id": "market_energy",
+    "title": "The electricity market (a quantity limit, no price)",
+    "group": "emissions_energy",
+    "summary": "Firms and households want electricity every month; the power plants can supply only their capacity. If demand is higher than capacity, everyone is served in the same proportion and output is cut back accordingly. There is no price for electricity in this model: it is shared out by a rule, not by bidding. The commons is the other resource with no price: it is governed by access rules and regrowth, and is shown under Ecology, not here.",
+    "formula": "served = min(1, capacity / demand); delivered = demand x served",
+    "params": [],
+    "examples": [],
+    "status": "tuned",
+    "statusNote": "A quantity constraint, not a price model.",
+    "leavesOut": [
+      "No electricity price, no storage and no imports."
+    ],
+    "code": [
+      "crates/sim-model/src/production.rs"
+    ],
+    "related": [
+      "energy_power",
+      "coordination_mechanisms"
+    ],
+    "usedBy": [
+      "markets:energy"
     ]
   }
 ]
