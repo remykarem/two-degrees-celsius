@@ -538,3 +538,17 @@ fn the_api_adds_nothing_to_the_simulation() {
     assert_eq!(bare.state, api.sim().state);
     assert_eq!(bare.rng, api.sim().rng);
 }
+
+#[test]
+fn import_refuses_crafted_huge_money_instead_of_panicking() {
+    let mut a = Api::init(21).unwrap();
+    a.submit_turn(&[]).unwrap();
+    let blob = a.export_state().unwrap();
+    let mut v: serde_json::Value = serde_json::from_str(&blob).unwrap();
+    v["state"]["households"][0]["savings"] = serde_json::json!(9_223_372_036_854_775_000_i64);
+    let mut b = Api::init(1).unwrap();
+    let err = b.import_state(&v.to_string()).unwrap_err();
+    assert_eq!(err.code, "bad_state");
+    // The untouched save still loads.
+    assert!(b.import_state(&blob).is_ok());
+}

@@ -73,6 +73,47 @@ pub fn export(
         .map_err(|e| ApiError::new(code::BAD_STATE, format!("export failed: {e}")))
 }
 
+/// Largest magnitude, in cents, any integer in a save may have (10^15 cents is 10 trillion
+/// dollars, far above anything the game produces). `Cents` arithmetic panics on i64 overflow and
+/// a panic traps the wasm module, so a crafted save must be refused before it can reach it.
+/// Summing a few thousand such values still fits in an i64. The RNG words are the only
+/// legitimately huge integers and are not walked.
+pub const MAX_SAVED_INTEGER: i64 = 1_000_000_000_000_000;
+
+fn bound_integers(blob: &serde_json::Value) -> ApiResult<()> {
+    fn walk(v: &serde_json::Value, path: &str) -> ApiResult<()> {
+        match v {
+            serde_json::Value::Number(n) => {
+                let too_big = if let Some(i) = n.as_i64() {
+                    i.unsigned_abs() > MAX_SAVED_INTEGER as u64
+                } else {
+                    n.as_u64().is_some()
+                };
+                if too_big {
+                    return Err(bad(format!(
+                        "saved number at {path} is out of range (more than {MAX_SAVED_INTEGER})"
+                    )));
+                }
+                Ok(())
+            }
+            serde_json::Value::Array(a) => a
+                .iter()
+                .enumerate()
+                .try_for_each(|(i, x)| walk(x, &format!("{path}[{i}]"))),
+            serde_json::Value::Object(o) => o
+                .iter()
+                .try_for_each(|(k, x)| walk(x, &format!("{path}.{k}"))),
+            _ => Ok(()),
+        }
+    }
+    for key in ["clampedTotal", "state", "history", "ledger", "log"] {
+        if let Some(v) = blob.get(key) {
+            walk(v, key)?;
+        }
+    }
+    Ok(())
+}
+
 fn bad(msg: impl Into<String>) -> ApiError {
     ApiError::new(code::BAD_STATE, msg)
 }
@@ -91,6 +132,7 @@ pub fn import(blob: &str, params: &Params, detail_turns: u32) -> ApiResult<Impor
             ),
         ));
     }
+    bound_integers(&value)?;
     let b: SaveBlob =
         serde_json::from_value(value).map_err(|e| bad(format!("save is malformed: {e}")))?;
     if b.params_hash != params_hash(params)? {
