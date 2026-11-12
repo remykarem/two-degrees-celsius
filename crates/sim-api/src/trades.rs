@@ -651,7 +651,13 @@ impl Ctx<'_> {
                 self.s
                     .persons
                     .get(x as usize)
-                    .map_or(format!("Person {x}"), |p| p.label.clone()),
+                    .map_or(format!("Person {x}"), |p| {
+                        // Person labels repeat ("Adult 1" in every household): name the household too.
+                        match self.s.households.get(p.household.idx()) {
+                            Some(h) => format!("{} ({})", p.label, h.label),
+                            None => p.label.clone(),
+                        }
+                    }),
                 e(MarketEntityKind::Person, x),
             ),
             Party::Home(n) => (

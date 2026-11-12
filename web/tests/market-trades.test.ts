@@ -50,11 +50,11 @@ describe('sorting, client side only', () => {
     expect(nextSort(d, 2)).toEqual({ column: 2, dir: 1 });
   });
   it('sorts numbers by the cell\'s number (10 after 2, not before) and text by text, stably', () => {
-    expect(sortRows(rows, { column: 1, dir: 1 }).map((r) => r.cells[1].text)).toEqual(['0', '2', '10']);
-    expect(sortRows(rows, { column: 1, dir: -1 }).map((r) => r.cells[1].text)).toEqual(['10', '2', '0']);
-    expect(sortRows(rows, { column: 0, dir: 1 }).map((r) => r.cells[0].text)).toEqual(['Brickworks', 'Council', 'Mira']);
+    expect(sortRows(rows, { column: 1, dir: 1 }).map((r) => r.cells[1]!.text)).toEqual(['0', '2', '10']);
+    expect(sortRows(rows, { column: 1, dir: -1 }).map((r) => r.cells[1]!.text)).toEqual(['10', '2', '0']);
+    expect(sortRows(rows, { column: 0, dir: 1 }).map((r) => r.cells[0]!.text)).toEqual(['Brickworks', 'Council', 'Mira']);
     expect(sortRows(rows, null)).toBe(rows);
-    expect(rows.map((r) => r.cells[0].text)).toEqual(['Mira', 'Brickworks', 'Council']); // the input is not changed
+    expect(rows.map((r) => r.cells[0]!.text)).toEqual(['Mira', 'Brickworks', 'Council']); // the input is not changed
   });
 });
 
@@ -77,7 +77,7 @@ describe('the pure helpers', () => {
   });
   it('an inspector line is the row\'s cells without the month', () => {
     const m = { ...zoning(), columns: [...zoning().columns.slice(0, 2), { id: 'month', label: 'When', help: '', numeric: false }] };
-    expect(rowSummary(m, m.rows[0])).toBe('Mira · 2');
+    expect(rowSummary(m, m.rows[0]!)).toBe('Mira · 2');
   });
 });
 
@@ -100,13 +100,13 @@ describe('a made-up market draws with no change to the web', () => {
   });
   it('a refusal (the recorded demo, an old package) reads as plain words', () => {
     const game = { state: writable({ snapshot: null }), select: () => {}, marketTrades: () => ({ ok: false as const, error: { code: 'unsupported', message: 'x' } }) };
-    expect(plain(draw(TradesTable, { game, market: 'food' }))).toContain(catalog().text.markets.trades_unavailable);
+    expect(plain(draw(TradesTable, { game, market: 'food' }))).toContain(catalog().text.markets!.trades_unavailable!);
   });
   it('every market card has the See all trades button', () => {
     const s = fixture<{ snapshot: Snapshot }>('turn-result.json').snapshot;
-    const card = cardModel(s.markets[0], catalog().markets.mechanisms);
+    const card = cardModel(s.markets[0]!, catalog().markets.mechanisms);
     const h = draw(MarketStrip, { card, game: { select: () => {}, openTrades: () => {} }, noSeries: '' });
-    expect(plain(h)).toContain(catalog().text.markets.trades_button);
+    expect(plain(h)).toContain(catalog().text.markets!.trades_button!);
   });
 });
 

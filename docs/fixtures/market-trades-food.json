@@ -473,7 +473,7 @@
     "count": 9,
     "units": 539.2728351126927,
     "money": 13638.21,
-    "text": "539.27 units bought for $13,638.21 this month, in 9 purchases.",
+    "text": "539.27 units bought for $13,638.21 this month (purchases: 9).",
     "cells": [
       {
         "text": "9"

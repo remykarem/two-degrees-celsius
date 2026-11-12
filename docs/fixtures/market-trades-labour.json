@@ -117,7 +117,7 @@
     {
       "cells": [
         {
-          "text": "Adult 1",
+          "text": "Adult 1 (Manager A)",
           "entity": {
             "kind": "person",
             "id": 4
@@ -147,7 +147,7 @@
     {
       "cells": [
         {
-          "text": "Adult 2",
+          "text": "Adult 2 (Manager A)",
           "entity": {
             "kind": "person",
             "id": 5
@@ -177,7 +177,7 @@
     {
       "cells": [
         {
-          "text": "Adult 1",
+          "text": "Adult 1 (Manager B)",
           "entity": {
             "kind": "person",
             "id": 7
@@ -207,7 +207,7 @@
     {
       "cells": [
         {
-          "text": "Adult 2",
+          "text": "Adult 2 (Manager B)",
           "entity": {
             "kind": "person",
             "id": 8
@@ -237,7 +237,7 @@
     {
       "cells": [
         {
-          "text": "Adult 1",
+          "text": "Adult 1 (Worker B)",
           "entity": {
             "kind": "person",
             "id": 13
@@ -267,7 +267,7 @@
     {
       "cells": [
         {
-          "text": "Adult 2",
+          "text": "Adult 2 (Worker B)",
           "entity": {
             "kind": "person",
             "id": 14
@@ -297,7 +297,7 @@
     {
       "cells": [
         {
-          "text": "Adult 1",
+          "text": "Adult 1 (Worker C)",
           "entity": {
             "kind": "person",
             "id": 16
@@ -327,7 +327,7 @@
     {
       "cells": [
         {
-          "text": "Pilot",
+          "text": "Pilot (Worker C)",
           "entity": {
             "kind": "person",
             "id": 18
@@ -357,7 +357,7 @@
     {
       "cells": [
         {
-          "text": "Adult 1",
+          "text": "Adult 1 (Destitute household)",
           "entity": {
             "kind": "person",
             "id": 19

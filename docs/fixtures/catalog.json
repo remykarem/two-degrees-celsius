@@ -287,7 +287,7 @@
       "trades_older": "Older turns are summed: one row per pair of parties for the whole turn.",
       "trades_period": "Show",
       "trades_reconciles": "These rows add up to the card: {traded}.",
-      "trades_rows": "{n} rows",
+      "trades_rows": "rows: {n}",
       "trades_see_all": "See all {market} trades",
       "trades_title": "All trades: {market}",
       "trades_totals": "Total",
@@ -978,7 +978,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         }
       },
       {
@@ -1074,7 +1074,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         }
       },
       {
@@ -1170,7 +1170,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         }
       },
       {
@@ -1453,7 +1453,7 @@
             "refused": "Refused"
           },
           "uncounted": "",
-          "totals": "{money} lent {span}, in {count} requests."
+          "totals": "{money} lent {span} (loan requests: {count})."
         }
       },
       {

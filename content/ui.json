@@ -318,7 +318,7 @@
       "trades_none": "No trades recorded for this period.",
       "trades_inspector": "Trades this month",
       "trades_see_all": "See all {market} trades",
-      "trades_rows": "{n} rows",
+      "trades_rows": "rows: {n}",
       "trades_close": "Close",
       "trades_older": "Older turns are summed: one row per pair of parties for the whole turn.",
       "also_here": "Also in this town"
@@ -750,7 +750,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
@@ -850,7 +850,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
@@ -946,7 +946,7 @@
             "self": "A firm buying its own output: no money moves"
           },
           "uncounted": "",
-          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+          "totals": "{units} units bought for {money} {span} (purchases: {count})."
         },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
@@ -1233,7 +1233,7 @@
             "refused": "Refused"
           },
           "uncounted": "",
-          "totals": "{money} lent {span}, in {count} requests."
+          "totals": "{money} lent {span} (loan requests: {count})."
         },
         "verdict": {
           "balanced": "Firms asked for {demand} and the bank had {supply} of room: every request was met.",
