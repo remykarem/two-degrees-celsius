@@ -158,3 +158,23 @@ New simulation behaviour (scope A); a town-wide demand curve or price-discovery;
 - Q5. Commons as a market card? **No, show it under Ecology; mention it in the energy explainer as the other "no price" resource.**
 - Q6. Do scope B now? **No; ship scope A first, then decide with the user.**
 - Q7. One `markets` snapshot field or a `markets()` call? **On the snapshot.**
+
+## Pedagogy: markets are one way to coordinate an economy (user request)
+
+The game is **pedagogical** (user reminder). The Markets view must not imply that markets are *the* economy. It should teach that **a market is one coordination mechanism** among several, each answering the same problem.
+
+**The problem (economics' basic questions):** resources are scarce, so a society must decide *what* to produce, *how*, and *for whom*, and the people deciding each know only a small part of what is needed (the knowledge and incentive problem). A **coordination mechanism** (also called a resource-allocation mechanism) is how that gets decided without anyone knowing everything.
+
+**Mechanisms to name in the UI** (one line each, with a real-world example):
+- **Markets:** prices signal scarcity; buyers and sellers adjust (shops, labour, housing).
+- **Planning/command:** an authority sets quotas and prices (public housing allocation, wartime rationing, the Soviet system).
+- **Firms/hierarchy:** managers direct work inside an organisation instead of buying every step on a market (Coase).
+- **Community rules/commons:** shared rules and reciprocity (the commons, co-operatives; Ostrom).
+- **Mixed:** real economies combine all of these. Note that markets do not imply capitalism: ownership (who holds the firms) is a separate question.
+
+**Where to show it (content-driven, no web logic):**
+1. A short intro block at the top of the Markets view: "A market is one way an economy decides what to make and who gets it. This town uses several."
+2. In the economic-system switch modal (Market/Regulated/Coop): which mechanisms each system leans on.
+3. An explorer topic `coordination_mechanisms` in `content/assumptions.json`, linked from the intro and from each market card's "how?".
+4. Tag each part of the model with its mechanism (goods and labour: market; public housing, regulation and the carbon price: planning/rules; the commons: community rules; firm hiring: hierarchy) so the player sees the mix.
+Open question (default in brackets): does a planned-economy system get added later, where the Markets view shows shortages and queues instead of price moves? [Later, as its own feature.]
