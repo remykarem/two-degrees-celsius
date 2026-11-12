@@ -135,8 +135,23 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         iota: f64,
     }
     let mut plans: Vec<Plan> = Vec::new();
+    // Farm-from-nature: the stocks left last month limit the food that can be grown. The cap is
+    // shared by the active farms in proportion to what each would make.
+    let food_total: f64 = s
+        .firms
+        .iter()
+        .filter(|f| f.active && f.sector == Sector::Food)
+        .map(|f| capacity(s, p, f, effective_labour(s, f)))
+        .sum();
+    let food_scale = match sim_metrics::food_cap(s, p) {
+        Some(cap) if food_total > cap => cap.max(0.0) / food_total,
+        _ => 1.0,
+    };
     for f in s.firms.iter().filter(|f| f.active) {
-        let y0 = capacity(s, p, f, effective_labour(s, f));
+        let mut y0 = capacity(s, p, f, effective_labour(s, f));
+        if f.sector == Sector::Food {
+            y0 *= food_scale;
+        }
         plans.push(Plan {
             id: f.id,
             y0,

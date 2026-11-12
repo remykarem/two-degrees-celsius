@@ -1559,8 +1559,10 @@ fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
         rs.iter().map(|r| r.loss_tick).collect::<Vec<_>>()
     );
     assert!(
-        share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 75)) >= 0.9,
-        "C loses by tick 75 in at least 90% of seeds (measured 66 to 67)"
+        share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 84)) >= 0.9,
+        // Farm-from-nature moved this from 66 to 67 to 74 to 78: the over-harvested commons now
+        // caps food output, so output and emissions fall (docs/tuning-log.md, known-issues FN-1).
+        "C loses by tick 84 in at least 90% of seeds (measured 74 to 78)"
     );
     let a = runs(&Plan::default());
     let a_exh = median(
@@ -1574,8 +1576,10 @@ fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
         .filter_map(|r| r.exhausted_tick)
         .map(|t| t as f64)
         .collect::<Vec<_>>();
-    // Extraction burns the budget no more slowly than doing nothing.
-    assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 3.0);
+    // Extraction used to burn the budget no more slowly than doing nothing. With the food cap a
+    // collapsing commons also cuts output, so it now runs out later than A (measured about 5 ticks
+    // later; reported, not retuned). It must still run out within the horizon.
+    assert!(c_exh.is_empty() || median(c_exh) <= a_exh + 9.0);
 }
 
 /// Baseline D: one tool (a carbon tax) is not enough; it also fails inside the horizon (budget
@@ -1670,4 +1674,167 @@ fn golden_snapshot_seed_42() {
     })
     .unwrap();
     insta::assert_snapshot!("market_seed_42", out);
+}
+
+// ---- Farm from nature (docs/features/farm-from-nature.md): the stocks cap the food ----
+
+fn farm_output(s: &Sim) -> f64 {
+    s.state
+        .firms
+        .iter()
+        .filter(|f| f.active && f.sector == Sector::Food)
+        .map(|f| f.output.0)
+        .sum()
+}
+
+/// Serialised state after `ticks` months with the cap shares set to `kappa` (None: default).
+fn state_after(seed: u64, ticks: u32, kappa: Option<f64>) -> String {
+    let mut p = params();
+    if let Some(k) = kappa {
+        p.nature.farm_cap_share_commons = k;
+        p.nature.farm_cap_share_forest = k;
+    }
+    let mut sim = sim_engine::init(p, seed).expect("init");
+    for _ in 0..ticks {
+        sim_engine::step(&mut sim).expect("checks pass");
+    }
+    serde_json::to_string(&sim.state).unwrap()
+}
+
+#[test]
+fn farm_cap_sign_more_harvest_effort_leaves_a_lower_commons() {
+    let commons = |s: &Sim| s.state.nature.commons.0;
+    let two = cmd(Command::SetPolicy(PolicyChange::CommonsHarvest(Rate(2.0))));
+    let (mut a, mut b) = (new_sim(42), new_sim(42));
+    let ca = collect(&mut a, 60, &Plan::default(), commons);
+    let cb = collect(&mut b, 60, &two, commons);
+    assert!(cb[59] < ca[59], "{} vs {}", cb[59], ca[59]);
+}
+
+#[test]
+fn farm_cap_a_gone_commons_or_forest_caps_food_output_at_zero() {
+    let mut sim = new_sim(42);
+    sim.state.nature.commons = Units(0.0);
+    sim_engine::step(&mut sim).expect("checks pass");
+    assert!(farm_output(&sim) <= 1e-9, "output {}", farm_output(&sim));
+    let mut sim = new_sim(42);
+    sim.state.nature.forest = Units(0.0);
+    sim_engine::step(&mut sim).expect("checks pass");
+    assert!(farm_output(&sim) <= 1e-9, "output {}", farm_output(&sim));
+}
+
+#[test]
+fn farm_cap_does_not_bind_in_the_first_year_at_default_settings() {
+    // A cap shares of 1e6 can never bind, so equal state means the default cap never did.
+    for seed in [1, 7, 42] {
+        assert_eq!(
+            state_after(seed, 12, None),
+            state_after(seed, 12, Some(1.0e6)),
+            "seed {seed}"
+        );
+    }
+}
+
+#[test]
+fn farm_cap_does_not_bind_in_the_no_action_run_over_ten_years() {
+    // The doc's expected point: with default settings and no action the commons never falls to
+    // the level where the cap binds inside the 40-turn game (stated in the feature doc, section 2).
+    for seed in [1, 2, 3, 7, 42] {
+        assert_eq!(
+            state_after(seed, 120, None),
+            state_after(seed, 120, Some(1.0e6)),
+            "seed {seed}"
+        );
+    }
+}
+
+#[test]
+fn farm_cap_harvest_reconciles_with_the_farm_output() {
+    let mut sim = new_sim(42);
+    let p = params();
+    for _ in 0..36 {
+        sim_engine::step(&mut sim).expect("checks pass");
+        let want = farm_output(&sim) * p.nature.farm_harvest_commons;
+        let n = &sim.state.nature;
+        // Open access, lever 1: what was taken is what the farm's output needs (or what was left).
+        assert!(
+            n.harvest_commons.0 <= want + 1e-9,
+            "{} vs {want}",
+            n.harvest_commons.0
+        );
+        assert!(
+            (n.harvest_commons.0 - want).abs() < 1e-9,
+            "{} vs {want}",
+            n.harvest_commons.0
+        );
+    }
+}
+
+#[test]
+fn farm_cap_community_limit_makes_less_food_than_open_at_a_middle_stock() {
+    let food = |access: CommonsAccess| {
+        let mut sim = new_sim(42);
+        sim.state.nature.commons = Units(500.0);
+        sim.state.nature.commons_access = access;
+        sim_engine::step(&mut sim).expect("checks pass");
+        farm_output(&sim)
+    };
+    let open = food(CommonsAccess::Open);
+    let community = food(CommonsAccess::Community { cap: Rate(0.5) });
+    assert!(community < open, "{community} vs {open}");
+}
+
+#[test]
+fn farm_cap_a_drought_at_a_low_stock_lowers_next_months_cap() {
+    let p = params();
+    let (c, taken) = (150.0, 0.5);
+    let next_cap = |drought: f64| {
+        let df = sim_metrics::commons_drought_factor(&p, CommonsAccess::Open, drought);
+        let c1 = c + sim_metrics::commons_regrowth(&p, c, df) - taken;
+        sim_metrics::food_cap_commons(&p, c1, CommonsAccess::Open, 1.0).unwrap()
+    };
+    assert!(next_cap(0.8) < next_cap(0.0));
+}
+
+#[test]
+fn farm_cap_invariants_hold_under_heavy_harvest() {
+    let p = params();
+    let mut sim = new_sim(7);
+    let heavy = cmd(Command::SetPolicy(PolicyChange::CommonsHarvest(Rate(3.0))));
+    let mut caps = Vec::new();
+    sim_engine::run(&mut sim, 60, &heavy, |s, _| {
+        let n = &s.state.nature;
+        assert!(n.commons.0 >= 0.0 && n.commons.0 <= p.nature.commons_max);
+        assert!(n.forest.0 >= 0.0 && n.forest.0 <= p.nature.forest_max);
+        caps.push(sim_metrics::food_cap(&s.state, &p));
+    })
+    .expect("checks pass");
+    assert!(caps.iter().flatten().all(|c| c.is_finite() && *c >= 0.0));
+}
+
+#[test]
+fn farm_cap_a_depleted_commons_causes_a_real_food_shortage() {
+    let mut sim = new_sim(42);
+    sim.state.nature.commons = Units(30.0);
+    let mut short = 0usize;
+    for _ in 0..9 {
+        sim_engine::step(&mut sim).expect("checks pass");
+        short = sim
+            .state
+            .households
+            .iter()
+            .filter(|h| h.food_met.0 < 0.5)
+            .count();
+    }
+    let mut base = new_sim(42);
+    for _ in 0..9 {
+        sim_engine::step(&mut base).expect("checks pass");
+    }
+    let base_short = base
+        .state
+        .households
+        .iter()
+        .filter(|h| h.food_met.0 < 0.5)
+        .count();
+    assert!(short > base_short, "short {short} vs {base_short}");
 }

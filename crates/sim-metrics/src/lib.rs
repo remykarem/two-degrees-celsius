@@ -323,6 +323,80 @@ pub fn commons_health(s: &State, p: &Params) -> f64 {
     (s.nature.commons.0 / p.nature.commons_max).clamp(0.0, 1.0)
 }
 
+/// Divisor of the logistic maximum sustainable yield `r x K / 4` (a property of that curve).
+const LOGISTIC_MSY_DIVISOR: f64 = 4.0;
+
+/// Best possible regrowth of a logistic stock (maximum sustainable yield), units per month.
+pub fn logistic_msy(growth: f64, max: f64) -> f64 {
+    growth * max / LOGISTIC_MSY_DIVISOR
+}
+
+/// Share of the commons regrowth that survives a drought of severity `drought` (0..1); a
+/// community-managed commons keeps `community_buffer` of the loss.
+pub fn commons_drought_factor(p: &Params, access: CommonsAccess, drought: f64) -> f64 {
+    let buffer = match access {
+        CommonsAccess::Community { .. } => p.weather.community_buffer,
+        _ => 0.0,
+    };
+    (1.0 - p.weather.a_c * drought * (1.0 - buffer)).max(0.0)
+}
+
+/// Regrowth of the commons this month at stock `c`, units per month.
+pub fn commons_regrowth(p: &Params, c: f64, drought_factor: f64) -> f64 {
+    p.nature.commons_growth * c * (1.0 - c / p.nature.commons_max) * drought_factor
+}
+
+/// Regrowth of the forest this month at stock `f` (before harvest and clearing).
+pub fn forest_regrowth(p: &Params, f: f64) -> f64 {
+    p.nature.forest_growth * f * (1.0 - f / p.nature.forest_max)
+}
+
+/// Most commons the farm can take this month (Schaefer cap `kappa x C`, then the access rule).
+pub fn commons_take_cap(p: &Params, c: f64, access: CommonsAccess) -> f64 {
+    let h = p.nature.farm_cap_share_commons * c;
+    let msy = logistic_msy(p.nature.commons_growth, p.nature.commons_max);
+    match access {
+        CommonsAccess::Open => h,
+        CommonsAccess::Enclosed(_) => h * p.nature.enclosure_harvest_multiplier,
+        CommonsAccess::Community { cap } => h.min(cap.0 * msy),
+    }
+}
+
+/// Most food the commons can supply this month: the take cap over the commons taken per unit of
+/// food. `None` when the lever is zero (the farm takes nothing from the commons, so the commons
+/// cannot limit it).
+pub fn food_cap_commons(p: &Params, c: f64, access: CommonsAccess, lever: f64) -> Option<f64> {
+    let per_unit = p.nature.farm_harvest_commons * lever;
+    if per_unit <= 0.0 {
+        return None;
+    }
+    Some(commons_take_cap(p, c, access) / per_unit)
+}
+
+/// Most food the forest can supply this month (`kappa_f x F` over the forest taken per unit).
+pub fn food_cap_forest(p: &Params, f: f64) -> Option<f64> {
+    if p.nature.farm_harvest_forest <= 0.0 {
+        return None;
+    }
+    Some(p.nature.farm_cap_share_forest * f / p.nature.farm_harvest_forest)
+}
+
+/// The tighter of the two nature caps on food output this month, from the state at the start of
+/// the tick (last month's end stocks). `None` when neither limits.
+pub fn food_cap(s: &State, p: &Params) -> Option<f64> {
+    let c = food_cap_commons(
+        p,
+        s.nature.commons.0,
+        s.nature.commons_access,
+        s.policy.commons_harvest.0,
+    );
+    let f = food_cap_forest(p, s.nature.forest.0);
+    match (c, f) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    }
+}
+
 /// Resource health of the farm: the mean of forest and commons health. Production raises
 /// this to `farm_health_exp` to scale the farm's output.
 pub fn farm_health(s: &State, p: &Params) -> f64 {

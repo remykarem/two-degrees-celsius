@@ -308,6 +308,11 @@ pub struct NatureParams {
     pub forest_shrank_share: f64,
     /// The commons count as collapsed below this share of `commons_max`.
     pub commons_collapse_share: f64,
+    /// Farm-from-nature (docs/features/farm-from-nature.md): the share of last month's commons
+    /// stock the farm can physically take in a month (Schaefer-style cap, `h_max = kappa x C`).
+    pub farm_cap_share_commons: f64,
+    /// The same for the forest stock.
+    pub farm_cap_share_forest: f64,
 }
 
 /// Town v4 weather: forest fires and drought (docs/town-v4.md, docs/causal-model.md section 11).

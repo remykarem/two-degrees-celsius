@@ -4,10 +4,6 @@ use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::*;
 
-/// Maximum sustainable yield of logistic growth `r * K * x * (1 - x)` is `r * K / 4`: a
-/// mathematical identity of that curve, not a game number.
-const LOGISTIC_MSY_DIVISOR: f64 = 4.0;
-
 /// Tonnes of CO2 the forest absorbs per month: `sink_sigma` per unit of standing forest.
 pub fn forest_sink(p: &Params, forest: f64) -> f64 {
     p.nature.sink_sigma * forest
@@ -74,7 +70,7 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     }
 
     // Harvests by the farm, under the commons access rule.
-    let msy = np.commons_growth * np.commons_max / LOGISTIC_MSY_DIVISOR;
+    let msy = sim_metrics::logistic_msy(np.commons_growth, np.commons_max);
     let mut harvest_c = 0.0;
     let mut harvest_f = 0.0;
     let mut enclosure_firms: Vec<FirmId> = Vec::new();
@@ -118,14 +114,12 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     let sink = forest_sink(p, f0);
     let df = np.forest_growth * f0 * (1.0 - f0 / np.forest_max) - harvest_f - n.pending_clearing.0;
     // Drought (S11) slows commons regrowth; a community-managed commons keeps part of it.
-    let buffer = match n.commons_access {
-        CommonsAccess::Community { .. } => p.weather.community_buffer,
-        _ => 0.0,
-    };
-    let drought_factor =
-        1.0 - p.weather.a_c * crate::weather::effective_drought(s, p) * (1.0 - buffer);
-    let dc =
-        np.commons_growth * c0 * (1.0 - c0 / np.commons_max) * drought_factor.max(0.0) - harvest_c;
+    let drought_factor = sim_metrics::commons_drought_factor(
+        p,
+        n.commons_access,
+        crate::weather::effective_drought(s, p),
+    );
+    let dc = sim_metrics::commons_regrowth(p, c0, drought_factor) - harvest_c;
     n.forest = Units((f0 + df).clamp(0.0, np.forest_max));
     n.commons = Units((c0 + dc).clamp(0.0, np.commons_max));
     n.pending_clearing = Units::ZERO;

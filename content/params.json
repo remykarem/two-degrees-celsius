@@ -337,7 +337,9 @@
     "t_limit": 1.5,
     "atmosphere_start": 60000.0,
     "forest_shrank_share": 0.995,
-    "commons_collapse_share": 0.01
+    "commons_collapse_share": 0.01,
+    "farm_cap_share_commons": 0.009,
+    "farm_cap_share_forest": 0.0026
   },
   "weather": {
     "onset": 0.75,
