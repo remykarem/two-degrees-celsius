@@ -3,6 +3,8 @@
   import { firmLines, infraLines, noStateOwnership } from './industry';
   import { money } from './format';
   import HowButton from './HowButton.svelte';
+  import { openMarkets } from './ui';
+  import { text } from '../store/catalog';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -18,6 +20,7 @@
     <p class="note" data-testid="industry-note">{ind.note}{#if noStateOwnership(ind)}<b class="zs">The state share is 0 in every firm.</b>{/if}</p>
 
     <section aria-labelledby="ind-firms"><h3 id="ind-firms">Private firms (goods and services) <HowButton anchor="industry" label="private firms" /></h3>
+      <p class="dim"><button type="button" class="lnk" data-testid="industry-markets-link" onclick={openMarkets}>{text('markets', 'see_markets')}</button></p>
       {#each firms as f (f.firm)}
         <article class:sel={selected?.kind === 'firm' && selected.id === f.firm}>
           <h4><button type="button" class="lnk" onclick={() => game.select({ kind: 'firm', id: f.firm })} aria-label="Select {f.name} on the map">{f.name}</button> <span class="sec">{f.sector}</span></h4>

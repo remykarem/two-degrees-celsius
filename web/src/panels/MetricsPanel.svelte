@@ -11,12 +11,14 @@
   import PeoplePanel from './PeoplePanel.svelte';
   import RunwayChart from './RunwayChart.svelte';
   import Sparkline from './Sparkline.svelte';
-  import { setUi } from './ui';
+  import { setUi, ui } from './ui';
   import EmissionsPanel from './EmissionsPanel.svelte';
   import EstateCard from './EstateCard.svelte';
   import WhoHoldsWhat from './WhoHoldsWhat.svelte';
   import HowButton from './HowButton.svelte';
   import IndustryPanel from './IndustryPanel.svelte';
+  import MarketsPanel from './MarketsPanel.svelte';
+  import { text } from '../store/catalog';
   import PoliciesPanel from './PoliciesPanel.svelte';
   import TaxesTable from './TaxesTable.svelte';
 
@@ -24,6 +26,12 @@
   // svelte-ignore state_referenced_locally
   const gs = game.state;
   let tab = $state<MetricTab>('Economy');
+  /** Economy has two sub-views: the charts and the Markets view (no eighth tab). */
+  let economyView = $state<'overview' | 'markets'>('overview');
+  // Another panel can ask for the Markets view (`openMarkets`); the request is consumed here.
+  $effect(() => {
+    if ($ui.marketsRequested) { tab = 'Economy'; economyView = 'markets'; setUi({ marketsRequested: false }); }
+  });
 
   const snap = $derived($gs.snapshot);
   const history = $derived(snap?.history ?? []);
@@ -57,6 +65,13 @@
     {#if fc && !fc.calm && tab !== 'Ecology'}<ForecastCard {game} />{/if}
     <div id="metrics-body" role="tabpanel" aria-labelledby="tab-{tab}">
       {#if tab === 'Economy'}
+        <div class="seg" role="group" aria-label="Economy views">
+          <button type="button" class:on={economyView === 'overview'} aria-pressed={economyView === 'overview'} onclick={() => (economyView = 'overview')}>{text('markets', 'overview_tab')}</button>
+          <button type="button" class:on={economyView === 'markets'} aria-pressed={economyView === 'markets'} data-testid="economy-markets" onclick={() => (economyView = 'markets')}>{text('markets', 'markets_tab')}</button>
+        </div>
+      {/if}
+      {#if tab === 'Economy' && economyView === 'markets'}<MarketsPanel {game} />{/if}
+      {#if tab === 'Economy' && economyView === 'overview'}
         <section class="pair" aria-label="GDP beside GPI">
           <div><div class="k">GDP <HowButton breakdown="gdp" anchor="gdp" label="GDP" /></div><div class="big">{money(snap.indicators.gdpRealAnnual)}</div></div>
           <div><div class="k">GPI <HowButton breakdown="gpi" anchor="gpi" label="GPI" /></div><div class="big">{money(snap.indicators.gpiAnnual)}</div></div>
@@ -98,6 +113,7 @@
       {#if tab === 'People'}
         <PeoplePanel {game} />
       {/if}
+      {#if !(tab === 'Economy' && economyView === 'markets')}
       <ul>
         {#each defs as m (m.id)}
           {@const ch = historyChange(m, history)}
@@ -117,6 +133,7 @@
           </li>
         {/each}
       </ul>
+      {/if}
 
       {#if tab === 'Ecology'}
         <section class="runway" aria-label="Carbon budget runway">
@@ -160,4 +177,8 @@
   .runway { margin-top: 12px; }
   .rtext { font-size: 12px; margin: 4px 0 0; }
   .dim { color: var(--text-dim); font-size: 12px; }
+  .seg { display: flex; gap: 0; margin-bottom: 10px; }
+  .seg button { flex: 1; padding: 4px 6px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+  .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); } .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; border-left: 0; }
+  .seg button.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
 </style>

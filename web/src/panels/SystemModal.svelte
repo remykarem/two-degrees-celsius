@@ -3,7 +3,8 @@
   import type { Game } from '../store';
   import { totalPc } from '../store';
   import { Button, Modal } from '../ui-kit';
-  import { catalog } from '../store/catalog';
+  import { catalog, text } from '../store/catalog';
+  import HowLink from './HowLink.svelte';
   import { leadText, pct } from './format';
   import { paramText, switchOptions } from './systemSwitch';
   import { setUi, ui } from './ui';
@@ -45,6 +46,7 @@
           <section class:cur={o.current} aria-label={c.name}>
             <h3>{c.name}{#if o.current}<span class="badge">Current</span>{/if}</h3>
             <p class="tag">{c.tagline}</p>
+            <p class="coord" data-testid="coord-{k}"><b>{text('markets', 'tags_title')}:</b> {c.coordination} <HowLink anchor="markets:intro" text={text('markets', 'intro_link')} /></p>
             <dl>
               {#each c.facts as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
               {#each c.params as p (p.path)}<dt>{p.label}</dt><dd>{paramText(p)}</dd>{/each}
@@ -88,6 +90,7 @@
   h3 { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--text); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   h4 { margin: 8px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
   .tag { margin: 2px 0 6px; font-style: italic; }
+  .coord { margin: 0 0 6px; font-size: 12px; }
   dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; }
   dt { color: var(--text-dim); } dd { margin: 0; }
   ul { margin: 0; padding-left: 16px; } p { margin: 2px 0; }

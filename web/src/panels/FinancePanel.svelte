@@ -8,6 +8,8 @@
   import HowButton from './HowButton.svelte';
   import { money } from './format';
   import { estateCard } from './estate';
+  import { openMarkets } from './ui';
+  import { text } from '../store/catalog';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -27,6 +29,7 @@
       <button type="button" onclick={() => open({ kind: 'government' })}>Government ledger</button>
       <button type="button" onclick={() => open({ kind: 'bank' })}>Bank ledger</button>
     </div>
+    <p class="dim"><button type="button" class="lnk" data-testid="finance-markets-link" onclick={openMarkets}>{text('markets', 'see_markets')}</button></p>
     {#if empty}<p class="dim">No month has been played yet, so there are no monthly flows to show. Play a turn to fill this in.</p>{/if}
 
     {#each sections as sec (sec.id)}
@@ -116,4 +119,5 @@
   .warnl { margin: 3px 0 0; font-size: 12px; color: var(--warn); font-weight: 600; }
   .bk { display: block; font-size: 10px; color: var(--text-dim); }
   .breach .gt { color: var(--bad); font-weight: 700; } .tight .gt { color: var(--warn); }
+  .lnk { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0; font: inherit; font-size: 12px; }
 </style>
