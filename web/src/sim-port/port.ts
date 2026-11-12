@@ -1,4 +1,4 @@
-import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, MarketTrades, TradesQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../contract';
 
 /**
  * Set by a port that replays a recorded run instead of running the simulation (platform cleanup phase 2). The UI badges the game as a
@@ -42,6 +42,8 @@ export interface SimPort {
   ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;
   /** Contract v1.4: a person's wages earned and employment events (people have no purse; money is household-level). */
   personLedger(person: number): Result<PersonLedger>;
+  /** Contract v2.4 (section 24): the list of individual trades behind one market (default: the latest month). A package without it, and the recorded demo, return { ok: false, code: 'unsupported' }. */
+  marketTrades(market: string, query?: TradesQuery): Result<MarketTrades>;
   /** Contract v1.5 (section 15): the model explorer's topics. Values and examples come from the model; the web never hard-codes them. */
   assumptions(): Result<AssumptionTopic[]>;
   /** Contract v1.7: who decides what, how, and where chance enters. */

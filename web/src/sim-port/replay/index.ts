@@ -43,6 +43,7 @@ export function createReplayPort(rec: Recording): SimPort {
     cancelPending: () => refuse('Cancelling a queued item'),
     ledger: () => refuse('The transaction ledger'),
     personLedger: () => refuse('The transaction ledger'),
+    marketTrades: () => refuse('The list of trades'),
     assumptions: () => ok(rec.assumptions),
     agents: () => ok(rec.agents),
     catalog: () => ok(rec.catalog),

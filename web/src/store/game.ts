@@ -1,4 +1,4 @@
-import type { AccountRef, AgentsCatalog, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
+import type { AccountRef, AgentsCatalog, AssumptionTopic, Command, LedgerKind, LedgerPage, LedgerQuery, MarketEntity, MarketTrades, TradesQuery, PersonLedger, InfraKind, MonthResult, Result, TurnResult, TurnStart } from '../contract';
 import type { SimPort } from '../sim-port/port';
 import { setCatalog } from './catalog';
 import { relabelLevers } from './labels';
@@ -33,6 +33,10 @@ export interface Game {
   /** Contract v1.4: an account's transaction ledger, or an error result (never throws). */
   ledger(account: AccountRef, query?: LedgerQuery): Result<LedgerPage>;
   personLedger(person: number): Result<PersonLedger>;
+  /** Contract v2.4: the list of trades behind one market, or an error result (never throws). */
+  marketTrades(market: string, query?: TradesQuery): Result<MarketTrades>;
+  /** Open the trade list of a market (null closes it); `entity` limits it to one party's trades. */
+  openTrades(market: string | null, entity?: MarketEntity): void;
   /** Contract v1.5: the model explorer's topics (asked once and cached; an error result when the package has none). */
   assumptions(): Result<AssumptionTopic[]>;
   agents(): Result<AgentsCatalog>;
@@ -95,7 +99,7 @@ export function createGame(port: SimPort): Game {
   const store = writable<GameState>({
     demo: port.demo ?? null, mode: 'relaxed', liveAvailable, live: null, savedClock: null,
     phase: 'review', snapshot: null, levers: [], actions: [], draft: [], lastResult: null, previous: null,
-    playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
+    playback: { month: -1, skipped: false }, selection: null, ledgerView: null, tradesView: null, hover: null,
     buildKind: null, validTiles: null, lens: 'none', camera: 0, error: cat.ok ? null : { ...cat.error, where: 'new_game' }, dismissedCrises: {},
   });
   const get = store.get;
@@ -140,7 +144,7 @@ export function createGame(port: SimPort): Game {
       const snapshot = res.value;
       store.set({
         ...get(), phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: relabelLevers(port.levers()), actions: port.actions(), draft: [], lastResult: null, previous: null,
-        playback: { month: -1, skipped: false }, selection: null, ledgerView: null, hover: null,
+        playback: { month: -1, skipped: false }, selection: null, ledgerView: null, tradesView: null, hover: null,
         buildKind: null, validTiles: null, error: null, dismissedCrises: {}, savedClock: null, live: get().mode === 'pressure' ? freshLive() : null,
       });
       captureBoundary();
@@ -201,6 +205,8 @@ export function createGame(port: SimPort): Game {
     select: (selection) => patch({ selection }),
     ledger: (account, query) => safe(() => port.ledger(account, query)),
     personLedger: (person) => safe(() => port.personLedger(person)),
+    marketTrades: (market, query) => safe(() => port.marketTrades(market, query)),
+    openTrades: (market, entity) => patch({ tradesView: market ? { market, ...(entity ? { entity } : {}) } : null }),
     agents() {
       if (!agentsCache) { const r = safe(() => port.agents()); if (!r.ok) return r; agentsCache = r; }
       return agentsCache;
@@ -365,7 +371,7 @@ export function createGame(port: SimPort): Game {
         ...get(), mode, live: mode === 'pressure' ? freshLive() : null, savedClock: f.clock ?? null,
         phase: snapshot.gameOver ? 'ended' : 'review', snapshot, levers: relabelLevers(port.levers()), actions: port.actions(), draft: [],
         lastResult: f.lastResult, previous: f.previous, playback: { month: -1, skipped: false },
-        selection: null, ledgerView: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
+        selection: null, ledgerView: null, tradesView: null, hover: null, buildKind: null, validTiles: null, lens: f.uiPrefs.lens, camera: f.uiPrefs.camera, error: null, dismissedCrises: {},
       });
       if (f.drafts?.length && !snapshot.gameOver) {
         let draft: GameState['draft'] = [];

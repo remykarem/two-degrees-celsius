@@ -1,4 +1,4 @@
-import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
+import type { AccountRef, AgentsCatalog, Catalog, AssumptionTopic, ActionInfo, Command, LedgerPage, LedgerQuery, MarketTrades, TradesQuery, PersonLedger, CommandPreview, InfraKind, LeverInfo, Result, Snapshot, MonthResult, TileRef, TurnResult, TurnStart } from '../../contract';
 import type { SimPort } from '../port';
 
 /**
@@ -23,6 +23,8 @@ export interface WasmSimInstance {
   /** Contract v1.4 ledger exports. Missing in a package built before v1.4 (the loader refuses such a package; this stays defensive for tests that pass a partial module). */
   ledger?(accountJson: string, queryJson: string): string;
   person_ledger?(person: number): string;
+  /** Contract v2.4: the list of trades behind one market. */
+  market_trades?(market: string, queryJson: string): string;
   /** Contract v1.5. Assumed export name; absent in an older package. */
   assumptions?(): string;
   agents?(): string;
@@ -82,6 +84,8 @@ export function createWasmPort(mod: WasmModuleLike): SimPort {
       ? call<TurnResult>(() => sim.finish_turn!()) : fail('unsupported', 'This simulation package has no live-turn calls (contract v1.1).'),
     ledger: (account: AccountRef, query?: LedgerQuery) => sim.ledger
       ? call<LedgerPage>(() => sim.ledger!(JSON.stringify(account), JSON.stringify(query ?? {}))) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
+    marketTrades: (market: string, query?: TradesQuery) => sim.market_trades
+      ? call<MarketTrades>(() => sim.market_trades!(market, JSON.stringify(query ?? {}))) : fail('unsupported', 'This simulation package has no trade lists (contract v2.4). Rebuild it with npm run build:wasm.'),
     personLedger: (person: number) => sim.person_ledger
       ? call<PersonLedger>(() => sim.person_ledger!(person)) : fail('unsupported', 'This simulation package has no ledger (contract v1.4). Rebuild it with npm run build:wasm.'),
     agents: () => sim.agents

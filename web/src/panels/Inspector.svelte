@@ -7,6 +7,7 @@
   import { openExplorer } from './ui';
   import { selectionAccount } from './ledger';
   import LedgerPreview from './LedgerPreview.svelte';
+  import EntityTrades from './EntityTrades.svelte';
   import PersonEarnings from './PersonEarnings.svelte';
   import NetWorthStatement from './NetWorthStatement.svelte';
 
@@ -80,6 +81,7 @@
       </section>
     {/if}
 
+    {#if pinned && (pinned.kind === 'household' || pinned.kind === 'firm' || pinned.kind === 'person')}<EntityTrades {game} entity={{ kind: pinned.kind, id: pinned.id }} />{/if}
     {#if acct}<LedgerPreview {game} account={acct} />{/if}
     {#if tag}<p class="tag" data-testid="decision-tag"><b>{tag.variant.label} household:</b> {tag.variant.decision} <button type="button" class="lnk" data-testid="howlink-decisions" onclick={() => openExplorer(agentsAnchorFor(tag.cls))}>How decisions are made</button></p>{/if}
     {#if pinned?.kind === 'person'}<PersonEarnings {game} person={pinned.id} />{/if}

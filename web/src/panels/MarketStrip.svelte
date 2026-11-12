@@ -3,6 +3,7 @@
   import type { MarketCardModel } from './markets';
   import HowButton from './HowButton.svelte';
   import Sparkline from './Sparkline.svelte';
+  import { text } from '../store/catalog';
 
   /** One market, always the same anatomy: price, two bars on one scale (wanted, available), the gap in words, who is short. Everything comes from the wire. */
   let { card, game, noSeries }: { card: MarketCardModel; game: Game; noSeries: string } = $props();
@@ -47,6 +48,7 @@
   <p class="note" data-testid="note-{card.id}">{card.note}</p>
 
   <p class="verdict">{card.verdict}</p>
+  <button type="button" class="all" onclick={() => game.openTrades(card.id)} data-testid="trades-open-{card.id}">{text('markets', 'trades_button')}</button>
 
   {#if card.drivers.length > 0}
     <dl class="drivers">{#each card.drivers as d (d.id)}<dt>{d.label}</dt><dd>{d.value}</dd>{/each}</dl>
@@ -88,6 +90,7 @@
   .trend { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; font-size: 12px; }
   .dir { font-weight: 600; } .dir.rising { color: var(--bad); } .dir.falling { color: var(--good); } .cause { color: var(--text-dim); } .ns { color: var(--text-dim); font-size: 11px; }
   .note { margin: 3px 0 0; font-size: 11.5px; color: var(--text-dim); font-style: italic; } .note:empty { display: none; }
+  .all { margin-top: 6px; font: inherit; font-size: 12px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: var(--radius); padding: 3px 10px; cursor: pointer; } .all:hover { background: var(--surface-2); }
   .verdict { margin: 6px 0 0; font-size: 12.5px; }
   .drivers { margin: 6px 0 0; display: grid; grid-template-columns: 1fr; gap: 0; font-size: 11.5px; } dt { color: var(--text-dim); margin-top: 3px; } dd { margin: 0; font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

@@ -1,6 +1,7 @@
 import type { GapKind, MarketCategoryDef, MarketShort, MarketView, MechanismDef, Snapshot } from '../contract';
 import type { Selection } from '../store';
 import { catalog, fill, text } from '../store/catalog';
+import { entitySelection } from './trades';
 
 /**
  * Pure views of the Markets view (contract v2.3, docs/features/markets.md). Every figure, sentence, label, unit, cause word and
@@ -46,7 +47,7 @@ export interface MarketsModel {
 }
 
 /** A chip's inspector target (the wire says what kind of thing and which one). */
-export const selectionOf = (s: MarketShort): Selection | null => (s.entity ? ({ kind: s.entity.kind, id: s.entity.id } as Selection) : null);
+export const selectionOf = (s: MarketShort): Selection | null => (s.entity ? entitySelection(s.entity) : null);
 
 const tags = (m: MarketView, all: MechanismDef[]): MechanismTag[] =>
   m.mechanisms.map((id) => all.find((x) => x.id === id)).filter((x): x is MechanismDef => !!x).map((x) => ({ id: x.id, label: x.label, blurb: x.blurb }));
