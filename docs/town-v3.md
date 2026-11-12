@@ -1,5 +1,7 @@
 # Town v3 design: the pressure clock (draft for review)
 
+Status update: **IMPLEMENTED** (see `docs/README.md` and `docs/known-issues.md`; the line below is the original status).
+
 Status: **APPROVED by the user ("go ahead, I trust your judgment"); implementation starting.** Weather is a separate, later release: see `docs/town-v4.md`. Every number is a placeholder and configurable. Items marked **[DECIDED]** came from the user; **[PROPOSED]** are my defaults for you to confirm or change.
 
 ## 1. Goal

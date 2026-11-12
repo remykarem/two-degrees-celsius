@@ -1,5 +1,7 @@
 # Town v4 design: weather (draft for review)
 
+Status update: **IMPLEMENTED** (see `docs/README.md` and `docs/known-issues.md`; the line below is the original status).
+
 Status: **APPROVED (user: "start v4"; defaults delegated); implementation starting after the carbon-budget horizon change (see section 11).** Builds on Town v3 (`docs/town-v3.md`). Scope **[DECIDED]**: **forest fires and drought only**; no floods in v4. Severity **scales gradually** with climate stress **[DECIDED]**. Thresholds are measured as carbon budget **remaining** **[DECIDED]** and are configurable. All numbers are placeholders.
 
 ## 1. Goal

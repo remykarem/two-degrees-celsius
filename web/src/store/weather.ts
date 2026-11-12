@@ -3,7 +3,7 @@ import { layoutOf, sameTile, type Selection } from './map';
 import { bands, fill, text, wordOf } from './catalog';
 
 /**
- * Weather as the panels read it (Town v4). Everything here is DERIVED from the snapshot; nothing is stored, so the mock and the real sim
+ * Weather as the panels read it (Town v4). Everything here is DERIVED from the snapshot; nothing is stored, so the recorded demo and the real sim
  * go through the same code. A package built before contract v1.2 has no `weather`: every function then reports "no weather".
  */
 

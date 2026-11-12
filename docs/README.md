@@ -15,12 +15,12 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | Where UI text, thresholds and bands live | `docs/town-v6.md`, `content/ui.json`, `docs/how-to.md` section 17 |
 | Sample wire output | `docs/fixtures/` (generated; do not hand-edit) |
 | How the pieces fit, turn flow, tick order, save schema | `docs/architecture.md` |
-| `docs/town-v3.md` | DRAFT (pressure clock, optional real-time mode). Not implemented | Planning the timer work |
-| `docs/town-v4.md` | DRAFT (weather: fires and drought). Not implemented; planned after v3 | Planning the weather work |
+| `docs/town-v3.md` | APPROVED, IMPLEMENTED (Pressure mode: the live clock, `web/src/store/clock.ts`, `live.ts`; recipe `docs/how-to.md` section 13) | Working on the clock or Pressure mode |
+| `docs/town-v4.md` | APPROVED, IMPLEMENTED (weather: fires and drought; `crates/sim-model/src/weather.rs`) | Working on weather |
 | `docs/town-v5.md` | APPROVED (information release: Finance tab, per-entity ledgers, energy units, shopping trips). In progress (section 10: the 'How it works' explorer is queued as v5.1) | Working on finance/ledger/energy |
 | `docs/town-v5-3.md` | APPROVED, IMPLEMENTED (agent choices explained: Agents section in the explorer, person decision tag, `agents()` wire call, contract v1.7). Includes the code-check corrections | Changing agent rules or the randomness table |
 | `docs/town-v6.md` | APPROVED (DRY cleanup: the web is a thin renderer; model text, thresholds and UI bands move to `content/` and the wire; contract v1.8) | Changing where text or thresholds live |
-| `docs/town-v7.md` | APPROVED, Rust/content/wire/mock IMPLEMENTED (the elite estate and its pilot; contract v1.9, `docs/snapshot-contract.md` section 19). The web panels are DONE (`docs/web-notes-v7.md`, section Panels); the scene is in progress | Working on the estate in the web, or its rules |
+| `docs/town-v7.md` | APPROVED, Rust/content/wire/recorded demo IMPLEMENTED (the elite estate and its pilot; contract v1.9, `docs/snapshot-contract.md` section 19). The web panels and the scene are DONE (`docs/web-notes-v7.md`) | Working on the estate in the web, or its rules |
 | `docs/town-v8.md` | APPROVED (net worth breakdown: per-household and per-person statement, town split by holder, reconciled to the Gini; contract v2.2). IMPLEMENTED | Working on net worth, wealth or the Who holds what view |
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST/VAT and state ownership; was v7, then v8). Not implemented; after v5.1/v5.2 | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
@@ -60,7 +60,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/web-notes-panels2.md` | CURRENT (panels notes) | Working in `web/src/panels` |
 | `docs/town-v5-3.md` | CURRENT (agents catalogue, contract v1.7) | Changing agent rules |
 | `docs/town-v6.md` | CURRENT (approved and implemented: thin renderer, UI catalog `content/ui.json`, contract v1.8) | Deciding where text, a threshold or a number lives |
-| `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, mock and web panels implemented, web scene see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
+| `docs/town-v7.md` | CURRENT (approved; Rust, content, wire, recorded demo, web panels and scene implemented; see `docs/web-notes-v7.md`) | Estate rules and design; the "As built" section lists what differs from the draft |
 | `docs/town-v8.md` | APPROVED (net worth breakdown; contract v2.2). IMPLEMENTED (`docs/snapshot-contract.md` section 22, `docs/how-to.md` section 23) | Net worth, wealth, Who holds what |
 | `docs/features/gst-and-state-ownership.md` | DRAFT (GST and state ownership; was v7, then v8) | Planning fiscal and ownership work |
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
