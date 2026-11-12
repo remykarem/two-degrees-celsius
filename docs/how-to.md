@@ -250,3 +250,13 @@ File count, landfill example (a buildable emitter on the map with a rule): `enum
 - **To record a different run:** edit `content/demo_script.json` (any number of turns; the file grows about 100 KB per turn) and regenerate.
 - **Force it:** `?sim=replay` or `VITE_SIM=replay`. **Without the wasm package:** `npm run dev` shows the demo with a notice; `npm test` leaves out the files that need the real simulation (they import `tests/port.ts` or the wasm package) and says so; CI (`deploy.yml`) first runs the tests without the package, then builds it and runs everything.
 - **Tests that need the real simulation** import `createSimPort` from `web/tests/port.ts` (a fresh wasm sim, already started). There is no second implementation to keep in step: `sync-mock`, `mock/` and the parity tests are gone.
+
+## 23. Add an asset or liability to the net worth statement (Town v8)
+
+1. Model side: if the new thing is part of `household_wealth` (sim-metrics), add a field to `WealthLines` and fill it in `household_wealth_lines`; `household_wealth` itself stays as it is (the state hash depends on its float order) and the reconcile test fails if the two disagree. A thing that is not in net worth is not a line.
+2. `crates/sim-api/src/networth.rs`: add the id to `LINE_IDS` and an arm to `value_of` (and `count_of` if it stands for homes or firms).
+3. `content/ui.json` `net_worth_lines`: one entry (`id`, `label`, `category` asset or liability, `howId`). Load-time validation refuses a missing or unknown id.
+4. `content/assumptions.json`: put the `howId` in the `usedBy` of a topic (`net_worth` or `net_worth_firms`) and add it to `ANCHORS` in `crates/sim-api/tests/assumptions.rs`.
+5. Regenerate: `cd web && npm run gen:contract` (only if a type changed), `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice), `npm run gen:recording`, `npm run build:wasm`. Tests: `cargo test -p sim-api --test networth`, `web/tests/panels-networth.test.ts`.
+6. The web needs no change: the inspector, the Gini view, the estate card and "Who holds what" iterate the wire lists. A new holder group is a `HOLDER_IDS` entry, a `net_worth_holders` entry and the grouping in `networth::holder_of`.
+7. Screenshots: `node web/playwright/v8-shots.mjs <outDir> [url]` (needs `npm run dev -- --port 5190`; `?sim=replay` for the demo).

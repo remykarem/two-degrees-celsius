@@ -24,7 +24,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `crates/sim-api` | Wire layer: contract JSON shapes, validation, frames, history, save/load, fixtures; source of the generated TS contract (feature `ts`, ts-rs) | engine and below. No model logic, no I/O |
 | `crates/sim-wasm` | wasm-bindgen shell over `sim_api::Api` (`WasmSim`). `unsafe_code = "deny"` (macro output) | sim-api, sim-params |
 | `crates/sim-cli` | Headless runner (`sim`) and `examples/debug.rs` | engine, params, metrics, types |
-| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `entities.json` (the entity registry: kinds, labels, roles, tiles, scene models, inspector sections; contract v2.1), `ui.json` (UI bands, authored UI text, system cards; Town v6), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
+| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `entities.json` (the entity registry: kinds, labels, roles, tiles, scene models, inspector sections; contract v2.1), `ui.json` (UI bands, authored UI text, system cards; Town v6; net worth statement lines and holders, Town v8), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
 | `tests/` | `scenarios.rs` (engine suite, run as a test of sim-engine), `golden/` (wasm golden), `snapshots/` (insta) | n/a |
 | `docs/` | Design docs, contract, notes, generated `fixtures/`. Index: `docs/README.md` | n/a |
 | `web/` | Browser app (Vite, Svelte 5, Three.js, Vitest). See below | n/a |

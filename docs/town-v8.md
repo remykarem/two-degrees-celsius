@@ -1,6 +1,6 @@
 # Town v8: net worth breakdown
 
-Status: **APPROVED (user: "just do net worth").** No new simulation behaviour: the state hash (`cargo run -p sim-cli --example statehash`) must be byte-identical before and after. The wire grows additively to contract v2.2. (GST and state ownership, which used to be v8, is now `docs/town-v9.md`; daily ticks is `docs/town-v10.md`.)
+Status: **APPROVED (user: "just do net worth").** No new simulation behaviour: the state hash (`cargo run -p sim-cli --example statehash`) must be byte-identical before and after. The wire grows additively to contract v2.2 (`docs/snapshot-contract.md` section 22). IMPLEMENTED: Rust, content, wire, fixtures, recording and the web panels; recipe `docs/how-to.md` section 23. (GST and state ownership, which used to be v8, is now `docs/town-v9.md`; daily ticks is `docs/town-v10.md`.)
 
 ## 1. Goal
 Show a statement of net worth per household and per person: assets minus liabilities, every line with its own "how?". Show the town's net worth split by holder. Both reconcile exactly to the headline net worth that the Gini and the Lorenz curve use, and say so with a `reconciles` flag, like the emissions tally.

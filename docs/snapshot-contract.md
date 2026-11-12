@@ -507,3 +507,14 @@ interface EntityKind {
 - Validation at load (`crates/sim-api/src/entities.rs`, tests `crates/sim-api/tests/entities.rs`): unique ids; closed enums for kind, category, role, owner and section; `labelled` on every entity; `located` iff a footprint; `buildable` iff an `infraKind`; every wire `TileKind` and `InfraKind` claimed exactly once; `variantOf` names another entity; an `emissions` section needs the `emitter` role; a `sceneModel` has a `default`. Footprints agree with the initial map (a test counts tiles). Unknown fields are refused.
 - Scene model ids are web names; `web/tests/entities.test.ts` checks every id exists in `scene/models.ts`. An id the build does not know draws a plain block (`facility_generic`), so a facility added only in content still shows.
 - Not in this version: `Purpose` categories (taxonomy step 5) and hazards as entries.
+
+## 22. Contract v2.2: the net worth statement (Town v8; ADDITIVE, `SCHEMA_VERSION` stays 6)
+
+Design: `docs/town-v8.md`. The state hash is unchanged (`cargo run -p sim-cli --example statehash` identical before and after). Types: `crates/sim-api/src/networth.rs`, generated into `web/src/contract/generated.ts`.
+
+- `breakdowns.gini.byHousehold[].statement: NetWorthStatement` = `{lines, assets, liabilities, netWorth, people, headline, reconciles}`. A line is `{id, label, category: 'asset'|'liability', value, perPerson, count?, howId?}` in dollars; zero lines are omitted; liabilities are positive magnitudes. `headline` is `household_wealth` (the Gini's figure) and `reconciles` is true when `assets - liabilities` equals it up to float rounding (1e-9 of the largest magnitude).
+- `breakdowns.gini.byHousehold[].holder`: `households | firm_owners | bank | estate` (priority in that reverse order: estate, then the bank's owner, then owners of or shareholders in a firm, then the rest).
+- `breakdowns.gini.town: TownNetWorth` = `{holders: NetWorthHolder[], headline, holdersTotal, reconciles}`; a holder is `{id, label, note, inHeadline, households, people, assets, liabilities, netWorth, howId?}`. The `inHeadline` holders add up to `headline`; `government` (cash minus debt, plus state-owned firms) is a memo row with `inHeadline: false`.
+- `catalog.netWorthLines`, `catalog.netWorthHolders`: the definitions from `content/ui.json` (`net_worth_lines`, `net_worth_holders`), validated against the closed id sets `LINE_IDS` and `HOLDER_IDS`. Authored text: `catalog.text.networth`. `howId` is an explorer anchor listed in `usedBy` of the `net_worth` and `net_worth_firms` topics.
+- `byHousehold[].parts` (v1.9) is unchanged in shape and now derived from the same lines.
+- Fixtures, the wasm golden and the recording were re-blessed (intended: the new fields).
