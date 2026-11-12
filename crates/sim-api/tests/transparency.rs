@@ -379,7 +379,7 @@ fn emission_and_income_sources_come_from_content_and_validate() {
         sim_api::yields::YieldContent {
             words: serde_json::from_value(serde_json::json!({
                 "access": {}, "ratio": "", "ratioNone": "", "overYes": "", "overNo": "",
-                "monthsNone": "", "months": "", "noLimit": "", "seriesLabelStock": "",
+                "monthsNone": "", "slowMonths": 1.0, "months": "", "noLimit": "", "seriesLabelStock": "",
                 "seriesLabelRegrowth": "", "seriesLabelTaken": "", "changeLabel": "",
                 "partsRegrowth": "", "partsTaken": ""
             }))

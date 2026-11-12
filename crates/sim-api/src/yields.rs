@@ -66,6 +66,9 @@ pub struct YieldWords {
     pub over_yes: String,
     pub over_no: String,
     pub months_none: String,
+    /// An over-the-line stock that would take at least this many months to run down gets the
+    /// calmer `verdict_slow` sentence (the game itself lasts 120 months).
+    pub slow_months: f64,
     /// `{months}`.
     pub months: String,
     pub no_limit: String,
@@ -95,6 +98,7 @@ pub struct YieldStockDef {
     pub rows: BTreeMap<String, String>,
     /// `{taken}`, `{regrowth}`, `{months}`.
     pub verdict_over: String,
+    pub verdict_slow: String,
     pub verdict_under: String,
     pub verdict_empty: String,
     pub how_id: String,
@@ -254,6 +258,17 @@ fn num(v: f64) -> String {
     }
 }
 
+/// A figure with its unit, the unit's first word singular when the figure reads as 1.
+fn with_unit(v: f64, unit: &str) -> String {
+    let n = num(v);
+    if n == "1" {
+        if let Some(rest) = unit.strip_prefix("units") {
+            return format!("{n} unit{rest}");
+        }
+    }
+    format!("{n} {unit}")
+}
+
 /// Months until the stock reaches `floor` at a net loss of `loss` a month; `None` if it is not losing.
 fn months_until(stock: f64, floor: f64, loss: f64) -> Option<f64> {
     (loss > 1e-9).then(|| ((stock - floor) / loss).max(0.0))
@@ -366,7 +381,7 @@ pub fn build(
                 unit: unit.to_string(),
                 text,
             };
-            let flow = |v: f64| format!("{} {}", num(v), def.flow_unit);
+            let flow = |v: f64| with_unit(v, &def.flow_unit);
             let mut rows = Vec::new();
             for key in row_ids(&def.id) {
                 rows.push(match *key {
@@ -374,7 +389,7 @@ pub fn build(
                         key,
                         Some(f.stock),
                         &def.stock_unit,
-                        format!("{} {}", num(f.stock), def.stock_unit),
+                        with_unit(f.stock, &def.stock_unit),
                     ),
                     "regrowth" => row(key, Some(f.regrowth), &def.flow_unit, flow(f.regrowth)),
                     "msy" => row(key, Some(f.msy), &def.flow_unit, flow(f.msy)),
@@ -408,17 +423,13 @@ pub fn build(
                         key,
                         cap,
                         &def.food_unit,
-                        cap.map_or_else(
-                            || w.no_limit.clone(),
-                            |c| format!("{} {}", num(c), def.food_unit),
-                        ),
+                        cap.map_or_else(|| w.no_limit.clone(), |c| with_unit(c, &def.food_unit)),
                     ),
                     "food_wanted" => row(
                         key,
                         food_wanted,
                         &def.food_unit,
-                        food_wanted
-                            .map_or_else(String::new, |c| format!("{} {}", num(c), def.food_unit)),
+                        food_wanted.map_or_else(String::new, |c| with_unit(c, &def.food_unit)),
                     ),
                     _ => {
                         let sink = sim_model::nature::forest_sink(p, f.stock);
@@ -426,7 +437,7 @@ pub fn build(
                             key,
                             Some(sink),
                             &def.tonnes_unit,
-                            format!("{} {}", num(sink), def.tonnes_unit),
+                            with_unit(sink, &def.tonnes_unit),
                         )
                     }
                 });
@@ -434,6 +445,8 @@ pub fn build(
             let verdict = fill(
                 if f.stock <= floor + 1e-9 && floor > 0.0 || f.stock <= 1e-9 {
                     &def.verdict_empty
+                } else if over && months.is_some_and(|m| m >= w.slow_months) {
+                    &def.verdict_slow
                 } else if over {
                     &def.verdict_over
                 } else {

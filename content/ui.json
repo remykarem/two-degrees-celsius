@@ -1334,6 +1334,7 @@
       "overYes": "Yes: more is taken than regrows",
       "overNo": "No: no more is taken than regrows",
       "monthsNone": "Not shrinking at this rate",
+      "slowMonths": 120,
       "months": "{months} months",
       "noLimit": "No limit from this stock",
       "seriesLabelStock": "Stock",
@@ -1366,6 +1367,7 @@
           "food_wanted": "Food the town wanted this month"
         },
         "verdictOver": "The Farm took {taken} units of commons this month, but the commons only regrows {regrowth} a month at this size. At this rate it collapses in {months} months, and food then runs short.",
+        "verdictSlow": "The Farm took {taken} units of commons this month, more than the {regrowth} the commons regrows a month at this size. At this rate it would take about {months} months to run down, and the gap widens as the stock falls.",
         "verdictUnder": "The Farm took {taken} units of commons this month and the commons regrows {regrowth} a month at this size, so the stock is holding or growing.",
         "verdictEmpty": "The commons is gone or nearly gone. It cannot supply the food the Farm would otherwise grow, and the town goes short.",
         "howId": "ecology:commons"
@@ -1392,6 +1394,7 @@
           "sink": "CO2 the forest absorbs"
         },
         "verdictOver": "The Farm took {taken} units of forest this month, but the forest only regrows {regrowth} a month at this size. At this rate it is gone in {months} months, and the sink goes with it.",
+        "verdictSlow": "The Farm took {taken} units of forest this month, more than the {regrowth} the forest regrows a month at this size. At this rate it would take about {months} months to be gone, and the gap widens as the stock falls.",
         "verdictUnder": "The Farm took {taken} units of forest this month and the forest regrows {regrowth} a month at this size, so the stock is holding or growing.",
         "verdictEmpty": "The forest is gone. It no longer absorbs CO2 or supplies food.",
         "howId": "ecology:forest"

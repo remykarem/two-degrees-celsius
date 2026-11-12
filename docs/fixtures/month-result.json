@@ -5267,7 +5267,7 @@
         "formula": "regrowth = growth rate x stock x (1 - stock / maximum) x drought factor; taken = Farm output x commons taken per unit of food x the harvest lever; next month the Farm cannot grow more food than a set share of the stock allows.",
         "headline": "1.3 taken for every 1 regrown",
         "overLine": true,
-        "verdict": "The Farm took 4.5 units of commons this month, but the commons only regrows 3.5 a month at this size. At this rate it collapses in 795 months, and food then runs short.",
+        "verdict": "The Farm took 4.5 units of commons this month, more than the 3.5 the commons regrows a month at this size. At this rate it would take about 795 months to run down, and the gap widens as the stock falls.",
         "monthsToCollapse": 795.3207500431105,
         "rows": [
           {

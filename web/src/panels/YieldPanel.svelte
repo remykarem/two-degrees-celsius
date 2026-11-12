@@ -30,7 +30,7 @@
             <rect x="0" y="0" width={W} height={H} fill="var(--surface-2)" rx="4" />
             {#if m.chart.msy !== null}
               <line x1="2" x2={W - 2} y1={m.chart.msy} y2={m.chart.msy} stroke="var(--text-dim)" stroke-dasharray="4 3" stroke-width="1" />
-              <text x="4" y={Number(m.chart.msy) - 3} font-size="9" fill="var(--text-dim)">{text('ecology', 'yield_best_line')}</text>
+              <text x={W - 4} y={Number(m.chart.msy) + 10} font-size="9" text-anchor="end" fill="var(--text-dim)">{text('ecology', 'yield_best_line')}</text>
             {/if}
             <polyline fill="none" stroke="var(--series-1)" stroke-width="2" points={m.chart.regrowth} />
             <polyline fill="none" stroke="var(--bad)" stroke-width="2" stroke-dasharray="5 2" points={m.chart.taken} />
