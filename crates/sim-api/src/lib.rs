@@ -34,6 +34,7 @@ pub mod policies;
 pub mod recording;
 pub mod snapshot;
 pub mod sources;
+pub mod trades;
 pub mod turn;
 
 pub use api::Api;
@@ -46,6 +47,7 @@ pub use keys::{BlockReason, InfraKind, LeverKey, SystemKey};
 pub use ledger::{AccountRef, LedgerKindKey, LedgerPage, LedgerQuery, PersonLedger};
 pub use meta::{ActionInfo, LeverInfo};
 pub use snapshot::Snapshot;
+pub use trades::{MarketTrades, TradesQuery};
 pub use turn::{CommandPreview, MonthFrame, MonthResult, TurnResult, TurnStart};
 
 /// Version of the wire format and of saved games. Bump when either changes shape.

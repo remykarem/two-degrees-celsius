@@ -366,6 +366,10 @@ pub struct LedgerStore {
     /// `(person, firm, tiles, minutes)` of the last commute event stored per person.
     last_commute: Vec<(u32, u32, u32, u32)>,
     closings: Vec<TurnClose>,
+    /// Contract v2.4: the trades behind the markets (rows for the detail window, sums before).
+    /// Older saves have none; the list then starts where the save was loaded.
+    #[serde(default)]
+    trades: crate::trades::TradeStore,
 }
 
 impl LedgerStore {
@@ -386,7 +390,12 @@ impl LedgerStore {
             person_events: Vec::new(),
             last_commute: Vec::new(),
             closings: Vec::new(),
+            trades: crate::trades::TradeStore::default(),
         }
+    }
+
+    pub fn trades(&self) -> &crate::trades::TradeStore {
+        &self.trades
     }
 
     pub fn size(&self) -> LedgerSize {
@@ -472,6 +481,7 @@ impl LedgerStore {
                 balances: now,
             });
         }
+        self.trades.record_tick(out, s);
         self.last_tick = Some(tick);
         self.roll_to(turn_of(tick));
         Ok(())
@@ -512,6 +522,7 @@ impl LedgerStore {
         if self.rolled_through.is_some_and(|t| t >= through) {
             return;
         }
+        self.trades.roll_to(through);
         let split = self.entries.partition_point(|e| e.turn() <= through);
         let old: Vec<Entry> = self.entries.drain(..split).collect();
         for e in &old {

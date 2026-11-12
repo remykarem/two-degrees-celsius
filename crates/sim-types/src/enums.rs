@@ -568,6 +568,27 @@ pub enum TraceRecord {
     /// Markets view: the mean share of renters' disposable income that goes to rent, and how
     /// many renting households it is over.
     RentBurden { burden: f64, renters: u32 },
+    /// Market trades (contract v2.4, output only): one buyer's purchase from one shop this month.
+    /// `units` is the shop's sold units times this buyer's share of its revenue (so a shop's
+    /// trades add up to its `GoodsFirm.sold_units`); `unit_price` is the shop's shelf price in
+    /// cents; `amount` is the exact cents that moved.
+    Trade {
+        sector: Sector,
+        buyer: TradeBuyer,
+        firm: FirmId,
+        units: f64,
+        unit_price: f64,
+        amount: Cents,
+    },
+}
+
+/// Who bought in a `TraceRecord::Trade`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TradeBuyer {
+    Household(HouseholdId),
+    /// A firm buying capital goods.
+    Firm(FirmId),
+    Government,
 }
 
 /// One tick's legitimacy update: `after = clamp(before + wellbeing - unemployment - inequality

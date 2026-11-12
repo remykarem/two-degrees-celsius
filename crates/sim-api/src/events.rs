@@ -447,7 +447,8 @@ impl TraceRecord {
             | st::TraceRecord::Vacancies { .. }
             | st::TraceRecord::CreditRoom { .. }
             | st::TraceRecord::CreditDecision { .. }
-            | st::TraceRecord::RentBurden { .. } => return None,
+            | st::TraceRecord::RentBurden { .. }
+            | st::TraceRecord::Trade { .. } => return None,
         })
     }
 }

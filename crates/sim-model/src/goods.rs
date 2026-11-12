@@ -344,6 +344,23 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             let sold_units = alloc.sold[i];
             let parts = apportion(revenue, &buyers);
             for (b, part) in parts.iter().enumerate() {
+                if *part > Cents::ZERO && revenue > Cents::ZERO {
+                    let buyer = if b < n_h {
+                        TradeBuyer::Household(HouseholdId(b as u32))
+                    } else if b < n_h + n_f {
+                        TradeBuyer::Firm(FirmId((b - n_h) as u32))
+                    } else {
+                        TradeBuyer::Government
+                    };
+                    d.trace.push(TraceRecord::Trade {
+                        sector,
+                        buyer,
+                        firm: f.id,
+                        units: sold_units * part.as_f64() / revenue.as_f64(),
+                        unit_price: price,
+                        amount: *part,
+                    });
+                }
                 if b < n_h {
                     let hid = HouseholdId(b as u32);
                     d.transfer_as(

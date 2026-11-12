@@ -307,6 +307,20 @@
       "how_label": "how?",
       "series_title": "Over the turns",
       "no_series": "A trend appears after the first full turn.",
+      "trades_button": "See all trades",
+      "trades_title": "All trades: {market}",
+      "trades_period": "Show",
+      "trades_totals": "Total",
+      "trades_reconciles": "These rows add up to the card: {traded}.",
+      "trades_not_reconciles": "These rows do NOT add up to the card ({traded}). That is a bug.",
+      "trades_how_to_sort": "Click a column heading to sort by it.",
+      "trades_unavailable": "The list of trades needs the live simulation. The recorded demo does not carry it.",
+      "trades_none": "No trades recorded for this period.",
+      "trades_inspector": "Trades this month",
+      "trades_see_all": "See all {market} trades",
+      "trades_rows": "{n} rows",
+      "trades_close": "Close",
+      "trades_older": "Older turns are summed: one row per pair of parties for the whole turn.",
       "also_here": "Also in this town"
     },
     "estate": {
@@ -582,6 +596,23 @@
     "steadyBand": 0.005,
     "gapNone": "Nothing missing and nothing left over.",
     "fullyMet": 0.99,
+    "trades": {
+      "names": {
+        "government": "Government",
+        "bank": "Bank",
+        "home": "Home {n}",
+        "open_job": "Unfilled job",
+        "nobody": "Nobody"
+      },
+      "spanMonth": "this month",
+      "spanMonths": "over {months} months",
+      "monthWord": "Month {month}",
+      "quarterWord": "{months} of the 3 months",
+      "periodMonth": "Turn {turn}, month {month}",
+      "periodTurn": "Turn {turn}, all three months",
+      "periodRolled": "Turn {turn}, all three months (older, rolled up)",
+      "rate": "${rate} a year per $100"
+    },
     "directions": {
       "rising": "rising",
       "steady": "steady",
@@ -668,6 +699,59 @@
         "gapUnmet": "{unmet} {unmet_unit} went without",
         "gapUnsold": "{unsold} {unsold_unit} unsold",
         "howId": "markets:food",
+        "trades": {
+          "intro": "Each row is one purchase of food this month: who bought, who sold it, how many units and at what price. Buyers are households, and also firms (buying machines and materials) and the government.",
+          "empty": "Nobody bought food in this month.",
+          "columns": [
+            {
+              "id": "buyer",
+              "label": "Buyer",
+              "help": "Who paid. Click a name to open it. A household buys for its own needs; a firm buys capital goods; the government buys for public services.",
+              "numeric": false
+            },
+            {
+              "id": "seller",
+              "label": "Seller",
+              "help": "The shop the buyer bought from. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "units",
+              "label": "Units",
+              "help": "How many units changed hands. A unit is the model's measure of one month's worth of that product.",
+              "numeric": false
+            },
+            {
+              "id": "unit_price",
+              "label": "Unit price",
+              "help": "What one unit cost this month. A shop sets it from its costs plus a markup (it does not move with demand). For a rolled-up older turn this is total money divided by total units.",
+              "numeric": false
+            },
+            {
+              "id": "total",
+              "label": "Total paid",
+              "help": "Units times price, in dollars. These add up to the money the shop received.",
+              "numeric": false
+            },
+            {
+              "id": "note",
+              "label": "Note",
+              "help": "Flags an unusual row. A firm can buy its own output (for example the Factory buying machines from itself): the units count, but no money changes hands.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "self": "A firm buying its own output: no money moves"
+          },
+          "uncounted": "",
+          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+        },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
           "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
@@ -715,6 +799,59 @@
         "gapUnmet": "{unmet} {unmet_unit} went without",
         "gapUnsold": "{unsold} {unsold_unit} unsold",
         "howId": "markets:goods",
+        "trades": {
+          "intro": "Each row is one purchase of goods this month: who bought, who sold it, how many units and at what price. Buyers are households, and also firms (buying machines and materials) and the government.",
+          "empty": "Nobody bought goods in this month.",
+          "columns": [
+            {
+              "id": "buyer",
+              "label": "Buyer",
+              "help": "Who paid. Click a name to open it. A household buys for its own needs; a firm buys capital goods; the government buys for public services.",
+              "numeric": false
+            },
+            {
+              "id": "seller",
+              "label": "Seller",
+              "help": "The shop the buyer bought from. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "units",
+              "label": "Units",
+              "help": "How many units changed hands. A unit is the model's measure of one month's worth of that product.",
+              "numeric": false
+            },
+            {
+              "id": "unit_price",
+              "label": "Unit price",
+              "help": "What one unit cost this month. A shop sets it from its costs plus a markup (it does not move with demand). For a rolled-up older turn this is total money divided by total units.",
+              "numeric": false
+            },
+            {
+              "id": "total",
+              "label": "Total paid",
+              "help": "Units times price, in dollars. These add up to the money the shop received.",
+              "numeric": false
+            },
+            {
+              "id": "note",
+              "label": "Note",
+              "help": "Flags an unusual row. A firm can buy its own output (for example the Factory buying machines from itself): the units count, but no money changes hands.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "self": "A firm buying its own output: no money moves"
+          },
+          "uncounted": "",
+          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+        },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
           "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
@@ -758,6 +895,59 @@
         "gapUnmet": "{unmet} {unmet_unit} went without",
         "gapUnsold": "{unsold} {unsold_unit} unsold",
         "howId": "markets:services",
+        "trades": {
+          "intro": "Each row is one purchase of services this month: who bought, who sold it, how many units and at what price. Buyers are households, and also firms (buying machines and materials) and the government.",
+          "empty": "Nobody bought services in this month.",
+          "columns": [
+            {
+              "id": "buyer",
+              "label": "Buyer",
+              "help": "Who paid. Click a name to open it. A household buys for its own needs; a firm buys capital goods; the government buys for public services.",
+              "numeric": false
+            },
+            {
+              "id": "seller",
+              "label": "Seller",
+              "help": "The shop the buyer bought from. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "units",
+              "label": "Units",
+              "help": "How many units changed hands. A unit is the model's measure of one month's worth of that product.",
+              "numeric": false
+            },
+            {
+              "id": "unit_price",
+              "label": "Unit price",
+              "help": "What one unit cost this month. A shop sets it from its costs plus a markup (it does not move with demand). For a rolled-up older turn this is total money divided by total units.",
+              "numeric": false
+            },
+            {
+              "id": "total",
+              "label": "Total paid",
+              "help": "Units times price, in dollars. These add up to the money the shop received.",
+              "numeric": false
+            },
+            {
+              "id": "note",
+              "label": "Note",
+              "help": "Flags an unusual row. A firm can buy its own output (for example the Factory buying machines from itself): the units count, but no money changes hands.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "self": "A firm buying its own output: no money moves"
+          },
+          "uncounted": "",
+          "totals": "{units} units bought for {money} {span}, in {count} purchases."
+        },
         "verdict": {
           "balanced": "Shoppers wanted {demand} {demand_unit} and the shops had {supply}: everything wanted was bought.",
           "short": "Shoppers wanted {demand} {demand_unit} but the shops had only {supply}: {unmet} {unmet_unit} went without. Going without does not push the price up, because firms set prices from their costs. They respond by hiring and producing more over the next months.",
@@ -802,6 +992,51 @@
         "gapUnmet": "Jobs still open: {unmet}",
         "gapUnsold": "People without a firm job: {unsold}",
         "howId": "markets:labour",
+        "trades": {
+          "intro": "Each row is one job this month: the person, the employer, and the wage paid. Jobs lost this month and jobs nobody filled are listed too but are not counted in the total.",
+          "empty": "There are no jobs to list yet.",
+          "columns": [
+            {
+              "id": "worker",
+              "label": "Worker",
+              "help": "The person doing the job, or 'Unfilled job' for a vacancy no one took. Click a name to open it.",
+              "numeric": false
+            },
+            {
+              "id": "employer",
+              "label": "Employer",
+              "help": "Who pays the wage: a firm, the government (job guarantee) or a household (domestic staff). Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "wage",
+              "label": "Wage a month",
+              "help": "What the worker was paid this month, in dollars. For a rolled-up older turn this is the average per month worked.",
+              "numeric": true
+            },
+            {
+              "id": "note",
+              "label": "What changed",
+              "help": "Whether the person was hired or lost the job this month, or why the row is not counted.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "hired": "Hired this month",
+            "fired": "Lost this job this month",
+            "open": "Open: nobody hired",
+            "guarantee": "Government job guarantee (not counted)",
+            "staff": "Household staff (not counted)"
+          },
+          "uncounted": "Not counted in the total: jobs lost, open jobs, the government's job guarantee and household staff. The labour card counts only jobs at firms.",
+          "totals": "{count} jobs at firms, paying {money} in wages {span}."
+        },
         "verdict": {
           "balanced": "Firms offered {demand} jobs and {supply} people could work: every job is filled and everyone who can work has a firm job.",
           "short": "Firms offered {demand} jobs but only {traded} are filled: {unmet} still open, and nobody is left looking for work. The town has run out of people to hire.",
@@ -851,6 +1086,55 @@
         "gapUnmet": "Households without a home: {unmet}",
         "gapUnsold": "Homes standing empty: {unsold}",
         "howId": "markets:housing",
+        "trades": {
+          "intro": "Each row is one home this month: who lives there, who owns it and the rent. Empty homes and households without a home are listed too but are not counted in the total.",
+          "empty": "There are no homes to list yet.",
+          "columns": [
+            {
+              "id": "home",
+              "label": "Home",
+              "help": "The home. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "tenant",
+              "label": "Lives there",
+              "help": "The household living in it, or 'Nobody' if it stands empty. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "owner",
+              "label": "Owner",
+              "help": "Who owns the home and collects the rent: a household, or the government (public housing).",
+              "numeric": false
+            },
+            {
+              "id": "rent",
+              "label": "Rent a month",
+              "help": "What a tenant pays this month, in dollars. Zero when the household owns the home it lives in, or when the home is empty.",
+              "numeric": true
+            },
+            {
+              "id": "note",
+              "label": "Status",
+              "help": "Whether the home is empty, lived in by its owner, or a household that has no home.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "vacant": "Empty",
+            "owner": "Lived in by its owner",
+            "unhoused": "Has no home (not counted)"
+          },
+          "uncounted": "Not counted in the total: empty homes and households that have no home. The housing card counts homes lived in.",
+          "totals": "{count} homes lived in, with {money} in rent {span}."
+        },
         "verdict": {
           "balanced": "{demand} households needed a home and the town has {supply}: every household is housed.",
           "short": "{demand} households needed a home and the town has {supply}: {unmet} {unmet_unit} short, so some households have no home.",
@@ -896,6 +1180,61 @@
         "gapUnmet": "Refused or cut back: {unmet}",
         "gapUnsold": "Bank room unused: {unsold}",
         "howId": "markets:credit",
+        "trades": {
+          "intro": "Each row is one firm's loan request this month: what it asked the bank for, what the bank approved and the yearly rate. Only firms that asked are listed.",
+          "empty": "No firm asked for a loan in this month.",
+          "columns": [
+            {
+              "id": "borrower",
+              "label": "Borrower",
+              "help": "The firm that asked for a loan. Click to open it.",
+              "numeric": false
+            },
+            {
+              "id": "lender",
+              "label": "Lender",
+              "help": "The bank.",
+              "numeric": false
+            },
+            {
+              "id": "asked",
+              "label": "Asked for",
+              "help": "The loan the firm asked for, in dollars.",
+              "numeric": true
+            },
+            {
+              "id": "approved",
+              "label": "Approved",
+              "help": "What the bank lent, in dollars. The bank lends less when the firm is already deep in debt or the bank is near its own limit.",
+              "numeric": true
+            },
+            {
+              "id": "rate",
+              "label": "Rate",
+              "help": "The yearly cost of the loan, written as the dollars of interest a year for every $100 borrowed.",
+              "numeric": false
+            },
+            {
+              "id": "note",
+              "label": "Outcome",
+              "help": "Whether the request was approved in full, in part or refused.",
+              "numeric": false
+            },
+            {
+              "id": "month",
+              "label": "When",
+              "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+              "numeric": false
+            }
+          ],
+          "notes": {
+            "full": "Approved in full",
+            "partial": "Approved in part",
+            "refused": "Refused"
+          },
+          "uncounted": "",
+          "totals": "{money} lent {span}, in {count} requests."
+        },
         "verdict": {
           "balanced": "Firms asked for {demand} and the bank had {supply} of room: every request was met.",
           "short": "Firms asked for {demand} and the bank lent {traded}: {unmet} was refused or cut back, either because the bank was out of room or because the firm already owed as much as it may.",
@@ -935,6 +1274,14 @@
         "gapUnmet": "{unmet} {unmet_unit} not delivered",
         "gapUnsold": "{unsold} {unsold_unit} of capacity idle",
         "howId": "markets:energy",
+        "trades": {
+          "intro": "Energy has no list of trades: the model has one town-wide supply and one town-wide demand, with no record of which household or firm used which plant's electricity.",
+          "empty": "Energy is counted for the whole town, not trade by trade.",
+          "columns": [],
+          "notes": {},
+          "uncounted": "",
+          "totals": ""
+        },
         "verdict": {
           "balanced": "Firms and homes wanted {demand} {demand_unit} and the plants could supply {supply}: everyone was served in full.",
           "short": "Firms and homes wanted {demand} {demand_unit} but the plants could supply {supply}: {unmet} {unmet_unit} were not delivered, so output and comfort were cut back in proportion.",

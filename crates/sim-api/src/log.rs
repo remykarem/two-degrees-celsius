@@ -122,7 +122,9 @@ impl TickRecord {
                     r.markets.rent_burden = burden;
                     r.markets.renters = renters;
                 }
-                TraceRecord::Income { .. } | TraceRecord::PolicyGap { .. } => {}
+                TraceRecord::Income { .. }
+                | TraceRecord::PolicyGap { .. }
+                | TraceRecord::Trade { .. } => {}
             }
         }
         r

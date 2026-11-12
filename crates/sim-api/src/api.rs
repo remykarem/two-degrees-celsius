@@ -172,9 +172,47 @@ impl Api {
             .person_ledger(person, p.household.0, &self.sim.state))
     }
 
+    /// Contract v2.4: the list of trades behind one market for one period (default: the latest
+    /// month). Legal at any time; the rows are the ledger's, so they are saved with the game.
+    pub fn market_trades(
+        &self,
+        market: &str,
+        query: &crate::trades::TradesQuery,
+    ) -> ApiResult<crate::trades::MarketTrades> {
+        let content = &self.meta.sources.markets;
+        let def = content
+            .list
+            .iter()
+            .find(|d| d.id == market)
+            .ok_or_else(|| ApiError::new(code::BAD_REQUEST, format!("no market {market:?}")))?;
+        let view = crate::markets::build(
+            &self.sim,
+            &self.history,
+            &self.log,
+            content,
+            &self.meta.energy_unit,
+        )
+        .into_iter()
+        .find(|m| m.id == market);
+        let firms: std::collections::BTreeMap<u32, String> =
+            crate::snapshot::firm_names(&self.sim.state.firms)
+                .into_iter()
+                .zip(&self.sim.state.firms)
+                .map(|(n, f)| (f.id.0, n))
+                .collect();
+        self.ledger
+            .trades()
+            .build(content, def, view.as_ref(), &self.sim.state, &firms, query)
+    }
+
     /// How much the ledger holds (tests and notes).
     pub fn ledger_size(&self) -> LedgerSize {
         self.ledger.size()
+    }
+
+    /// How many trade rows and sums are held (tests and notes).
+    pub fn trade_size(&self) -> crate::trades::TradeSize {
+        self.ledger.trades().size()
     }
 
     /// Record one applied tick in the ledger. On failure the ledger is left as it was.

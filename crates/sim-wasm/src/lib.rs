@@ -14,7 +14,7 @@
 use serde::Serialize;
 use sim_api::api::parse_commands;
 use sim_api::error::code;
-use sim_api::{AccountRef, Api, ApiError, ApiResult, InfraKind, LedgerQuery};
+use sim_api::{AccountRef, Api, ApiError, ApiResult, InfraKind, LedgerQuery, TradesQuery};
 use sim_params::ContentJson;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -186,6 +186,22 @@ impl WasmSim {
                 })?
             };
             a.ledger(&account, &query)
+        }))
+    }
+
+    /// `Result<MarketTrades>` (contract v2.4): the list of trades behind one market. `market` is a
+    /// market id (`food`, `labour`, ...); `query_json` a `TradesQuery` (`{}` for the latest month)
+    /// or an empty string.
+    pub fn market_trades(&self, market: &str, query_json: &str) -> String {
+        wrap(self.get().and_then(|a| {
+            let query: TradesQuery = if query_json.trim().is_empty() {
+                TradesQuery::default()
+            } else {
+                serde_json::from_str(query_json).map_err(|e| {
+                    ApiError::new(code::BAD_REQUEST, format!("bad trades query: {e}"))
+                })?
+            };
+            a.market_trades(market, &query)
         }))
     }
 

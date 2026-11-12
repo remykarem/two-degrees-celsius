@@ -1,0 +1,508 @@
+{
+  "market": "food",
+  "label": "Food",
+  "intro": "Each row is one purchase of food this month: who bought, who sold it, how many units and at what price. Buyers are households, and also firms (buying machines and materials) and the government.",
+  "empty": "Nobody bought food in this month.",
+  "uncounted": "",
+  "period": {
+    "turn": 3,
+    "month": 2,
+    "rolled": false,
+    "label": "Turn 3, month 3"
+  },
+  "periods": [
+    {
+      "turn": 3,
+      "rolled": false,
+      "label": "Turn 3, all three months"
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 3, month 3"
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 3, month 2"
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 3, month 1"
+    },
+    {
+      "turn": 2,
+      "rolled": false,
+      "label": "Turn 2, all three months"
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 2, month 3"
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 2, month 2"
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 2, month 1"
+    },
+    {
+      "turn": 1,
+      "rolled": false,
+      "label": "Turn 1, all three months"
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 1, month 3"
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 1, month 2"
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 1, month 1"
+    }
+  ],
+  "columns": [
+    {
+      "id": "buyer",
+      "label": "Buyer",
+      "help": "Who paid. Click a name to open it. A household buys for its own needs; a firm buys capital goods; the government buys for public services.",
+      "numeric": false
+    },
+    {
+      "id": "seller",
+      "label": "Seller",
+      "help": "The shop the buyer bought from. Click to open it.",
+      "numeric": false
+    },
+    {
+      "id": "units",
+      "label": "Units",
+      "help": "How many units changed hands. A unit is the model's measure of one month's worth of that product.",
+      "numeric": false
+    },
+    {
+      "id": "unit_price",
+      "label": "Unit price",
+      "help": "What one unit cost this month. A shop sets it from its costs plus a markup (it does not move with demand). For a rolled-up older turn this is total money divided by total units.",
+      "numeric": false
+    },
+    {
+      "id": "total",
+      "label": "Total paid",
+      "help": "Units times price, in dollars. These add up to the money the shop received.",
+      "numeric": false
+    },
+    {
+      "id": "note",
+      "label": "Note",
+      "help": "Flags an unusual row. A firm can buy its own output (for example the Factory buying machines from itself): the units count, but no money changes hands.",
+      "numeric": false
+    },
+    {
+      "id": "month",
+      "label": "When",
+      "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+      "numeric": false
+    }
+  ],
+  "rows": [
+    {
+      "cells": [
+        {
+          "text": "Owner family",
+          "entity": {
+            "kind": "household",
+            "id": 0
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "50.00",
+          "sort": 50.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,264.50",
+          "sort": 1264.5
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Landlord",
+          "entity": {
+            "kind": "household",
+            "id": 1
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "50.00",
+          "sort": 50.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,264.50",
+          "sort": 1264.5
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Manager A",
+          "entity": {
+            "kind": "household",
+            "id": 2
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "75.00",
+          "sort": 75.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,896.75",
+          "sort": 1896.75
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Manager B",
+          "entity": {
+            "kind": "household",
+            "id": 3
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "75.00",
+          "sort": 75.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,896.75",
+          "sort": 1896.75
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Worker A",
+          "entity": {
+            "kind": "household",
+            "id": 4
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "64.27",
+          "sort": 64.27283511269276
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,625.46",
+          "sort": 1625.46
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Worker B",
+          "entity": {
+            "kind": "household",
+            "id": 5
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "75.00",
+          "sort": 75.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,896.75",
+          "sort": 1896.75
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Worker C",
+          "entity": {
+            "kind": "household",
+            "id": 6
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "75.00",
+          "sort": 75.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,896.75",
+          "sort": 1896.75
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Destitute household",
+          "entity": {
+            "kind": "household",
+            "id": 7
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "50.00",
+          "sort": 50.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$1,264.50",
+          "sort": 1264.5
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Estate owner",
+          "entity": {
+            "kind": "household",
+            "id": 8
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "25.00",
+          "sort": 25.0
+        },
+        {
+          "text": "$25.29",
+          "sort": 25.29
+        },
+        {
+          "text": "$632.25",
+          "sort": 632.25
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    }
+  ],
+  "totals": {
+    "count": 9,
+    "units": 539.2728351126927,
+    "money": 13638.21,
+    "text": "539.27 units bought for $13,638.21 this month, in 9 purchases.",
+    "cells": [
+      {
+        "text": "9"
+      },
+      {
+        "text": ""
+      },
+      {
+        "text": "539.27",
+        "sort": 539.2728351126927
+      },
+      {
+        "text": ""
+      },
+      {
+        "text": "$13,638.21",
+        "sort": 13638.21
+      },
+      {
+        "text": ""
+      },
+      {
+        "text": ""
+      }
+    ]
+  },
+  "aggregate": {
+    "traded": 539.2728351126927,
+    "text": "Bought: 539"
+  },
+  "reconciles": true
+}

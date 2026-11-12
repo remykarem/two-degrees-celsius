@@ -108,6 +108,10 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
     let query = crate::ledger::LedgerQuery::default();
     let ledger_household = api.ledger(&crate::ledger::AccountRef::Household { id: 0 }, &query)?;
     let ledger_government = api.ledger(&crate::ledger::AccountRef::Government, &query)?;
+    // Contract v2.4: the list of trades behind two markets.
+    let tq = crate::trades::TradesQuery::default();
+    let trades_food = api.market_trades("food", &tq)?;
+    let trades_labour = api.market_trades("labour", &tq)?;
     Ok(vec![
         ("snapshot-turn1.json".to_string(), snapshot),
         ("turn-result.json".to_string(), pretty(&turn)?),
@@ -127,6 +131,11 @@ pub fn generate() -> ApiResult<Vec<(String, String)>> {
         (
             "ledger-government.json".to_string(),
             pretty(&ledger_government)?,
+        ),
+        ("market-trades-food.json".to_string(), pretty(&trades_food)?),
+        (
+            "market-trades-labour.json".to_string(),
+            pretty(&trades_labour)?,
         ),
         ("finance.json".to_string(), pretty(&later.finance)?),
         ("energy.json".to_string(), pretty(&later.energy)?),

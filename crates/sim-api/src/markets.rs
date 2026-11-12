@@ -55,6 +55,41 @@ pub fn driver_ids(market: &str) -> &'static [&'static str] {
     }
 }
 
+/// The columns of a market's trade list, in order (content gives each a label and help text).
+pub fn trade_column_ids(market: &str) -> &'static [&'static str] {
+    match market {
+        "food" | "goods" | "services" => &[
+            "buyer",
+            "seller",
+            "units",
+            "unit_price",
+            "total",
+            "note",
+            "month",
+        ],
+        "labour" => &["worker", "employer", "wage", "note", "month"],
+        "housing" => &["home", "tenant", "owner", "rent", "note", "month"],
+        "credit" => &[
+            "borrower", "lender", "asked", "approved", "rate", "note", "month",
+        ],
+        _ => &[],
+    }
+}
+
+/// The "what changed" notes a market's trade rows can carry (content gives each a sentence).
+pub fn trade_note_ids(market: &str) -> &'static [&'static str] {
+    match market {
+        "food" | "goods" | "services" => &["self"],
+        "labour" => &["hired", "fired", "open", "guarantee", "staff"],
+        "housing" => &["vacant", "owner", "unhoused"],
+        "credit" => &["full", "partial", "refused"],
+        _ => &[],
+    }
+}
+
+/// Names the trade lists use for parties that have no label of their own.
+pub const TRADE_NAMES: [&str; 5] = ["government", "bank", "home", "open_job", "nobody"];
+
 /// The direction ids a price can have (content gives each a word).
 const DIRECTIONS: [&str; 5] = ["rising", "steady", "falling", "none", "unknown"];
 /// The cause ids content may use.
@@ -152,6 +187,56 @@ pub struct MarketDef {
     pub verdict: Verdict,
     pub short: BTreeMap<String, ShortText>,
     pub drivers: BTreeMap<String, String>,
+    /// Contract v2.4: the list of trades behind this market.
+    pub trades: TradesDef,
+}
+
+/// One column of a market's trade list.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TradeColumnDef {
+    pub id: String,
+    pub label: String,
+    /// Plain-English help: what the column means.
+    pub help: String,
+    pub numeric: bool,
+}
+
+/// The text of a market's trade list. `totals` placeholders: `{count}`, `{units}`, `{money}`, `{span}`.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TradesDef {
+    pub intro: String,
+    pub empty: String,
+    pub columns: Vec<TradeColumnDef>,
+    pub notes: BTreeMap<String, String>,
+    /// Said under the table when some rows are listed but not counted; empty when all are counted.
+    pub uncounted: String,
+    pub totals: String,
+}
+
+/// Words shared by every market's trade list.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct TradesCommon {
+    /// Keys: [`TRADE_NAMES`]. `home` has `{n}`.
+    pub names: BTreeMap<String, String>,
+    pub span_month: String,
+    /// `{months}`.
+    pub span_months: String,
+    /// `{month}`.
+    pub month_word: String,
+    /// `{months}`.
+    pub quarter_word: String,
+    /// `{turn}`, `{month}`.
+    pub period_month: String,
+    pub period_turn: String,
+    pub period_rolled: String,
+    /// `{rate}`: dollars a year for every $100 borrowed.
+    pub rate: String,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -183,6 +268,7 @@ pub struct MarketsContent {
     pub gap_none: String,
     /// A household whose food need was met at or above this share counts as fed.
     pub fully_met: f64,
+    pub trades: TradesCommon,
     pub directions: BTreeMap<String, String>,
     pub causes: BTreeMap<String, String>,
     pub categories: Vec<MarketCategoryDef>,
@@ -224,6 +310,11 @@ impl MarketsContent {
             &DIRECTIONS,
         )?;
         same_keys(
+            "markets.trades.names",
+            self.trades.names.keys().map(String::as_str).collect(),
+            &TRADE_NAMES,
+        )?;
+        same_keys(
             "markets.causes",
             self.causes.keys().map(String::as_str).collect(),
             &CAUSES,
@@ -257,6 +348,23 @@ impl MarketsContent {
                 d.drivers.keys().map(String::as_str).collect(),
                 driver_ids(&d.id),
             )?;
+            same_keys(
+                &format!("{} trades columns", d.id),
+                d.trades.columns.iter().map(|c| c.id.as_str()).collect(),
+                trade_column_ids(&d.id),
+            )?;
+            // The columns keep the order the builder writes cells in.
+            let order: Vec<&str> = d.trades.columns.iter().map(|c| c.id.as_str()).collect();
+            if order != trade_column_ids(&d.id) {
+                return Err(at(
+                    "trades columns must be in the order the code writes them",
+                ));
+            }
+            same_keys(
+                &format!("{} trades notes", d.id),
+                d.trades.notes.keys().map(String::as_str).collect(),
+                trade_note_ids(&d.id),
+            )?;
             if d.how_id.is_empty() || d.gap_floor < 0.0 {
                 return Err(at("howId must be set and gapFloor must not be negative"));
             }
@@ -274,6 +382,10 @@ pub enum MarketEntityKind {
     Firm,
     Household,
     Home,
+    /// Contract v2.4 (trade lists).
+    Person,
+    Government,
+    Bank,
 }
 
 /// Something on the map a chip points at (the web selects it in the inspector).
@@ -390,11 +502,11 @@ struct Raw {
     drivers: Vec<(&'static str, String)>,
 }
 
-fn close(a: f64, b: f64) -> bool {
+pub(crate) fn close(a: f64, b: f64) -> bool {
     (a - b).abs() <= 1e-6 * a.abs().max(b.abs()).max(1.0)
 }
 
-fn thousands(n: i64) -> String {
+pub(crate) fn thousands(n: i64) -> String {
     let digits = n.unsigned_abs().to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
@@ -439,7 +551,7 @@ fn price_text(kind: PriceKind, v: f64) -> Option<String> {
     }
 }
 
-fn fill(template: &str, vars: &[(&str, String)]) -> String {
+pub(crate) fn fill(template: &str, vars: &[(&str, String)]) -> String {
     let mut out = template.to_string();
     for (k, v) in vars {
         out = out.replace(&format!("{{{k}}}"), v);

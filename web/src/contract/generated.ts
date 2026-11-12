@@ -610,7 +610,11 @@ howId: string,
 /**
  * Placeholders: `{demand}`, `{supply}`, `{traded}`, `{unmet}`, `{unsold}`, `{unit}`.
  */
-verdict: Verdict, short: { [key in string]: ShortText }, drivers: { [key in string]: string }, };
+verdict: Verdict, short: { [key in string]: ShortText }, drivers: { [key in string]: string }, 
+/**
+ * Contract v2.4: the list of trades behind this market.
+ */
+trades: TradesDef, };
 
 export type MarketDriver = { id: string, label: string, 
 /**
@@ -620,13 +624,23 @@ value: string, };
 
 export type MarketEntity = { kind: MarketEntityKind, id: number, };
 
-export type MarketEntityKind = "firm" | "household" | "home";
+export type MarketEntityKind = "firm" | "household" | "home" | "person" | "government" | "bank";
 
 export type MarketShort = { id: string, 
 /**
  * The finished sentence from the content template.
  */
 label: string, count: number, entity?: MarketEntity, };
+
+export type MarketTrades = { market: string, label: string, intro: string, empty: string, uncounted: string, period: TradePeriod, periods: Array<TradePeriod>, columns: Array<TradeColumn>, rows: Array<TradeRow>, totals: TradeTotals, 
+/**
+ * Set for the latest month with every row shown (the figure the card has).
+ */
+aggregate?: TradeAggregate, 
+/**
+ * `Some` with `aggregate`: the counted rows add up to the card.
+ */
+reconciles?: boolean, };
 
 export type MarketView = { id: string, label: string, category: string, mechanisms: Array<string>, blurb: string, unit: string, amount: AmountKind, demand: number, supply: number, traded: number, 
 /**
@@ -683,7 +697,7 @@ steadyBand: number, gapNone: string,
 /**
  * A household whose food need was met at or above this share counts as fed.
  */
-fullyMet: number, directions: { [key in string]: string }, causes: { [key in string]: string }, categories: Array<MarketCategoryDef>, mechanisms: Array<MechanismDef>, list: Array<MarketDef>, };
+fullyMet: number, trades: TradesCommon, directions: { [key in string]: string }, causes: { [key in string]: string }, categories: Array<MarketCategoryDef>, mechanisms: Array<MechanismDef>, list: Array<MarketDef>, };
 
 export type MechanismDef = { id: string, label: string, blurb: string, example: string, };
 
@@ -1039,6 +1053,106 @@ headline: number,
 holdersTotal: number, reconciles: boolean, };
 
 export type TraceRecord = { "type": "emissions", source: EmissionSourceKind, id?: number, tile?: Tile, tonnes: number, } | { "type": "income", household: number, kind: IncomeKindKey, amount: number, } | { "type": "policy_gap", lever: LeverKey, nominal: number, effective: number, netLobby: number, };
+
+export type TradeAggregate = { traded: number, 
+/**
+ * For example `Bought: 545`.
+ */
+text: string, };
+
+export type TradeCell = { text: string, sort?: number, entity?: MarketEntity, };
+
+export type TradeColumn = { id: string, label: string, help: string, numeric: boolean, };
+
+export type TradeColumnDef = { id: string, label: string, 
+/**
+ * Plain-English help: what the column means.
+ */
+help: string, numeric: boolean, };
+
+export type TradePeriod = { turn: number, 
+/**
+ * `None`: the whole turn.
+ */
+month?: 0 | 1 | 2, 
+/**
+ * An older turn kept only as sums.
+ */
+rolled: boolean, label: string, };
+
+export type TradeRow = { 
+/**
+ * One cell per column, in column order.
+ */
+cells: Array<TradeCell>, 
+/**
+ * Counted in the totals (and so in the market card's figure).
+ */
+counted: boolean, };
+
+export type TradeTotals = { 
+/**
+ * Counted rows.
+ */
+count: number, 
+/**
+ * Counted units (for a loan market: approved dollars).
+ */
+units: number, 
+/**
+ * Dollars: money paid, wages, rent or lent.
+ */
+money: number, 
+/**
+ * The sentence from the content.
+ */
+text: string, 
+/**
+ * The totals row, one cell per column.
+ */
+cells: Array<TradeCell>, };
+
+export type TradesCommon = { 
+/**
+ * Keys: [`TRADE_NAMES`]. `home` has `{n}`.
+ */
+names: { [key in string]: string }, spanMonth: string, 
+/**
+ * `{months}`.
+ */
+spanMonths: string, 
+/**
+ * `{month}`.
+ */
+monthWord: string, 
+/**
+ * `{months}`.
+ */
+quarterWord: string, 
+/**
+ * `{turn}`, `{month}`.
+ */
+periodMonth: string, periodTurn: string, periodRolled: string, 
+/**
+ * `{rate}`: dollars a year for every $100 borrowed.
+ */
+rate: string, };
+
+export type TradesDef = { intro: string, empty: string, columns: Array<TradeColumnDef>, notes: { [key in string]: string }, 
+/**
+ * Said under the table when some rows are listed but not counted; empty when all are counted.
+ */
+uncounted: string, totals: string, };
+
+export type TradesQuery = { turn?: number, 
+/**
+ * 0..=2. Absent with a `turn`: the whole turn.
+ */
+month?: number, 
+/**
+ * Only trades this party took part in.
+ */
+entity?: MarketEntity, };
 
 export type TransitionView = { to: SystemKey, monthsLeft: number, total: number, };
 

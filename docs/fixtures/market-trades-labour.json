@@ -1,0 +1,417 @@
+{
+  "market": "labour",
+  "label": "Labour",
+  "intro": "Each row is one job this month: the person, the employer, and the wage paid. Jobs lost this month and jobs nobody filled are listed too but are not counted in the total.",
+  "empty": "There are no jobs to list yet.",
+  "uncounted": "Not counted in the total: jobs lost, open jobs, the government's job guarantee and household staff. The labour card counts only jobs at firms.",
+  "period": {
+    "turn": 3,
+    "month": 2,
+    "rolled": false,
+    "label": "Turn 3, month 3"
+  },
+  "periods": [
+    {
+      "turn": 3,
+      "rolled": false,
+      "label": "Turn 3, all three months"
+    },
+    {
+      "turn": 3,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 3, month 3"
+    },
+    {
+      "turn": 3,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 3, month 2"
+    },
+    {
+      "turn": 3,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 3, month 1"
+    },
+    {
+      "turn": 2,
+      "rolled": false,
+      "label": "Turn 2, all three months"
+    },
+    {
+      "turn": 2,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 2, month 3"
+    },
+    {
+      "turn": 2,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 2, month 2"
+    },
+    {
+      "turn": 2,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 2, month 1"
+    },
+    {
+      "turn": 1,
+      "rolled": false,
+      "label": "Turn 1, all three months"
+    },
+    {
+      "turn": 1,
+      "month": 2,
+      "rolled": false,
+      "label": "Turn 1, month 3"
+    },
+    {
+      "turn": 1,
+      "month": 1,
+      "rolled": false,
+      "label": "Turn 1, month 2"
+    },
+    {
+      "turn": 1,
+      "month": 0,
+      "rolled": false,
+      "label": "Turn 1, month 1"
+    }
+  ],
+  "columns": [
+    {
+      "id": "worker",
+      "label": "Worker",
+      "help": "The person doing the job, or 'Unfilled job' for a vacancy no one took. Click a name to open it.",
+      "numeric": false
+    },
+    {
+      "id": "employer",
+      "label": "Employer",
+      "help": "Who pays the wage: a firm, the government (job guarantee) or a household (domestic staff). Click to open it.",
+      "numeric": false
+    },
+    {
+      "id": "wage",
+      "label": "Wage a month",
+      "help": "What the worker was paid this month, in dollars. For a rolled-up older turn this is the average per month worked.",
+      "numeric": true
+    },
+    {
+      "id": "note",
+      "label": "What changed",
+      "help": "Whether the person was hired or lost the job this month, or why the row is not counted.",
+      "numeric": false
+    },
+    {
+      "id": "month",
+      "label": "When",
+      "help": "Which month of the game this trade happened in. An older turn is summed over its three months.",
+      "numeric": false
+    }
+  ],
+  "rows": [
+    {
+      "cells": [
+        {
+          "text": "Adult 1",
+          "entity": {
+            "kind": "person",
+            "id": 4
+          }
+        },
+        {
+          "text": "Factory",
+          "entity": {
+            "kind": "firm",
+            "id": 0
+          }
+        },
+        {
+          "text": "$2,739.98",
+          "sort": 2739.98
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 2",
+          "entity": {
+            "kind": "person",
+            "id": 5
+          }
+        },
+        {
+          "text": "Shop",
+          "entity": {
+            "kind": "firm",
+            "id": 2
+          }
+        },
+        {
+          "text": "$2,678.11",
+          "sort": 2678.11
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 1",
+          "entity": {
+            "kind": "person",
+            "id": 7
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "$2,678.11",
+          "sort": 2678.11
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 2",
+          "entity": {
+            "kind": "person",
+            "id": 8
+          }
+        },
+        {
+          "text": "Shop",
+          "entity": {
+            "kind": "firm",
+            "id": 2
+          }
+        },
+        {
+          "text": "$2,678.11",
+          "sort": 2678.11
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 1",
+          "entity": {
+            "kind": "person",
+            "id": 13
+          }
+        },
+        {
+          "text": "Farm",
+          "entity": {
+            "kind": "firm",
+            "id": 1
+          }
+        },
+        {
+          "text": "$1,489.19",
+          "sort": 1489.19
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 2",
+          "entity": {
+            "kind": "person",
+            "id": 14
+          }
+        },
+        {
+          "text": "Factory",
+          "entity": {
+            "kind": "firm",
+            "id": 0
+          }
+        },
+        {
+          "text": "$1,502.82",
+          "sort": 1502.82
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 1",
+          "entity": {
+            "kind": "person",
+            "id": 16
+          }
+        },
+        {
+          "text": "Factory",
+          "entity": {
+            "kind": "firm",
+            "id": 0
+          }
+        },
+        {
+          "text": "$1,258.57",
+          "sort": 1258.57
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    },
+    {
+      "cells": [
+        {
+          "text": "Pilot",
+          "entity": {
+            "kind": "person",
+            "id": 18
+          }
+        },
+        {
+          "text": "Estate owner",
+          "entity": {
+            "kind": "household",
+            "id": 8
+          }
+        },
+        {
+          "text": "$1,800.00",
+          "sort": 1800.0
+        },
+        {
+          "text": "Household staff (not counted)"
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": false
+    },
+    {
+      "cells": [
+        {
+          "text": "Adult 1",
+          "entity": {
+            "kind": "person",
+            "id": 19
+          }
+        },
+        {
+          "text": "Factory",
+          "entity": {
+            "kind": "firm",
+            "id": 0
+          }
+        },
+        {
+          "text": "$1,200.00",
+          "sort": 1200.0
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Month 3",
+          "sort": 11.0
+        }
+      ],
+      "counted": true
+    }
+  ],
+  "totals": {
+    "count": 8,
+    "units": 8.0,
+    "money": 16224.89,
+    "text": "8 jobs at firms, paying $16,224.89 in wages this month.",
+    "cells": [
+      {
+        "text": "8"
+      },
+      {
+        "text": ""
+      },
+      {
+        "text": "$16,224.89",
+        "sort": 16224.89
+      },
+      {
+        "text": ""
+      },
+      {
+        "text": ""
+      }
+    ]
+  },
+  "aggregate": {
+    "traded": 8.0,
+    "text": "In a firm job: 8"
+  },
+  "reconciles": true
+}

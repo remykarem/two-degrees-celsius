@@ -415,6 +415,20 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ("markets", <crate::markets::MarketShort as TS>::decl(&cfg)),
         ("markets", <crate::markets::MarketDriver as TS>::decl(&cfg)),
         ("markets", <crate::markets::MarketView as TS>::decl(&cfg)),
+        (
+            "markets",
+            <crate::markets::TradeColumnDef as TS>::decl(&cfg),
+        ),
+        ("markets", <crate::markets::TradesDef as TS>::decl(&cfg)),
+        ("markets", <crate::markets::TradesCommon as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradesQuery as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradeColumn as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradeCell as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradeRow as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradePeriod as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradeTotals as TS>::decl(&cfg)),
+        ("trades", <crate::trades::TradeAggregate as TS>::decl(&cfg)),
+        ("trades", <crate::trades::MarketTrades as TS>::decl(&cfg)),
     ]
 }
 
