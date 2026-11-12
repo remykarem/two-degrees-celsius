@@ -1472,8 +1472,8 @@ fn baseline_b_sensible_play_with_adaptation_survives_in_most_seeds() {
         rs.iter().map(|r| (r.farm_min * 100.0).round() / 100.0).collect::<Vec<_>>()
     );
     assert!(
-        share(&rs, |r| matches!(r.outcome, Outcome::Survived)) >= 0.7,
-        "B (design requirement, causal model section 9) wins in at least 70% of seeds"
+        share(&rs, |r| matches!(r.outcome, Outcome::Survived)) >= 0.9,
+        "B (design requirement, causal model section 9) wins in at least 90% of seeds (measured 20 of 20)"
     );
     assert!(
         share(&rs, |r| r.exhausted_tick.is_none()) >= 0.9,
@@ -1485,7 +1485,7 @@ fn baseline_b_sensible_play_with_adaptation_survives_in_most_seeds() {
     // 30% (measured: 7% to 12% in 20 seeds). Still a win in every seed, but a thin margin
     // (docs/balance-backlog.md); `budget_b0` was not retuned.
     assert!(
-        (0.05..=0.45).contains(&left),
+        (0.05..=0.20).contains(&left),
         "B keeps a carbon margin at the end: {left}"
     );
     assert!(
@@ -1508,7 +1508,15 @@ fn baseline_e_adaptation_only_fails_in_most_seeds() {
         rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
         median(rs.iter().map(|r| r.budget_left_share).collect())
     );
-    assert!(share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.7);
+    assert!(
+        share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.9,
+        "E fails in at least 90% of seeds (measured 20 of 20)"
+    );
+    let left = median(rs.iter().map(|r| r.budget_left_share).collect());
+    assert!(
+        left < -0.2,
+        "E overshoots the budget clearly (measured -0.58): {left}"
+    );
 }
 
 /// Baseline F: renewables only (two plants, then both fossil plants closed). HONEST RESULT: this
@@ -1534,7 +1542,7 @@ fn baseline_f_renewables_only_is_clearly_worse_than_b_but_often_survives() {
     // Shop from defaulting, see docs/tuning-log.md "Town v7"), and renewables alone now survive
     // in every seed (measured 1.00, was 0.65). That is a worse answer to "one tool must not be
     // enough" (known-issues WN-1); the assertion pins only that F is no better than B.
-    assert!(fs >= 0.4, "F survival share {fs} (measured 1.00)");
+    assert!(fs >= 0.85, "F survival share {fs} (measured 1.00)");
     assert!(
         bs >= fs,
         "B ({bs}) must be at least as good as renewables alone ({fs})"
@@ -1550,7 +1558,10 @@ fn baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds() {
         "C: loss ticks {:?}",
         rs.iter().map(|r| r.loss_tick).collect::<Vec<_>>()
     );
-    assert!(share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 84)) >= 0.7);
+    assert!(
+        share(&rs, |r| r.loss_tick.is_some_and(|t| t <= 75)) >= 0.9,
+        "C loses by tick 75 in at least 90% of seeds (measured 66 to 67)"
+    );
     let a = runs(&Plan::default());
     let a_exh = median(
         a.iter()
@@ -1577,7 +1588,15 @@ fn baseline_d_carbon_tax_alone_fails_in_most_seeds() {
         rs.iter().map(|r| r.outcome).collect::<Vec<_>>(),
         median(rs.iter().map(|r| r.budget_left_share).collect())
     );
-    assert!(share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.7);
+    assert!(
+        share(&rs, |r| !matches!(r.outcome, Outcome::Survived)) >= 0.9,
+        "D fails in at least 90% of seeds (measured 20 of 20)"
+    );
+    let left = median(rs.iter().map(|r| r.budget_left_share).collect());
+    assert!(
+        left < -0.2,
+        "D overshoots the budget clearly (measured -0.52): {left}"
+    );
 }
 
 #[test]
