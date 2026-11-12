@@ -100,7 +100,7 @@ pub struct ActionInfo {
 
 /// Game calendar (contract section 9, item 8).
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameCalendar {
     pub start_year: i32,
@@ -109,6 +109,9 @@ pub struct GameCalendar {
     pub turns_per_year: u32,
     /// Contract v1.8: monthly ticks in a turn (`params.run.ticks_per_turn`).
     pub ticks_per_turn: u32,
+    /// Contract v2.5: the warming limit in degrees C that the carbon budget stands for
+    /// (`nature.t_limit`).
+    pub temperature_limit: f64,
 }
 
 // ---- the content file ----
@@ -360,6 +363,7 @@ impl Meta {
                 last_turn: params.run.turns,
                 turns_per_year: 12 / tpt,
                 ticks_per_turn: tpt,
+                temperature_limit: params.nature.t_limit,
             },
         })
     }

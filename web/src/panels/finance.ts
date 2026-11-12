@@ -164,5 +164,5 @@ export function circularFlow(f: FinanceView, ticksPerTurn: number): { edges: Flo
     { from: 'bank', to: 'households', amount: incomeOf(a.householdIncome, 'interest') * k, label: 'interest' },
     { from: 'government', to: 'bank', amount: a.govSpending.interest * k, label: 'debt interest' },
   ];
-  return { edges: edges.filter((e) => e.amount > 0.5), approx: !q };
+  return { edges: edges.filter((e) => e.amount > bands().flowMinUsd), approx: !q };
 }

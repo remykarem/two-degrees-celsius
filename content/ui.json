@@ -57,7 +57,10 @@
     "budgetMeter": {
       "low": 0.25,
       "high": 0.5
-    }
+    },
+    "estimateToleranceShare": 0.01,
+    "estimateToleranceUsd": 1.0,
+    "flowMinUsd": 0.5
   },
   "lever_groups": [
     {
@@ -90,6 +93,11 @@
     }
   ],
   "text": {
+    "rules": {
+      "budget_spent": "The carbon budget is spent.",
+      "budget_hint": "Share of the carbon budget still unspent. Hitting zero ends the game.",
+      "start_pitch": "Run a small town for {years} years and keep it under a {limit} C carbon budget. Choose how time works."
+    },
     "metric_hint": {
       "gdp": "Total output, adjusted for prices",
       "gpi": "Genuine progress: output adjusted for social and environmental costs",

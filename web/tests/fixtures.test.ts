@@ -211,7 +211,7 @@ describe('real fixtures against contract v1.4 (finance, energy, ledgers)', () =>
   it('finance and energy have the declared sections', () => {
     expect(conforms(fin as unknown as Record<string, unknown>, { government: 'object', bank: 'object', households: 'object', firms: 'object', money: 'object', priceIndex: 'number', wageShare: 'number', profitShare: 'number', quarter: 'object' }, 'finance')).toEqual([]);
     expect(typeof fin.bank.capitalRatioLimit).toBe('number');
-    expect(conforms(en as unknown as Record<string, unknown>, { unit: 'string', supply: 'array', demand: 'object', served: 'number', intensity: 'number', renewableShare: 'number', emissionsByPlant: 'array' }, 'energy')).toEqual([]);
+    expect(conforms(en as unknown as Record<string, unknown>, { unit: 'string', supply: 'array', demand: 'object', served: 'number', rationed: 'boolean', intensity: 'number', renewableShare: 'number', emissionsByPlant: 'array' }, 'energy')).toEqual([]);
     expect(() => plantRows(en)).not.toThrow();
     expect(unitLabel(en)).toMatch(/\//);
   });

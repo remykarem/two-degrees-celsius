@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 7;
 
-export const CONTRACT_VERSION = "2.4";
+export const CONTRACT_VERSION = "2.5";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -61,7 +61,16 @@ communityCap: number,
 /**
  * The bank counts as "tight" below `limit x` this factor.
  */
-capitalTightFactor: number, budgetMeter: MeterBands, };
+capitalTightFactor: number, budgetMeter: MeterBands, 
+/**
+ * A building's table cost and the simulation's preview disagree when they differ by more
+ * than this share (and by more than `estimate_tolerance_usd`).
+ */
+estimateToleranceShare: number, estimateToleranceUsd: number, 
+/**
+ * Money flows below this many dollars a year are left out of the flow diagram.
+ */
+flowMinUsd: number, };
 
 export type BankFinance = { equity: number, loans: number, deposits: number, capitalRatio: number, capitalRatioLimit: number, headroom: number, defaultRate: number, interestIncome: number, };
 
@@ -226,7 +235,11 @@ export type EnergyDemand = { firms: number, households: number, total: number, }
 
 export type EnergyPlantKind = "fossil" | "renewable";
 
-export type EnergyView = { unit: string, supply: Array<PlantSupply>, demand: EnergyDemand, served: number, intensity: number, renewableShare: number, emissionsByPlant: Array<PlantEmissions>, };
+export type EnergyView = { unit: string, supply: Array<PlantSupply>, demand: EnergyDemand, served: number, 
+/**
+ * True when `served` is below the rationing threshold (`energy.rationed_below`).
+ */
+rationed: boolean, intensity: number, renewableShare: number, emissionsByPlant: Array<PlantEmissions>, };
 
 export type EntityAxis = "actor" | "facility" | "stock";
 
@@ -331,7 +344,12 @@ export type GameCalendar = { startYear: number, firstTurn: number, lastTurn: num
 /**
  * Contract v1.8: monthly ticks in a turn (`params.run.ticks_per_turn`).
  */
-ticksPerTurn: number, };
+ticksPerTurn: number, 
+/**
+ * Contract v2.5: the warming limit in degrees C that the carbon budget stands for
+ * (`nature.t_limit`).
+ */
+temperatureLimit: number, };
 
 export type GameOutcome = PlainOutcome | { collapse: CollapseReason, };
 

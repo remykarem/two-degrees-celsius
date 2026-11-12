@@ -24,6 +24,7 @@
     "total": 7.654035336092704
   },
   "served": 1.0,
+  "rationed": false,
   "intensity": 1.0,
   "renewableShare": 0.0,
   "emissionsByPlant": [

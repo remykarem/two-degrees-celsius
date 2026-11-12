@@ -544,3 +544,14 @@ The state hash is unchanged (`cargo run -p sim-cli --example statehash` identica
 - **Model side (output only):** `TraceRecord::Trade {sector, buyer, firm, units, unitPrice, amount}` from `goods`; the wire `TraceRecord` omits it. Jobs, homes and loans are read from the state after each tick and the tick's hire/fire events and `CreditDecision` records.
 - **Storage:** in the ledger store (not `State`): full rows for the last `ledger.detail_turns` turns, older turns summed per (market, parties, note, turn). Saved with the game.
 - New fixtures `docs/fixtures/market-trades-food.json` and `market-trades-labour.json`; golden `catalog` and `export` hashes and the recording re-blessed on purpose.
+
+## 25. Contract v2.5: rules moved out of the web (ADDITIVE, `SCHEMA_VERSION` stays 7)
+
+Review finding F8 (thin renderer). The state hash is unchanged.
+
+- `energy.rationed: bool`: true when `served` is below `params.energy.rationed_below` (0.999). Computed by `sim_model::production::is_rationed`, the same rule that fires the `ElectricityRationed` event. The web no longer holds the threshold.
+- `game.temperatureLimit: number`: `params.nature.t_limit` (1.5), for the New game text. Years are `lastTurn / turnsPerYear`.
+- Catalog `bands.estimateToleranceShare`, `bands.estimateToleranceUsd` (when the table cost and the preview disagree) and `bands.flowMinUsd` (smallest money flow drawn in the flow diagram), from `content/ui.json`.
+- Catalog `text.rules.budget_spent`, `text.rules.budget_hint`, `text.rules.start_pitch` (`{years}`, `{limit}`).
+- The web reads the budget total from `breakdowns.emissions.cumulative.budget` instead of dividing `remainingBudget` by `budgetShare`.
+- `CONTRACT_VERSION` ("2.5") and `SCHEMA_VERSION` are emitted into the generated `web/src/contract/generated.ts`; the wasm loader compares against them (F7).

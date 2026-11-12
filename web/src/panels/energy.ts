@@ -28,7 +28,7 @@ export const plantAt = (snap: Snapshot, t: { x: number; y: number }): PlantRow |
 export interface EnergyBalance { capacity: number; demand: number; served: number; servedText: string; rationed: boolean; warning: string | null; firmsShare: number; householdsShare: number }
 export function energyBalance(e: EnergyView): EnergyBalance {
   const capacity = e.supply.reduce((a, p) => a + p.capacity, 0);
-  const rationed = e.served < 0.999;
+  const rationed = e.rationed;
   return {
     capacity, demand: e.demand.total, served: e.served, servedText: pctWith(e.served, `supply ${energyText(capacity, e)}, demand ${energyText(e.demand.total, e)}`), rationed,
     warning: rationed ? `Demand is above capacity: only ${pct(e.served)} of it is served (supply ${energyText(capacity, e)} against demand ${energyText(e.demand.total, e)}). Firms and households are being rationed. Build a plant.` : null,

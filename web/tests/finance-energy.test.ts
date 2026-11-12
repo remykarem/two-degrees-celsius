@@ -113,10 +113,10 @@ describe('energy formatting and the unit label', () => {
     expect(plantAt(played, { x: 0, y: 0 })).toBeUndefined();
   });
   it('warns when demand exceeds capacity and not otherwise', () => {
-    const calm = energyBalance({ ...e, served: 1 });
+    const calm = energyBalance({ ...e, served: 1, rationed: false });
     expect(calm.rationed).toBe(false);
     expect(calm.warning).toBeNull();
-    const short: EnergyView = { ...e, served: 0.82 };
+    const short: EnergyView = { ...e, served: 0.82, rationed: true };
     const b = energyBalance(short);
     expect(b.rationed).toBe(true);
     expect(b.warning).toMatch(/82%/);

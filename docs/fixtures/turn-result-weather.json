@@ -2767,7 +2767,8 @@
       "firstTurn": 1,
       "lastTurn": 40,
       "turnsPerYear": 4,
-      "ticksPerTurn": 3
+      "ticksPerTurn": 3,
+      "temperatureLimit": 1.5
     },
     "turn": 9,
     "tick": 24,
@@ -5035,6 +5036,7 @@
         "total": 8.022079615936644
       },
       "served": 1.0,
+      "rationed": false,
       "intensity": 1.0,
       "renewableShare": 0.0,
       "emissionsByPlant": [

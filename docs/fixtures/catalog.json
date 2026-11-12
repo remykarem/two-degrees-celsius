@@ -87,7 +87,10 @@
     "budgetMeter": {
       "low": 0.25,
       "high": 0.5
-    }
+    },
+    "estimateToleranceShare": 0.01,
+    "estimateToleranceUsd": 1.0,
+    "flowMinUsd": 0.5
   },
   "leverGroups": [
     {
@@ -353,6 +356,11 @@
       "household": "Household",
       "state": "State",
       "workers": "Workers"
+    },
+    "rules": {
+      "budget_hint": "Share of the carbon budget still unspent. Hitting zero ends the game.",
+      "budget_spent": "The carbon budget is spent.",
+      "start_pitch": "Run a small town for {years} years and keep it under a {limit} C carbon budget. Choose how time works."
     },
     "story": {
       "budget_full": "and to {full} left, where stress is at its fullest, by {when}",

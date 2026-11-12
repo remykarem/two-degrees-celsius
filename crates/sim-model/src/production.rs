@@ -20,6 +20,12 @@ pub fn climate_factor(s: &State, p: &Params) -> f64 {
     1.0 - p.production.climate_damage * ratio * ratio
 }
 
+/// Electricity is rationed when the served share is below `energy.rationed_below`. The event and
+/// the `rationed` flag on the wire both use this, so the web never repeats the threshold.
+pub fn is_rationed(p: &Params, served: f64) -> bool {
+    served < p.energy.rationed_below
+}
+
 /// Output of `tfp x K^alpha x L^beta` for capital `k` and effective labour `l`.
 pub fn cobb_douglas(p: &Params, tfp: f64, k: f64, l: f64) -> f64 {
     tfp * pow(k, p.production.alpha_k) * pow(l, p.production.beta_n)
@@ -146,7 +152,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     } else {
         1.0
     };
-    if served < p.energy.rationed_below {
+    if is_rationed(p, served) {
         d.events.push(Event::ElectricityRationed {
             served: Rate(served),
         });

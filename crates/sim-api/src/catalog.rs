@@ -67,6 +67,12 @@ pub struct Bands {
     /// The bank counts as "tight" below `limit x` this factor.
     pub capital_tight_factor: f64,
     pub budget_meter: MeterBands,
+    /// A building's table cost and the simulation's preview disagree when they differ by more
+    /// than this share (and by more than `estimate_tolerance_usd`).
+    pub estimate_tolerance_share: f64,
+    pub estimate_tolerance_usd: f64,
+    /// Money flows below this many dollars a year are left out of the flow diagram.
+    pub flow_min_usd: f64,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]

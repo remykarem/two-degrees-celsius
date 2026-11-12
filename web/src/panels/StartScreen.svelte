@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { secondsPerQuarter, type GameMode, type Game, type Live } from '../store';
+  import { fill, secondsPerQuarter, text, type GameMode, type Game, type Live } from '../store';
   import { Button, Modal } from '../ui-kit';
   import { setUi, ui } from './ui';
 
@@ -10,6 +10,10 @@
   // svelte-ignore state_referenced_locally
   const spq = Math.round(secondsPerQuarter(live.config));
   const ok = $derived($gs.liveAvailable);
+  const pitch = $derived.by(() => {
+    const g = $gs.snapshot?.game;
+    return g ? fill(text('rules', 'start_pitch'), { years: g.lastTurn / g.turnsPerYear, limit: g.temperatureLimit }) : '';
+  });
   function start() {
     live.newGame($ui.nextSeed ?? seed, mode);
     setUi({ startOpen: false, nextSeed: null });
@@ -18,7 +22,7 @@
 
 {#if $ui.startOpen}
   <Modal title="New game" size="md" dismissible={false}>
-    <p>Run a small town for 10 years and keep it under a 1.5 C carbon budget. Choose how time works.</p>
+    <p>{pitch}</p>
     <div class="choices" role="radiogroup" aria-label="Game mode">
       <label class="opt" class:on={mode === 'relaxed'}>
         <input type="radio" name="mode" value="relaxed" checked={mode === 'relaxed'} onchange={() => (mode = 'relaxed')} data-autofocus />

@@ -1,5 +1,6 @@
 import type { ActionInfo, CostModel, LeverInfo } from '../contract';
 import { formatLever } from './format';
+import { bands } from '../store/catalog';
 
 /** Cost model of an action: the wire may omit it; place, remove and switch all have unit 1 and min size 1, so base cost is the cost. */
 export const actionModel = (a: ActionInfo): CostModel => a.costModel ?? { base: a.baseCostPc, unit: 1, minSize: 1 };
@@ -36,5 +37,8 @@ export function costLine(a: ActionInfo, est: { pc: number; money: number; leadTi
   return { pc: estimatePc(actionModel(a), 1), money: a.moneyCost, leadTime: a.leadTime, exact: false };
 }
 
-/** True when the action table disagrees with the simulation's price by more than 1% (a content or wire bug worth surfacing). */
-export const estimateDisagrees = (a: ActionInfo, est: { money: number } | null) => !!est && Math.abs(est.money - a.moneyCost) > Math.max(1, Math.abs(est.money) * 0.01);
+/** True when the action table disagrees with the simulation's price by more than the tolerance in the catalog bands (a content or wire bug worth surfacing). */
+export const estimateDisagrees = (a: ActionInfo, est: { money: number } | null) => {
+  const b = bands();
+  return !!est && Math.abs(est.money - a.moneyCost) > Math.max(b.estimateToleranceUsd, Math.abs(est.money) * b.estimateToleranceShare);
+};

@@ -543,6 +543,8 @@ pub struct EnergyView {
     pub supply: Vec<PlantSupply>,
     pub demand: EnergyDemand,
     pub served: f64,
+    /// True when `served` is below the rationing threshold (`energy.rationed_below`).
+    pub rationed: bool,
     pub intensity: f64,
     pub renewable_share: f64,
     pub emissions_by_plant: Vec<PlantEmissions>,
@@ -584,6 +586,7 @@ pub fn energy(sim: &Sim, unit: &str) -> EnergyView {
             total,
         },
         served: s.energy.served.0,
+        rationed: sim_model::production::is_rationed(&sim.params, s.energy.served.0),
         intensity: s.energy.grid_intensity.0,
         renewable_share: if fossil + renewable > 0.0 {
             // `+ 0.0` turns an empty sum's -0.0 into 0.0 (it would print as "-0.0").

@@ -118,7 +118,7 @@ export function runway(s: Snapshot): Runway | null {
   const remaining = s.indicators.remainingBudget;
   const r = s.breakdowns?.emissions.runway;
   if (!r || (share <= 0 && remaining <= 0)) return null;
-  const total = share > 0 ? remaining / share : 0;
+  const total = s.breakdowns?.emissions.cumulative.budget ?? 0;
   const perTurn = r.perTurn, runOutTurn = r.runOutTurn ?? null;
   const lastTurn = s.game.lastTurn;
   const now = Math.min(s.turn, lastTurn + 1);
@@ -129,7 +129,7 @@ export function runway(s: Snapshot): Runway | null {
 }
 
 export function runwayText(r: Runway, label: (turn: number) => string): string {
-  if (r.remaining <= 0) return 'The carbon budget is spent.';
+  if (r.remaining <= 0) return text('rules', 'budget_spent');
   if (r.runOutTurn === null) return 'At the current rate emissions do not use up the budget.';
   const t = Math.ceil(r.runOutTurn);
   const when = label(Math.min(t, r.lastTurn));
