@@ -157,6 +157,13 @@
       "low_legitimacy_title": "Collapse warning: legitimacy is very low",
       "policy_blocked_title": "A policy was blocked"
     },
+    "ecology": {
+      "yield_best_line": "best possible regrowth",
+      "yield_chart_label": "Taken and regrown each month",
+      "yield_intro": "A shared stock (the commons, the forest) regrows a little every month. The most it can regrow in a month, at its best, is its maximum sustainable yield, and it regrows that much only when it is about half full. Taking more than it regrows shrinks the stock, which shrinks the regrowth, which makes the same harvest even further over the line.",
+      "yield_stock_label": "Stock",
+      "yield_title": "Taken against regrown"
+    },
     "estate": {
       "does_not_work": "Does not work: outside the labour force",
       "employer_line": "Employer: {label} (household)",
@@ -1091,8 +1098,7 @@
           },
           "uncounted": "",
           "totals": "{units} units bought for {money} {span} (purchases: {count})."
-        },
-        "link": null
+        }
       },
       {
         "id": "services",
@@ -1188,8 +1194,7 @@
           },
           "uncounted": "",
           "totals": "{units} units bought for {money} {span} (purchases: {count})."
-        },
-        "link": null
+        }
       },
       {
         "id": "labour",
@@ -1283,8 +1288,7 @@
           },
           "uncounted": "Not counted in the total: jobs lost, open jobs, the government's job guarantee and household staff. The labour card counts only jobs at firms.",
           "totals": "{count} jobs at firms, paying {money} in wages {span}."
-        },
-        "link": null
+        }
       },
       {
         "id": "housing",
@@ -1378,8 +1382,7 @@
           },
           "uncounted": "Not counted in the total: empty homes and households that have no home. The housing card counts homes lived in.",
           "totals": "{count} homes lived in, with {money} in rent {span}."
-        },
-        "link": null
+        }
       },
       {
         "id": "credit",
@@ -1474,8 +1477,7 @@
           },
           "uncounted": "",
           "totals": "{money} lent {span} (loan requests: {count})."
-        },
-        "link": null
+        }
       },
       {
         "id": "energy",
@@ -1520,8 +1522,7 @@
           "notes": {},
           "uncounted": "",
           "totals": ""
-        },
-        "link": null
+        }
       }
     ]
   },

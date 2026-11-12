@@ -7213,7 +7213,7 @@
           "id": "open",
           "label": "Open to everyone",
           "mechanism": "market",
-          "mechanism_label": "Market"
+          "mechanismLabel": "Market"
         },
         "reconciles": true
       },

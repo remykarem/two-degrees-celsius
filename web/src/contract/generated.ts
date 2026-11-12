@@ -1248,7 +1248,7 @@ id: string, label: string,
 /**
  * An id of the Markets mechanisms (`market`, `commons`, ...).
  */
-mechanism: string, mechanism_label: string, };
+mechanism: string, mechanismLabel: string, };
 
 export type YieldView = { id: string, title: string, blurb: string, formula: string, 
 /**

@@ -33,6 +33,8 @@ export interface MarketCardModel {
   chips: ShortChip[];
   mechanisms: MechanismTag[];
   how: string;
+  /** A link to another view from the card's content (the food card to Ecology): the wire's label and anchor. */
+  link: { label: string; target: string } | null;
   reconciles: boolean;
 }
 export interface MarketGroupModel { id: string; label: string; blurb: string; cards: MarketCardModel[] }
@@ -70,7 +72,7 @@ export function cardModel(m: MarketView, mechanisms: MechanismDef[]): MarketCard
     note: m.priceNote,
     series: m.priceSeries,
     drivers: m.drivers, chips: m.short.map((s) => ({ id: s.id, label: s.label, selection: selectionOf(s) })),
-    mechanisms: tags(m, mechanisms), how: m.howId, reconciles: m.reconciles,
+    mechanisms: tags(m, mechanisms), how: m.howId, link: m.link ?? null, reconciles: m.reconciles,
   };
 }
 

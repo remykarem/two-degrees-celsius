@@ -93,6 +93,13 @@
     }
   ],
   "text": {
+    "ecology": {
+      "yield_intro": "A shared stock (the commons, the forest) regrows a little every month. The most it can regrow in a month, at its best, is its maximum sustainable yield, and it regrows that much only when it is about half full. Taking more than it regrows shrinks the stock, which shrinks the regrowth, which makes the same harvest even further over the line.",
+      "yield_title": "Taken against regrown",
+      "yield_chart_label": "Taken and regrown each month",
+      "yield_best_line": "best possible regrowth",
+      "yield_stock_label": "Stock"
+    },
     "rules": {
       "budget_spent": "The carbon budget is spent.",
       "budget_hint": "Share of the carbon budget still unspent. Hitting zero ends the game.",
@@ -1322,7 +1329,6 @@
         "enclosed": { "label": "Fenced off by an owner who charges a fee", "mechanism": "market" },
         "community": { "label": "Run by the community under an agreed limit", "mechanism": "commons" }
       },
-      "intro": "A shared stock (the commons, the forest) regrows a little every month. The most it can regrow in a month, at its best, is its maximum sustainable yield, and it regrows that much only when it is about half full. Taking more than it regrows shrinks the stock, which shrinks the regrowth, which makes the same harvest even further over the line.",
       "ratio": "{taken} taken for every {regrown} regrown",
       "ratioNone": "Taken, but nothing regrows",
       "overYes": "Yes: more is taken than regrows",

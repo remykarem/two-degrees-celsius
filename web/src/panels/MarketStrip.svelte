@@ -4,6 +4,7 @@
   import HowButton from './HowButton.svelte';
   import Sparkline from './Sparkline.svelte';
   import { text } from '../store/catalog';
+  import { openAnchor } from './ui';
 
   /** One market, always the same anatomy: price, two bars on one scale (wanted, available), the gap in words, who is short. Everything comes from the wire. */
   let { card, game, noSeries }: { card: MarketCardModel; game: Game; noSeries: string } = $props();
@@ -64,9 +65,14 @@
       {/each}
     </div>
   {/if}
+  {#if card.link}
+    {@const link = card.link}
+    <button type="button" class="seealso" data-testid="market-link-{card.id}" onclick={() => openAnchor(link.target)}>{link.label}</button>
+  {/if}
 </article>
 
 <style>
+  .seealso { border: 0; background: transparent; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 4px 0 0; font: inherit; font-size: 12px; }
   .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; margin: 8px 0; background: var(--surface); }
   .card[data-reconciles='false'] { border-color: var(--bad); }
   header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

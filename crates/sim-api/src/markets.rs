@@ -199,7 +199,7 @@ pub struct MarketDef {
     /// Contract v2.4: the list of trades behind this market.
     pub trades: TradesDef,
     /// Contract v2.6: an optional link to another view (the food card links to the Ecology view).
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub link: Option<MarketLink>,
 }

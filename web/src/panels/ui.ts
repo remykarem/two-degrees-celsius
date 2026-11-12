@@ -20,15 +20,19 @@ export interface PanelUi {
   explorer: { topic: string | null } | null;
   /** Another panel asked for the Markets view (a sub-view of the Economy tab); the metrics panel consumes it. */
   marketsRequested: boolean;
+  /** Another panel asked for a metrics tab by its wire anchor (`panel:ecology`); the metrics panel consumes it. */
+  tabRequested: string | null;
 }
 
 const KEY = 'panels.coach.done';
 const read = (): boolean => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
 export const markCoachDone = () => { try { localStorage.setItem(KEY, '1'); } catch { /* storage may be unavailable */ } };
 
-export const ui = writable<PanelUi>({ drawerOpen: false, focusLever: null, systemModal: false, why: null, coachStep: 0, coachDone: read(), startOpen: false, nextSeed: null, breakdown: null, explorer: null, marketsRequested: false });
+export const ui = writable<PanelUi>({ drawerOpen: false, focusLever: null, systemModal: false, why: null, coachStep: 0, coachDone: read(), startOpen: false, nextSeed: null, breakdown: null, explorer: null, marketsRequested: false, tabRequested: null });
 export const setUi = (p: Partial<PanelUi>) => ui.set({ ...ui.get(), ...p });
 export const openBreakdown = (key: BreakdownKey) => setUi({ breakdown: key });
 export const openExplorer = (topic: string | null = null) => setUi({ explorer: { topic }, breakdown: null });
 /** Show the Markets view (Economy tab, Markets segment). */
 export const openMarkets = () => setUi({ marketsRequested: true });
+/** Follow a link's wire target (`panel:ecology`) to the metrics tab it names. */
+export const openAnchor = (target: string) => setUi({ tabRequested: target });

@@ -60,7 +60,6 @@ pub struct YieldWords {
     /// What each access rule is called, and which coordination mechanism it leans on (an id of
     /// `markets.mechanisms`; open and enclosed are a market, community is community rules).
     pub access: BTreeMap<String, YieldAccess>,
-    pub intro: String,
     /// `{taken}`, `{regrown}`.
     pub ratio: String,
     pub ratio_none: String,
@@ -206,6 +205,7 @@ pub struct YieldView {
 /// The access rule of the commons and its mechanism tag.
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct YieldTag {
     /// `open`, `enclosed` or `community`.
     pub id: String,

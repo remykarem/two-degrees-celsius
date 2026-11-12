@@ -15,6 +15,7 @@
   import EmissionsPanel from './EmissionsPanel.svelte';
   import EstateCard from './EstateCard.svelte';
   import WhoHoldsWhat from './WhoHoldsWhat.svelte';
+  import YieldPanel from './YieldPanel.svelte';
   import HowButton from './HowButton.svelte';
   import IndustryPanel from './IndustryPanel.svelte';
   import MarketsPanel from './MarketsPanel.svelte';
@@ -31,6 +32,15 @@
   // Another panel can ask for the Markets view (`openMarkets`); the request is consumed here.
   $effect(() => {
     if ($ui.marketsRequested) { tab = 'Economy'; economyView = 'markets'; setUi({ marketsRequested: false }); }
+  });
+
+  // A link elsewhere (the Markets food card) can ask for a tab by its wire anchor, `panel:<tab>`.
+  $effect(() => {
+    const t = $ui.tabRequested;
+    if (!t) return;
+    const hit = METRIC_TABS.find((x) => `panel:${x.toLowerCase()}` === t);
+    if (hit) tab = hit;
+    setUi({ tabRequested: null });
   });
 
   const snap = $derived($gs.snapshot);
@@ -98,6 +108,7 @@
         <ClimateGauge {game} />
         <section class="health" aria-label="Health of the land"><h3>Health of the land</h3><HealthMeters {game} /></section>
         <EnergyPanel {game} />
+        <YieldPanel {snap} />
         <EmissionsPanel {snap} />
       {/if}
 
