@@ -88,6 +88,9 @@ function safe<T>(f: () => Result<T>): Result<T> {
   try { return f(); } catch (e) { return { ok: false, error: { code: 'internal', message: e instanceof Error ? e.message : String(e) } }; }
 }
 
+/** A wasm trap (the module stays dead) comes back as this code; the UI must offer a reload, not "try again". */
+export const isFatalError = (e: { code: string }) => e.code === 'wasm_panic';
+
 export function createGame(port: SimPort): Game {
   // The UI catalog (bands, labels, explanatory text) comes from the simulation; without it there is no text to show.
   const cat = safe(() => port.catalog());
