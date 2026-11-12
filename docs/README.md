@@ -26,6 +26,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `docs/features/daily-ticks.md` | DRAFT, DEFERRED (daily ticks; was v5, v6, v8, then v9) | Planning the time-step refactor |
 | `docs/features/markets.md` | APPROVED, scope A IMPLEMENTED (Markets view: supply, demand, price and who is short per market, information only; contract v2.3, `docs/snapshot-contract.md` section 23, recipe `docs/how-to.md` section 24). Scope B, demand-responsive goods prices, not approved | Planning the Markets tab or price rules |
 | `docs/features/market-trades.md` | APPROVED, IMPLEMENTED (the list of individual trades behind each market, "See all trades"; contract v2.4, `docs/snapshot-contract.md` section 24, recipe `docs/how-to.md` section 25) | Planning market or ledger drill-downs |
+| `docs/features/inflation.md` | DRAFT for review (measure inflation: CPI from household spending, real wages, and an exact cost pass-through decomposition; output only; contract v2.5 proposed) | Planning inflation, price indices or real wages |
 | `docs/features/registry-driven-sim.md` | PARKED (idea: the simulation reads `content/entities.json`, not only Rust enums) | Planning the sim/registry link |
 | **Naming convention** | From now on new work is a named **feature**, not a version: `docs/features/<name>.md`. The old `town-vN.md` files stay as history | Starting new work |
 | How to make a change | `docs/how-to.md` |
