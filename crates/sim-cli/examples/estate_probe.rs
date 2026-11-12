@@ -1,3 +1,5 @@
+//! Developer probe for the Town v7 balance log (see docs/how-to.md section 18). Not shipped, not tested:
+//! it unwraps freely and exits with a panic on bad input, which is fine for a throwaway measuring tool.
 use sim_engine::Plan;
 use sim_params::{ContentJson, Params};
 use sim_types::*;

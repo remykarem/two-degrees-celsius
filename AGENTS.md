@@ -29,7 +29,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `docs/` | Design docs, contract, notes, generated `fixtures/`. Index: `docs/README.md` | n/a |
 | `web/` | Browser app (Vite, Svelte 5, Three.js, Vitest). See below | n/a |
 | `.github/workflows/` | `ci.yml` (every pull request): `cargo fmt --check`, clippy `-D warnings`, `cargo test --workspace`, contract and recording staleness, build wasm, web test/typecheck/lint/build; plus a non-blocking `audit` job (`npm audit --omit=dev`, `cargo audit`). `deploy.yml` (push to `main`): cargo test, build wasm, web test/typecheck/lint, build, publish `web/dist` to `gh-pages` (only this job has `contents: write`). Actions are pinned to commit SHAs; `rust-toolchain.toml` pins the compiler | n/a |
-| `.idea/` | IDE files. Tracked by accident. Never edit or commit | n/a |
+| `.idea/` | IDE files. Untracked and git-ignored (they were tracked by accident until the review fix); never commit | n/a |
 
 `web/src` folders:
 
