@@ -24,7 +24,7 @@ Entry point for coding agents and contributors. Read this, then `docs/README.md`
 | `crates/sim-api` | Wire layer: contract JSON shapes, validation, frames, history, save/load, fixtures; source of the generated TS contract (feature `ts`, ts-rs) | engine and below. No model logic, no I/O |
 | `crates/sim-wasm` | wasm-bindgen shell over `sim_api::Api` (`WasmSim`). `unsafe_code = "deny"` (macro output) | sim-api, sim-params |
 | `crates/sim-cli` | Headless runner (`sim`) and `examples/debug.rs` | engine, params, metrics, types |
-| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `entities.json` (the entity registry: kinds, labels, roles, tiles, scene models, inspector sections; contract v2.1), `ui.json` (UI bands, authored UI text, system cards; Town v6; net worth statement lines and holders, Town v8), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
+| `content/` | All numbers: `params.json`, `initial_town.json`, `levers.json` (lever and action metadata), `entities.json` (the entity registry: kinds, labels, roles, tiles, scene models, inspector sections; contract v2.1), `ui.json` (UI bands, authored UI text, system cards; Town v6; net worth statement lines and holders, Town v8; the Markets view cards, mechanisms and cause words, contract v2.3), `assumptions.json` (explorer), `systems/*.json`, `scenarios/*.json` (turn plans) | n/a |
 | `tests/` | `scenarios.rs` (engine suite, run as a test of sim-engine), `golden/` (wasm golden), `snapshots/` (insta) | n/a |
 | `docs/` | Design docs, contract, notes, generated `fixtures/`. Index: `docs/README.md` | n/a |
 | `web/` | Browser app (Vite, Svelte 5, Three.js, Vitest). See below | n/a |
@@ -88,7 +88,7 @@ Web (in `web/`; needs Node 22+ and `npm install` once):
 
 ```
 npm run dev                # http://localhost:5173 ; wasm when built, else the recorded demo; ?sim=replay forces the demo, ?seed=42
-npm test                   # vitest (41 files, 448 tests plus 12 skipped at last count with the wasm package built; without it the files that need the real sim are left out and the run says so)
+npm test                   # vitest (43 files, 468 tests plus 12 skipped at last count with the wasm package built; without it the files that need the real sim are left out and the run says so)
 npm run typecheck          # svelte-check + tsc
 npm run lint               # eslint src tests (includes the module boundaries)
 npm run build              # production bundle in web/dist (VITE_BASE sets the base path)

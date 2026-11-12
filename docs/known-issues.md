@@ -182,3 +182,15 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 | NW-2 | Holder groups give each household one group by priority (estate, bank owner, firm owner, other). The bank's owner also owns the Factory, so that household shows under "The bank's owner", not "Firm owners". Workers' cooperatives count their members' households as firm owners | by design | `crates/sim-api/src/networth.rs::holder_of` |
 | NW-3 | The reconcile flags compare floats with a tolerance of 1e-9 of the largest magnitude (the Rust lines are summed in a different order from `household_wealth`, which is left untouched so the state hash does not move). A bank with negative equity shows as a negative asset line | open, cosmetic | `crates/sim-api/tests/networth.rs` |
 | NW-4 | The recorded demo shows the statement because the recording was regenerated; the person card there divides by people like the live game. Not tested in a browser beyond the 1440 wide screenshots listed in the v8 final report | info | `web/playwright/v8-shots.mjs` |
+
+## Markets view (contract v2.3)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| MK-1 | Goods and services prices ignore excess demand (cost-plus): a shortage never raises a price and a glut never lowers one. The cards say so in words. Making prices respond (feature scope B) would change the balance and is not approved | by design | `docs/features/markets.md` section 4 |
+| MK-2 | `markets` is empty until the first month has been played, so the Markets view shows a note on a fresh game and on the first screen of a loaded game before a month is played | by design | `crates/sim-api/src/markets.rs` `build` |
+| MK-3 | The doc's revenue identity (`revenue = sum(sold x price)`) is not on the cards: the firm price has moved by the end of the tick and revenue is floored to cents per firm, so it cannot be recomputed exactly. The reconcile flag checks traced sales against each shop's stored `sales_units` and shelves against end inventory instead | open, cosmetic | `docs/features/markets.md` section 3.4 |
+| MK-4 | A goods "wanted" figure is `sold + max(wanted - sold, 0)` per shop. When a second-pass reroute lets one shop sell more than its first-pass share, the shown demand is the bought amount, not the first-pass wish | by design | `crates/sim-api/src/markets.rs` `goods_raw` |
+| MK-5 | A card is one month (the latest tick). The sparkline is one point per finished turn (plus the open month in live mode). No unmet or unsold series is kept | open | `crates/sim-api/src/history.rs` |
+| MK-6 | The Markets view is read-only: nothing on a card changes the simulation. There is no centrally planned system, so shortages and queues under planning are not shown (a later feature) | by design | `docs/features/markets.md` pedagogy section |
+| MK-7 | Playwright checks (`web/playwright/markets-shots.mjs`) were run at 1440 wide on the real sim and the recorded demo; no mobile or narrow layout was checked, and the panel is narrow (about 290 px), so cards are tall | info | `web/playwright/markets-shots.mjs` |
