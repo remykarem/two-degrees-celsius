@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.4.1";
+export const CONTRACT_VERSION = "2.6.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
