@@ -247,7 +247,7 @@ A system is a config that overrides parameters and some rule choices.
 | Debt → interest → need for profit → more investment | **Reinforcing** | Growth imperative. |
 | Capital income grows, wage share falls → demand falls → layoffs | **Balancing (crisis)** | Inequality starves demand. |
 | Unemployment → lower wages → higher profit → hiring | **Balancing** | Reserve army. Fixes jobs, deepens inequality. |
-| Scarcity → price rises → demand falls | **Balancing** | Normal market. |
+| Scarcity → price rises → demand falls | **Balancing** | NOT MODELLED. Goods prices are cost-plus and ignore excess demand (`docs/known-issues.md` MK-1): a shortage never raises a price. This loop does not exist in the game as built. |
 | Over-harvest → commons collapses → farm output falls | **Balancing (late)** | Tragedy of the commons. |
 | Emissions → budget used → climate damage → lower farm output and wellbeing | **Reinforcing** | Overshoot starts hurting before game over. |
 | Carbon price → green investment → lower ι → fewer emissions | **Balancing** | The main lever, weakened by lobbying. |
