@@ -1,4 +1,4 @@
-# Town v10 design: daily ticks (draft, deferred)
+# Feature: daily ticks (draft, deferred; was "Town v10")
 
 Status: **DRAFT, DEFERRED, nothing implemented.** Renumbered from v5 to v6, to v8, to v9, then to v10 (v6 became the DRY/thin-renderer cleanup, `docs/town-v6.md`), when the user chose to make v5 an information release (`docs/town-v5.md`) first. Start only after v5 and a playtest. Numbers are placeholders. **[DECIDED]** = from the user; **[PROPOSED]** = my choices.
 

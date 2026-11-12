@@ -1,4 +1,4 @@
-# Town v9 design: GST and state ownership (draft for review)
+# Feature: GST and state ownership (draft for review; was "Town v9")
 
 Status: **DRAFT, nothing implemented.** Renumbered from v8 to v9 when Town v8 became the net worth breakdown (`docs/town-v8.md`). The user answered **yes to both** (model a GST/VAT; model state shareholding) **and yes to a separate release**. Starts after the v5.1/v5.2 transparency pass (`docs/town-v5.md` sections 10 and 11) and a playtest. Numbers are placeholders. **[PROPOSED]** items are my defaults for the user to change.
 
