@@ -157,6 +157,7 @@ Household emissions: E_h = weight · footprint_pc,  footprint_pc = f0 + f1 · co
 Budget remaining:  B_rem = B0 − CE
 Displayed warming: T = T0 + (1.5 − T0) · CE / B0       (T0 ≈ 1.3 [P]; hits 1.5 exactly when the budget is gone)
 ```
+- **Food cap (farm-from-nature, `docs/features/farm-from-nature.md`):** food output is capped by last month's stocks, `Y <= kappa_c x C_prev / (farm_harvest_commons x commons_harvest)` and `Y <= kappa_f x F_prev / farm_harvest_forest` (access rule: enclosed raises the take cap by the enclosure multiplier, community takes the smaller of the cap and `cap x MSY`; lever 0 means no commons limit). Several farms share the cap pro rata. No `State` field; the cap is a pure function of the stocks (`sim_metrics::food_cap`). Sign: a lower stock, a higher lever or a drought at a low stock gives less food next month. It does not bind in the starting town or the no-action run.
 - **Tragedy of the commons:** maximum sustainable yield is `g_c · Cmax / 4`. Harvest above that and the stock collapses (the logistic curve turns negative below a threshold).
 - **Access rule for the commons (player-set):** *open* (anyone, depletes), *enclosed* (one owner, who harvests for profit, often more), *community-managed* (cap set to sustainable yield, needs coordination cost).
 - **Climate feedback (v1, simple):** `farm A *= (1 − 0.3 · (CE/B0)²)`; wellbeing environment term falls (S10). This makes overshoot hurt even before the game ends.

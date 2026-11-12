@@ -34,6 +34,10 @@ Domain terms first, then code terms. Values are the current content defaults (ch
 | **Plant (power plant)** | Say "power plant" in player text. A power plant tile: fossil (emits `delivered x factor_fossil`) or renewable (emits 0). $40,000 each. Capacity 5 per plant |
 | **Electricity rationing** | If demand exceeds total plant capacity, all output is scaled by `supply / demand` (`electricity_rationed` event) |
 | **Firm slots** | Factory (goods), Farm (food), Shop (services), plus one dormant slot a household may found a firm in (`MAX_FIRMS` = 4) |
+| **Maximum sustainable yield** | The most a regrowing stock can regrow in a month at its best (`growth rate x maximum / 4`, reached at half the maximum). Take no more than that every month and the stock can hold steady. It is not the same as 'sustainable at this stock': what counts is what the stock regrows at its present size |
+| **Overshoot** | Taking more than a stock regrows. The stock shrinks, so it regrows less, so the same harvest is further over the line; below a low level it collapses. The Ecology view shows 'taken for every 1 regrown' and the months left at the present rate |
+| **Tragedy of the commons** | Nobody owns a shared stock, so each user gains from taking more and all share the loss. Here the Farm does not choose to over-take: demand and the harvest lever set it |
+| **Food cap (nature cap)** | The most food the Farm can grow next month, set by last month's commons and forest stocks (a set share of the stock over the stock taken per unit of food). It does not bind in the starting town; a run-down commons makes a real food shortage, not a price rise |
 | **Forest, commons** | Natural stocks. Commons access is `open` or `community`; can be enclosed or collapse |
 | **Budget b0** | `nature.budget_b0`, the town's cumulative-emissions allowance: 900 t. Exhausting it ends the game (`budget_exhausted`) |
 | **Legitimacy** | 0..1 public support. Moves with wellbeing, unemployment, Gini, debt, bailouts. Scales PC regeneration. Zero = collapse |

@@ -210,3 +210,17 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 | TR-6 | Energy has no list: the model keeps one town-wide supply and demand | by design | `content/ui.json` |
 | TR-7 | Every reply repeats the column help and intro text (about 5 KB of 5 to 8 KB); not worth a separate catalog call yet | open | `crates/sim-api/src/trades.rs` |
 | TR-8 | Checked in a browser at 1440 wide only, on seed 7 (real sim) and the recorded demo; no narrow layout, no screen reader | info | `web/playwright/trades-shots.mjs` |
+
+## Farm from nature (contract v2.6)
+
+| # | Issue | Status | Source |
+|---|---|---|---|
+| FN-1 | Baseline C (commons_harvest 3.0 from turn 1) now binds the food cap: its budget run-out turn moved from a median 22.33 to 25.67 (loss tick 66 to 67 became 74 to 78), because less food means less output and fewer emissions. The doc's pass bar was within half a turn for A, C, D, E; A, D, E and B, F are unchanged to the digit. Reported, not retuned; the C test pins were relaxed (loss by tick 84; no more than 9 ticks later than A) | open, a design decision | `tests/scenarios.rs`, `docs/tuning-log.md` |
+| FN-2 | Q5: the enclosure fee ($2 per unit taken, `Purpose::CommonsFee`) is not in the Farm's unit cost (`goods.rs`: unit cost = wage bill plus carbon cost over output), so enclosure raises the food price only through the cost route when output falls. Left as is per the doc's default | open | `crates/sim-model/src/goods.rs` |
+| FN-3 | With `farm_cap_share_commons` 0.009 below the commons growth rate 0.02, an open commons cannot be driven to collapse by harvest alone: the cap holds the take to 0.9 of the stock a month, and the stock settles near 550 at a heavy lever, with less food. Collapse needs drought on top. The months-to-collapse row can therefore read in the hundreds. This is the doc's calibration (non-binding at the start), not a bug | by design | `content/params.json` |
+| FN-4 | Enclosed access multiplies the take cap by 1.5 as the doc's formula says, and the harvest per unit of food is also multiplied by 1.5 in `nature.rs`, so the stock falls faster than the cap suggests | by design | `crates/sim-metrics/src/lib.rs` |
+| FN-5 | The forest rows do not show "cleared by building": `pending_clearing` is reset each tick and not stored, so it cannot be rebuilt from the end state (it would need a trace record and a schema bump) | open | `crates/sim-api/src/yields.rs` |
+| FN-6 | The series is per turn (history), not monthly as the doc says; the first point (turn 0) has taken 0 because no month has been played | by design | `crates/sim-api/src/yields.rs` |
+| FN-7 | The `commons_limit` chip is forward-looking (next month's cap against this month's output), not "the cap bound this month" (that needs a trace record) | by design | `crates/sim-api/src/markets.rs` |
+| FN-8 | Verdict sentences say "1 units of commons" when the figure is 1 (row units are singular-aware, the verdict templates are not); the real-sim screenshots were taken at 1440 wide on seed 42 only | open | `content/ui.json` |
+

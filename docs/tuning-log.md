@@ -274,3 +274,22 @@ Request: give weather its own stream (state schema 5), so player actions that ch
 | F renewables | 20 of 20; no run-out; 0.09 | 20 of 20; no run-out; 0.09 |
 
 Result: stability and winnability are unchanged within seed noise (win rates identical, run-out turns within one third of a turn). F still survives in every seed (known-issues WN-1, unchanged).
+
+## Farm from nature: the food cap (feature `docs/features/farm-from-nature.md`)
+
+Request: cap the Farm's food output by last month's commons and forest stocks (Schaefer-style, `kappa_c` 0.009, `kappa_f` 0.0026, no new State field), so a run-down commons causes a real food shortage. Baselines A to F, 20 seeds, `cargo run --release -p sim-cli --example baselines`, before and after:
+
+| Script | Before (survived; budget run-out turn median; budget left median) | After |
+|---|---|---|
+| A none | 0 of 20 (budget); 24.00; -0.58 | 0 of 20 (budget); 24.00; -0.58 |
+| B sensible | 20 of 20; no run-out; 0.10 | 20 of 20; no run-out; 0.10 |
+| C neglect | 0 of 20 (budget); 22.33; -0.68 | 0 of 20 (budget); **25.67**; -0.53 |
+| D carbon tax | 0 of 20 (budget); 24.67; -0.52 | 0 of 20 (budget); 24.67; -0.52 |
+| E adaptation | 0 of 20 (budget); 24.00; -0.58 | 0 of 20 (budget); 24.00; -0.58 |
+| F renewables | 20 of 20; no run-out; 0.09 | 20 of 20; no run-out; 0.09 |
+
+Result: A, B, D, E, F identical to the digit (the cap never binds). C moves about 3.3 turns later (loss tick 66 to 67 became 74 to 78): its commons_harvest of 3.0 now binds the cap from the first months, food output and so emissions fall. B and F winnability and stability are unchanged (20 of 20). C is still lost in 20 of 20 seeds. This is a consequence of the feature, not a tune: nothing was retuned; the two pins in `baseline_c_neglect_fails_inside_the_budget_horizon_in_most_seeds` were relaxed and the shift is in known-issues FN-1 for a design decision.
+
+State hash (`cargo run -p sim-cli --example statehash`, 3 seeds x 6 scripts x 40 turns): every row is byte-identical except `baseline_c_neglect.json` seeds 7, 42 and 99, which differ from the second turn hash on (the lever takes effect after its lead time, then the cap binds). Rows for no plan, B and the other scripts are identical: the cap does not bind. Tests `farm_cap_does_not_bind_in_the_first_year_at_default_settings` and `..._in_the_no_action_run_over_ten_years` prove it by comparing the whole state against a run with a cap that cannot bind (seeds 1, 2, 3, 7, 42 for 120 ticks).
+
+Not measured: the commons and forest at turns 0, 10, 20, 30 and 40 for each baseline (the doc's optional probe).

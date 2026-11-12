@@ -1,6 +1,6 @@
 # Feature: the farm draws its food from nature (overconsumption and the tragedy of the commons)
 
-Status: **APPROVED by the user with ALL open-question defaults (Q1 to Q8); being implemented.** Written from the code at commit `30b7959`. Where this doc and the code disagree, the code wins (`docs/README.md`).
+Status: **APPROVED by the user with ALL open-question defaults (Q1 to Q8); IMPLEMENTED (see section 9, As built).** Written from the code at commit `30b7959`. Where this doc and the code disagree, the code wins (`docs/README.md`).
 
 The game is pedagogical and the user is new to economics: this feature exists so the player can SEE overconsumption (taking from a shared stock faster than it regrows) and the tragedy of the commons. Thin UI / DRY applies (`docs/town-v6.md`): every number, sentence and flag below is computed in Rust or authored in `content/`; the web only renders.
 
@@ -138,3 +138,13 @@ Mechanism tags: the commons card is tagged "community rules" or "market" per acc
 - Q6. Headline for the breakdown: taken per regrown or months to collapse? **Default: taken per regrown; months to collapse as a row.**
 - Q7. One-month lag (`C_prev`) acceptable? **Default: yes.**
 - Q8. Should the demo/recording or the Markets food card warn before the cap binds? **Default: yes, a "past the sustainable line" flag in Ecology only; no popup.**
+
+## 9. As built
+
+Status: IMPLEMENTED (contract v2.6, `docs/snapshot-contract.md` section 27, recipe `docs/how-to.md` section 26). Where the build differs from the draft:
+
+- Cap: `sim_metrics::food_cap`, applied in `production::run` to the farm's output before rationing; several farms share it pro rata; no State field, no schema bump. `kappa_c` 0.009 and `kappa_f` 0.0026 (forest non-binding above about 400). `capacity()` itself is unchanged so hiring does not see the cap.
+- Q5: checked in the code: the enclosure fee is NOT in the Farm's unit cost (`goods.rs`). Left as is (default), listed as known-issues FN-2.
+- Wire: its own `natureYield` list (not a `Breakdown`, because the headline is a worded ratio and the parts reconcile to the monthly change); series per turn from the history (optional history fields); the forest rows omit "cleared by building" (FN-5); the Markets signal is a chip `commons_limit` (forward-looking) plus a `link` on the card, not a price cause word (the cause word is a per-market price rule).
+- Calibration result: baselines A, B, D, E, F unchanged; C moves 3.3 turns later (`docs/tuning-log.md`, FN-1).
+- Finding: with `kappa_c` below the growth rate an open commons cannot collapse from harvest alone (FN-3).
