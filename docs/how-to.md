@@ -49,12 +49,28 @@ Rust
 - Effect on activation and construction: `crates/sim-engine/src/commands.rs` (pushes to `gov.pending_build`), `crates/sim-model/src/government.rs` (build and upkeep, near the `InfraKind::Road` arm). Gameplay effect: `crates/sim-model/src/space.rs` (commute routes use roads).
 - `crates/sim-api`: `keys.rs` (`InfraKind`, `TileKindKey`, `ALL`), `snapshot.rs::buildings` (summary count), `meta.rs` (`place:<kind>` money cost; needs `content/levers.json` action entries with `tileRule`).
 
-Web
-- `web/src/contract/index.ts`: `InfraKind`, `TileKind`, `ActionKey` types.
-- Palette: `store/palette.ts` builds entries from `actions()` automatically; label/hint text in `panels/BuildPalette.svelte`; `store/game.ts` (the kind guard near line 185) and `store/map.ts`; inspector text in `panels/inspect.ts`.
-- Scene: `scene/models.ts` (mesh/model id), `scene/entities.ts` (`Building` type, planning), `scene/entityLayer.ts`; roads have their own `scene/roads.ts` and ghost handling in `scene/index.ts`.
+Registry and content (since the entity registry, contract v2.1)
+- `content/entities.json`: one entry for the kind (labels, roles, tiles, `infraKind`, scene model id, inspector sections). `crates/sim-api/src/entities.rs` (`ALL_TILE_KINDS`) and `industry.rs` (infra key): `cargo test -p sim-api --test entities` fails until every tile and infra kind is claimed once.
+- `content/ui.json` for any label or text, `content/assumptions.json` for the "why" explainer (section 15).
+
+Web (mostly nothing: labels, palette entries and inspector sections come from the registry and `actions()`)
+- Types are generated: run `cd web && npm run gen:contract` (section 19); do not edit `contract/generated.ts` by hand.
+- Optional: a mesh in `scene/models.ts` (section 11; until then it draws as a plain block). Roads have their own `scene/roads.ts` and ghost handling in `scene/index.ts`.
+- Only if the kind needs a new tile-to-selection route: `store/map.ts` (known-issues PC-9).
 
 Tests: roads tests in `tests/scenarios.rs` (`roads_are_built_on_their_tile_cost_money_and_need_upkeep`, `a_road_shortens_a_commute_...`), `tests/golden/plan.json` (add the kind to the golden plan only if you want it covered), `scene-roads.test.ts`. Regenerate per section 0. Update `docs/snapshot-contract.md` section 11 if the wire changed.
+
+### 2a. Worked plan: a new public facility (for example a sanitation facility)
+
+Overall idea: build in layers from the inside out and check each before the next. Keep the **rule** bespoke and everything else data-driven.
+
+1. **Decide the effect first, in one sentence.** "Part of the whole system" means it must move at least one existing quantity (wellbeing, a nature stock, money, emissions, a hazard). Name that quantity and the direction (add a sign test, `docs/causal-model.md` section 5).
+2. **Content and types:** `content/params.json` (cost, upkeep, lead time, effect size, `turn.levers.place_<kind>` and `remove_<kind>`), `content/entities.json`, `content/levers.json`, `content/ui.json`; `enums.rs`, `sim-params`, `sim-api/src/{keys,entities,industry,meta}.rs`, `sim-engine/src/turn.rs` (section 2 and 21 above). Run `cargo test --workspace`; the registry test tells you what you missed.
+3. **The rule:** one pure function in the right `crates/sim-model/src/<system>.rs`, reading the facility count or coverage from `State` (pattern: `weather.rs::covered` for the fire station). Numbers in `params.json`, a unit test and a sign test. If it emits, add an emission source (section 20); if it costs money each month, add it to the government upkeep sum; if it adds a new kind of money movement, section 12a.
+4. **Explain it:** an assumptions topic (section 15) and, if it feeds a headline metric, a breakdown (section 14), so the player can see why.
+5. **Regenerate in this order:** `cd web && npm run gen:contract`; `cargo run -p sim-api --example fixtures`; `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden`; `npm run build:wasm`; `npm run gen:recording` (section 0). The state hash changes the moment a rule is added; that is expected.
+6. **Play it, then run the baselines** (A to F, 20 seeds): a new rule shifts the economy; log changes in `docs/tuning-log.md` and `docs/balance-backlog.md`.
+7. **Web:** usually nothing. Add a mesh (section 11) when you want it to look right, and check the inspector, the palette and the Industry or Society views in the real sim.
 
 ## 3. Add an event type
 
