@@ -3,7 +3,7 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
   import { catalog, hasCatalog } from '../store/catalog';
@@ -72,19 +72,25 @@
               {#if kind}
                 <h3 class="t" data-testid="agent-title">{kind.title} <span class="badge {kind.actor}" title="Agents decide; the others follow fixed rules or chance">{ACTOR_WORD[kind.actor]}</span></h3>
                 <p>{kind.summary}</p>
-                <h4>Decides</h4><ul class="lo">{#each kind.decides as d (d)}<li>{d}</li>{/each}</ul>
+                {#if kind.decides.length}<h4>Decides</h4><ul class="lo">{#each kind.decides as d (d)}<li>{d}</li>{/each}</ul>{/if}
                 <h4>Observes</h4><ul class="lo">{#each kind.observes as d (d)}<li>{d}</li>{/each}</ul>
                 {#if kindDecisions.length}
                   <h4>Decisions (generated from the code)</h4>
                   <ul class="lo" data-testid="agent-decisions">
                     {#each kindDecisions as d (d.id)}
                       {@const l = decisionLine(d)}
+                      {@const cl = causalLines(catalog().causal, d.id)}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
+                        <p class="dim edge" data-testid="agent-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} decisions back): {u.causes}.</p>{/each}
                         <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}.{d.params.length ? ` Parameters: ${d.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
                   </ul>
                 {/if}
-                <h4>Rule</h4><p class="formula" data-testid="agent-rule">{kind.rule}</p>
+                {#if kind.notes.length}
+                  <h4>Not decided here</h4><ul class="lo" data-testid="agent-notes">{#each kind.notes as n (n)}<li>{n}</li>{/each}</ul>
+                {/if}
+                <h4>Rule</h4><p class="formula" style="white-space: pre-line" data-testid="agent-rule">{kind.rule}</p>
                 {#if kind.variants.length}
                   <h4>Classes (worked out from what a household owns and earns, never chosen)</h4>
                   <table><tbody>{#each kind.variants as v (v.id)}<tr><th scope="row">{v.label}<span class="path">{v.rule}</span></th><td>{v.decision}</td></tr>{/each}</tbody></table>
@@ -150,6 +156,6 @@
   .formula { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); padding: 6px 8px; border-radius: var(--radius); } .dim { color: var(--text-dim); font-size: 12px; }
   .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px solid var(--border); border-radius: 8px; padding: 1px 6px; vertical-align: middle; } .badge.placeholder { color: var(--warn); border-color: var(--warn); } .badge.tuned { color: var(--good); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; } th[scope='row'] { text-align: left; font-weight: 400; } .path { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); } .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
-  .exm { margin: 3px 0; } .lo { margin: 0; padding-left: 18px; } .rel { border: 1px solid var(--border); background: var(--surface); color: var(--accent); border-radius: 10px; padding: 1px 8px; margin-right: 4px; cursor: pointer; font: inherit; font-size: 12px; }
+  .exm { margin: 3px 0; } .lo { margin: 0; padding-left: 18px; } .edge { margin: 2px 0; } .rel { border: 1px solid var(--border); background: var(--surface); color: var(--accent); border-radius: 10px; padding: 1px 8px; margin-right: 4px; cursor: pointer; font: inherit; font-size: 12px; }
   @media (max-width: 900px) { .ex { grid-template-columns: 1fr; } nav { max-height: 24vh; } }
 </style>

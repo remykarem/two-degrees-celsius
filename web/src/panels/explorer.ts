@@ -1,4 +1,4 @@
-import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, DecisionInfo, Distribution, Snapshot } from '../contract';
+import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, DecisionInfo, Distribution, Snapshot } from '../contract';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
 export const GROUP_LABEL: Record<AssumptionGroup, string> = {
@@ -65,3 +65,40 @@ export const decisionLine = (d: DecisionInfo): { inputs: string; title: string; 
   title: d.title,
   outputs: d.outputs.map((q) => q.label).join(', '),
 });
+
+// ---- Causal edges (contract v2.8): read from catalog.causal, nothing here names a decision or a quantity ----
+
+export interface CausalLines {
+  /** What the decision reads, each marked when it is a starting point or an end point (and with a loop mark when the decision also writes it). */
+  inputs: string;
+  /** What it writes, marked the same way. */
+  outputs: string;
+  /** For each written quantity nobody else reads (an outcome): the quantities that can change it, nearest first. */
+  upstream: { label: string; causes: string }[];
+}
+
+/** The loop mark for a quantity a decision both reads and writes. */
+export const LOOP_MARK = '\u21ba';
+
+/** The causal lines of one decision, from the `reads` and `writes` edges that touch its node. */
+export function causalLines(g: CausalGraph, decisionId: string): CausalLines {
+  const byId = new Map(g.nodes.map((n) => [n.id, n]));
+  const roleLabel = (n: CausalNode): string => g.roles.find((r) => r.id === n.role)?.label ?? '';
+  const name = (n: CausalNode, loop: boolean): string => {
+    const mark = n.kind === 'quantity' && (n.role === 'source' || n.role === 'sink') ? ` (${roleLabel(n)})` : '';
+    return `${n.label}${mark}${loop ? ` ${LOOP_MARK}` : ''}`;
+  };
+  const me = `decision:${decisionId}`;
+  const ins = g.edges.filter((e) => e.kind === 'reads' && e.to === me);
+  const outs = g.edges.filter((e) => e.kind === 'writes' && e.from === me);
+  const label = (id: string, loop: boolean): string => {
+    const n = byId.get(id);
+    return n ? name(n, loop) : id;
+  };
+  const upstream = outs.flatMap((e) => {
+    const n = byId.get(e.to);
+    if (!n || n.role !== 'sink' || n.upstream.length === 0) return [];
+    return [{ label: n.label, causes: n.upstream.map((u) => byId.get(u)?.label ?? u).join(', ') }];
+  });
+  return { inputs: ins.map((e) => label(e.from, e.selfLoop)).join(', '), outputs: outs.map((e) => label(e.to, e.selfLoop)).join(', '), upstream };
+}

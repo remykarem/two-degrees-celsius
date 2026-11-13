@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { AgentsCatalog, DecisionInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, decisionLine, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, causalLines, decisionLine, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -85,6 +85,29 @@ describe('decisions (generated from the registry)', () => {
     const all = [...catalog.decisions, made];
     expect(decisionsOfKind(all, 'weather').map((d) => d.id)).toEqual(['weather_made_up']);
     expect(decisionLine(decisionsOfKind(all, 'weather')[0]!)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
+  });
+});
+
+describe('causal edges (contract v2.8)', () => {
+  const g = ok(sim.catalog()).causal;
+  it('the real graph reads as plain lines: starting points, end points, loops and upstream causes', () => {
+    const wage = causalLines(g, 'firm_wage');
+    expect(wage.inputs).toContain('Unemployment (Starting point)');
+    const leg = causalLines(g, 'government_legitimacy');
+    expect(leg.inputs).toContain('Legitimacy');
+    expect(leg.inputs).toContain(LOOP_MARK);
+    expect(leg.outputs).toContain(`Legitimacy (End point) ${LOOP_MARK}`);
+    expect(leg.upstream.map((u) => u.label)).toContain('Legitimacy');
+    expect(leg.upstream[0]!.causes.length).toBeGreaterThan(0);
+  });
+  it('a made-up decision and edges added only in the catalogue appear with no web change', () => {
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream });
+    const made = {
+      ...g,
+      nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
+      edges: [...g.edges, { from: 'quantity:qa', to: 'decision:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'decision:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
+    };
+    expect(causalLines(made, 'made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
   });
 });
 

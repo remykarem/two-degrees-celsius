@@ -1,5 +1,5 @@
-// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Government, Estate and Nature on the real simulation:
-// the generated "Who decides" lines, the Decisions list (inputs -> decision -> outputs) and the live parameters (contract v2.7).
+// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Firms, Government, Estate, Nature and Lobbyists (no decisions) on the real simulation:
+// the generated "Who decides" lines, the Decisions list with its causal edge lines (contract v2.8), the "Not decided here" notes and the live parameters.
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
@@ -20,11 +20,15 @@ await page.getByRole('button', { name: 'Start game' }).click({ timeout: 1500 }).
 console.log('sim:', await page.evaluate(() => document.documentElement.dataset.sim));
 await page.getByTestId('how-it-works').click();
 await page.getByTestId('tab-agents').click();
-for (const [label, slug] of [['Government', 'government'], ['The estate and its pilot', 'estate'], ['Nature', 'nature']]) {
+for (const [label, slug] of [['Firms', 'firms'], ['Government', 'government'], ['The estate and its pilot', 'estate'], ['Nature', 'nature'], ['Lobbyists', 'lobbyists']]) {
   await page.getByRole('button', { name: label, exact: true }).first().click();
-  await page.waitForSelector('[data-testid=agent-decisions]');
+  await page.waitForSelector('[data-testid=agent-title]');
   console.log(`${slug} decisions:`, await page.getByTestId('agent-decision').evaluateAll((els) => els.map((e) => e.getAttribute('data-id'))));
+  console.log(`${slug} edges:`, await page.getByTestId('agent-edges').allInnerTexts());
+  console.log(`${slug} upstream:`, await page.getByTestId('agent-upstream').allInnerTexts());
+  console.log(`${slug} notes:`, await page.getByTestId('agent-notes').allInnerTexts());
   await page.screenshot({ path: `${out}/agents-${slug}.png` });
+  if (!(await page.getByTestId('agent-decision').count())) continue;
   await page.getByTestId('agent-decisions').scrollIntoViewIfNeeded();
   await page.getByTestId('agent-decision').first().locator('summary').click();
   await page.screenshot({ path: `${out}/agents-${slug}-decisions.png` });
