@@ -24,7 +24,7 @@ macro_rules! named_enum {
 }
 
 named_enum! {
-    /// Who makes a decision. Only `Firm` has registered decisions so far (stage 1, the labour pilot).
+    /// Who makes a decision. Firm, Household and Bank have registered decisions so far.
     pub enum OwnerKind {
         Firm => "firm",
         Household => "household",
@@ -47,6 +47,15 @@ named_enum! {
         FirmPayout => "firm_payout",
         FirmExit => "firm_exit",
         HouseholdFoundFirm => "household_found_firm",
+        HouseholdSpend => "household_spend",
+        HouseholdShop => "household_shop",
+        HouseholdLobby => "household_lobby",
+        FirmExpect => "firm_expect",
+        BankHeadroom => "bank_headroom",
+        BankLend => "bank_lend",
+        BankSpread => "bank_spread",
+        BankDividend => "bank_dividend",
+        BankRescue => "bank_rescue",
     }
 }
 
@@ -61,8 +70,17 @@ impl DecisionId {
             | DecisionId::FirmGreen
             | DecisionId::FirmCapex
             | DecisionId::FirmPayout
-            | DecisionId::FirmExit => OwnerKind::Firm,
-            DecisionId::HouseholdFoundFirm => OwnerKind::Household,
+            | DecisionId::FirmExit
+            | DecisionId::FirmExpect => OwnerKind::Firm,
+            DecisionId::HouseholdFoundFirm
+            | DecisionId::HouseholdSpend
+            | DecisionId::HouseholdShop
+            | DecisionId::HouseholdLobby => OwnerKind::Household,
+            DecisionId::BankHeadroom
+            | DecisionId::BankLend
+            | DecisionId::BankSpread
+            | DecisionId::BankDividend
+            | DecisionId::BankRescue => OwnerKind::Bank,
         }
     }
 }
@@ -122,6 +140,32 @@ named_enum! {
         BaseRate => "base_rate",
         RandomDraw => "random_draw",
         NewFirm => "new_firm",
+        Savings => "savings",
+        LastDisposable => "last_disposable",
+        NetWealth => "net_wealth",
+        FoodPrice => "food_price",
+        FoodNeed => "food_need",
+        HouseholdSize => "household_size",
+        SpendingPropensity => "spending_propensity",
+        WealthSpendingRate => "wealth_spending_rate",
+        ConsumptionBudget => "consumption_budget",
+        DemandUnits => "demand_units",
+        UnitsSold => "units_sold",
+        CapitalIncome => "capital_income",
+        CampaignCap => "campaign_cap",
+        LobbySpend => "lobby_spend",
+        BankEquity => "bank_equity",
+        BankLoans => "bank_loans",
+        BankDeposits => "bank_deposits",
+        CapitalRatio => "capital_ratio",
+        CreditHeadroom => "credit_headroom",
+        FirmAssets => "firm_assets",
+        LoanApproved => "loan_approved",
+        CreditSpreadAdd => "credit_spread_add",
+        BankDividend => "bank_dividend",
+        BailoutPolicy => "bailout_policy",
+        BankFailed => "bank_failed",
+        PolicyRate => "policy_rate",
     }
 }
 

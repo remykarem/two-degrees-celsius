@@ -80,7 +80,7 @@
                     {#each kindDecisions as d (d.id)}
                       {@const l = decisionLine(d)}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
-                        <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}. Parameters: {d.params.map((p) => p.label).join('; ')}.</p></details></li>
+                        <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}.{d.params.length ? ` Parameters: ${d.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
                   </ul>
                 {/if}

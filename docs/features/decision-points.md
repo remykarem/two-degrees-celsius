@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) and stage 2 (the firm decisions, in a re-scoped form: section 12) IMPLEMENTED; goods spending/shop, bank, government, estate, nature and lobbying decisions and the wire stage not started.** See sections 10, 11 and 12. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stages 1 (labour), 2 (firm decisions, section 12) and 3 (household and bank decisions, section 13) IMPLEMENTED; government, estate and nature decisions and the causal-edges wire stage not started.** See sections 10 to 13. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
@@ -22,11 +22,12 @@ Precedent already in the repo: `price_target` and `wage_step` are small `pub fn`
 | 6 | Firm | Green technology step | investment.rs:36-80 | footprint, carbon price (announced), revenue, cap, subsidy | `green_tech`, spend | `invest.green_payback_years`, `green_cost_share`, `green_max` | no |
 | 7 | Firm | Capex plan and loan request | investment.rs:85-100 | profit EMA, capital, expected sales, loan rate | `plan_invest`, `loan_request` | `invest.accelerator`, `max_invest_share`, `return_scale` | no |
 | 8 | Firm | Dividend payout | income.rs:85-100 | profit, cash, payroll, debt service | dividends | `payout_ratio` (system), `income.cash_reserve_months` | no |
-| 9 | Household | Spending split (food, goods, services) | goods.rs:255-273 | savings, last disposable, class, wealth | three budgets | `goods.propensity.*`, `food_need_units_pc`, `services_share` | no |
-| 10 | Household | Shop choice | goods.rs:23 (`allocate`) | stock, price per firm | budget split | `goods.price_elasticity` | yes (private) |
+| 9 | Household | Spending split (food, goods, services) | goods.rs `decide_spend` (was :255-273) | savings, last disposable, class, wealth | three budgets | `goods.propensity.*`, `food_need_units_pc`, `services_share` | no |
+| 10 | Household | Shop choice (also used by firms buying capital goods and the government) | goods.rs `decide_shop` (was private `allocate` :23) | stock, price per firm, the market's budget | units sold, demand units per firm | `goods.price_elasticity`, `min_price_usd` | yes (private) |
 | 11 | Household | Found a firm | class.rs:138-165 | savings, sector return, base rate, RNG | new firm | `class.mobility_rate`, `startup_cost_usd` | no |
-| 12 | Household (capital class) | Lobby spend | lobbying.rs:24-56 | capital income, `campaign_cap` | fund, `net_lobby` | `lobbying.spend_rate` | no (`expected_effective` yes) |
-| 13 | Bank | Lend to firms | credit.rs:229-250 | requests, headroom, leverage | approved loans | `credit.max_firm_leverage`, spread params | no |
+| 12 | Household (capital class) | Lobby spend | lobbying.rs `decide_lobby` | capital income, savings, `campaign_cap` | gift to the lobbyist household | `lobby.spend_rate` (the draft said `lobbying.spend_rate`; the section is `lobby`) | no (`expected_effective` yes) |
+| 13 | Bank | Lend to firms: headroom, approval, rate by leverage, payout, rescue (five decisions) | credit.rs `decide_headroom`, `decide_lend`, `decide_spread`, `decide_bank_dividend`, `decide_rescue` | requests, equity, loans, capital ratio, firm assets and debt | approved loans, loan rate, dividend, bailout or haircut | `credit.max_firm_leverage`, `spread_*`, `bank_*`, `bailout_target_ratio`, `haircut_margin` | no |
+| 13b | Firm | Expected sales (the demand -> hiring link) | goods.rs `decide_expect` | demand units, expected sales | expected sales | `labour.expected_smoothing` | no (missing from the draft inventory) |
 | 14 | Government | Fund spending (cash, tax, borrow) | government.rs:203-225 | cash, taxes, bank headroom | borrowing, pro-rata cuts | levers | no |
 | 15 | Government | Legitimacy | government.rs:251, `legitimacy_step` :271 | gaps, bailout | legitimacy | `gov.*` **(unverified names)** | step yes |
 | 16 | Estate | Flight, pilot dismissal | estate.rs:26-67 | RNG draw, pilot pay | flight, jet | `estate.flight_prob_monthly` | no |
@@ -225,3 +226,19 @@ The user re-scoped stages: stage 2 is now "the firm decisions" and the household
 **Gate results.** `statehash` (3 seeds x plans, 18 lines) byte-identical before and after (`cmp`); baselines A-F identical (`cmp` of the full output); `cargo test --workspace` 268 passed, 0 failed; fmt and clippy `-D warnings` clean. The golden changed only in the `agents` and `catalog` wire hashes; the per-turn state hashes did not change.
 
 **Not extracted here (see `docs/known-issues.md`).** Production and capacity are physics, not a decision (the capex plan is the capacity decision); `firm_exit` has no `State` builder (its view is built from this month's payments inside `credit::run`).
+
+## 13. As built (stage 3: household and bank decisions)
+
+**Inventory check.** The inventory (section 2) was right about what exists; line numbers had drifted, the lobbying parameter section is `lobby` (not `lobbying`), the bank "lend" row is really five decisions (room, approval, rate, payout, rescue), and the smoothing of demand into expected sales (the one edge from households to hiring) was missing: it is now `firm_expect`. Section 2 rows 9, 10, 12 and 13 are corrected in place.
+
+**Decisions registered (9 new, 18 in all).** `household_spend` (goods.rs: need first, then propensity and wealth, split into goods and services), `household_shop` (the stock and price weighted split; firms buying capital goods and the government use it too), `firm_expect` (smoothing of demand into expected sales), `household_lobby` (lobbying.rs), and the bank's `bank_headroom` (equity over the capital ratio, less loans), `bank_lend` (request within room and leverage cap), `bank_spread` (rate by leverage), `bank_dividend` (equity above the buffer), `bank_rescue` (bailout or depositor haircut when equity is negative). The graph now has `household_spend -> consumption budget -> household_shop -> demand -> firm_expect -> expected sales -> firm_hire`, and `firm_capex -> loan request -> bank_lend -> loan approved`, `bank_headroom -> lending room -> bank_lend`, `bank_spread -> loan rate -> firm_capex`.
+
+**New `QuantityId`s (26).** savings, last_disposable, net_wealth, food_price, food_need, household_size, spending_propensity, wealth_spending_rate, consumption_budget, demand_units, units_sold, capital_income, campaign_cap, lobby_spend, bank_equity, bank_loans, bank_deposits, capital_ratio, credit_headroom, firm_assets, loan_approved, credit_spread_add, bank_dividend, policy_rate, bailout_policy, bank_failed. (`base_rate` stays the founder's cost of borrowing; the bank's input is `policy_rate`.) The system's extra credit spread (`cfg`) is an input quantity, like the stage-2 settings.
+
+**Content.** Owner row `bank` -> Agents kind `bank` in `content/decisions.json`; 9 decision entries, 26 quantity entries, 16 parameter entries. The hand-written decides, observes and params of the Households and Bank kinds, the expected-smoothing parameter of Firms, and the lobbying line and `lobby.spend_rate` of Lobbyists were removed from `content/assumptions.json` (the Lobbyists kind keeps one line pointing to Households).
+
+**Conventions added** (how-to section 27, step 4b): a list decision borrows slices through `ShopInputs`/`ShopView`; class-dependent parameters are chosen by the builder and enter as quantities; a not-applicable factor is exactly 0.0 or 1.0; `run` keeps the bank's running equity, loans and headroom and passes them to the builders.
+
+**Gate results.** `statehash` (18 lines) byte-identical (`cmp`); baselines A-F identical; `cargo test --workspace` 277 passed, 0 failed; fmt and clippy `-D warnings` clean; web tests, typecheck, lint, build, check:contract (no wire type changed) and check:recording pass. The golden changed only in the `agents` and `catalog` hashes. The builder gate gained a bank-with-negative-equity variant; `household_spend` declares what `household_wealth` reads (`WEALTH`).
+
+**Not extracted (see `docs/known-issues.md` DP-5 to DP-9).** `excess_demand` (beside expected sales), the household loan and deposit interest and the government's debt service (mechanics), the `apportion` of a firm's revenue to buyers, and the accounting of a default.

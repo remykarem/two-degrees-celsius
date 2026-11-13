@@ -48,13 +48,208 @@ pub fn decide_exit(v: &ExitView, cp: &CreditParams) -> ExitChoice {
     }
 }
 
+// ---- Decisions of the bank: how much it can lend, to whom, at what rate, and what it pays out ----
+
+pub const BANK_HEADROOM: DecisionSpec = DecisionSpec {
+    id: D::BankHeadroom,
+    system: SystemId::Credit,
+    inputs: &[Q::BankEquity, Q::BankLoans, Q::CapitalRatio],
+    outputs: &[Q::CreditHeadroom],
+    params: &[],
+    rule: "capital_ratio_limit",
+};
+
+/// The bank's position after this month's repayments, defaults and any rescue (`run` keeps the
+/// running figures), and the minimum capital ratio the policy sets.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HeadroomView {
+    pub bank_equity: Cents,
+    pub bank_loans: Cents,
+    pub capital_ratio: f64,
+}
+
+pub fn headroom_view(s: &State, equity: Cents, loans: Cents) -> HeadroomView {
+    HeadroomView {
+        bank_equity: equity,
+        bank_loans: loans,
+        capital_ratio: s.policy.bank_capital_ratio.0,
+    }
+}
+
+/// How many more dollars the bank may lend: equity divided by the required ratio, less what it
+/// has already lent (never negative).
+pub fn decide_headroom(v: &HeadroomView) -> Cents {
+    let max_loans = if v.capital_ratio > 0.0 {
+        v.bank_equity.max(Cents::ZERO).scale(1.0 / v.capital_ratio)
+    } else {
+        Cents::ZERO
+    };
+    (max_loans - v.bank_loans).max(Cents::ZERO)
+}
+
+pub const BANK_LEND: DecisionSpec = DecisionSpec {
+    id: D::BankLend,
+    system: SystemId::Credit,
+    inputs: &[Q::LoanRequest, Q::CreditHeadroom, Q::FirmAssets, Q::Debt],
+    outputs: &[Q::LoanApproved],
+    params: &["credit.max_firm_leverage"],
+    rule: "headroom_and_leverage_cap",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LendView {
+    pub loan_request: Cents,
+    /// What the bank has left to lend this month (falls as loans are approved).
+    pub credit_headroom: Cents,
+    /// Cents: capital at its price plus cash.
+    pub firm_assets: f64,
+    pub debt: Cents,
+}
+
+/// A firm's assets in cents: capital at the price of capital, plus cash.
+pub fn firm_assets(p: &Params, f: &Firm, cash: Cents) -> f64 {
+    f.capital.0 * (p.invest.capital_price_usd * 100.0) + cash.as_f64()
+}
+
+/// `credit_headroom`, the firm's `debt` and `cash` after this month's payments are the bank's
+/// running figures that `run` passes in.
+pub fn lend_view(p: &Params, f: &Firm, headroom: Cents, debt: Cents, cash: Cents) -> LendView {
+    LendView {
+        loan_request: f.loan_request,
+        credit_headroom: headroom,
+        firm_assets: firm_assets(p, f, cash),
+        debt,
+    }
+}
+
+/// Approve the request up to the bank's headroom and up to the firm's leverage cap.
+pub fn decide_lend(v: &LendView, cp: &CreditParams) -> Cents {
+    let lev_cap = Cents::from_f64((cp.max_firm_leverage * v.firm_assets).max(0.0)) - v.debt;
+    v.loan_request
+        .min(v.credit_headroom)
+        .min(lev_cap.max(Cents::ZERO))
+        .max(Cents::ZERO)
+}
+
+pub const BANK_SPREAD: DecisionSpec = DecisionSpec {
+    id: D::BankSpread,
+    system: SystemId::Credit,
+    inputs: &[Q::PolicyRate, Q::Debt, Q::FirmAssets, Q::CreditSpreadAdd],
+    outputs: &[Q::LoanRate],
+    params: &["credit.spread_base", "credit.spread_leverage"],
+    rule: "base_plus_leverage_spread",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SpreadView {
+    pub base_rate: f64,
+    /// The firm's debt after this month's new loan.
+    pub debt: Cents,
+    pub firm_assets: f64,
+    /// The economic system's extra spread (a system setting, not a parameter).
+    pub credit_spread_add: f64,
+}
+
+pub fn spread_view(s: &State, p: &Params, f: &Firm, debt: Cents, cash: Cents) -> SpreadView {
+    SpreadView {
+        base_rate: s.policy.base_rate.0,
+        debt,
+        firm_assets: firm_assets(p, f, cash),
+        credit_spread_add: cfg(s, p).credit_spread_add,
+    }
+}
+
+/// The yearly rate on the firm's debt from next month: base rate plus a base spread plus a spread
+/// that grows with its leverage (debt over assets).
+pub fn decide_spread(v: &SpreadView, cp: &CreditParams) -> Rate {
+    let lev = safe_div(v.debt.as_f64(), v.firm_assets, 0.0);
+    Rate(v.base_rate + cp.spread_base + cp.spread_leverage * lev + v.credit_spread_add)
+}
+
+pub const BANK_DIVIDEND: DecisionSpec = DecisionSpec {
+    id: D::BankDividend,
+    system: SystemId::Credit,
+    inputs: &[Q::BankEquity, Q::BankLoans, Q::CapitalRatio],
+    outputs: &[Q::BankDividend],
+    params: &["credit.bank_buffer", "credit.bank_payout"],
+    rule: "pay_out_excess_equity",
+};
+
+pub fn dividend_view(s: &State, equity: Cents, loans: Cents) -> HeadroomView {
+    headroom_view(s, equity, loans)
+}
+
+/// Equity above the required buffer (the capital ratio plus a safety margin) is partly paid to the
+/// bank's owner.
+pub fn decide_bank_dividend(v: &HeadroomView, cp: &CreditParams) -> Cents {
+    let required = v.bank_loans.scale(v.capital_ratio * (1.0 + cp.bank_buffer));
+    let excess = (v.bank_equity - required).max(Cents::ZERO);
+    excess.scale(cp.bank_payout)
+}
+
+pub const BANK_RESCUE: DecisionSpec = DecisionSpec {
+    id: D::BankRescue,
+    system: SystemId::Credit,
+    inputs: &[
+        Q::BankEquity,
+        Q::BankLoans,
+        Q::BankDeposits,
+        Q::BailoutPolicy,
+    ],
+    outputs: &[Q::BankEquity, Q::BankFailed],
+    params: &["credit.bailout_target_ratio", "credit.haircut_margin"],
+    rule: "bailout_or_haircut",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RescueView {
+    pub bank_equity: Cents,
+    pub bank_loans: Cents,
+    pub bank_deposits: Cents,
+    /// The player's policy: the treasury recapitalises a failing bank.
+    pub bailout_policy: bool,
+}
+
+pub fn rescue_view(s: &State, equity: Cents, loans: Cents, deposits: Cents) -> RescueView {
+    RescueView {
+        bank_equity: equity,
+        bank_loans: loans,
+        bank_deposits: deposits,
+        bailout_policy: s.policy.bailout,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RescueChoice {
+    /// Equity is not negative: nothing to do.
+    None,
+    /// New money restores equity to the target ratio of loans.
+    Bailout { amount: Cents },
+    /// No bailout: the bank fails and depositors lose this share.
+    Haircut { rate: Rate },
+}
+
+pub fn decide_rescue(v: &RescueView, cp: &CreditParams) -> RescueChoice {
+    if !v.bank_equity.is_negative() {
+        RescueChoice::None
+    } else if v.bailout_policy {
+        let target = v.bank_loans.scale(cp.bailout_target_ratio);
+        RescueChoice::Bailout {
+            amount: target - v.bank_equity,
+        }
+    } else {
+        RescueChoice::Haircut {
+            rate: Rate(
+                (-v.bank_equity.as_f64()) / v.bank_deposits.as_f64().max(1.0) * cp.haircut_margin,
+            ),
+        }
+    }
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let cp = &p.credit;
-    let c = cfg(s, p);
     let base = s.policy.base_rate.0;
-    let kappa = s.policy.bank_capital_ratio.0;
-    let kp = p.invest.capital_price_usd * 100.0;
     // Running bank position, mirroring what the engine will apply.
     let mut eq = s.bank.equity;
     let mut loans = s.bank.loans;
@@ -251,10 +446,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     }
 
     // ---- Failure check before any new lending or dividends ----
-    if eq.is_negative() {
-        if s.policy.bailout {
-            let target = loans.scale(cp.bailout_target_ratio);
-            let amount = target - eq;
+    match decide_rescue(&rescue_view(s, eq, loans, dep), cp) {
+        RescueChoice::None => {}
+        RescueChoice::Bailout { amount } => {
             d.money.push(MoneyOp::Bailout { amount });
             eq += amount;
             loans += amount;
@@ -263,9 +457,9 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 ..BankPatch::default()
             }));
             d.events.push(Event::BankBailout { amount });
-        } else {
-            let rate = (-eq.as_f64()) / dep.as_f64().max(1.0) * cp.haircut_margin;
-            d.money.push(MoneyOp::Haircut { rate: Rate(rate) });
+        }
+        RescueChoice::Haircut { rate } => {
+            d.money.push(MoneyOp::Haircut { rate });
             d.changes.push(Delta::Bank(BankPatch {
                 failed: Some(true),
                 ..BankPatch::default()
@@ -277,12 +471,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     }
 
     // ---- New lending to firms, within the capital ratio ----
-    let max_loans = if kappa > 0.0 {
-        eq.max(Cents::ZERO).scale(1.0 / kappa)
-    } else {
-        Cents::ZERO
-    };
-    let mut headroom = (max_loans - loans).max(Cents::ZERO);
+    let mut headroom = decide_headroom(&headroom_view(s, eq, loans));
     let mut lent = Cents::ZERO;
     d.trace.push(TraceRecord::CreditRoom { headroom });
     for f in s.firms.iter().filter(|f| f.active) {
@@ -290,13 +479,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         if closed[i] {
             continue;
         }
-        let assets = f.capital.0 * kp + cash_after[i].as_f64();
-        let lev_cap = Cents::from_f64((cp.max_firm_leverage * assets).max(0.0)) - debt_after[i];
-        let approve = f
-            .loan_request
-            .min(headroom)
-            .min(lev_cap.max(Cents::ZERO))
-            .max(Cents::ZERO);
+        let approve = decide_lend(&lend_view(p, f, headroom, debt_after[i], cash_after[i]), cp);
         d.trace.push(TraceRecord::CreditDecision {
             firm: f.id,
             requested: f.loan_request.max(Cents::ZERO),
@@ -314,26 +497,19 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             debt_after[i] += approve;
             cash_after[i] += approve;
         }
-        let lev = safe_div(
-            debt_after[i].as_f64(),
-            f.capital.0 * kp + cash_after[i].as_f64(),
-            0.0,
-        );
-        let rate = base + cp.spread_base + cp.spread_leverage * lev + c.credit_spread_add;
+        let rate = decide_spread(&spread_view(s, p, f, debt_after[i], cash_after[i]), cp);
         d.firm(
             f.id,
             FirmPatch {
                 loan_request: Some(Cents::ZERO),
-                loan_rate: Some(Rate(rate)),
+                loan_rate: Some(rate),
                 ..FirmPatch::default()
             },
         );
     }
 
     // ---- Bank dividend: equity above the required buffer goes to the bank's owner ----
-    let required = loans.scale(kappa * (1.0 + cp.bank_buffer));
-    let excess = (eq - required).max(Cents::ZERO);
-    let dividend = excess.scale(cp.bank_payout);
+    let dividend = decide_bank_dividend(&dividend_view(s, eq, loans), cp);
     if dividend > Cents::ZERO {
         d.money.push(MoneyOp::BankDividend {
             to: s.bank.owner,

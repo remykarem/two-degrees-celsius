@@ -2342,48 +2342,10 @@
         "title": "Households and people",
         "actor": "agent",
         "summary": "Nine households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
-        "decides": [
-          "How much to spend on food, goods and services this month",
-          "Which firm in each sector gets that spending",
-          "Capital-owning households: how much to give lobbying"
-        ],
-        "observes": [
-          "Its savings and last disposable income",
-          "Every shop's price and stock"
-        ],
+        "decides": [],
+        "observes": [],
         "rule": "food = min(need x food price, savings); discretionary = min(propensity x max(0, disposable - food need) + wealth spending, savings - food); services = services share x discretionary; goods = the rest. Shop weight = stock x (average price / price) ^ elasticity, where the average price is weighted by stock",
-        "params": [
-          {
-            "path": "goods.food_need_units_pc",
-            "label": "Food need per person",
-            "unit": "units per month"
-          },
-          {
-            "path": "goods.price_elasticity",
-            "label": "Price elasticity of shop choice",
-            "unit": "exponent"
-          },
-          {
-            "path": "goods.services_share",
-            "label": "Share of discretionary spending on services",
-            "unit": "share"
-          },
-          {
-            "path": "goods.wealth_consumption_rate",
-            "label": "Capitalists and Rentiers: spending out of wealth",
-            "unit": "share of net wealth per month"
-          },
-          {
-            "path": "goods.propensity.worker",
-            "label": "Spending propensity, Worker",
-            "unit": "share"
-          },
-          {
-            "path": "goods.propensity.capitalist",
-            "label": "Spending propensity, Capitalist",
-            "unit": "share"
-          }
-        ],
+        "params": [],
         "variants": [
           {
             "id": "capitalist",
@@ -2452,13 +2414,7 @@
         "decides": [],
         "observes": [],
         "rule": "Each decision a firm makes has its own rule under Decisions below (generated from the code). expected sales = smoothing x demand + (1 - smoothing) x previous",
-        "params": [
-          {
-            "path": "labour.expected_smoothing",
-            "label": "Weight of this month's demand in expected sales",
-            "unit": "share"
-          }
-        ],
+        "params": [],
         "code": [
           "crates/sim-model/src/labour.rs",
           "crates/sim-model/src/goods.rs",
@@ -2471,39 +2427,10 @@
         "title": "Bank",
         "actor": "agent",
         "summary": "One bank that lends to firms against its equity, takes deposits and pays a dividend from excess capital. It follows a rule; it does not weigh individual borrowers.",
-        "decides": [
-          "The interest rate each firm pays",
-          "How much a firm may borrow (a leverage cap and the bank's capital ratio)",
-          "How much of excess capital to pay out"
-        ],
-        "observes": [
-          "The base rate set by the player",
-          "Each firm's debt against its assets (leverage)",
-          "Its own equity and loans"
-        ],
+        "decides": [],
+        "observes": [],
         "rule": "firm loan rate = base rate + base spread + leverage spread x leverage + system spread; leverage = debt / (capital value + cash); borrowing limited to max leverage x assets",
-        "params": [
-          {
-            "path": "credit.spread_base",
-            "label": "Base spread over the policy rate",
-            "unit": "per year"
-          },
-          {
-            "path": "credit.spread_leverage",
-            "label": "Extra spread per unit of leverage",
-            "unit": "per year"
-          },
-          {
-            "path": "credit.max_firm_leverage",
-            "label": "Largest debt against assets",
-            "unit": "ratio"
-          },
-          {
-            "path": "credit.bank_payout",
-            "label": "Share of excess capital paid out",
-            "unit": "share"
-          }
-        ],
+        "params": [],
         "code": [
           "crates/sim-model/src/credit.rs"
         ]
@@ -2570,19 +2497,13 @@
         "actor": "agent",
         "summary": "Not a separate body: Capitalist and Rentier households give a share of their capital income to the wealthiest Manager household, which acts as the lobbyist. Together with union density this erodes the policies the player sets. The player sees the nominal lever and the effective one.",
         "decides": [
-          "How much each capital-owning household gives (a share of capital income, up to its savings and the campaign cap)"
+          "Nothing of its own: each capital-owning household's gift is a decision listed under Households; here that money becomes pressure on policy levers, held back by union strength"
         ],
         "observes": [
-          "Capital income and savings",
           "GDP, wage share and unemployment (for union strength)"
         ],
         "rule": "capital pull = lobby k x spend / monthly GDP, capped at the system's maximum; labour pull = union density x wage share x labour weight; net = clamp(capital - labour, 0, max); effective lever = nominal x (1 - net)",
         "params": [
-          {
-            "path": "lobby.spend_rate",
-            "label": "Share of capital income given",
-            "unit": "share"
-          },
           {
             "path": "lobby.k",
             "label": "Influence per unit of spending against GDP",

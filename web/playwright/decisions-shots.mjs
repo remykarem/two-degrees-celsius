@@ -1,4 +1,4 @@
-// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Firms on the real simulation:
+// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Firms, Households and Bank on the real simulation:
 // the generated "Who decides" lines, the Decisions list (inputs -> decision -> outputs) and the live parameters (contract v2.7).
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -20,12 +20,14 @@ await page.getByRole('button', { name: 'Start game' }).click({ timeout: 1500 }).
 console.log('sim:', await page.evaluate(() => document.documentElement.dataset.sim));
 await page.getByTestId('how-it-works').click();
 await page.getByTestId('tab-agents').click();
-await page.getByRole('button', { name: 'Firms' }).first().click();
-await page.waitForSelector('[data-testid=agent-decisions]');
-console.log('decisions:', await page.getByTestId('agent-decision').evaluateAll((els) => els.map((e) => e.getAttribute('data-id'))));
-await page.screenshot({ path: `${out}/agents-firms.png` });
-await page.getByTestId('agent-decisions').scrollIntoViewIfNeeded();
-await page.getByTestId('agent-decision').first().locator('summary').click();
-await page.screenshot({ path: `${out}/agents-firms-decisions.png` });
+for (const [label, slug] of [['Firms', 'firms'], ['Households and people', 'households'], ['Bank', 'bank']]) {
+  await page.getByRole('button', { name: label, exact: true }).first().click();
+  await page.waitForSelector('[data-testid=agent-decisions]');
+  console.log(`${slug} decisions:`, await page.getByTestId('agent-decision').evaluateAll((els) => els.map((e) => e.getAttribute('data-id'))));
+  await page.screenshot({ path: `${out}/agents-${slug}.png` });
+  await page.getByTestId('agent-decisions').scrollIntoViewIfNeeded();
+  await page.getByTestId('agent-decision').first().locator('summary').click();
+  await page.screenshot({ path: `${out}/agents-${slug}-decisions.png` });
+}
 console.log('errors:', errors);
 await browser.close();

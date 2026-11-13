@@ -7,6 +7,10 @@
     {
       "kind": "household",
       "agent_kind": "households"
+    },
+    {
+      "kind": "bank",
+      "agent_kind": "bank"
     }
   ],
   "quantities": [
@@ -373,6 +377,188 @@
       "unit": "yes or no",
       "owner": "household",
       "summary": "A household founds a firm in the dormant slot."
+    },
+    {
+      "id": "savings",
+      "label": "Savings",
+      "unit": "$",
+      "owner": "household",
+      "summary": "The deposits a household holds."
+    },
+    {
+      "id": "last_disposable",
+      "label": "Last month's disposable income",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "Income after tax, rent and loan payments last month."
+    },
+    {
+      "id": "net_wealth",
+      "label": "Net wealth",
+      "unit": "$",
+      "owner": "household",
+      "summary": "Savings, homes and firm shares owned, less debt."
+    },
+    {
+      "id": "food_price",
+      "label": "Food price",
+      "unit": "$ per unit",
+      "owner": "household",
+      "summary": "The average price of food across the food firms."
+    },
+    {
+      "id": "food_need",
+      "label": "Food need",
+      "unit": "units per month",
+      "owner": "household",
+      "summary": "The food a household needs each month: a fixed amount per person."
+    },
+    {
+      "id": "household_size",
+      "label": "Household size",
+      "unit": "people",
+      "owner": "household",
+      "summary": "How many people live in the household."
+    },
+    {
+      "id": "spending_propensity",
+      "label": "Spending propensity",
+      "unit": "share",
+      "owner": "household",
+      "summary": "The share of spare income a household of this class spends rather than saves."
+    },
+    {
+      "id": "wealth_spending_rate",
+      "label": "Spending out of wealth",
+      "unit": "share of net wealth per month",
+      "owner": "household",
+      "summary": "The slice of net wealth the owner classes also spend each month (zero for other classes)."
+    },
+    {
+      "id": "consumption_budget",
+      "label": "Spending budget",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "The money a buyer brings to a market: households split theirs into food, goods and services; firms and the government buy in the same markets."
+    },
+    {
+      "id": "demand_units",
+      "label": "Demand",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "What buyers wanted from the firm this month, in units, even if its stock ran out."
+    },
+    {
+      "id": "units_sold",
+      "label": "Units sold",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "What the firm actually sold this month."
+    },
+    {
+      "id": "capital_income",
+      "label": "Capital income",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "Dividends, rent and interest a household received last month."
+    },
+    {
+      "id": "campaign_cap",
+      "label": "Campaign spending cap",
+      "unit": "share of income",
+      "owner": "household",
+      "summary": "The player-set limit on the share of income that may go to lobbying."
+    },
+    {
+      "id": "lobby_spend",
+      "label": "Lobbying spend",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "What a capital-owning household gives to lobbying this month."
+    },
+    {
+      "id": "bank_equity",
+      "label": "Bank equity",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "The bank's own money: what its loans are worth less what it owes depositors."
+    },
+    {
+      "id": "bank_loans",
+      "label": "Bank loans",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "All the loans the bank has made."
+    },
+    {
+      "id": "bank_deposits",
+      "label": "Bank deposits",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "What the bank owes its depositors."
+    },
+    {
+      "id": "capital_ratio",
+      "label": "Required capital ratio",
+      "unit": "share of loans",
+      "owner": "bank",
+      "summary": "The player-set minimum of equity to loans."
+    },
+    {
+      "id": "credit_headroom",
+      "label": "Lending room",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "How much more the bank may lend before it breaks the capital ratio."
+    },
+    {
+      "id": "firm_assets",
+      "label": "Firm assets",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "What a firm owns: capital at its price plus cash."
+    },
+    {
+      "id": "loan_approved",
+      "label": "Loan approved",
+      "unit": "$",
+      "owner": "bank",
+      "summary": "What the bank agrees to lend the firm this month."
+    },
+    {
+      "id": "credit_spread_add",
+      "label": "System credit spread",
+      "unit": "per year",
+      "owner": "bank",
+      "summary": "Extra interest the economic system adds on top of the usual spread."
+    },
+    {
+      "id": "bank_dividend",
+      "label": "Bank dividend",
+      "unit": "$ per month",
+      "owner": "bank",
+      "summary": "Equity above the required buffer that the bank pays to its owner."
+    },
+    {
+      "id": "policy_rate",
+      "label": "Policy rate",
+      "unit": "per year",
+      "owner": "bank",
+      "summary": "The base interest rate the player sets."
+    },
+    {
+      "id": "bailout_policy",
+      "label": "Bailout policy",
+      "unit": "yes or no",
+      "owner": "bank",
+      "summary": "Whether the treasury recapitalises a failing bank."
+    },
+    {
+      "id": "bank_failed",
+      "label": "Bank failed",
+      "unit": "yes or no",
+      "owner": "bank",
+      "summary": "The bank is out of equity and has no bailout: depositors lose part of their savings."
     }
   ],
   "decisions": [
@@ -464,6 +650,96 @@
         "id": "return_over_loan_rate",
         "label": "A chance that grows with the return over the cost of borrowing",
         "text": "Which household can found (a Worker or Manager with enough savings) and which slot are matched first. The chance this month = mobility rate x (sector return - cost of borrowing), between 0 and 1; the firm is founded if the month's random draw falls below it."
+      }
+    },
+    {
+      "id": "household_spend",
+      "title": "Spending",
+      "decides": "How much to spend on food, goods and services this month",
+      "rule": {
+        "id": "need_first_then_propensity",
+        "label": "Food first, then a share of what is left",
+        "text": "Food need = people x food per person; the household buys that first, up to its savings. Of what is left of last month's disposable income it spends its class's propensity; the owner classes also spend a small slice of net wealth. The total cannot exceed savings, and is split into goods and services."
+      }
+    },
+    {
+      "id": "household_shop",
+      "title": "Shopping",
+      "decides": "Which firm in each market gets the money",
+      "rule": {
+        "id": "stock_and_price_weighted",
+        "label": "Cheaper firms with more stock get more",
+        "text": "Each firm's weight = its stock x (average price / its price) ^ elasticity. The budget is shared in proportion to weight, in two passes so a firm cannot sell more than it holds. What buyers wanted at their share, even beyond stock, is its demand. Firms buying capital goods and the government use the same split."
+      }
+    },
+    {
+      "id": "firm_expect",
+      "title": "Expecting sales",
+      "decides": "What sales to expect next month",
+      "rule": {
+        "id": "exponential_smoothing",
+        "label": "A smoothing of demand",
+        "text": "Expected sales = weight x this month's demand + (1 - weight) x last expectation. Hiring and production read it, so spending reaches jobs here."
+      }
+    },
+    {
+      "id": "household_lobby",
+      "title": "Lobbying",
+      "decides": "How much a capital-owning household gives to lobbying",
+      "rule": {
+        "id": "share_of_capital_income",
+        "label": "A share of capital income, within savings and the cap",
+        "text": "Spend = capital income x the smaller of the spend rate and the campaign cap, never more than savings. Which households lobby (Capitalists and Rentiers) and who receives the money are matched first."
+      }
+    },
+    {
+      "id": "bank_headroom",
+      "title": "Lending room",
+      "decides": "How much more the bank may lend",
+      "rule": {
+        "id": "capital_ratio_limit",
+        "label": "Equity divided by the required ratio",
+        "text": "Most the bank may have lent = equity / required capital ratio (nothing if the ratio is zero). Room = that less its loans, never below zero."
+      }
+    },
+    {
+      "id": "bank_lend",
+      "title": "Lending",
+      "decides": "How much to lend each firm that asks",
+      "rule": {
+        "id": "headroom_and_leverage_cap",
+        "label": "The request, within the bank's room and the firm's leverage cap",
+        "text": "Approved = the smallest of the request, the bank's remaining room, and (maximum leverage x firm assets - its debt), never below zero. Firms are served in order until the room is used up."
+      }
+    },
+    {
+      "id": "bank_spread",
+      "title": "Interest rate",
+      "decides": "The interest rate each firm pays",
+      "rule": {
+        "id": "base_plus_leverage_spread",
+        "label": "Base rate plus a spread that grows with leverage",
+        "text": "Rate = policy rate + base spread + leverage spread x (debt / assets) + any extra spread the economic system adds. Riskier, more indebted firms pay more."
+      }
+    },
+    {
+      "id": "bank_dividend",
+      "title": "Bank payout",
+      "decides": "How much of its excess capital the bank pays out",
+      "rule": {
+        "id": "pay_out_excess_equity",
+        "label": "Pay out part of equity above a buffer",
+        "text": "Required = loans x capital ratio x (1 + buffer). Excess = equity - required (never below zero). It pays out the payout share of the excess to its owner."
+      }
+    },
+    {
+      "id": "bank_rescue",
+      "title": "Rescue or failure",
+      "decides": "What happens when the bank's equity goes negative",
+      "rule": {
+        "id": "bailout_or_haircut",
+        "label": "The treasury recapitalises it, or depositors take a loss",
+        "text": "If equity is negative and the bailout policy is on, new money restores equity to the target share of loans. Without it the bank fails and every deposit loses a share: the shortfall over deposits, plus a margin."
       }
     }
   ],
@@ -677,6 +953,96 @@
       "path": "class.mobility_rate",
       "label": "Chance of founding per unit of return over borrowing cost",
       "unit": "per year of return"
+    },
+    {
+      "path": "goods.food_need_units_pc",
+      "label": "Food need per person",
+      "unit": "units per month"
+    },
+    {
+      "path": "goods.price_elasticity",
+      "label": "Price elasticity of shop choice",
+      "unit": "exponent"
+    },
+    {
+      "path": "goods.services_share",
+      "label": "Share of discretionary spending on services",
+      "unit": "share"
+    },
+    {
+      "path": "goods.wealth_consumption_rate",
+      "label": "Capitalists and Rentiers: spending out of wealth",
+      "unit": "share of net wealth per month"
+    },
+    {
+      "path": "goods.propensity.worker",
+      "label": "Spending propensity, Worker",
+      "unit": "share"
+    },
+    {
+      "path": "goods.propensity.capitalist",
+      "label": "Spending propensity, Capitalist",
+      "unit": "share"
+    },
+    {
+      "path": "goods.propensity.rentier",
+      "label": "Spending propensity, Rentier",
+      "unit": "share"
+    },
+    {
+      "path": "goods.propensity.manager",
+      "label": "Spending propensity, Manager",
+      "unit": "share"
+    },
+    {
+      "path": "goods.propensity.dependent",
+      "label": "Spending propensity, Dependent",
+      "unit": "share"
+    },
+    {
+      "path": "labour.expected_smoothing",
+      "label": "Weight of this month's demand in expected sales",
+      "unit": "share"
+    },
+    {
+      "path": "lobby.spend_rate",
+      "label": "Share of capital income given",
+      "unit": "share"
+    },
+    {
+      "path": "credit.spread_base",
+      "label": "Base spread over the policy rate",
+      "unit": "per year"
+    },
+    {
+      "path": "credit.spread_leverage",
+      "label": "Extra spread per unit of leverage",
+      "unit": "per year"
+    },
+    {
+      "path": "credit.max_firm_leverage",
+      "label": "Largest debt against assets",
+      "unit": "ratio"
+    },
+    {
+      "path": "credit.bank_payout",
+      "label": "Share of excess capital paid out",
+      "unit": "share"
+    },
+    {
+      "path": "credit.bank_buffer",
+      "label": "Safety buffer above the required capital",
+      "unit": "share of required capital"
+    },
+    {
+      "path": "credit.bailout_target_ratio",
+      "label": "Equity a bailout restores",
+      "unit": "share of loans"
+    },
+    {
+      "path": "credit.haircut_margin",
+      "label": "Margin on a depositor loss when the bank fails",
+      "unit": "multiple"
     }
   ]
 }

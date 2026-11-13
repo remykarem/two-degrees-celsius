@@ -8,23 +8,71 @@
 use crate::util::{apportion, capex_available, wage_bill};
 use libm::pow;
 use sim_metrics::household_wealth;
-use sim_params::{GoodsParams, Params};
+use sim_params::{GoodsParams, LabourParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
-struct Allocation {
-    sold: Vec<f64>,
-    spent: Vec<f64>,
-    demand_units: Vec<f64>,
+// ---- Decision: where a household's (and any buyer's) money goes among the firms of a market ----
+
+pub const HOUSEHOLD_SHOP: DecisionSpec = DecisionSpec {
+    id: D::HouseholdShop,
+    system: SystemId::Goods,
+    inputs: &[Q::ConsumptionBudget, Q::Inventory, Q::Price],
+    outputs: &[Q::UnitsSold, Q::DemandUnits],
+    params: &["goods.price_elasticity", "goods.min_price_usd"],
+    rule: "stock_and_price_weighted",
+};
+
+/// What buyers see in one market: the money they bring (households, firms buying capital goods
+/// and the government all use this split) and each seller's stock and price (cents), in the same
+/// order. The slices are borrowed from `ShopInputs`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ShopView<'a> {
+    pub budget: f64,
+    pub stock: &'a [f64],
+    pub price: &'a [f64],
+}
+
+/// The storage a `ShopView` borrows: one entry per active firm of the sector.
+pub struct ShopInputs {
+    pub stock: Vec<f64>,
+    pub price: Vec<f64>,
+}
+
+pub fn shop_inputs(firms: &[&Firm]) -> ShopInputs {
+    ShopInputs {
+        stock: firms.iter().map(|f| f.inventory.0).collect(),
+        price: firms.iter().map(|f| f.price.as_f64()).collect(),
+    }
+}
+
+impl ShopInputs {
+    pub fn view(&self, budget: f64) -> ShopView<'_> {
+        ShopView {
+            budget,
+            stock: &self.stock,
+            price: &self.price,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ShopChoice {
+    pub sold: Vec<f64>,
+    pub spent: Vec<f64>,
+    pub demand_units: Vec<f64>,
 }
 
 /// Split a sector's total budget (cents) over its firms. Cheaper firms with more stock
 /// get more; stock limits are respected over two passes.
-fn allocate(firms: &[&Firm], budget: f64, elasticity: f64, min_price: f64) -> Allocation {
-    let n = firms.len();
-    let mut a = Allocation {
+pub fn decide_shop(v: &ShopView, gp: &GoodsParams) -> ShopChoice {
+    let elasticity = gp.price_elasticity;
+    let min_price = gp.min_price_usd * 100.0;
+    let budget = v.budget;
+    let n = v.stock.len();
+    let mut a = ShopChoice {
         sold: vec![0.0; n],
         spent: vec![0.0; n],
         demand_units: vec![0.0; n],
@@ -32,11 +80,8 @@ fn allocate(firms: &[&Firm], budget: f64, elasticity: f64, min_price: f64) -> Al
     if n == 0 || budget <= 0.0 {
         return a;
     }
-    let avail0: Vec<f64> = firms.iter().map(|f| f.inventory.0).collect();
-    let prices: Vec<f64> = firms
-        .iter()
-        .map(|f| f.price.as_f64().max(min_price))
-        .collect();
+    let avail0: Vec<f64> = v.stock.to_vec();
+    let prices: Vec<f64> = v.price.iter().map(|p| p.max(min_price)).collect();
     let tot_avail: f64 = avail0.iter().sum();
     let pbar = if tot_avail > 0.0 {
         avail0.iter().zip(&prices).map(|(q, p)| q * p).sum::<f64>() / tot_avail
@@ -286,6 +331,130 @@ pub fn decide_price(v: &PriceView, gp: &GoodsParams) -> Cents {
     }
 }
 
+// ---- Decision: how much a household spends, and on what ----
+
+pub const HOUSEHOLD_SPEND: DecisionSpec = DecisionSpec {
+    id: D::HouseholdSpend,
+    system: SystemId::Goods,
+    inputs: &[
+        Q::HouseholdSize,
+        Q::FoodPrice,
+        Q::Savings,
+        Q::LastDisposable,
+        Q::SpendingPropensity,
+        Q::NetWealth,
+        Q::WealthSpendingRate,
+    ],
+    outputs: &[Q::FoodNeed, Q::ConsumptionBudget],
+    params: &[
+        "goods.food_need_units_pc",
+        "goods.services_share",
+        "goods.wealth_consumption_rate",
+        "goods.propensity.capitalist",
+        "goods.propensity.rentier",
+        "goods.propensity.manager",
+        "goods.propensity.worker",
+        "goods.propensity.dependent",
+    ],
+    rule: "need_first_then_propensity",
+};
+
+/// What a household sees when it plans the month's spending. The class picks the propensity and
+/// whether net wealth is spent (`wealth_spending_rate` is 0 for the classes that do not).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SpendView {
+    pub household_size: u32,
+    /// Cents per unit of food (the sector's average price).
+    pub food_price: f64,
+    pub savings: Cents,
+    pub last_disposable: Cents,
+    pub spending_propensity: f64,
+    /// Cents.
+    pub net_wealth: f64,
+    pub wealth_spending_rate: f64,
+}
+
+/// `net_wealth` and `food_price` are computed once for all households by `run` and passed in.
+pub fn spend_view(p: &Params, h: &Household, food_price: f64, net_wealth: f64) -> SpendView {
+    let gp = &p.goods;
+    SpendView {
+        household_size: h.members.len() as u32,
+        food_price,
+        savings: h.savings,
+        last_disposable: h.last_disposable,
+        spending_propensity: gp.propensity.get(h.class),
+        net_wealth,
+        // Wealth effect: capital-owning classes also consume out of net wealth.
+        wealth_spending_rate: if matches!(h.class, Class::Capitalist | Class::Rentier) {
+            gp.wealth_consumption_rate
+        } else {
+            0.0
+        },
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SpendChoice {
+    /// Units of food the household needs this month.
+    pub food_need_units: f64,
+    /// Cents.
+    pub food_budget: f64,
+    pub goods_budget: f64,
+    pub services_budget: f64,
+}
+
+/// Food first (what the need costs, up to savings), then a propensity share of what is left of
+/// disposable income plus a slice of net wealth, within savings, split into goods and services.
+pub fn decide_spend(v: &SpendView, gp: &GoodsParams) -> SpendChoice {
+    let food_need_units = v.household_size as f64 * gp.food_need_units_pc;
+    let need_cost = food_need_units * v.food_price;
+    let savings = v.savings.as_f64();
+    let food_budget = need_cost.min(savings);
+    let disposable = v.last_disposable.as_f64().max(0.0);
+    let wealth_spend = v.wealth_spending_rate * v.net_wealth.max(0.0);
+    let wish = v.spending_propensity * (disposable - need_cost).max(0.0) + wealth_spend;
+    let discretionary = wish.min(savings - food_budget).max(0.0);
+    let services_budget = discretionary * gp.services_share;
+    SpendChoice {
+        food_need_units,
+        food_budget,
+        goods_budget: discretionary - services_budget,
+        services_budget,
+    }
+}
+
+// ---- Decision: what a firm expects to sell ----
+
+pub const FIRM_EXPECT: DecisionSpec = DecisionSpec {
+    id: D::FirmExpect,
+    system: SystemId::Goods,
+    inputs: &[Q::DemandUnits, Q::ExpectedSales],
+    outputs: &[Q::ExpectedSales],
+    params: &["labour.expected_smoothing"],
+    rule: "exponential_smoothing",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ExpectView {
+    /// What buyers wanted this month, in units (more than was sold when stock ran short).
+    pub demand_units: f64,
+    pub expected_sales: f64,
+}
+
+pub fn expect_view(f: &Firm, demand_units: f64) -> ExpectView {
+    ExpectView {
+        demand_units,
+        expected_sales: f.expected_sales.0,
+    }
+}
+
+/// Next month's expected sales: a smoothing of this month's demand into the old expectation.
+/// Hiring reads it, so this is the link from households' spending to a firm's workforce.
+pub fn decide_expect(v: &ExpectView, lp: &LabourParams) -> Units {
+    let lam = lp.expected_smoothing;
+    Units(lam * v.demand_units + (1.0 - lam) * v.expected_sales)
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let gp = &p.goods;
@@ -301,22 +470,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut services_budget = vec![0.0; n_h];
     let mut need_units = vec![0.0; n_h];
     for (i, h) in s.households.iter().enumerate() {
-        need_units[i] = h.members.len() as f64 * gp.food_need_units_pc;
-        let need_cost = need_units[i] * p_food;
-        let savings = h.savings.as_f64();
-        food_budget[i] = need_cost.min(savings);
-        let c = gp.propensity.get(h.class);
-        let disposable = h.last_disposable.as_f64().max(0.0);
-        // Wealth effect: capital-owning classes also consume out of net wealth.
-        let wealth_spend = if matches!(h.class, Class::Capitalist | Class::Rentier) {
-            gp.wealth_consumption_rate * wealth[i].max(0.0)
-        } else {
-            0.0
-        };
-        let wish = c * (disposable - need_cost).max(0.0) + wealth_spend;
-        let discretionary = wish.min(savings - food_budget[i]).max(0.0);
-        services_budget[i] = discretionary * gp.services_share;
-        goods_budget[i] = discretionary - services_budget[i];
+        let c = decide_spend(&spend_view(p, h, p_food, wealth[i]), gp);
+        need_units[i] = c.food_need_units;
+        food_budget[i] = c.food_budget;
+        goods_budget[i] = c.goods_budget;
+        services_budget[i] = c.services_budget;
     }
     // Firms buy capital goods from the goods sector (investment is demand).
     let capex_budget: Vec<f64> = s
@@ -383,7 +541,8 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             }
         }
         let budget: f64 = buyers.iter().sum();
-        let alloc = allocate(&firms, budget, gp.price_elasticity, min_price);
+        let shop = shop_inputs(&firms);
+        let alloc = decide_shop(&shop.view(budget), gp);
         for (i, f) in firms.iter().enumerate() {
             let price = f.price.as_f64().max(min_price);
             let revenue = Cents(alloc.spent[i].floor() as i64);
@@ -459,8 +618,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             } else {
                 1.0
             };
-            let lam = p.labour.expected_smoothing;
-            let expected = lam * alloc.demand_units[i] + (1.0 - lam) * f.expected_sales.0;
+            let expected = decide_expect(&expect_view(f, alloc.demand_units[i]), &p.labour);
             let h = f.sales_hist;
             d.trace.push(TraceRecord::GoodsFirm {
                 firm: f.id,
@@ -477,7 +635,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     sales_units: Some(Units(sold_units)),
                     revenue: Some(revenue),
                     excess_demand: Some(Rate(excess)),
-                    expected_sales: Some(Units(expected)),
+                    expected_sales: Some(expected),
                     ..FirmPatch::default()
                 },
             );

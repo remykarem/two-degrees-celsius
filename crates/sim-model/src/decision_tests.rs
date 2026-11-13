@@ -7,6 +7,7 @@ use crate::credit::*;
 use crate::goods::*;
 use crate::income::*;
 use crate::investment::*;
+use crate::lobbying::*;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -360,4 +361,300 @@ fn found_firm_reads_only_its_declared_inputs() {
     check_view_only(&HOUSEHOLD_FOUND_FIRM, &bases, &fields, |v| {
         decide_found(v, cp)
     });
+}
+
+#[test]
+fn spend_reads_only_its_declared_inputs() {
+    let p = params();
+    let gp = &p.goods;
+    let base = |size, savings, disposable, wealth, rate| SpendView {
+        household_size: size,
+        food_price: 1_000.0,
+        savings: Cents(savings),
+        last_disposable: Cents(disposable),
+        spending_propensity: 0.9,
+        net_wealth: wealth,
+        wealth_spending_rate: rate,
+    };
+    let bases = [
+        base(2, 1_000_000, 800_000, 5.0e6, 0.005),
+        base(2, 60_000, 800_000, 5.0e6, 0.005),
+        base(2, 1_000_000, 10_000, 5.0e6, 0.0),
+    ];
+    let SpendView {
+        household_size: _,
+        food_price: _,
+        savings: _,
+        last_disposable: _,
+        spending_propensity: _,
+        net_wealth: _,
+        wealth_spending_rate: _,
+    } = bases[0];
+    let fields: [Field<SpendView>; 7] = [
+        ("household_size", Q::HouseholdSize, |v| {
+            v.household_size += 1
+        }),
+        ("food_price", Q::FoodPrice, |v| v.food_price *= 2.0),
+        ("savings", Q::Savings, |v| {
+            v.savings = Cents(v.savings.0 / 3)
+        }),
+        ("last_disposable", Q::LastDisposable, |v| {
+            v.last_disposable = Cents(v.last_disposable.0 * 2)
+        }),
+        ("spending_propensity", Q::SpendingPropensity, |v| {
+            v.spending_propensity = 0.3
+        }),
+        ("net_wealth", Q::NetWealth, |v| v.net_wealth *= 3.0),
+        ("wealth_spending_rate", Q::WealthSpendingRate, |v| {
+            v.wealth_spending_rate += 0.01
+        }),
+    ];
+    check_view_only(&HOUSEHOLD_SPEND, &bases, &fields, |v| decide_spend(v, gp));
+}
+
+#[test]
+fn shop_reads_only_its_declared_inputs() {
+    let p = params();
+    let gp = &p.goods;
+    let base = |budget, stock: &'static [f64], price: &'static [f64]| ShopView {
+        budget,
+        stock,
+        price,
+    };
+    let bases = [
+        base(100_000.0, &[50.0, 80.0], &[1_000.0, 1_500.0]),
+        base(100_000.0, &[0.0, 0.0], &[1_000.0, 1_500.0]),
+        base(100_000.0, &[1.0, 1.0], &[1_000.0, 1_500.0]),
+    ];
+    let ShopView {
+        budget: _,
+        stock: _,
+        price: _,
+    } = bases[0];
+    let fields: [Field<ShopView<'static>>; 3] = [
+        ("budget", Q::ConsumptionBudget, |v| v.budget *= 2.0),
+        ("stock", Q::Inventory, |v| v.stock = &[200.0, 10.0]),
+        ("price", Q::Price, |v| v.price = &[2_000.0, 900.0]),
+    ];
+    check_view_only(&HOUSEHOLD_SHOP, &bases, &fields, |v| decide_shop(v, gp));
+}
+
+#[test]
+fn expect_reads_only_its_declared_inputs() {
+    let p = params();
+    let bases = [
+        ExpectView {
+            demand_units: 100.0,
+            expected_sales: 80.0,
+        },
+        ExpectView {
+            demand_units: 0.0,
+            expected_sales: 5.0,
+        },
+    ];
+    let ExpectView {
+        demand_units: _,
+        expected_sales: _,
+    } = bases[0];
+    let fields: [Field<ExpectView>; 2] = [
+        ("demand_units", Q::DemandUnits, |v| v.demand_units += 40.0),
+        ("expected_sales", Q::ExpectedSales, |v| {
+            v.expected_sales += 40.0
+        }),
+    ];
+    check_view_only(&FIRM_EXPECT, &bases, &fields, |v| {
+        decide_expect(v, &p.labour)
+    });
+}
+
+#[test]
+fn lobby_reads_only_its_declared_inputs() {
+    let p = params();
+    let base = |income, savings, cap| LobbyView {
+        capital_income: Cents(income),
+        savings: Cents(savings),
+        campaign_cap: cap,
+    };
+    let bases = [
+        base(1_000_000, 50_000_000, 1.0),
+        base(1_000_000, 100, 1.0),
+        base(1_000_000, 50_000_000, 0.001),
+    ];
+    let LobbyView {
+        capital_income: _,
+        savings: _,
+        campaign_cap: _,
+    } = bases[0];
+    let fields: [Field<LobbyView>; 3] = [
+        ("capital_income", Q::CapitalIncome, |v| {
+            v.capital_income = Cents(v.capital_income.0 * 2)
+        }),
+        ("savings", Q::Savings, |v| {
+            v.savings = Cents(v.savings.0 / 100_000)
+        }),
+        ("campaign_cap", Q::CampaignCap, |v| v.campaign_cap = 0.0001),
+    ];
+    check_view_only(&HOUSEHOLD_LOBBY, &bases, &fields, |v| {
+        decide_lobby(v, &p.lobby)
+    });
+}
+
+fn bank_bases() -> [HeadroomView; 3] {
+    let base = |equity, loans, ratio| HeadroomView {
+        bank_equity: Cents(equity),
+        bank_loans: Cents(loans),
+        capital_ratio: ratio,
+    };
+    [
+        base(100_000_000, 500_000_000, 0.12),
+        base(100_000_000, 10_000_000, 0.12),
+        base(100_000_000, 10_000_000, 0.0),
+    ]
+}
+
+fn bank_fields() -> [Field<HeadroomView>; 3] {
+    [
+        ("bank_equity", Q::BankEquity, |v| {
+            v.bank_equity = Cents(v.bank_equity.0 * 4)
+        }),
+        ("bank_loans", Q::BankLoans, |v| {
+            v.bank_loans = Cents(v.bank_loans.0 / 4)
+        }),
+        ("capital_ratio", Q::CapitalRatio, |v| {
+            v.capital_ratio = 0.2 + v.capital_ratio * 0.5
+        }),
+    ]
+}
+
+#[test]
+fn headroom_reads_only_its_declared_inputs() {
+    let bases = bank_bases();
+    let HeadroomView {
+        bank_equity: _,
+        bank_loans: _,
+        capital_ratio: _,
+    } = bases[0];
+    check_view_only(&BANK_HEADROOM, &bases, &bank_fields(), decide_headroom);
+}
+
+#[test]
+fn bank_dividend_reads_only_its_declared_inputs() {
+    let p = params();
+    let cp = &p.credit;
+    let mut bases = bank_bases();
+    for b in &mut bases {
+        b.bank_loans = Cents(b.bank_loans.0 / 10);
+    }
+    check_view_only(&BANK_DIVIDEND, &bases, &bank_fields(), |v| {
+        decide_bank_dividend(v, cp)
+    });
+}
+
+#[test]
+fn lend_reads_only_its_declared_inputs() {
+    let p = params();
+    let cp = &p.credit;
+    let base = |request, headroom, assets, debt| LendView {
+        loan_request: Cents(request),
+        credit_headroom: Cents(headroom),
+        firm_assets: assets,
+        debt: Cents(debt),
+    };
+    let bases = [
+        base(100_000, 10_000_000, 10_000_000.0, 0),
+        base(100_000_000, 10_000_000, 100_000_000.0, 0),
+        base(100_000_000, 100_000_000, 1_000_000.0, 100_000),
+    ];
+    let LendView {
+        loan_request: _,
+        credit_headroom: _,
+        firm_assets: _,
+        debt: _,
+    } = bases[0];
+    let fields: [Field<LendView>; 4] = [
+        ("loan_request", Q::LoanRequest, |v| {
+            v.loan_request = Cents(v.loan_request.0 / 2)
+        }),
+        ("credit_headroom", Q::CreditHeadroom, |v| {
+            v.credit_headroom = Cents(1_000)
+        }),
+        ("firm_assets", Q::FirmAssets, |v| v.firm_assets /= 10.0),
+        ("debt", Q::Debt, |v| v.debt = Cents(v.debt.0 + 500_000)),
+    ];
+    check_view_only(&BANK_LEND, &bases, &fields, |v| decide_lend(v, cp));
+}
+
+#[test]
+fn spread_reads_only_its_declared_inputs() {
+    let p = params();
+    let cp = &p.credit;
+    let bases = [
+        SpreadView {
+            base_rate: 0.03,
+            debt: Cents(1_000_000),
+            firm_assets: 5_000_000.0,
+            credit_spread_add: 0.0,
+        },
+        SpreadView {
+            base_rate: 0.03,
+            debt: Cents(0),
+            firm_assets: 0.0,
+            credit_spread_add: 0.01,
+        },
+    ];
+    let SpreadView {
+        base_rate: _,
+        debt: _,
+        firm_assets: _,
+        credit_spread_add: _,
+    } = bases[0];
+    let fields: [Field<SpreadView>; 4] = [
+        ("base_rate", Q::PolicyRate, |v| v.base_rate += 0.01),
+        ("debt", Q::Debt, |v| v.debt = Cents(v.debt.0 + 1_000_000)),
+        ("firm_assets", Q::FirmAssets, |v| {
+            v.firm_assets += 1_000_000.0
+        }),
+        ("credit_spread_add", Q::CreditSpreadAdd, |v| {
+            v.credit_spread_add += 0.02
+        }),
+    ];
+    check_view_only(&BANK_SPREAD, &bases, &fields, |v| decide_spread(v, cp));
+}
+
+#[test]
+fn rescue_reads_only_its_declared_inputs() {
+    let p = params();
+    let cp = &p.credit;
+    let base = |equity, bailout| RescueView {
+        bank_equity: Cents(equity),
+        bank_loans: Cents(500_000_000),
+        bank_deposits: Cents(600_000_000),
+        bailout_policy: bailout,
+    };
+    let bases = [
+        base(-10_000_000, true),
+        base(-10_000_000, false),
+        base(10_000_000, false),
+    ];
+    let RescueView {
+        bank_equity: _,
+        bank_loans: _,
+        bank_deposits: _,
+        bailout_policy: _,
+    } = bases[0];
+    let fields: [Field<RescueView>; 4] = [
+        ("bank_equity", Q::BankEquity, |v| {
+            v.bank_equity = Cents(-v.bank_equity.0 * 2 + 1)
+        }),
+        ("bank_loans", Q::BankLoans, |v| {
+            v.bank_loans = Cents(v.bank_loans.0 / 2)
+        }),
+        ("bank_deposits", Q::BankDeposits, |v| {
+            v.bank_deposits = Cents(v.bank_deposits.0 / 2)
+        }),
+        ("bailout_policy", Q::BailoutPolicy, |v| {
+            v.bailout_policy = !v.bailout_policy
+        }),
+    ];
+    check_view_only(&BANK_RESCUE, &bases, &fields, |v| decide_rescue(v, cp));
 }

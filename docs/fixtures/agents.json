@@ -8,15 +8,25 @@
       "decides": [
         "Whether to found a firm in the dormant slot",
         "How much to spend on food, goods and services this month",
-        "Which firm in each sector gets that spending",
-        "Capital-owning households: how much to give lobbying"
+        "Which firm in each market gets the money",
+        "How much a capital-owning household gives to lobbying"
       ],
       "observes": [
         "Sector return: The average return on capital in a sector that has room for another firm.",
         "Cost of borrowing: The base rate plus the bank's base spread.",
         "Random draw: A chance draw the simulation takes each month and hands to the decision.",
-        "Its savings and last disposable income",
-        "Every shop's price and stock"
+        "Household size: How many people live in the household.",
+        "Food price: The average price of food across the food firms.",
+        "Savings: The deposits a household holds.",
+        "Last month's disposable income: Income after tax, rent and loan payments last month.",
+        "Spending propensity: The share of spare income a household of this class spends rather than saves.",
+        "Net wealth: Savings, homes and firm shares owned, less debt.",
+        "Spending out of wealth: The slice of net wealth the owner classes also spend each month (zero for other classes).",
+        "Spending budget: The money a buyer brings to a market: households split theirs into food, goods and services; firms and the government buy in the same markets.",
+        "Inventory: Unsold stock the firm holds.",
+        "Price: What the firm charges for one unit.",
+        "Capital income: Dividends, rent and interest a household received last month.",
+        "Campaign spending cap: The player-set limit on the share of income that may go to lobbying."
       ],
       "rule": "food = min(need x food price, savings); discretionary = min(propensity x max(0, disposable - food need) + wealth spending, savings - food); services = services share x discretionary; goods = the rest. Shop weight = stock x (average price / price) ^ elasticity, where the average price is weighted by stock",
       "params": [
@@ -33,12 +43,6 @@
           "unit": "units per month"
         },
         {
-          "path": "goods.price_elasticity",
-          "label": "Price elasticity of shop choice",
-          "value": 2.0,
-          "unit": "exponent"
-        },
-        {
           "path": "goods.services_share",
           "label": "Share of discretionary spending on services",
           "value": 0.45,
@@ -51,15 +55,51 @@
           "unit": "share of net wealth per month"
         },
         {
+          "path": "goods.propensity.capitalist",
+          "label": "Spending propensity, Capitalist",
+          "value": 0.45,
+          "unit": "share"
+        },
+        {
+          "path": "goods.propensity.rentier",
+          "label": "Spending propensity, Rentier",
+          "value": 0.5,
+          "unit": "share"
+        },
+        {
+          "path": "goods.propensity.manager",
+          "label": "Spending propensity, Manager",
+          "value": 0.9,
+          "unit": "share"
+        },
+        {
           "path": "goods.propensity.worker",
           "label": "Spending propensity, Worker",
           "value": 1.0,
           "unit": "share"
         },
         {
-          "path": "goods.propensity.capitalist",
-          "label": "Spending propensity, Capitalist",
-          "value": 0.45,
+          "path": "goods.propensity.dependent",
+          "label": "Spending propensity, Dependent",
+          "value": 1.0,
+          "unit": "share"
+        },
+        {
+          "path": "goods.price_elasticity",
+          "label": "Price elasticity of shop choice",
+          "value": 2.0,
+          "unit": "exponent"
+        },
+        {
+          "path": "goods.min_price_usd",
+          "label": "Lowest price",
+          "value": 0.01,
+          "unit": "$ per unit"
+        },
+        {
+          "path": "lobby.spend_rate",
+          "label": "Share of capital income given",
+          "value": 0.02,
           "unit": "share"
         }
       ],
@@ -140,7 +180,8 @@
         "Whether to buy a step of clean technology this month, and whether to save for one",
         "How much capital to buy next month and how much to borrow for it",
         "How much to pay its owners",
-        "Whether to default and close"
+        "Whether to default and close",
+        "What sales to expect next month"
       ],
       "observes": [
         "Expected sales: A smoothed average of past demand for what the firm makes.",
@@ -185,7 +226,8 @@
         "Payout ratio: The share of profit paid out; set by the economic system.",
         "Missed payments: Interest, scheduled principal or wages went unpaid this month.",
         "Months in distress: How many months in a row the firm has missed payments.",
-        "Debt: What the firm owes the bank."
+        "Debt: What the firm owes the bank.",
+        "Demand: What buyers wanted from the firm this month, in units, even if its stock ran out."
       ],
       "rule": "Each decision a firm makes has its own rule under Decisions below (generated from the code). expected sales = smoothing x demand + (1 - smoothing) x previous",
       "params": [
@@ -457,17 +499,33 @@
       "actor": "agent",
       "summary": "One bank that lends to firms against its equity, takes deposits and pays a dividend from excess capital. It follows a rule; it does not weigh individual borrowers.",
       "decides": [
+        "How much more the bank may lend",
+        "How much to lend each firm that asks",
         "The interest rate each firm pays",
-        "How much a firm may borrow (a leverage cap and the bank's capital ratio)",
-        "How much of excess capital to pay out"
+        "How much of its excess capital the bank pays out",
+        "What happens when the bank's equity goes negative"
       ],
       "observes": [
-        "The base rate set by the player",
-        "Each firm's debt against its assets (leverage)",
-        "Its own equity and loans"
+        "Bank equity: The bank's own money: what its loans are worth less what it owes depositors.",
+        "Bank loans: All the loans the bank has made.",
+        "Required capital ratio: The player-set minimum of equity to loans.",
+        "Loan request: What the firm asks the bank to lend for its plan.",
+        "Lending room: How much more the bank may lend before it breaks the capital ratio.",
+        "Firm assets: What a firm owns: capital at its price plus cash.",
+        "Debt: What the firm owes the bank.",
+        "Policy rate: The base interest rate the player sets.",
+        "System credit spread: Extra interest the economic system adds on top of the usual spread.",
+        "Bank deposits: What the bank owes its depositors.",
+        "Bailout policy: Whether the treasury recapitalises a failing bank."
       ],
       "rule": "firm loan rate = base rate + base spread + leverage spread x leverage + system spread; leverage = debt / (capital value + cash); borrowing limited to max leverage x assets",
       "params": [
+        {
+          "path": "credit.max_firm_leverage",
+          "label": "Largest debt against assets",
+          "value": 0.6,
+          "unit": "ratio"
+        },
         {
           "path": "credit.spread_base",
           "label": "Base spread over the policy rate",
@@ -481,16 +539,28 @@
           "unit": "per year"
         },
         {
-          "path": "credit.max_firm_leverage",
-          "label": "Largest debt against assets",
-          "value": 0.6,
-          "unit": "ratio"
+          "path": "credit.bank_buffer",
+          "label": "Safety buffer above the required capital",
+          "value": 0.25,
+          "unit": "share of required capital"
         },
         {
           "path": "credit.bank_payout",
           "label": "Share of excess capital paid out",
           "value": 0.5,
           "unit": "share"
+        },
+        {
+          "path": "credit.bailout_target_ratio",
+          "label": "Equity a bailout restores",
+          "value": 0.12,
+          "unit": "share of loans"
+        },
+        {
+          "path": "credit.haircut_margin",
+          "label": "Margin on a depositor loss when the bank fails",
+          "value": 1.01,
+          "unit": "multiple"
         }
       ],
       "variants": [],
@@ -570,20 +640,13 @@
       "actor": "agent",
       "summary": "Not a separate body: Capitalist and Rentier households give a share of their capital income to the wealthiest Manager household, which acts as the lobbyist. Together with union density this erodes the policies the player sets. The player sees the nominal lever and the effective one.",
       "decides": [
-        "How much each capital-owning household gives (a share of capital income, up to its savings and the campaign cap)"
+        "Nothing of its own: each capital-owning household's gift is a decision listed under Households; here that money becomes pressure on policy levers, held back by union strength"
       ],
       "observes": [
-        "Capital income and savings",
         "GDP, wage share and unemployment (for union strength)"
       ],
       "rule": "capital pull = lobby k x spend / monthly GDP, capped at the system's maximum; labour pull = union density x wage share x labour weight; net = clamp(capital - labour, 0, max); effective lever = nominal x (1 - net)",
       "params": [
-        {
-          "path": "lobby.spend_rate",
-          "label": "Share of capital income given",
-          "value": 0.02,
-          "unit": "share"
-        },
         {
           "path": "lobby.k",
           "label": "Influence per unit of spending against GDP",

@@ -15,7 +15,7 @@
 
 use serde_json::Value;
 use sim_engine::Plan;
-use sim_model::{class, goods, income, investment, labour, util};
+use sim_model::{class, credit, goods, income, investment, labour, lobbying, util};
 use sim_params::{ContentJson, Params};
 use sim_types::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -37,6 +37,11 @@ fn load(params: &str) -> Params {
     })
     .expect("content loads")
 }
+
+/// Arguments `run` computes and passes in, fed as constants (they are not read from `State`).
+const DEMAND_UNITS: f64 = 123.0;
+const HEADROOM: Cents = Cents(50_000_000);
+const MARKET_BUDGET: f64 = 1_000_000.0;
 
 /// One line per decision and owner: the view the builder made and the choice, as text. Comparing
 /// the view too means a leaf the builder reads shows up even when it does not tip the choice.
@@ -111,6 +116,86 @@ fn choices(s: &State, p: &Params) -> BTreeMap<String, String> {
             format!("{payout:?}"),
         );
     }
+    for f in s.firms.iter().filter(|f| f.active) {
+        let id = f.id.0;
+        // `run` passes this month's demand; the gate feeds a constant.
+        let ev = goods::expect_view(f, DEMAND_UNITS);
+        let expect = goods::decide_expect(&ev, &p.labour);
+        put(
+            format!("firm_expect/{id}"),
+            format!("{ev:?}"),
+            format!("{expect:?}"),
+        );
+        // `run` passes the bank's running headroom and the firm's debt and cash after payments.
+        let lv = credit::lend_view(p, f, HEADROOM, f.debt, f.cash);
+        let lend = credit::decide_lend(&lv, &p.credit);
+        put(
+            format!("bank_lend/{id}"),
+            format!("{lv:?}"),
+            format!("{lend:?}"),
+        );
+        let sv = credit::spread_view(s, p, f, f.debt, f.cash);
+        let spread = credit::decide_spread(&sv, &p.credit);
+        put(
+            format!("bank_spread/{id}"),
+            format!("{sv:?}"),
+            format!("{spread:?}"),
+        );
+    }
+    let wealth = sim_metrics::household_wealth(s, p);
+    let p_food = sim_metrics::sector_price(s, Sector::Food);
+    for (i, h) in s.households.iter().enumerate() {
+        let id = h.id.0;
+        let sv = goods::spend_view(p, h, p_food, wealth[i]);
+        let spend = goods::decide_spend(&sv, &p.goods);
+        put(
+            format!("household_spend/{id}"),
+            format!("{sv:?}"),
+            format!("{spend:?}"),
+        );
+        let lv = lobbying::lobby_view(s, h);
+        let lobby = lobbying::decide_lobby(&lv, &p.lobby);
+        put(
+            format!("household_lobby/{id}"),
+            format!("{lv:?}"),
+            format!("{lobby:?}"),
+        );
+    }
+    for sector in [Sector::Food, Sector::Goods, Sector::Services] {
+        let firms: Vec<&Firm> = s
+            .firms
+            .iter()
+            .filter(|f| f.active && f.sector == sector)
+            .collect();
+        let inputs = goods::shop_inputs(&firms);
+        let view = inputs.view(MARKET_BUDGET);
+        let shop = goods::decide_shop(&view, &p.goods);
+        put(
+            format!("household_shop/{sector:?}"),
+            format!("{view:?}"),
+            format!("{shop:?}"),
+        );
+    }
+    // `run` passes the bank's running equity and loans; the gate feeds the state's own.
+    let (eq, loans, dep) = (s.bank.equity, s.bank.loans, s.bank.deposits);
+    let hv = credit::headroom_view(s, eq, loans);
+    put(
+        "bank_headroom/0".into(),
+        format!("{hv:?}"),
+        format!("{:?}", credit::decide_headroom(&hv)),
+    );
+    let dv = credit::dividend_view(s, eq, loans);
+    put(
+        "bank_dividend/0".into(),
+        format!("{dv:?}"),
+        format!("{:?}", credit::decide_bank_dividend(&dv, &p.credit)),
+    );
+    let rv = credit::rescue_view(s, eq, loans, dep);
+    put(
+        "bank_rescue/0".into(),
+        format!("{rv:?}"),
+        format!("{:?}", credit::decide_rescue(&rv, &p.credit)),
+    );
     for sector in [Sector::Goods, Sector::Food, Sector::Services] {
         // A draw of 0: a firm is founded whenever the chance is above zero.
         if let Some(v) = class::found_view(s, p, sector, 0.0) {
@@ -256,6 +341,32 @@ const DORMANT: &[&str] = &[
     "params.invest.green_payback_years",
     "params.invest.green_max",
     "params.class.startup_min_excess_demand",
+    // A bump of these leaves the valid range of the parameter, so the sample is rejected.
+    "params.goods.services_share",
+    "params.goods.min_price_usd",
+    // Never binds in the sampled states (headroom and leverage are loose).
+    "params.credit.max_firm_leverage",
+    // Read as a length (the head count) or as an enum: the gate only bumps numeric leaves.
+    "state.households[].members",
+    "state.households[].class",
+];
+
+/// What `sim_metrics::household_wealth` reads: savings and debt, owned homes, the bank's equity
+/// (to the bank's owner), the jet, and the books of every active firm (to its owner).
+const WEALTH: &[&str] = &[
+    "state.bank.equity",
+    "state.bank.owner",
+    "state.estate.jet.value",
+    "state.firms[].capital",
+    "state.firms[].cash",
+    "state.firms[].debt",
+    "state.firms[].inventory",
+    "state.firms[].price",
+    "state.firms[].owner",
+    "state.homes[].owner",
+    "state.homes[].value",
+    "state.households[].debt",
+    "params.invest.capital_price_usd",
 ];
 
 const HIRE: &[&str] = &[
@@ -297,6 +408,15 @@ const COVERED: &[&str] = &[
     "firm_capex",
     "firm_payout",
     "household_found_firm",
+    "household_spend",
+    "household_shop",
+    "household_lobby",
+    "firm_expect",
+    "bank_headroom",
+    "bank_lend",
+    "bank_spread",
+    "bank_dividend",
+    "bank_rescue",
 ];
 
 /// The leaves each decision's builder and function are declared to read. A declared path covers
@@ -381,6 +501,64 @@ fn reads(decision: &str) -> Vec<&'static str> {
             "params.class.startup_min_excess_demand",
             "params.invest.capital_price_usd",
         ],
+        "household_spend" => &[
+            "state.households[].members",
+            "state.households[].class",
+            "state.households[].savings",
+            "state.households[].last_disposable",
+            "state.households[].id",
+            "params.goods.food_need_units_pc",
+            "params.goods.services_share",
+            "params.goods.wealth_consumption_rate",
+            "params.goods.propensity",
+        ],
+        "household_shop" => &[
+            "state.firms[].inventory",
+            "state.firms[].price",
+            "params.goods.price_elasticity",
+            "params.goods.min_price_usd",
+        ],
+        "household_lobby" => &[
+            "state.households[].income.dividends",
+            "state.households[].income.rent_received",
+            "state.households[].income.interest_received",
+            "state.households[].savings",
+            "state.households[].id",
+            "state.policy.campaign_cap",
+            "params.lobby.spend_rate",
+        ],
+        "firm_expect" => &[
+            "state.firms[].expected_sales",
+            "params.labour.expected_smoothing",
+        ],
+        "bank_headroom" | "bank_dividend" => &[
+            "state.bank.equity",
+            "state.bank.loans",
+            "state.policy.bank_capital_ratio",
+        ],
+        "bank_rescue" => &[
+            "state.bank.equity",
+            "state.bank.loans",
+            "state.bank.deposits",
+            "state.policy.bailout",
+        ],
+        "bank_lend" => &[
+            "state.firms[].loan_request",
+            "state.firms[].capital",
+            "state.firms[].cash",
+            "state.firms[].debt",
+            "params.invest.capital_price_usd",
+            "params.credit.max_firm_leverage",
+        ],
+        "bank_spread" => &[
+            "state.policy.base_rate",
+            "state.firms[].capital",
+            "state.firms[].cash",
+            "state.firms[].debt",
+            "params.invest.capital_price_usd",
+            "params.credit.spread_base",
+            "params.credit.spread_leverage",
+        ],
         _ => &[],
     };
     let mut v: Vec<&'static str> = own.to_vec();
@@ -392,6 +570,14 @@ fn reads(decision: &str) -> Vec<&'static str> {
             v.extend_from_slice(WAGE_BILL);
             v.extend_from_slice(RESERVE);
         }
+        "household_spend" => v.extend_from_slice(WEALTH),
+        "bank_dividend" => {
+            v.extend_from_slice(&["params.credit.bank_buffer", "params.credit.bank_payout"])
+        }
+        "bank_rescue" => v.extend_from_slice(&[
+            "params.credit.bailout_target_ratio",
+            "params.credit.haircut_margin",
+        ]),
         "firm_green" => {
             v.extend_from_slice(WAGE_BILL);
             v.extend_from_slice(RESERVE);
@@ -402,7 +588,8 @@ fn reads(decision: &str) -> Vec<&'static str> {
 }
 
 /// Sampled variants that reach branches the plain run does not: demand left over in every sector
-/// (so a firm can be founded) and a carbon price with plenty of cash (so a green step is bought).
+/// (so a firm can be founded), a carbon price with plenty of cash (so a green step is bought) and
+/// a bank with negative equity (rescued, or failing).
 fn variants(s: &State) -> Vec<State> {
     let mut demand = s.clone();
     for f in &mut demand.firms {
@@ -415,7 +602,13 @@ fn variants(s: &State) -> Vec<State> {
         f.cash = Cents(2_000_000_000);
         f.revenue = Cents(10_000_000);
     }
-    vec![s.clone(), demand, carbon]
+    // A bank with negative equity: one rescued by the treasury, one that fails.
+    let mut bailout = s.clone();
+    bailout.bank.equity = Cents(-10_000_000);
+    bailout.policy.bailout = true;
+    let mut failing = bailout.clone();
+    failing.policy.bailout = false;
+    vec![s.clone(), demand, carbon, bailout, failing]
 }
 
 #[test]

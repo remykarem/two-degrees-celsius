@@ -54,6 +54,7 @@ fn catalog_serves_every_decision_and_quantity_with_text() {
         let kind = match d.owner.as_str() {
             "firm" => "firms",
             "household" => "households",
+            "bank" => "bank",
             o => panic!("owner {o} has no agent kind in the test"),
         };
         assert_eq!(d.agent_kind, kind);

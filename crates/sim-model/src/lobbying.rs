@@ -3,8 +3,10 @@
 
 use crate::util::cfg;
 use sim_metrics::household_wealth;
-use sim_params::Params;
+use sim_params::{LobbyParams, Params};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 
 /// The value a lobbied lever would have in force at `net_lobby`, for a nominal setting. The same
@@ -18,13 +20,49 @@ pub fn expected_effective(lever: Lever, nominal: f64, net_lobby: f64) -> f64 {
     }
 }
 
+// ---- Decision: how much a household with capital income spends on lobbying ----
+
+pub const HOUSEHOLD_LOBBY: DecisionSpec = DecisionSpec {
+    id: D::HouseholdLobby,
+    system: SystemId::Lobbying,
+    inputs: &[Q::CapitalIncome, Q::Savings, Q::CampaignCap],
+    outputs: &[Q::LobbySpend],
+    params: &["lobby.spend_rate"],
+    rule: "share_of_capital_income",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LobbyView {
+    /// Dividends, rent and interest received last month.
+    pub capital_income: Cents,
+    pub savings: Cents,
+    /// The campaign-finance cap on the share of income that may be spent (a policy lever).
+    pub campaign_cap: f64,
+}
+
+pub fn lobby_view(s: &State, h: &Household) -> LobbyView {
+    LobbyView {
+        capital_income: h.income.capital_income(),
+        savings: h.savings,
+        campaign_cap: s.policy.campaign_cap.0,
+    }
+}
+
+/// A share of capital income (the spend rate, or the cap if lower), never more than savings.
+/// (Which households lobby, and who receives it, is matching and stays in `run`.)
+pub fn decide_lobby(v: &LobbyView, lp: &LobbyParams) -> Cents {
+    let share = lp.spend_rate.min(v.campaign_cap);
+    v.capital_income
+        .scale(share)
+        .min(v.savings.max(Cents::ZERO))
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let lp = &p.lobby;
     let c = cfg(s, p);
 
     // Capital households spend a share of their capital income on lobbying, up to the cap.
-    let share = lp.spend_rate.min(s.policy.campaign_cap.0);
     let lobbyist = s
         .households
         .iter()
@@ -37,11 +75,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
             .iter()
             .filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier))
         {
-            let spend = h
-                .income
-                .capital_income()
-                .scale(share)
-                .min(h.savings.max(Cents::ZERO));
+            let spend = decide_lobby(&lobby_view(s, h), lp);
             total_spend += spend.dollars();
             d.transfer_as(
                 Account::Household(h.id),
