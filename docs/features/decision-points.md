@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **APPROVED (all section 8 defaults). Stage 1 (labour pilot) in progress.** Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) IMPLEMENTED; stages 2-5 not started.** See section 10, "As built (stage 1)". Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
@@ -144,3 +144,32 @@ Relation to other docs: **registry-driven-sim** (parked) makes the *sim* read `e
 ## 9. Out of scope
 
 The causality graph UI and any sign/strength data; player directives and overrides; new behaviour of any kind; balance changes.
+
+## 10. As built (stage 1: the labour pilot)
+
+Written from the code after stage 1. Where this and the code disagree, the code wins.
+
+**What exists**
+- `crates/sim-types/src/decisions.rs` (data only): `OwnerKind`, `DecisionId` (`owner()` is an exhaustive match), `QuantityId` (14 quantities), `DecisionSpec`. A 10-line `macro_rules! named_enum!` writes each enum's variants, `ALL` and snake_case `as_str()` once (no `unsafe`, passes clippy; it removes a three-times-repeated list that would otherwise drift). `DecisionSpec` itself is a plain `const` struct, as recommended (option B).
+- `crates/sim-model/src/labour.rs`: `FIRM_HIRE`, `FIRM_FIRE`, `FIRM_WAGE` (specs) next to `decide_hire`, `decide_fire`, `decide_wage` and their views (`HireView`, `FireView`, `WageView`) and `*_view` builders. `run` is now: build view, decide, apply (matching, picking whom to fire, the job guarantee and person patches stay in `run`). The fire view reads the hire choice (`workers_wanted`), so the graph has a real edge `hire -> wanted_workers -> fire`.
+- `crates/sim-model/src/decisions.rs`: `DECISIONS` (the const registry), `spec`, `readers_of`, `writers_of` (the graph queries), and the registry tests.
+- `crates/sim-api/src/decisions.rs` + `content/decisions.json`: quantity labels, units and summaries, decision titles and rule text, parameter labels and units, and the owner to Agents-kind map. Joined with the registry at `catalog()` time and validated (missing or extra entries, rule id not matching the code, unknown parameter path: `bad_metadata`).
+- Wire (contract 2.7.0, additive): `catalog.decisions: DecisionInfo[]`, `catalog.quantities: QuantityInfo[]`. The firms Agents kind's `decides`, `observes` and `params` now start with lines generated from the decisions; `content/assumptions.json` keeps only what no registered decision covers (price, invest, expected sales).
+- Web: Agents explorer shows a "Decisions" list per kind (`inputs -> decision -> outputs`, rule and parameters in a disclosure) from `catalog.decisions`, filtered by `agentKind`. No decision is named in the web.
+
+**Differences from the draft**
+- Views carry state-derived quantities only; `decide_hire` also takes `&LabourParams` and `&ProductionParams` (for `beta_n`), `decide_wage` and `decide_fire` take `&LabourParams`. The sector's inventory cover and productivity growth are selected by the view builder (`inventory_cover`, `sector_tfp_growth` are quantities), so no decision matches on a sector.
+- `output_capacity` is one quantity standing for capital, technology, weather and climate (`production::capacity`); splitting it is for the graph work, not now.
+- `Choice` is a small struct, not the delta (open question 3 default). `HireChoice.max_hires` passes `labour.max_hire_per_month` through so that the declared parameter is genuinely read by the decision.
+- Whom to hire and whom to fire are mechanics and stay in `run` (open question 6 default).
+- `DecisionSpec` does not carry `OwnerKind` (derived) and `system` is `SystemId::Labour`.
+
+**Tests (all run in `cargo test --workspace`)**
+- `sim-model decisions::tests`: every `DecisionId` has exactly one spec; ids and quantity names unique; no `static` or `thread_local!` in the model crate; the graph queries find `hire -> wanted_workers -> fire`.
+- `sim-model labour::decision_tests`: **view-only reads** for each decision: every view field is a quantity the spec lists (the table is built next to an exhaustive destructure, so a new view field fails to compile until added), every listed input is carried by a view field, perturbing each field changes the choice for at least one base view, and the same view gives the same choice.
+- `sim-api tests/decisions.rs`: every listed parameter path resolves in `content/params.json`; every quantity and decision has text; the firms "Who decides" lines and parameters are generated and no longer hand-written in `content/assumptions.json`.
+- Web `tests/agents.test.ts`: the wire carries the decisions; a decision added only in the catalogue appears with no web change.
+
+**Gate results.** State hash (`statehash`, 3 seeds x plans) byte-identical before and after; baselines A-F identical (`cargo run --release -p sim-cli --example baselines`); insta snapshot and the golden's per-turn hashes unchanged; the golden changes only in the `agents` and `catalog` wire hashes. Recording, fixtures and generated contract regenerated.
+
+**Known limits (see `docs/known-issues.md`, DP-1 to DP-3).** The perturbation test proves a declared input matters, not that no other input is read inside `decide_*`; the view builders read `State` and are not covered by it; the Agents "observes" list now has one line per input quantity (long).

@@ -574,3 +574,13 @@ Review finding F8 (thin renderer). The state hash is unchanged.
 - Markets: `MarketDef`/`MarketView.link?: {label, target}` (the food card links to `panel:ecology`); the food market has a new "who is short" chip `commons_limit` (shown when the stocks left cap next month's food below what the farm made this month; its count is the cap).
 - `CONTRACT_VERSION` is "2.6.0". `docs/features/inflation.md` still proposes v2.5 for itself (not built); v2.5 is skipped.
 - The model change behind it (no wire type): production caps the food output by last month's stocks (`sim-metrics::food_cap`, params `nature.farm_cap_share_commons` and `nature.farm_cap_share_forest`). No `State` field, no `SCHEMA_VERSION` bump, no new random draw. `content/params.json` changed, so old saves are invalid (`paramsHash`).
+
+## 28. Contract v2.7: decision points (feature `docs/features/decision-points.md`; ADDITIVE, `SCHEMA_VERSION` stays 8)
+
+- `Catalog.decisions: DecisionInfo[]` and `Catalog.quantities: QuantityInfo[]` (`crates/sim-api/src/decisions.rs`, text from `content/decisions.json`, structure from `sim_model::decisions::DECISIONS`).
+  - `DecisionInfo` is `{id, title, owner, agentKind, system, decides, rule: {id, label, text}, inputs: QuantityRef[], outputs: QuantityRef[], params: AssumptionParam[]}`. `id` and `owner` are the snake_case `DecisionId` and `OwnerKind`; `agentKind` is the `AgentKindInfo.id` that shows it; `params` carry live values. `QuantityRef` is `{id, label, unit}`; `QuantityInfo` adds `owner` and `summary`.
+  - The graph is `inputs -> decision -> outputs`; a quantity one decision writes and another reads links them.
+- `AgentKindInfo` (the `agents()` catalogue) is unchanged in shape; for the `firms` kind, `decides`, `observes` and `params` now begin with lines generated from the decisions (hand-written lines for price and investment follow).
+- Stage 1 registers three decisions: `firm_hire`, `firm_fire`, `firm_wage` (system `S1 labour`), over 14 quantities.
+- `CONTRACT_VERSION` is "2.7.0". Fixtures `catalog.json`, `agents.json`, the golden's `agents` and `catalog` hashes and the recording changed; the state hashes did not.
+
