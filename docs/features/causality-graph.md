@@ -1,6 +1,6 @@
 # Causality graph (the "Why?" view)
 
-Status: **DRAFT for review.** Nothing is built. Builds on `docs/features/decision-points.md` (sections 15 and 16: the registry, `crates/sim-model/src/causal.rs`, `catalog().causal`, contract 2.8). Claims marked *(unverified)* were not checked against code or a running build; sizes marked *(npm)* come from npm registry metadata, not a bundle build.
+Status: **APPROVED (all open-question defaults).** Stage 0 in progress; later stages not built. Builds on `docs/features/decision-points.md` (sections 15 and 16: the registry, `crates/sim-model/src/causal.rs`, `catalog().causal`, contract 2.8). Claims marked *(unverified)* were not checked against code or a running build; sizes marked *(npm)* come from npm registry metadata, not a bundle build.
 
 ## 1. Goal and hard rules
 
