@@ -1,5 +1,5 @@
 //! S11 weather (Town v4): climate stress, drought, forest fires, and the forecast.
-//! Rules: docs/causal-model.md section 11. Runs before production (S2) and nature (S7).
+//! Design: docs/town-v4.md. Runs before production (S2) and nature (S7).
 //!
 //! RNG draw order per tick (it fixes every seeded outcome):
 //! 1. Drought onset: one `chance` if no drought was active at the start of the tick and stress

@@ -1,5 +1,5 @@
 //! Town v4 weather: stress curve, drought, fires, fire stations, forecast, invariants and sign
-//! tests (docs/causal-model.md section 11). Probability tests call the pure S11 system many
+//! tests (docs/town-v4.md). Probability tests call the pure S11 system many
 //! times from one state with a seeded generator, so they are exact in expectation and fixed in
 //! outcome.
 

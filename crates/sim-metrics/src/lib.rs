@@ -301,7 +301,7 @@ pub fn temperature(cumulative: Tonnes, p: &Params) -> f64 {
     p.nature.t0 + (p.nature.t_limit - p.nature.t0) * cumulative.0 / p.nature.budget_b0
 }
 
-/// Climate stress 0..1 (docs/causal-model.md section 11): 0 until the carbon budget remaining
+/// Climate stress 0..1 (docs/town-v4.md): 0 until the carbon budget remaining
 /// falls to `onset` of `budget_b0`, 1 at `full`, rising along `curve` in between.
 pub fn climate_stress(cumulative: Tonnes, p: &Params) -> f64 {
     let w = &p.weather;

@@ -617,7 +617,8 @@ mod tests {
             .any(|x| x.kind == LoopKind::Depends && x.quantities.len() > 1));
     }
 
-    /// A teaching loop of `docs/causal-model.md` section 4 and what the code supports. `members`
+    /// One of the nine teaching loops of the original hand-written design table (findings:
+    /// `docs/features/causality-graph.md` section 14) and what the code supports. `members`
     /// is the quantity set of the generated loop that carries it (`None`: nothing in the registry
     /// supports it), `kind` that loop's kind.
     struct DocRow {
@@ -712,7 +713,7 @@ mod tests {
                 row: 8,
                 story: "emissions -> budget used -> climate damage -> lower output",
                 doc_kind: R,
-                // The doc calls it reinforcing; through output it is balancing (output makes
+                // The story calls it reinforcing; through output it is balancing (output makes
                 // the emissions). The reinforcing version runs through the forest sink.
                 found: Some((
                     B,
@@ -739,7 +740,7 @@ mod tests {
     }
 
     #[test]
-    fn doc_table_rows_are_validated_against_the_generated_loops() {
+    fn teaching_loops_are_validated_against_the_generated_loops() {
         let l = loops();
         let mut unsupported = Vec::new();
         let mut kind_disagrees = Vec::new();
@@ -759,7 +760,7 @@ mod tests {
                 None => unsupported.push(r.row),
             }
         }
-        // The findings the doc states, pinned so they cannot drift.
+        // The findings of the original design table, pinned so they cannot drift.
         assert_eq!(unsupported, vec![2, 3, 6]);
         assert_eq!(kind_disagrees, vec![8]);
         // Why each unsupported row has no loop:

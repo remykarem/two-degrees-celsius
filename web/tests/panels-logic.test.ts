@@ -322,7 +322,7 @@ describe('v0.3 panels logic', () => {
     const withArrow = { ...cap, arrows: [{ metric: 'emissions' as const, direction: 'up' as const }] }; // raising the cap raises emissions
     expect(arrowsShown(withArrow, 0, 200).arrows[0]).toMatchObject({ metric: 'emissions', direction: 'down' });
   });
-  it('only causal-model arrows (content/levers.json): none for campaign_cap, nothing on prices for bailout', () => {
+  it('only declared lever arrows (content/levers.json): none for campaign_cap, nothing on prices for bailout', () => {
     expect(lv('campaign_cap').arrows).toEqual([]);
     expect(lv('bailout').arrows.map((a) => a.metric)).not.toContain('prices');
     for (const l of levers) for (const a of l.arrows) expect(['gdp', 'unemployment', 'gini', 'emissions', 'legitimacy', 'debt', 'wage_share', 'money', 'commons', 'forest_health', 'commons_health', 'farm_health']).toContain(a.metric);

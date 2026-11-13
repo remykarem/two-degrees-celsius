@@ -1,4 +1,4 @@
-//! The causal rules. One module per system (see docs/causal-model.md).
+//! The causal rules. One module per system (why: docs/causal-model.md).
 //! Every system is a pure function `fn(&State, &Params, &mut Rng) -> Deltas`:
 //! it reads a snapshot of the state and returns changes; the engine applies them.
 #![forbid(unsafe_code)]

@@ -315,7 +315,7 @@ pub struct NatureParams {
     pub farm_cap_share_forest: f64,
 }
 
-/// Town v4 weather: forest fires and drought (docs/town-v4.md, docs/causal-model.md section 11).
+/// Town v4 weather: forest fires and drought (docs/town-v4.md).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WeatherParams {

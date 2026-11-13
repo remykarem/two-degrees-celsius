@@ -474,7 +474,7 @@ pub enum Event {
     Collapse {
         reason: CollapseReason,
     },
-    /// Town v4 weather (docs/causal-model.md section 11).
+    /// Town v4 weather (docs/town-v4.md).
     FireStarted {
         tile: Tile,
     },
