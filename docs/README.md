@@ -8,7 +8,8 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 |---|---|
 | What the game is, goals, scope, milestones | `SPEC.md` sections 1-4, 8-10, 14-16 (read its "Current state" block first) |
 | Town v2 design (people, households, map, roads, plants, Shop, inequality) | `docs/town-v2.md` |
-| The rules of each system and sign tests | `docs/causal-model.md` section 10 (Town v2), then sections 7 and 8 (turn layer, demand side); sections 0-3 are cohort-era |
+| The rules of each system | The code (`crates/sim-model/src/<system>.rs`), the registry (`content/decisions.json`, the Agents explorer, `catalog().causal`) and `docs/features/causality-graph.md`; sign tests are automated (`tests/mechanism_signs`) |
+| Why the model is built this way, and what is left out | `docs/causal-model.md` |
 | What the code deliberately does differently from the design | `docs/deviations.md`, the "Town v2" table (T1-T23) |
 | Numbers, tuning history, baselines A-D | `content/*.json` (values), `docs/tuning-log.md` "Town v2" (history) |
 | The wire (JSON shapes) | `crates/sim-api` (Rust types) and the TS generated from them, `web/src/contract/generated.ts` (do not edit; `index.ts` holds aliases), then `docs/snapshot-contract.md` section 30 (v2.9, live values and quantity links), section 29 (v2.8, the causal graph), section 27 (v2.6, the sustainable-yield view), section 24 (v2.4, trade lists) and section 23 (v2.3, the Markets view), section 22 (v2.2, the net worth statement), section 21 (v2.1, the entity registry), section 20 (v2.0, sources as lists), then `docs/snapshot-contract.md` sections 9-11, 18 (v1.8) and 19 (v1.9, the estate), then `docs/sim-api-notes.md` "Town v2" |
@@ -47,7 +48,7 @@ Start with `/AGENTS.md`. This page says which doc to trust for what. Where two d
 | `README.md` (root) | CURRENT | Running the game |
 | `SPEC.md` | PARTLY CURRENT. Sections 2 (agents), 5, 6, 12 and 13.1 (map ownership) are SUPERSEDED BY section 17 and `docs/town-v2.md` | Concept, goals, scope |
 | `docs/town-v2.md` | CURRENT (approved design) | Changing anything about people, households, map, roads, plants, firms |
-| `docs/causal-model.md` | Sections 0-3 SUPERSEDED BY section 10 and `docs/town-v2.md` (cohort model). Sections 4-9 HISTORICAL numbers, rules still mostly valid. Section 10 CURRENT | Changing or checking a system's rule |
+| `docs/causal-model.md` | CURRENT (short): the modelling choices and why, what is deliberately left out, pointers to where each rule lives. The original equations, loop table and targets were removed | Asking why a rule is the way it is |
 | `docs/snapshot-contract.md` | Sections 1-8 HISTORICAL (v0.1: UI owns the map, cohort households). Sections 9-11 CURRENT (v0.2 fixes, v0.3 alignment, v1.0 Town v2) | Changing the wire |
 | `docs/sim-api-notes.md` | Top half (v0.3 era) HISTORICAL, some values stale (corrected inline). "Town v2 (contract v1.0)" section CURRENT | Wire details: shapes, frames, save, metadata |
 | `docs/integration-notes.md` | CURRENT for wasm build, determinism, golden. "Contract fixes" and "Contract issues left" sections are v0.3-era (schemaVersion 1) and HISTORICAL | Building wasm, golden test |
