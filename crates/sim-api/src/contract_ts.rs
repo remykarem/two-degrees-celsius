@@ -127,6 +127,10 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ),
         (
             "decisions",
+            <crate::decisions::MechanismInfo as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
             <crate::decisions::CausalRole as TS>::decl(&cfg),
         ),
         (

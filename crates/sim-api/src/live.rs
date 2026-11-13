@@ -309,6 +309,90 @@ pub fn binding(q: QuantityId) -> Binding {
             },
             previous: None,
         }),
+        // Stage 1 (mechanisms): nature, the grid, weather and what plain code writes.
+        Q::ForestStock => town("nature.forest", |s| Some(s.nature.forest), None),
+        Q::CommonsStock => town("nature.commons", |s| Some(s.nature.commons), None),
+        Q::CumulativeEmissions => town(
+            "nature.cumulativeTonnes",
+            |s| Some(s.nature.cumulative_tonnes),
+            None,
+        ),
+        Q::GrossEmissions => town(
+            "nature.grossEmissionsMonthly",
+            |s| Some(s.nature.gross_emissions_monthly),
+            None,
+        ),
+        Q::ForestSink => town("nature.sinkMonthly", |s| Some(s.nature.sink_monthly), None),
+        Q::NetEmissions => town(
+            "nature.netEmissionsMonthly",
+            |s| Some(s.nature.net_emissions_monthly),
+            None,
+        ),
+        Q::CommonsCommunity => Binding::Bound(Bound {
+            path: "nature.commonsAccess",
+            aggregate: Aggregate::Flag,
+            lever: None,
+            read: |s| Some(flag(s.nature.commons_access == CommonsAccessKey::Community)),
+            previous: None,
+        }),
+        Q::CommonsHarvest => lever!(LeverKey::CommonsHarvest, "policy.commons_harvest.nominal"),
+        Q::ResilienceSpending => lever!(
+            LeverKey::ResilienceSpending,
+            "policy.resilience_spending.nominal"
+        ),
+        Q::ProfitTaxRate => lever!(LeverKey::TaxProfit, "policy.tax_profit.effective"),
+        Q::WageTaxRate => lever!(LeverKey::TaxWage, "policy.tax_wage.nominal"),
+        Q::CapitalTaxRate => lever!(LeverKey::TaxCapital, "policy.tax_capital.nominal"),
+        Q::WealthTaxRate => lever!(LeverKey::WealthTax, "policy.wealth_tax.effective"),
+        Q::WealthThreshold => lever!(LeverKey::WealthThreshold, "policy.wealth_threshold.nominal"),
+        Q::DirectEmissions => agg("firms[].emissions", Aggregate::Sum, |s| {
+            firm_sum(s, |f| f.emissions)
+        }),
+        Q::Output => agg("firms[].output", Aggregate::Sum, |s| {
+            firm_sum(s, |f| f.output)
+        }),
+        Q::PlantEmissions => agg("energy.emissionsByPlant[].tonnes", Aggregate::Sum, |s| {
+            Some(s.energy.emissions_by_plant.iter().map(|p| p.tonnes).sum())
+        }),
+        Q::PlantCapacity => agg("energy.supply[].capacity", Aggregate::Sum, |s| {
+            Some(s.energy.supply.iter().map(|p| p.capacity).sum())
+        }),
+        Q::GridIntensity => town("energy.intensity", |s| Some(s.energy.intensity), None),
+        Q::RenewableShare => town(
+            "energy.renewableShare",
+            |s| Some(s.energy.renewable_share),
+            None,
+        ),
+        Q::EnergyDemand => town("energy.demand.total", |s| Some(s.energy.demand.total), None),
+        Q::ElectricityServed => town("energy.served", |s| Some(s.energy.served), None),
+        Q::ClimateStress => town("weather.stress", |s| Some(s.weather.stress), None),
+        Q::Drought => Binding::Bound(Bound {
+            path: "weather.drought",
+            aggregate: Aggregate::Flag,
+            lever: None,
+            read: |s| Some(flag(s.weather.drought.is_some())),
+            previous: None,
+        }),
+        Q::Fire => Binding::Bound(Bound {
+            path: "weather.fires",
+            aggregate: Aggregate::Flag,
+            lever: None,
+            read: |s| Some(flag(!s.weather.fires.is_empty())),
+            previous: None,
+        }),
+        Q::SystemChange => Binding::Bound(Bound {
+            path: "system.transition",
+            aggregate: Aggregate::Flag,
+            lever: None,
+            read: |s| Some(flag(s.system.transition.is_some())),
+            previous: None,
+        }),
+        Q::Rent => town(
+            "housing.rentPrivate",
+            |s| Some(s.housing.rent_private),
+            None,
+        ),
+        Q::Occupancy => town("housing.occupancy", |s| Some(s.housing.occupancy), None),
         // Private working variables of one agent.
         Q::ExpectedSales
         | Q::Inventory
@@ -368,9 +452,13 @@ pub fn binding(q: QuantityId) -> Binding {
         | Q::CommittedSpending
         | Q::SpendingCutRatio => Binding::Unbound(Computed),
         // In the state, not published as a town figure.
-        Q::TreasuryTaxes | Q::Borrowing | Q::Repayment | Q::Bailout | Q::BaseRate => {
-            Binding::Unbound(NotPublished)
-        }
+        Q::Technology
+        | Q::Consumption
+        | Q::TreasuryTaxes
+        | Q::Borrowing
+        | Q::Repayment
+        | Q::Bailout
+        | Q::BaseRate => Binding::Unbound(NotPublished),
         // Settings of a household or rule, fixed in the game's parameters.
         Q::SpendingPropensity | Q::WealthSpendingRate => Binding::Unbound(Fixed),
         Q::RandomDraw => Binding::Unbound(Random),

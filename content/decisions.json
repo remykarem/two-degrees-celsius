@@ -23,6 +23,10 @@
     {
       "kind": "nature",
       "agent_kind": "nature"
+    },
+    {
+      "kind": "weather",
+      "agent_kind": "weather"
     }
   ],
   "kind_notes": [
@@ -66,22 +70,27 @@
       {
         "id": "source",
         "label": "Starting point",
-        "text": "No decision writes it: a state variable, a lever or a setting the chain starts from."
+        "text": "Nothing in the registry writes it: a state variable, a lever or a setting the chain starts from, or something whose cause is not described yet."
       },
       {
         "id": "derived",
         "label": "In the middle",
-        "text": "A decision writes it and another decision reads it."
+        "text": "A decision or a piece of plain code writes it and another one reads it."
       },
       {
         "id": "sink",
         "label": "End point",
-        "text": "Written by a decision, but no other decision reads it: an outcome."
+        "text": "Written by a decision or a piece of plain code, but nothing else reads it: an outcome."
       },
       {
         "id": "decision",
         "label": "Decision",
         "text": "A choice that reads some quantities and writes others."
+      },
+      {
+        "id": "mechanism",
+        "label": "Mechanism",
+        "text": "Plain physics or accounting that nobody chooses (production, emissions, weather, rent, taxes): it reads some quantities and writes others by a fixed rule."
       }
     ],
     "live": {
@@ -794,6 +803,216 @@
       "unit": "yes or no",
       "owner": "nature",
       "summary": "Whether an owner has fenced the commons off."
+    },
+    {
+      "id": "forest_stock",
+      "label": "Forest",
+      "unit": "share of its maximum",
+      "owner": "nature",
+      "summary": "How much forest is left, as a share of the most the land can hold. It absorbs carbon, helps the farm and is cleared when the town builds."
+    },
+    {
+      "id": "commons_stock",
+      "label": "Commons",
+      "unit": "share of its maximum",
+      "owner": "nature",
+      "summary": "How much of the shared grazing and fishing land is left, as a share of the most it can hold. It regrows slowly and the farm takes food from it."
+    },
+    {
+      "id": "commons_community",
+      "label": "Commons run by the community",
+      "unit": "yes or no",
+      "owner": "nature",
+      "summary": "Whether the commons are managed by the community, which caps what the farm may take and cushions droughts at a small coordination cost."
+    },
+    {
+      "id": "commons_harvest",
+      "label": "Commons harvest setting",
+      "unit": "share of the usual take",
+      "owner": "government",
+      "summary": "The policy lever for how much of the usual harvest the farm may take from the commons."
+    },
+    {
+      "id": "cumulative_emissions",
+      "label": "Net emissions so far",
+      "unit": "tonnes",
+      "owner": "nature",
+      "summary": "All the carbon the town has emitted so far, less what the forest absorbed. It is the number the 1.5 C carbon budget is measured against."
+    },
+    {
+      "id": "gross_emissions",
+      "label": "Emissions per month (before the forest)",
+      "unit": "tonnes per month",
+      "owner": "nature",
+      "summary": "Everything the town emits in a month: firms, power plants, households and any private flight."
+    },
+    {
+      "id": "forest_sink",
+      "label": "Carbon the forest absorbs",
+      "unit": "tonnes per month",
+      "owner": "nature",
+      "summary": "The carbon the forest takes out of the air each month, in proportion to how much forest there is."
+    },
+    {
+      "id": "net_emissions",
+      "label": "Net emissions per month",
+      "unit": "tonnes per month",
+      "owner": "nature",
+      "summary": "Gross emissions less what the forest absorbs. It adds to the carbon already emitted."
+    },
+    {
+      "id": "direct_emissions",
+      "label": "Firms' direct emissions",
+      "unit": "tonnes per month",
+      "owner": "firm",
+      "summary": "The carbon firms emit making their goods, before counting the electricity they use."
+    },
+    {
+      "id": "plant_emissions",
+      "label": "Power plants' emissions",
+      "unit": "tonnes per month",
+      "owner": "nature",
+      "summary": "The carbon fossil power plants emit making the electricity the town uses. Renewable plants emit none."
+    },
+    {
+      "id": "grid_intensity",
+      "label": "Carbon per unit of electricity",
+      "unit": "tonnes per energy unit",
+      "owner": "nature",
+      "summary": "How much carbon one unit of electricity carries: higher when more of the plants burn fossil fuel."
+    },
+    {
+      "id": "renewable_share",
+      "label": "Renewable share of the plants",
+      "unit": "share of capacity",
+      "owner": "nature",
+      "summary": "The share of the town's power capacity that is renewable rather than fossil."
+    },
+    {
+      "id": "plant_capacity",
+      "label": "Power plant capacity",
+      "unit": "energy units per month",
+      "owner": "nature",
+      "summary": "The most electricity all the plants together can supply in a month."
+    },
+    {
+      "id": "energy_demand",
+      "label": "Electricity demanded",
+      "unit": "energy units per month",
+      "owner": "firm",
+      "summary": "The electricity firms and households would like to use this month, before any rationing."
+    },
+    {
+      "id": "electricity_served",
+      "label": "Share of electricity delivered",
+      "unit": "share of demand",
+      "owner": "nature",
+      "summary": "The share of what firms and households asked for that the plants can deliver. Below 1 means rationing, and firms make less."
+    },
+    {
+      "id": "climate_stress",
+      "label": "Climate stress",
+      "unit": "on a 0 to 1 scale",
+      "owner": "weather",
+      "summary": "How hard the climate is pressing: 0 while the carbon budget is healthy, 1 when it has run out. It raises the odds of droughts and fires."
+    },
+    {
+      "id": "drought",
+      "label": "Drought under way",
+      "unit": "yes or no",
+      "owner": "weather",
+      "summary": "Whether a drought is on. It cuts farm output and commons regrowth and raises electricity use."
+    },
+    {
+      "id": "fire",
+      "label": "Fire burning",
+      "unit": "yes or no",
+      "owner": "weather",
+      "summary": "Whether a forest fire is burning. It burns forest, smokes out nearby firms and makes people unhappy."
+    },
+    {
+      "id": "resilience_spending",
+      "label": "Resilience spending",
+      "unit": "$ per month",
+      "owner": "government",
+      "summary": "The policy lever for spending on defences against drought and fire."
+    },
+    {
+      "id": "system_change",
+      "label": "Economic system change under way",
+      "unit": "yes or no",
+      "owner": "government",
+      "summary": "Whether the town is switching economic system. Output dips while it happens."
+    },
+    {
+      "id": "output",
+      "label": "Output",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "What the firms actually make in a month, after electricity rationing, the emissions cap and nature's limits."
+    },
+    {
+      "id": "technology",
+      "label": "Technology",
+      "unit": "productivity index",
+      "owner": "firm",
+      "summary": "How much a firm gets out of its capital and labour. It creeps up a little each month."
+    },
+    {
+      "id": "consumption",
+      "label": "Household spending",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "What a household actually spent last month on goods and food."
+    },
+    {
+      "id": "rent",
+      "label": "Private rent",
+      "unit": "$ per month",
+      "owner": "household",
+      "summary": "The rent for a privately owned home. It rises while every home is taken and falls otherwise."
+    },
+    {
+      "id": "occupancy",
+      "label": "Homes occupied",
+      "unit": "share of homes",
+      "owner": "household",
+      "summary": "The share of homes that have a household living in them."
+    },
+    {
+      "id": "profit_tax_rate",
+      "label": "Profit tax rate",
+      "unit": "share of profit",
+      "owner": "government",
+      "summary": "The policy lever for the tax on firm profit (the rate in force, after lobbying)."
+    },
+    {
+      "id": "wage_tax_rate",
+      "label": "Wage tax rate",
+      "unit": "share of wages",
+      "owner": "government",
+      "summary": "The policy lever for the tax on wages."
+    },
+    {
+      "id": "capital_tax_rate",
+      "label": "Capital income tax rate",
+      "unit": "share of capital income",
+      "owner": "government",
+      "summary": "The policy lever for the tax on dividends and rent."
+    },
+    {
+      "id": "wealth_tax_rate",
+      "label": "Wealth tax rate",
+      "unit": "share of wealth per year",
+      "owner": "government",
+      "summary": "The policy lever for the tax on wealth above the threshold (the rate in force, after lobbying)."
+    },
+    {
+      "id": "wealth_threshold",
+      "label": "Wealth tax threshold",
+      "unit": "$",
+      "owner": "government",
+      "summary": "The policy lever for how much wealth a household may hold before the wealth tax applies."
     }
   ],
   "decisions": [
@@ -1035,6 +1254,398 @@
         "id": "monthly_chance_while_open",
         "label": "A monthly chance while the commons are open",
         "text": "While the commons are open, each month's random draw is compared with the economic system's chance of enclosure; below it, the richest capital-owning household fences the commons off. Who that is, is matched in the simulation."
+      }
+    }
+  ],
+  "mechanisms": [
+    {
+      "id": "production_technology",
+      "title": "Technology, capital and labour make output",
+      "explains": "Output before the factors below is technology times capital to a power times labour to a power.",
+      "rule": {
+        "id": "cobb_douglas",
+        "label": "Cobb-Douglas production",
+        "text": "Output = technology x capital^a x labour^b, with a = 0.3 and b = 0.7 here: more capital or more labour make more output, with diminishing returns."
+      }
+    },
+    {
+      "id": "technology_growth",
+      "title": "Technology creeps up",
+      "explains": "A firm's technology grows a little every month, at a rate set by its sector.",
+      "rule": {
+        "id": "technology_drift",
+        "label": "Steady technological drift",
+        "text": "Technology next month = technology x (1 + the sector's growth rate). Nothing a firm decides changes it."
+      }
+    },
+    {
+      "id": "capital_accumulation",
+      "title": "Capital wears out and is added to",
+      "explains": "Capital loses a share each month, and last month's investment is added; building clears a little forest.",
+      "rule": {
+        "id": "depreciate_then_add_investment",
+        "label": "Depreciate, then add investment",
+        "text": "Capital next month = capital x (1 - depreciation) + the money planned for investment / the price of a unit of capital. Each dollar built also clears some forest."
+      }
+    },
+    {
+      "id": "effective_labour_supply",
+      "title": "Workers supply effective labour",
+      "explains": "A firm's labour is its workers' skill times the hours they work.",
+      "rule": {
+        "id": "skill_times_hours",
+        "label": "Skill times hours",
+        "text": "Effective labour = the sum over the firm's workers of skill x effective hours. Skilled workers and longer working hours count for more."
+      }
+    },
+    {
+      "id": "farm_health_factor",
+      "title": "The farm needs healthy forest and commons",
+      "explains": "The farm's output is scaled by the health of the forest and the commons.",
+      "rule": {
+        "id": "farm_health_power",
+        "label": "Output follows resource health",
+        "text": "Farm output is multiplied by (the average of forest health and commons health) to a power, so a depleted forest or commons cuts food. A community-managed commons costs a little output in coordination."
+      }
+    },
+    {
+      "id": "climate_damage",
+      "title": "Climate damage cuts farm output",
+      "explains": "The farm loses a share of its output that grows with the carbon emitted so far.",
+      "rule": {
+        "id": "climate_damage_share",
+        "label": "Damage grows with the square of the budget used",
+        "text": "Share lost = damage x (emissions so far / carbon budget)^2, with the ratio capped. It is the slow cost of the carbon already in the air."
+      }
+    },
+    {
+      "id": "drought_loss",
+      "title": "Drought cuts farm output",
+      "explains": "While a drought lasts the farm loses output; resilience spending softens it.",
+      "rule": {
+        "id": "drought_output_loss",
+        "label": "Drought loss, softened by resilience",
+        "text": "Output is multiplied by 1 - a x (drought severity, cut by resilience spending). Resilience spending protects up to a ceiling."
+      }
+    },
+    {
+      "id": "fire_smoke",
+      "title": "Smoke cuts output near a fire",
+      "explains": "Every firm near a burning tile loses a little output.",
+      "rule": {
+        "id": "smoke_output_loss",
+        "label": "Smoke loss",
+        "text": "Output is multiplied by 1 - the smoke loss for any firm within the smoke radius of a fire."
+      }
+    },
+    {
+      "id": "transition_loss",
+      "title": "A change of system costs output",
+      "explains": "While the economic system changes, every firm makes less.",
+      "rule": {
+        "id": "transition_output_penalty",
+        "label": "Transition output penalty",
+        "text": "Output is multiplied by 1 - the penalty set in the system file, for as long as the switch takes. (The penalty is a setting of the system files, not of params.json.)"
+      }
+    },
+    {
+      "id": "production_output",
+      "title": "Output: capacity, rationing and the cap",
+      "explains": "Output is the capacity the factors give, cut by electricity rationing and by the emissions cap.",
+      "rule": {
+        "id": "capacity_rationed_capped",
+        "label": "Capacity, then rationing, then the cap",
+        "text": "Capacity = production x farm health x climate x drought x smoke x transition. It is then multiplied by the share of electricity delivered, and cannot exceed the emissions cap divided by the firm's carbon per unit."
+      }
+    },
+    {
+      "id": "food_cap",
+      "title": "Nature limits how much food can grow",
+      "explains": "The food the farms can grow is capped by what the forest and the commons can supply.",
+      "rule": {
+        "id": "food_limited_by_stocks",
+        "label": "Food limited by stocks",
+        "text": "Food cannot exceed the tighter of two caps: the commons supply (a share of the stock, limited by who controls access) over the commons taken per unit of food, and the same for the forest."
+      }
+    },
+    {
+      "id": "inventory_stock",
+      "title": "Stock carries over and this month's output is added",
+      "explains": "What a firm did not sell loses a little to holding costs, and this month's output is added.",
+      "rule": {
+        "id": "stock_decay_plus_output",
+        "label": "Stock decay plus output",
+        "text": "Stock next month = stock x (1 - holding cost) + this month's output. Services cannot be stored: their holding cost is 100 per cent."
+      }
+    },
+    {
+      "id": "electricity_demand",
+      "title": "Firms and households need electricity",
+      "explains": "Firms need electricity per unit made and households per person and per dollar spent; a drought raises both.",
+      "rule": {
+        "id": "electricity_per_unit",
+        "label": "Electricity per unit and per person",
+        "text": "Firm demand = planned output x electricity per unit (cut by green technology) x a heat factor. Household demand = people x (base + extra for each dollar spent). A drought raises both."
+      }
+    },
+    {
+      "id": "electricity_rationing",
+      "title": "Plants deliver what they can",
+      "explains": "The share of electricity delivered is what the plants can supply over what is asked, at most 1.",
+      "rule": {
+        "id": "served_share",
+        "label": "Served share",
+        "text": "Served = supply / demand when demand exceeds supply, otherwise 1. Below the rationing threshold the town is told electricity is rationed."
+      }
+    },
+    {
+      "id": "grid_intensity_mix",
+      "title": "The mix of plants sets carbon per unit of electricity",
+      "explains": "Carbon per unit of electricity is the fossil share of capacity times the fossil factor.",
+      "rule": {
+        "id": "fossil_share_times_factor",
+        "label": "Fossil share times factor",
+        "text": "Grid intensity = (fossil capacity / total capacity) x tonnes of carbon per unit of fossil electricity. Building renewables lowers it."
+      }
+    },
+    {
+      "id": "firm_emissions",
+      "title": "Firms emit in proportion to output",
+      "explains": "A firm's direct emissions are its output times its carbon intensity, cut by green technology; its footprint adds its electricity.",
+      "rule": {
+        "id": "intensity_times_output",
+        "label": "Intensity times output",
+        "text": "Direct emissions = output x base intensity x (1 - green technology). Footprint = direct emissions + the electricity used x carbon per unit of electricity."
+      }
+    },
+    {
+      "id": "plant_emissions_output",
+      "title": "Only fossil plants emit",
+      "explains": "Fossil plants emit in proportion to the electricity they deliver.",
+      "rule": {
+        "id": "fossil_plants_emit",
+        "label": "Fossil plants emit",
+        "text": "Each plant delivers its capacity share of the electricity used; fossil plants emit that x the fossil factor, renewable plants nothing."
+      }
+    },
+    {
+      "id": "emissions_accounting",
+      "title": "Emissions are added up",
+      "explains": "Gross emissions are firms' direct emissions, plants, households and any private flight, summed.",
+      "rule": {
+        "id": "gross_emissions_sum",
+        "label": "Sum of the sources",
+        "text": "Gross emissions = firms' direct + plants' + households' (people x direct emissions each) + any flight's tonnes."
+      }
+    },
+    {
+      "id": "carbon_budget",
+      "title": "Net emissions use up the carbon budget",
+      "explains": "Net emissions are gross emissions less what the forest absorbs, and they add to the carbon emitted so far.",
+      "rule": {
+        "id": "net_emissions_accumulate",
+        "label": "Net emissions accumulate",
+        "text": "Net = gross - forest absorption. Total so far = total so far + net, never below zero. The carbon budget is measured against this total."
+      }
+    },
+    {
+      "id": "forest_sink_uptake",
+      "title": "The forest absorbs carbon",
+      "explains": "The forest absorbs carbon in proportion to how much of it there is.",
+      "rule": {
+        "id": "sink_per_unit_forest",
+        "label": "Absorption per unit of forest",
+        "text": "Carbon absorbed per month = absorption rate x forest stock. Cutting or burning forest therefore also cuts the sink."
+      }
+    },
+    {
+      "id": "forest_stock_change",
+      "title": "The forest regrows and is harvested",
+      "explains": "The forest regrows along a logistic curve and the farms take some for each unit of food.",
+      "rule": {
+        "id": "logistic_growth_less_harvest",
+        "label": "Logistic growth less harvest",
+        "text": "Forest next month = forest + growth x forest x (1 - forest / maximum) - the harvest (food made x forest taken per unit) - any clearing for building."
+      }
+    },
+    {
+      "id": "commons_stock_change",
+      "title": "The commons regrow and are harvested",
+      "explains": "The commons regrow along a logistic curve, slowed by drought, and the farms take some; access rules limit the take.",
+      "rule": {
+        "id": "logistic_growth_less_harvest",
+        "label": "Logistic growth less harvest",
+        "text": "Commons next month = commons + growth x commons x (1 - commons / maximum) x (share surviving drought) - the harvest. A fenced-off commons allows more harvest; a community-managed one is capped and cushions drought."
+      }
+    },
+    {
+      "id": "fire_burns_forest",
+      "title": "Fire burns forest",
+      "explains": "Burning tiles lose a share of the forest stock each month.",
+      "rule": {
+        "id": "burning_tiles_lose_forest",
+        "label": "Burn loss",
+        "text": "Forest lost = burning tiles x burn share x (forest / forest tiles). Burnt tiles then regrow slowly."
+      }
+    },
+    {
+      "id": "climate_stress_curve",
+      "title": "Emissions raise climate stress",
+      "explains": "Climate stress is 0 until the carbon budget runs low and rises to 1 as it runs out.",
+      "rule": {
+        "id": "stress_from_budget_used",
+        "label": "Stress from the budget used",
+        "text": "Stress = ((onset - budget left) / (onset - full)) clamped to 0..1, raised to a curve exponent. It is the one link from emissions to the weather."
+      }
+    },
+    {
+      "id": "drought_onset",
+      "title": "Stress makes droughts likelier",
+      "explains": "A drought starts by chance, likelier and more severe as stress rises, and ends when its months run out.",
+      "rule": {
+        "id": "drought_chance_by_stress",
+        "label": "Drought chance by stress",
+        "text": "Monthly chance = base x (1 + gain x stress). Severity and length are drawn from ranges that widen with stress. The draw is random, so two games differ."
+      }
+    },
+    {
+      "id": "fire_ignition",
+      "title": "Dry conditions start and spread fires",
+      "explains": "Fires start by chance and spread to neighbouring forest tiles, more in dry conditions, less with fire stations and resilience spending.",
+      "rule": {
+        "id": "fire_chance_by_dryness",
+        "label": "Fire chance by dryness",
+        "text": "Ignition chance = base x (1 + gain x stress) x dryness x share of forest standing x (1 - resilience cut). Dryness grows with a depleted commons and with drought. Spread chance rises with drought and falls near a fire station."
+      }
+    },
+    {
+      "id": "wellbeing_score",
+      "title": "Wellbeing blends what people need",
+      "explains": "Each person's wellbeing moves toward a weighted blend of consumption, a job, a home, a clean environment, savings, a short commute and clean local air.",
+      "rule": {
+        "id": "weighted_needs_blend",
+        "label": "Weighted blend of needs",
+        "text": "Target = weighted sum of: spending against needs, having a job, being housed, forest times clean air, savings against a few months of needs, less a long commute, nearby fossil plants and smoke. Wellbeing moves a share of the way to it each month."
+      }
+    },
+    {
+      "id": "inequality_gini",
+      "title": "Inequality is the Gini of wealth",
+      "explains": "Inequality is how unevenly wealth is spread across people (0 = equal, 1 = one person has all).",
+      "rule": {
+        "id": "gini_of_wealth",
+        "label": "Gini of wealth",
+        "text": "The Gini coefficient of each person's wealth (their share of the household's wealth)."
+      }
+    },
+    {
+      "id": "last_disposable_record",
+      "title": "Last month's income is remembered",
+      "explains": "A household's disposable income is recorded each month and used to decide next month's spending and moves.",
+      "rule": {
+        "id": "income_less_taxes_and_rent",
+        "label": "Income less taxes and rent",
+        "text": "Disposable income = wages + capital income + transfers, less taxes and rent paid. It is stored for next month."
+      }
+    },
+    {
+      "id": "wage_payment",
+      "title": "Firms pay wages",
+      "explains": "Firms pay each worker their wage, scaled down if the firm's cash falls short; the pay lands in the worker's household.",
+      "rule": {
+        "id": "pay_up_to_cash",
+        "label": "Pay up to the cash in hand",
+        "text": "Each worker is paid the wage due; if the total due exceeds the firm's cash, everyone is paid the same share of it. Wages paid is the firm's payroll."
+      }
+    },
+    {
+      "id": "household_income_flows",
+      "title": "Dividends and rent reach households",
+      "explains": "Dividends go to the firm's owners and rent to the home's owner.",
+      "rule": {
+        "id": "dividends_and_rent_received",
+        "label": "Dividends and rent received",
+        "text": "Each month a firm's dividend goes to its owner (a household, the bank's owner, the state or its workers), and renters pay rent to the home's owner. Both add to the receiving household's savings and capital income."
+      }
+    },
+    {
+      "id": "firm_profit",
+      "title": "Profit is what is left",
+      "explains": "Profit is revenue less wages, loan interest, the carbon charge and profit tax.",
+      "rule": {
+        "id": "revenue_less_costs_and_taxes",
+        "label": "Revenue less costs and taxes",
+        "text": "Profit = revenue - wages paid - interest - carbon charge (carbon price x footprint) - profit tax (rate x the profit before tax)."
+      }
+    },
+    {
+      "id": "tax_collection",
+      "title": "The treasury collects taxes",
+      "explains": "The government collects taxes on wages, capital income and wealth, and what firms pay in carbon charge and profit tax.",
+      "rule": {
+        "id": "taxes_by_base_and_rate",
+        "label": "Taxes by base and rate",
+        "text": "Receipts = wage tax x wages + capital tax x capital income + wealth tax x wealth above the threshold + firms' carbon charge + firms' profit tax. Collecting is not a choice; what to do with the money is (see the government's decisions)."
+      }
+    },
+    {
+      "id": "goods_settlement",
+      "title": "Purchases move money and stock",
+      "explains": "What households buy moves money from their savings to the firm, takes units out of its stock and counts as their spending.",
+      "rule": {
+        "id": "units_times_price",
+        "label": "Units times price",
+        "text": "Revenue = units sold x price. Stock falls by the units sold; the buyers' savings fall by what they paid and their recorded spending rises by it."
+      }
+    },
+    {
+      "id": "unit_cost_buildup",
+      "title": "Wages and carbon make up a firm's unit cost",
+      "explains": "A firm's unit cost is its wage bill plus its carbon charge, per unit made.",
+      "rule": {
+        "id": "wages_plus_carbon_per_unit",
+        "label": "Wages plus carbon per unit",
+        "text": "Unit cost = (wage bill + carbon charge) / output. The price rule then moves price toward unit cost plus markup, so wages and the carbon price pass into prices."
+      }
+    },
+    {
+      "id": "housing_rent",
+      "title": "Rent follows occupancy and what renters can bear",
+      "explains": "Rent rises while every home is taken and renters can bear it, and falls otherwise.",
+      "rule": {
+        "id": "rent_follows_occupancy_and_burden",
+        "label": "Rent follows occupancy and burden",
+        "text": "If occupancy is at or above the trigger and rent takes less than the burden cap of renters' income, rent rises by a set share; otherwise it falls by one, never below the floor."
+      }
+    },
+    {
+      "id": "housing_moves",
+      "title": "Households move to what they can afford",
+      "explains": "Households move to a home whose rent they can afford; unpaid rent for too long loses the home.",
+      "rule": {
+        "id": "move_evict_by_affordability",
+        "label": "Move and evict by affordability",
+        "text": "A household moves to the cheapest free home whose rent is within the share of its income it will pay. After enough months of unpaid rent a tenant is evicted. Both change how many homes are occupied."
+      }
+    },
+    {
+      "id": "labour_matching",
+      "title": "Vacancies are filled from the jobless",
+      "explains": "Posted vacancies are filled from people without work, those who ask the least first.",
+      "rule": {
+        "id": "fill_vacancies_from_jobless",
+        "label": "Fill vacancies from the jobless",
+        "text": "Each firm's vacancies are filled from the jobless in the labour force, in order of the pay they ask, up to the firm's monthly hiring cap. Fewer jobless than vacancies leaves jobs open."
+      }
+    },
+    {
+      "id": "unemployment_rate",
+      "title": "Unemployment is the jobless share",
+      "explains": "Unemployment is the share of the labour force without a job.",
+      "rule": {
+        "id": "jobless_share_of_labour_force",
+        "label": "Jobless share of the labour force",
+        "text": "Unemployment = people in the labour force with no job / people in the labour force."
       }
     }
   ],
@@ -1413,6 +2024,401 @@
       "path": "systems.market.enclosure_prob",
       "label": "Monthly chance of enclosure, Market system",
       "unit": "probability per month"
+    },
+    {
+      "path": "energy.factor_fossil",
+      "label": "Carbon per unit of fossil electricity",
+      "unit": "tonnes per energy unit"
+    },
+    {
+      "path": "production.alpha_k",
+      "label": "Output elasticity of capital",
+      "unit": "exponent"
+    },
+    {
+      "path": "production.farm_health_exp",
+      "label": "Farm output sensitivity to resource health",
+      "unit": "exponent"
+    },
+    {
+      "path": "nature.community_coord_cost",
+      "label": "Output lost to coordinating a community commons",
+      "unit": "share"
+    },
+    {
+      "path": "nature.forest_max",
+      "label": "Most forest the land can hold",
+      "unit": "units"
+    },
+    {
+      "path": "nature.commons_max",
+      "label": "Most commons the land can hold",
+      "unit": "units"
+    },
+    {
+      "path": "production.climate_damage",
+      "label": "Farm output lost at the full carbon budget",
+      "unit": "share"
+    },
+    {
+      "path": "production.climate_ratio_cap",
+      "label": "Highest budget ratio that counts for climate damage",
+      "unit": "ratio"
+    },
+    {
+      "path": "nature.budget_b0",
+      "label": "Carbon budget",
+      "unit": "tonnes"
+    },
+    {
+      "path": "weather.a_f",
+      "label": "Farm output lost per unit of drought",
+      "unit": "share"
+    },
+    {
+      "path": "weather.resilience_drought_cut_max",
+      "label": "Most a drought is softened by resilience spending",
+      "unit": "share"
+    },
+    {
+      "path": "weather.resilience_scale_usd",
+      "label": "Resilience spending at which about two thirds of the protection is reached",
+      "unit": "$ per month"
+    },
+    {
+      "path": "weather.smoke_productivity",
+      "label": "Output lost near a fire",
+      "unit": "share"
+    },
+    {
+      "path": "weather.smoke_radius",
+      "label": "How far smoke reaches",
+      "unit": "tiles"
+    },
+    {
+      "path": "nature.farm_cap_share_commons",
+      "label": "Most of the commons the farm can take in a month",
+      "unit": "share"
+    },
+    {
+      "path": "nature.farm_cap_share_forest",
+      "label": "Most of the forest the farm can take in a month",
+      "unit": "share"
+    },
+    {
+      "path": "nature.farm_harvest_commons",
+      "label": "Commons taken per unit of food",
+      "unit": "units"
+    },
+    {
+      "path": "nature.farm_harvest_forest",
+      "label": "Forest taken per unit of food",
+      "unit": "units"
+    },
+    {
+      "path": "nature.enclosure_harvest_multiplier",
+      "label": "Harvest allowed on a fenced-off commons",
+      "unit": "times the usual"
+    },
+    {
+      "path": "nature.commons_growth",
+      "label": "Commons regrowth rate",
+      "unit": "share per month"
+    },
+    {
+      "path": "goods.holding_cost",
+      "label": "Share of stock lost per month",
+      "unit": "share"
+    },
+    {
+      "path": "goods.services_holding_cost",
+      "label": "Share of services stock lost per month",
+      "unit": "share"
+    },
+    {
+      "path": "energy.hh_energy_base_pc",
+      "label": "Electricity a person needs",
+      "unit": "energy units per month"
+    },
+    {
+      "path": "energy.hh_energy_consumption_pc",
+      "label": "Extra electricity per reference spend",
+      "unit": "energy units per month"
+    },
+    {
+      "path": "energy.hh_ref_consumption_usd",
+      "label": "Reference household spending",
+      "unit": "$ per person per month"
+    },
+    {
+      "path": "weather.a_e",
+      "label": "Extra electricity demand per unit of drought",
+      "unit": "share"
+    },
+    {
+      "path": "nature.household_footprint_base",
+      "label": "Direct emissions per person",
+      "unit": "tonnes per month"
+    },
+    {
+      "path": "estate.household_emissions_t",
+      "label": "The estate household's direct emissions",
+      "unit": "tonnes per month"
+    },
+    {
+      "path": "estate.flight_tonnes",
+      "label": "Emissions of one private flight",
+      "unit": "tonnes"
+    },
+    {
+      "path": "nature.sink_sigma",
+      "label": "Carbon absorbed per unit of forest",
+      "unit": "tonnes per month"
+    },
+    {
+      "path": "nature.forest_growth",
+      "label": "Forest regrowth rate",
+      "unit": "share per month"
+    },
+    {
+      "path": "weather.a_c",
+      "label": "Commons regrowth lost per unit of drought",
+      "unit": "share"
+    },
+    {
+      "path": "weather.community_buffer",
+      "label": "Drought loss a community commons avoids",
+      "unit": "share"
+    },
+    {
+      "path": "weather.burn_frac",
+      "label": "Share of a tile's forest lost to a fire",
+      "unit": "share"
+    },
+    {
+      "path": "weather.onset",
+      "label": "Budget left above which there is no stress",
+      "unit": "share of the budget"
+    },
+    {
+      "path": "weather.full",
+      "label": "Budget left at which stress is full",
+      "unit": "share of the budget"
+    },
+    {
+      "path": "weather.curve",
+      "label": "Shape of the stress curve",
+      "unit": "exponent"
+    },
+    {
+      "path": "weather.drought_base",
+      "label": "Base monthly drought chance",
+      "unit": "probability per month"
+    },
+    {
+      "path": "weather.drought_stress_gain",
+      "label": "Extra drought chance per unit of stress",
+      "unit": "ratio"
+    },
+    {
+      "path": "weather.sev_min",
+      "label": "Mildest drought",
+      "unit": "share"
+    },
+    {
+      "path": "weather.sev_span_base",
+      "label": "Range of drought severity",
+      "unit": "share"
+    },
+    {
+      "path": "weather.sev_span_stress",
+      "label": "Extra range of severity at full stress",
+      "unit": "share"
+    },
+    {
+      "path": "weather.dur_min",
+      "label": "Shortest drought",
+      "unit": "months"
+    },
+    {
+      "path": "weather.dur_span_base",
+      "label": "Range of drought length",
+      "unit": "months"
+    },
+    {
+      "path": "weather.dur_span_stress",
+      "label": "Extra range of length at full stress",
+      "unit": "months"
+    },
+    {
+      "path": "weather.fire_base",
+      "label": "Base monthly ignition chance",
+      "unit": "probability per month"
+    },
+    {
+      "path": "weather.fire_stress_gain",
+      "label": "Extra ignition chance per unit of stress",
+      "unit": "ratio"
+    },
+    {
+      "path": "weather.dry_commons",
+      "label": "Dryness added by a depleted commons",
+      "unit": "ratio"
+    },
+    {
+      "path": "weather.dry_drought",
+      "label": "Dryness added by a drought",
+      "unit": "ratio"
+    },
+    {
+      "path": "weather.resilience_ignition_cut_max",
+      "label": "Most ignition chance cut by resilience spending",
+      "unit": "share"
+    },
+    {
+      "path": "weather.spread_p",
+      "label": "Base spread chance per neighbouring forest tile",
+      "unit": "probability per month"
+    },
+    {
+      "path": "weather.spread_drought",
+      "label": "Extra spread chance per unit of drought",
+      "unit": "ratio"
+    },
+    {
+      "path": "weather.duration_months",
+      "label": "Months a fire burns",
+      "unit": "months"
+    },
+    {
+      "path": "weather.station_spread_cut",
+      "label": "Spread chance cut by a fire station",
+      "unit": "share"
+    },
+    {
+      "path": "weather.station_duration_cut",
+      "label": "Burn time cut by a fire station",
+      "unit": "share"
+    },
+    {
+      "path": "weather.coverage_radius",
+      "label": "How far a fire station reaches",
+      "unit": "tiles"
+    },
+    {
+      "path": "wellbeing.needs_usd_pc",
+      "label": "Spending that meets a person's needs",
+      "unit": "$ per month"
+    },
+    {
+      "path": "wellbeing.w_consumption",
+      "label": "Weight of consumption in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.w_employment",
+      "label": "Weight of a job in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.w_housing",
+      "label": "Weight of housing in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.w_environment",
+      "label": "Weight of the environment in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.w_security",
+      "label": "Weight of savings in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.security_months",
+      "label": "Months of needs that make a household feel secure",
+      "unit": "months"
+    },
+    {
+      "path": "wellbeing.smoothing",
+      "label": "How fast wellbeing moves toward its target",
+      "unit": "share per month"
+    },
+    {
+      "path": "wellbeing.pollution_scale",
+      "label": "Monthly emissions that count as full pollution",
+      "unit": "tonnes per month"
+    },
+    {
+      "path": "wellbeing.w_commute",
+      "label": "Weight of a long commute in wellbeing",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.commute_scale_minutes",
+      "label": "Commute that counts as fully bad",
+      "unit": "minutes"
+    },
+    {
+      "path": "wellbeing.w_local_pollution",
+      "label": "Weight of nearby fossil plants and factories",
+      "unit": "weight"
+    },
+    {
+      "path": "wellbeing.pollution_radius",
+      "label": "How close counts as nearby",
+      "unit": "tiles"
+    },
+    {
+      "path": "weather.smoke_wellbeing",
+      "label": "Wellbeing lost to smoke",
+      "unit": "weight"
+    },
+    {
+      "path": "goods.occupancy_trigger",
+      "label": "Occupancy above which rents may rise",
+      "unit": "share of homes"
+    },
+    {
+      "path": "goods.rent_burden_cap",
+      "label": "Share of income rent may take before it stops rising",
+      "unit": "share"
+    },
+    {
+      "path": "goods.rent_up",
+      "label": "Monthly rent rise",
+      "unit": "share per month"
+    },
+    {
+      "path": "goods.rent_down",
+      "label": "Monthly rent fall",
+      "unit": "share per month"
+    },
+    {
+      "path": "goods.min_rent_usd",
+      "label": "Lowest rent",
+      "unit": "$ per month"
+    },
+    {
+      "path": "goods.move_rent_share",
+      "label": "Share of income a household will pay in rent",
+      "unit": "share"
+    },
+    {
+      "path": "goods.evict_after_months",
+      "label": "Months of unpaid rent before eviction",
+      "unit": "months"
+    },
+    {
+      "path": "space.free_minutes",
+      "label": "Commute that costs no wellbeing",
+      "unit": "minutes"
+    },
+    {
+      "path": "nature.forest_clear_per_build",
+      "label": "Forest cleared per dollar built",
+      "unit": "units per $"
     }
   ]
 }

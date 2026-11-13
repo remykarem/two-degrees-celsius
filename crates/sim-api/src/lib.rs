@@ -68,4 +68,4 @@ pub const SCHEMA_VERSION: u32 = 8;
 
 /// Version of the contract text in `docs/snapshot-contract.md` (the newest section). Emitted into
 /// the generated TS so the web compares against it, not a hard-coded copy.
-pub const CONTRACT_VERSION: &str = "2.9.0";
+pub const CONTRACT_VERSION: &str = "2.10.0";

@@ -160,6 +160,8 @@ pub struct Catalog {
     pub entities: Vec<crate::entities::EntityKind>,
     /// Contract v2.7: the registered decisions (what each reads, writes and uses), from code plus `content/decisions.json`.
     pub decisions: Vec<crate::decisions::DecisionInfo>,
+    /// Contract v2.10: the registered mechanisms (plain physics and accounting code that links the decisions' quantities: what each reads, writes and uses), from code plus `content/decisions.json`. Not decisions: nothing here is chosen.
+    pub mechanisms: Vec<crate::decisions::MechanismInfo>,
     /// Contract v2.7: the quantity vocabulary of the decisions (labels and units).
     pub quantities: Vec<crate::decisions::QuantityInfo>,
     /// Contract v2.8: the causal graph of the decisions (nodes, edges, source and sink markers), derived from the registry.
@@ -292,6 +294,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         markets: f.markets.validated()?,
         entities: crate::entities::load()?,
         decisions: dec.decisions,
+        mechanisms: dec.mechanisms,
         quantities: dec.quantities,
         causal: dec.causal,
     })

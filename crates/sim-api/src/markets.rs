@@ -55,14 +55,15 @@ pub fn driver_ids(market: &str) -> &'static [&'static str] {
     }
 }
 
-/// Contract v2.9: the graph quantity a market's price is, where the registry has one (the
-/// housing rent and electricity are not in the decision registry yet).
+/// Contract v2.9: the graph quantity a market's price is, where the registry has one (electricity
+/// is not in the registry yet; housing is the private rent since stage 1).
 pub fn price_quantity(market: &str) -> Option<QuantityId> {
     match market {
         "food" => Some(QuantityId::FoodPrice),
         "goods" | "services" => Some(QuantityId::Price),
         "labour" => Some(QuantityId::Wage),
         "credit" => Some(QuantityId::LoanRate),
+        "housing" => Some(QuantityId::Rent),
         _ => None,
     }
 }

@@ -294,3 +294,16 @@ fn legitimacy_breakdown_inputs_are_what_the_legitimacy_decision_reads() {
         );
     }
 }
+
+/// Stage 1: the housing card links to the rent quantity, and the quantity's live value is the
+/// private rent the card shows.
+#[test]
+fn the_housing_market_links_to_the_rent_quantity() {
+    let api = api_after_turns(3);
+    let snap = api.snapshot();
+    let card = snap.markets.iter().find(|m| m.id == "housing").unwrap();
+    assert_eq!(card.price_quantity.as_deref(), Some("rent"));
+    let rent = snap.quantities.iter().find(|l| l.id == "rent").unwrap();
+    assert_eq!(Some(rent.value), card.price);
+    assert_eq!(rent.value, snap.housing.rent_private);
+}

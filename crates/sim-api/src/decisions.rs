@@ -10,9 +10,9 @@ use crate::error::{code, ApiError, ApiResult};
 use crate::live;
 use serde::{Deserialize, Serialize};
 use sim_model::causal::{self, EdgeKind, Node, Role};
-use sim_model::decisions::DECISIONS;
+use sim_model::decisions::{DECISIONS, MECHANISMS};
 use sim_params::Params;
-use sim_types::{DecisionId, OwnerKind, QuantityId};
+use sim_types::{DecisionId, MechanismId, OwnerKind, QuantityId};
 use std::collections::BTreeMap;
 
 pub const DECISIONS_JSON: &str = include_str!("../../../content/decisions.json");
@@ -41,6 +41,16 @@ struct DecisionDef {
     id: String,
     title: String,
     decides: String,
+    rule: DecisionRule,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MechanismDef {
+    id: String,
+    title: String,
+    /// One line: what the plain code does (the decision's `decides`).
+    explains: String,
     rule: DecisionRule,
 }
 
@@ -93,6 +103,8 @@ struct File {
     causal: CausalDef,
     quantities: Vec<QuantityDef>,
     decisions: Vec<DecisionDef>,
+    /// Contract v2.10: the words of the registered mechanisms (plain physics and accounting code).
+    mechanisms: Vec<MechanismDef>,
     params: Vec<ParamDef>,
 }
 
@@ -157,6 +169,30 @@ pub struct DecisionRule {
 
 /// One registered decision: owner, where it runs, what it reads and writes, and the live
 /// parameters it uses.
+/// Contract v2.10: one registered mechanism, the plain code (physics or accounting) that links the
+/// quantities decisions read and write. Same shape as a decision, minus "decides": it is not a
+/// choice, and declaring it changes no behaviour.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MechanismInfo {
+    /// The `MechanismId` wire name.
+    pub id: String,
+    pub title: String,
+    /// The `OwnerKind` wire name.
+    pub owner: String,
+    /// The Agents explorer kind (`AgentKindInfo.id`) that lists it.
+    pub agent_kind: String,
+    /// The simulation system it runs in.
+    pub system: String,
+    /// One line: what the code does.
+    pub explains: String,
+    pub rule: DecisionRule,
+    pub inputs: Vec<QuantityRef>,
+    pub outputs: Vec<QuantityRef>,
+    pub params: Vec<AssumptionParam>,
+}
+
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -202,23 +238,25 @@ pub struct CausalLive {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CausalNode {
-    /// `quantity:<id>` or `decision:<id>` (a quantity and a decision can share a bare id).
+    /// `quantity:<id>`, `decision:<id>` or `mechanism:<id>` (a quantity and a decision can share a bare id).
     pub id: String,
-    /// `quantity` or `decision`.
+    /// `quantity`, `decision` or `mechanism` (contract v2.10: plain physics and accounting code).
     pub kind: String,
-    /// `source` (nothing writes it), `derived`, `sink` (nothing else reads it) or `decision`.
+    /// `source` (nothing in the registry writes it), `derived`, `sink` (nothing else reads it),
+    /// `decision` or `mechanism`.
     pub role: String,
-    /// The bare `QuantityId` or `DecisionId` wire name.
+    /// The bare `QuantityId`, `DecisionId` or `MechanismId` wire name.
     pub ref_id: String,
     pub label: String,
     /// The `OwnerKind` wire name.
     pub owner: String,
-    /// A decision both reads and writes this quantity (legitimacy is an example).
+    /// A decision or mechanism both reads and writes this quantity (legitimacy is an example).
     pub self_loop: bool,
     /// The weakly connected component, numbered in node order.
     pub component: usize,
     /// Quantity node ids that can change this quantity, nearest first, up to
-    /// `causal.upstreamDepth` decisions back. Empty for decisions and sources.
+    /// `causal.upstreamDepth` steps back (decisions or mechanisms crossed). Empty for decisions,
+    /// mechanisms and sources.
     pub upstream: Vec<String>,
 }
 
@@ -231,7 +269,7 @@ pub struct CausalEdge {
     pub from: String,
     pub to: String,
     pub kind: String,
-    /// The decision node id a `drives` edge goes through.
+    /// The decision or mechanism node id a `drives` edge goes through.
     pub via: Option<String>,
     pub self_loop: bool,
 }
@@ -251,6 +289,7 @@ pub struct CausalGraph {
 /// The decisions and the quantity vocabulary, joined from code and content and validated.
 pub struct Resolved {
     pub decisions: Vec<DecisionInfo>,
+    pub mechanisms: Vec<MechanismInfo>,
     pub quantities: Vec<QuantityInfo>,
     pub causal: CausalGraph,
     /// Documented notes by Agents kind id.
@@ -261,6 +300,7 @@ fn node_id(n: Node) -> String {
     match n {
         Node::Quantity(q) => format!("quantity:{}", q.as_str()),
         Node::Decision(d) => format!("decision:{}", d.as_str()),
+        Node::Mechanism(m) => format!("mechanism:{}", m.as_str()),
     }
 }
 
@@ -324,6 +364,7 @@ fn build_causal(
     c: &CausalDef,
     quantities: &[QuantityInfo],
     decisions: &[DecisionInfo],
+    mechanisms: &[MechanismInfo],
 ) -> ApiResult<CausalGraph> {
     let role_text = |id: &str| -> ApiResult<()> {
         c.roles
@@ -332,12 +373,12 @@ fn build_causal(
             .then_some(())
             .ok_or_else(|| bad(format!("causal.roles has no {id}")))
     };
-    for id in ["source", "derived", "sink", "decision"] {
+    for id in ["source", "derived", "sink", "decision", "mechanism"] {
         role_text(id)?;
     }
-    if c.roles.len() != 4 {
+    if c.roles.len() != 5 {
         return Err(bad(
-            "causal.roles must be source, derived, sink, decision".into()
+            "causal.roles must be source, derived, sink, decision, mechanism".into(),
         ));
     }
     let comp: BTreeMap<Node, usize> = causal::components().into_iter().collect();
@@ -371,6 +412,23 @@ fn build_causal(
                     upstream,
                 }
             }
+            Node::Mechanism(m) => {
+                let info = mechanisms
+                    .iter()
+                    .find(|x| x.id == m.as_str())
+                    .ok_or_else(|| bad(format!("mechanism {} has no entry", m.as_str())))?;
+                CausalNode {
+                    id: node_id(n),
+                    kind: "mechanism".into(),
+                    role: "mechanism".into(),
+                    ref_id: m.as_str().into(),
+                    label: info.title.clone(),
+                    owner: info.owner.clone(),
+                    self_loop: false,
+                    component: comp[&n],
+                    upstream: Vec::new(),
+                }
+            }
             Node::Decision(d) => {
                 let info = decisions
                     .iter()
@@ -401,7 +459,7 @@ fn build_causal(
                 EdgeKind::Drives => "drives",
             }
             .into(),
-            via: e.via.map(|d| node_id(Node::Decision(d))),
+            via: e.via.map(node_id),
             self_loop: e.self_loop,
         })
         .collect();
@@ -523,6 +581,62 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
     {
         return Err(bad(format!("decision {} is not a DecisionId", d.id)));
     }
+    let mut mechanisms = Vec::new();
+    for spec in MECHANISMS {
+        let id = spec.id.as_str();
+        let def = f
+            .mechanisms
+            .iter()
+            .find(|d| d.id == id)
+            .ok_or_else(|| bad(format!("mechanism {id} has no entry")))?;
+        if def.rule.id != spec.rule {
+            return Err(bad(format!(
+                "mechanism {id}: rule id {} is not the code's {}",
+                def.rule.id, spec.rule
+            )));
+        }
+        let owner = spec.owner().as_str();
+        let agent_kind = f
+            .owners
+            .iter()
+            .find(|o| o.kind == owner)
+            .ok_or_else(|| bad(format!("no owner entry for {owner}")))?
+            .agent_kind
+            .clone();
+        let mut ps = Vec::new();
+        for path in spec.params {
+            let d = by_p
+                .get(path)
+                .ok_or_else(|| bad(format!("mechanism {id}: no label for parameter {path}")))?;
+            let value = param_value(&pj, path)
+                .ok_or_else(|| bad(format!("mechanism {id}: no parameter {path}")))?;
+            ps.push(AssumptionParam {
+                path: (*path).to_string(),
+                label: d.label.clone(),
+                value,
+                unit: d.unit.clone(),
+            });
+        }
+        mechanisms.push(MechanismInfo {
+            id: id.to_string(),
+            title: def.title.clone(),
+            owner: owner.to_string(),
+            agent_kind,
+            system: spec.system.name().to_string(),
+            explains: def.explains.clone(),
+            rule: def.rule.clone(),
+            inputs: spec.inputs.iter().map(qref).collect(),
+            outputs: spec.outputs.iter().map(qref).collect(),
+            params: ps,
+        });
+    }
+    if let Some(d) = f
+        .mechanisms
+        .iter()
+        .find(|d| !MechanismId::ALL.iter().any(|i| i.as_str() == d.id))
+    {
+        return Err(bad(format!("mechanism {} is not a MechanismId", d.id)));
+    }
     let quantities: Vec<QuantityInfo> = f
         .quantities
         .iter()
@@ -546,7 +660,7 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
                 }),
         })
         .collect();
-    let causal = build_causal(&f.causal, &quantities, &decisions)?;
+    let causal = build_causal(&f.causal, &quantities, &decisions, &mechanisms)?;
     let notes = f
         .kind_notes
         .into_iter()
@@ -554,6 +668,7 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
         .collect();
     Ok(Resolved {
         decisions,
+        mechanisms,
         quantities,
         causal,
         notes,

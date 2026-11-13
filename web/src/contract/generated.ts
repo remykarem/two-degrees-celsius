@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.9.0";
+export const CONTRACT_VERSION = "2.10.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -139,6 +139,10 @@ entities: Array<EntityKind>,
  */
 decisions: Array<DecisionInfo>, 
 /**
+ * Contract v2.10: the registered mechanisms (plain physics and accounting code that links the decisions' quantities: what each reads, writes and uses), from code plus `content/decisions.json`. Not decisions: nothing here is chosen.
+ */
+mechanisms: Array<MechanismInfo>, 
+/**
  * Contract v2.7: the quantity vocabulary of the decisions (labels and units).
  */
 quantities: Array<QuantityInfo>, 
@@ -149,7 +153,7 @@ causal: CausalGraph, };
 
 export type CausalEdge = { from: string, to: string, kind: string, 
 /**
- * The decision node id a `drives` edge goes through.
+ * The decision or mechanism node id a `drives` edge goes through.
  */
 via: string | null, selfLoop: boolean, };
 
@@ -171,19 +175,20 @@ unbound: Array<CausalRole>, };
 
 export type CausalNode = { 
 /**
- * `quantity:<id>` or `decision:<id>` (a quantity and a decision can share a bare id).
+ * `quantity:<id>`, `decision:<id>` or `mechanism:<id>` (a quantity and a decision can share a bare id).
  */
 id: string, 
 /**
- * `quantity` or `decision`.
+ * `quantity`, `decision` or `mechanism` (contract v2.10: plain physics and accounting code).
  */
 kind: string, 
 /**
- * `source` (nothing writes it), `derived`, `sink` (nothing else reads it) or `decision`.
+ * `source` (nothing in the registry writes it), `derived`, `sink` (nothing else reads it),
+ * `decision` or `mechanism`.
  */
 role: string, 
 /**
- * The bare `QuantityId` or `DecisionId` wire name.
+ * The bare `QuantityId`, `DecisionId` or `MechanismId` wire name.
  */
 refId: string, label: string, 
 /**
@@ -191,7 +196,7 @@ refId: string, label: string,
  */
 owner: string, 
 /**
- * A decision both reads and writes this quantity (legitimacy is an example).
+ * A decision or mechanism both reads and writes this quantity (legitimacy is an example).
  */
 selfLoop: boolean, 
 /**
@@ -200,7 +205,8 @@ selfLoop: boolean,
 component: number, 
 /**
  * Quantity node ids that can change this quantity, nearest first, up to
- * `causal.upstreamDepth` decisions back. Empty for decisions and sources.
+ * `causal.upstreamDepth` steps back (decisions or mechanisms crossed). Empty for decisions,
+ * mechanisms and sources.
  */
 upstream: Array<string>, };
 
@@ -871,6 +877,28 @@ steadyBand: number, gapNone: string,
 fullyMet: number, trades: TradesCommon, directions: { [key in string]: string }, causes: { [key in string]: string }, categories: Array<MarketCategoryDef>, mechanisms: Array<MechanismDef>, list: Array<MarketDef>, };
 
 export type MechanismDef = { id: string, label: string, blurb: string, example: string, };
+
+export type MechanismInfo = { 
+/**
+ * The `MechanismId` wire name.
+ */
+id: string, title: string, 
+/**
+ * The `OwnerKind` wire name.
+ */
+owner: string, 
+/**
+ * The Agents explorer kind (`AgentKindInfo.id`) that lists it.
+ */
+agentKind: string, 
+/**
+ * The simulation system it runs in.
+ */
+system: string, 
+/**
+ * One line: what the code does.
+ */
+explains: string, rule: DecisionRule, inputs: Array<QuantityRef>, outputs: Array<QuantityRef>, params: Array<AssumptionParam>, };
 
 export type MeterBands = { low: number, high: number, };
 
