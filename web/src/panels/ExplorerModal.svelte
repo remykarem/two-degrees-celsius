@@ -3,7 +3,7 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, mechanismLine, mechanismsOfKind, nodeLines, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
   import { catalog, hasCatalog } from '../store/catalog';
@@ -23,6 +23,7 @@
   const agents = $derived<AgentsCatalog | null>(ares && ares.ok ? ares.value : null);
   const found = $derived(agents ? searchAgents(agents, query) : { kinds: [], draws: [] });
   const kind = $derived(found.kinds.find((k) => k.id === chosenKind) ?? found.kinds[0] ?? null);
+  const kindMechanisms = $derived(kind && open && hasCatalog() ? mechanismsOfKind(catalog().mechanisms, kind.id) : []);
   const kindDecisions = $derived(kind && open && hasCatalog() ? decisionsOfKind(catalog().decisions, kind.id) : []);
   // A link names an anchor or a topic id: resolve it when the explorer opens.
   $effect(() => {
@@ -82,8 +83,20 @@
                       {@const cl = causalLines(catalog().causal, d.id, liveLookup(catalog(), $gs.snapshot))}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
-                        {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} decisions back): {u.causes}.</p>{/each}
+                        {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} steps back): {u.causes}.</p>{/each}
                         <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}.{d.params.length ? ` Parameters: ${d.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
+                    {/each}
+                  </ul>
+                {/if}
+                {#if kindMechanisms.length}
+                  <h4>Mechanisms (plain code, not choices)</h4>
+                  <ul class="lo" data-testid="agent-mechanisms">
+                    {#each kindMechanisms as m (m.id)}
+                      {@const l = mechanismLine(m)}
+                      {@const cl = nodeLines(catalog().causal, `mechanism:${m.id}`, liveLookup(catalog(), $gs.snapshot))}
+                      <li data-testid="agent-mechanism" data-id={m.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
+                        <p class="dim edge" data-testid="agent-mechanism-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        <details><summary class="dim">{m.rule.label}</summary><p>{m.explains}</p><p>{m.rule.text}</p><p class="dim">Runs in {m.system}.{m.params.length ? ` Parameters: ${m.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
                   </ul>
                 {/if}

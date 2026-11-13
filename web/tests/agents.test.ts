@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentsCatalog, DecisionInfo } from '../src/contract';
+import type { AgentsCatalog, DecisionInfo, MechanismInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, causalLines, decisionLine, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, causalLines, decisionLine, mechanismLine, mechanismsOfKind, nodeLines, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -92,7 +92,9 @@ describe('causal edges (contract v2.8)', () => {
   const g = ok(sim.catalog()).causal;
   it('the real graph reads as plain lines: starting points, end points, loops and upstream causes', () => {
     const wage = causalLines(g, 'firm_wage');
-    expect(wage.inputs).toContain('Unemployment (Starting point)');
+    expect(wage.inputs).toContain('Minimum wage (Starting point)');
+    // Unemployment is written by a mechanism now (stage 1), so it is no longer a starting point.
+    expect(wage.inputs).not.toContain('Unemployment (Starting point)');
     const leg = causalLines(g, 'government_legitimacy');
     expect(leg.inputs).toContain('Legitimacy');
     expect(leg.inputs).toContain(LOOP_MARK);
@@ -108,6 +110,51 @@ describe('causal edges (contract v2.8)', () => {
       edges: [...g.edges, { from: 'quantity:qa', to: 'decision:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'decision:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
     };
     expect(causalLines(made, 'made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
+  });
+});
+
+describe('mechanisms (contract v2.10)', () => {
+  const c = ok(sim.catalog());
+  it('the plain-code mechanisms are on the wire, grouped by Agents kind, and read as text lines', () => {
+    expect(c.mechanisms.length).toBeGreaterThan(30);
+    const kinds = new Set(cat.kinds.map((k) => k.id));
+    for (const m of c.mechanisms) {
+      expect(kinds.has(m.agentKind), m.id).toBe(true);
+      expect(m.inputs.length).toBeGreaterThan(0);
+      expect(c.decisions.some((d) => d.id === m.id)).toBe(false);
+    }
+    // Weather, Nature and Firms each list some.
+    const weather = mechanismsOfKind(c.mechanisms, 'weather');
+    expect(weather.map((m) => m.id)).toEqual(expect.arrayContaining(['climate_stress_curve', 'drought_onset', 'fire_ignition']));
+    expect(mechanismsOfKind(c.mechanisms, 'nature').map((m) => m.id)).toContain('emissions_accounting');
+    expect(mechanismsOfKind(c.mechanisms, 'firms').map((m) => m.id)).toContain('production_output');
+    const line = mechanismLine(weather.find((m) => m.id === 'drought_onset')!);
+    expect(line.inputs).toContain('Climate stress');
+    expect(line.outputs).toBe('Drought under way');
+  });
+  it('the chain emissions -> weather -> output reads off the mechanism lines with their edge marks', () => {
+    const g = c.causal;
+    const out = nodeLines(g, 'mechanism:drought_loss');
+    expect(out.inputs).toContain('Drought under way');
+    expect(out.outputs).toContain('Weather and climate effect on output');
+    // The mechanism's own output is read by the hiring decision, so it is not an end point.
+    expect(out.outputs).not.toContain('End point');
+    const stress = nodeLines(g, 'mechanism:climate_stress_curve');
+    expect(stress.inputs).toContain('Net emissions so far');
+  });
+  it('a mechanism added only in the catalogue appears with no web change', () => {
+    const node = (id: string, kind: string, role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'weather', selfLoop: false, component: 99, upstream });
+    const g = c.causal;
+    const made = {
+      ...g,
+      nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('mechanism:made_up', 'mechanism', 'mechanism', 'Made up')],
+      edges: [...g.edges, { from: 'quantity:qa', to: 'mechanism:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'mechanism:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
+    };
+    const m: MechanismInfo = { ...c.mechanisms[0]!, id: 'made_up', title: 'Made up', agentKind: 'weather', inputs: [{ id: 'qa', label: 'Alpha', unit: 'x' }], outputs: [{ id: 'qb', label: 'Beta', unit: 'y' }] };
+    const all = [...c.mechanisms, m];
+    expect(mechanismsOfKind(all, 'weather').map((x) => x.id)).toContain('made_up');
+    expect(mechanismLine(m)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
+    expect(nodeLines(made, 'mechanism:made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
   });
 });
 

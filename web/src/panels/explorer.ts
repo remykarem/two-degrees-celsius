@@ -1,4 +1,4 @@
-import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, Catalog, DecisionInfo, Distribution, Snapshot } from '../contract';
+import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, Catalog, DecisionInfo, Distribution, MechanismInfo, Snapshot } from '../contract';
 import { compact } from './format';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
@@ -67,6 +67,15 @@ export const decisionLine = (d: DecisionInfo): { inputs: string; title: string; 
   outputs: d.outputs.map((q) => q.label).join(', '),
 });
 
+/** The registered mechanisms (plain physics and accounting code, not choices) that an Agents kind lists (`catalog.mechanisms[].agentKind`). Nothing here names one: a new one in the catalogue appears (contract v2.10). */
+export const mechanismsOfKind = (mechanisms: MechanismInfo[], kindId: string): MechanismInfo[] => mechanisms.filter((m) => m.agentKind === kindId);
+/** One text line per mechanism: what it reads, the mechanism, what it writes. Labels come from the wire. */
+export const mechanismLine = (m: MechanismInfo): { inputs: string; title: string; outputs: string } => ({
+  inputs: m.inputs.map((q) => q.label).join(', '),
+  title: m.title,
+  outputs: m.outputs.map((q) => q.label).join(', '),
+});
+
 // ---- Causal edges (contract v2.8): read from catalog.causal, nothing here names a decision or a quantity ----
 
 export interface CausalLines {
@@ -101,14 +110,17 @@ export function liveLookup(c: Catalog, snap: Snapshot | null): LiveLookup {
 }
 
 /** The causal lines of one decision, from the `reads` and `writes` edges that touch its node. `live` adds each cause's current value. */
-export function causalLines(g: CausalGraph, decisionId: string, live?: LiveLookup): CausalLines {
+export const causalLines = (g: CausalGraph, decisionId: string, live?: LiveLookup): CausalLines => nodeLines(g, `decision:${decisionId}`, live);
+
+/** The same lines for any decision or mechanism node (`decision:<id>` or `mechanism:<id>`; contract v2.10). */
+export function nodeLines(g: CausalGraph, nodeId: string, live?: LiveLookup): CausalLines {
   const byId = new Map(g.nodes.map((n) => [n.id, n]));
   const roleLabel = (n: CausalNode): string => g.roles.find((r) => r.id === n.role)?.label ?? '';
   const name = (n: CausalNode, loop: boolean): string => {
     const mark = n.kind === 'quantity' && (n.role === 'source' || n.role === 'sink') ? ` (${roleLabel(n)})` : '';
     return `${n.label}${mark}${loop ? ` ${LOOP_MARK}` : ''}`;
   };
-  const me = `decision:${decisionId}`;
+  const me = nodeId;
   const ins = g.edges.filter((e) => e.kind === 'reads' && e.to === me);
   const outs = g.edges.filter((e) => e.kind === 'writes' && e.from === me);
   const label = (id: string, loop: boolean): string => {
