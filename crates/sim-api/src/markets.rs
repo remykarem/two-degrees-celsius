@@ -23,7 +23,7 @@ use crate::history::HistoryPoint;
 use crate::log::{GoodsFirmTrace, WrapperLog};
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
-use sim_types::{Firm, Sector, State};
+use sim_types::{Firm, QuantityId, Sector, State};
 use std::collections::BTreeMap;
 
 /// Markets the code can total, in display order of the wire's own sums.
@@ -52,6 +52,28 @@ pub fn driver_ids(market: &str) -> &'static [&'static str] {
         "housing" => &["rent_burden", "rent_burden_cap"],
         "credit" => &["base_rate"],
         _ => &[],
+    }
+}
+
+/// Contract v2.9: the graph quantity a market's price is, where the registry has one (the
+/// housing rent and electricity are not in the decision registry yet).
+pub fn price_quantity(market: &str) -> Option<QuantityId> {
+    match market {
+        "food" => Some(QuantityId::FoodPrice),
+        "goods" | "services" => Some(QuantityId::Price),
+        "labour" => Some(QuantityId::Wage),
+        "credit" => Some(QuantityId::LoanRate),
+        _ => None,
+    }
+}
+
+/// Contract v2.9: the graph quantity a market driver is, where the registry has one.
+pub fn driver_quantity(driver: &str) -> Option<QuantityId> {
+    match driver {
+        "markup" => Some(QuantityId::Markup),
+        "unemployment" => Some(QuantityId::Unemployment),
+        "base_rate" => Some(QuantityId::PolicyRate),
+        _ => None,
     }
 }
 
@@ -432,6 +454,10 @@ pub struct MarketDriver {
     pub label: String,
     /// Already written out, with its unit (for example `14% of income`).
     pub value: String,
+    /// Contract v2.9: the graph quantity this driver is (`catalog().quantities[].id`), if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub quantity_id: Option<String>,
 }
 
 /// One market, this month (the latest tick). Quantities are in the market's own unit:
@@ -484,6 +510,10 @@ pub struct MarketView {
     /// What the model really lets move this price: `cost`, `slack`, `scarcity`, `risk` or `none`.
     pub price_cause: String,
     pub price_cause_word: String,
+    /// Contract v2.9: the graph quantity the price is (`catalog().quantities[].id`), if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub price_quantity: Option<String>,
     pub price_note: String,
     /// The price at the end of each finished turn, oldest first, then this month if the turn is open.
     pub price_series: Vec<f64>,
@@ -1038,6 +1068,7 @@ fn view(
                 id: (*id).to_string(),
                 label: def.drivers.get(*id)?.clone(),
                 value: value.clone(),
+                quantity_id: driver_quantity(id).map(|q| q.as_str().to_string()),
             })
         })
         .collect();
@@ -1077,6 +1108,7 @@ fn view(
         price_direction_word: word(&c.directions, dir),
         price_cause: def.price_cause.clone(),
         price_cause_word: word(&c.causes, &def.price_cause),
+        price_quantity: price_quantity(&def.id).map(|q| q.as_str().to_string()),
         price_note: def.price_note.clone(),
         price_series: series,
         drivers,

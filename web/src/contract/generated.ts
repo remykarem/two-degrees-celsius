@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.8.0";
+export const CONTRACT_VERSION = "2.9.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -84,7 +84,12 @@ export type BlockReason = "transition_in_progress" | "nothing_to_remove" | "same
 
 export type Breakdown = { id: string, title: string, formula: string, inputs: Array<BreakdownInput>, result: Value, parts?: Array<Part>, sumsToResult?: boolean, };
 
-export type BreakdownInput = { label: string, value: number, unit: string, source?: string, };
+export type BreakdownInput = { label: string, value: number, unit: string, source?: string, 
+/**
+ * Contract v2.9: the graph quantity (`catalog().quantities[].id`) this input is, where the
+ * registry has one. The arithmetic stays here; the cause lists come from the graph.
+ */
+quantityId?: string, };
 
 export type Breakdowns = { gdp: Breakdown, gpi: Breakdown, wageShare: Breakdown, profitShare: Breakdown, debtToGdp: Breakdown, gini: GiniBreakdown, legitimacy: LegitimacyBreakdown, capitalRatio: Breakdown, emissions: EmissionsBreakdown, taxes: Array<TaxRow>, };
 
@@ -148,7 +153,21 @@ export type CausalEdge = { from: string, to: string, kind: string,
  */
 via: string | null, selfLoop: boolean, };
 
-export type CausalGraph = { upstreamDepth: number, roles: Array<CausalRole>, nodes: Array<CausalNode>, edges: Array<CausalEdge>, };
+export type CausalGraph = { upstreamDepth: number, roles: Array<CausalRole>, 
+/**
+ * Contract v2.9: words for the live-value binding.
+ */
+live: CausalLive, nodes: Array<CausalNode>, edges: Array<CausalEdge>, };
+
+export type CausalLive = { 
+/**
+ * How a town-level number is made (`town`, `sum`, `mean`, `lever`, `flag`).
+ */
+aggregates: Array<CausalRole>, 
+/**
+ * Why a quantity has no live value (`private`, `computed`, `not_published`, `fixed`, `random`).
+ */
+unbound: Array<CausalRole>, };
 
 export type CausalNode = { 
 /**
@@ -676,6 +695,28 @@ export type LeverKey = "carbon_price" | "tax_wage" | "tax_profit" | "tax_capital
 
 export type LeverUnit = "usd" | "usd_per_month" | "usd_per_tonne" | "fraction" | "tonnes_per_month" | "bool" | "enum";
 
+export type LiveBinding = { bound: boolean, 
+/**
+ * The snapshot path the number is read from (`firms[].price`, `markets[food].price`).
+ */
+path?: string, 
+/**
+ * One of `catalog().causal.live.aggregates`.
+ */
+aggregate?: string, 
+/**
+ * The `LeverKey` this quantity is the setting of, if any.
+ */
+lever?: string, 
+/**
+ * The snapshot value carries a `previous` and a `trend` (the history keeps its series).
+ */
+hasTrend: boolean, 
+/**
+ * One of `catalog().causal.live.unbound` when `bound` is false.
+ */
+unbound?: string, };
+
 export type LorenzPoint = { populationShare: number, wealthShare: number, };
 
 export type MapView = { width: number, height: number, 
@@ -736,7 +777,11 @@ export type MarketDriver = { id: string, label: string,
 /**
  * Already written out, with its unit (for example `14% of income`).
  */
-value: string, };
+value: string, 
+/**
+ * Contract v2.9: the graph quantity this driver is (`catalog().quantities[].id`), if any.
+ */
+quantityId?: string, };
 
 export type MarketEntity = { kind: MarketEntityKind, id: number, };
 
@@ -797,7 +842,11 @@ priceDirection: string, priceDirectionWord: string,
 /**
  * What the model really lets move this price: `cost`, `slack`, `scarcity`, `risk` or `none`.
  */
-priceCause: string, priceCauseWord: string, priceNote: string, 
+priceCause: string, priceCauseWord: string, 
+/**
+ * Contract v2.9: the graph quantity the price is (`catalog().quantities[].id`), if any.
+ */
+priceQuantity?: string, priceNote: string, 
 /**
  * The price at the end of each finished turn, oldest first, then this month if the turn is open.
  */
@@ -1017,7 +1066,26 @@ id: string, label: string, unit: string,
 /**
  * The `OwnerKind` wire name of whoever holds the quantity.
  */
-owner: string, summary: string, };
+owner: string, summary: string, 
+/**
+ * Contract v2.9: where the quantity's live number comes from, or why it has none.
+ */
+live: LiveBinding, };
+
+export type QuantityLive = { 
+/**
+ * The `QuantityId` wire name (`catalog().quantities`).
+ */
+id: string, value: number, 
+/**
+ * The same figure at the end of the previous turn; only where the history keeps the series.
+ */
+previous?: number, 
+/**
+ * `rising`, `steady` or `falling` against `previous`, the same ids and band as the Markets
+ * price direction (words: `catalog().markets.directions`).
+ */
+trend?: string, };
 
 export type QuantityRef = { id: string, label: string, unit: string, };
 
@@ -1088,6 +1156,11 @@ markets: Array<MarketView>,
  * Contract v2.6: the sustainable-yield view of the commons and the forest (always present).
  */
 natureYield: Array<YieldView>, history: Array<HistoryPoint>, 
+/**
+ * Contract v2.9: the live value of every graph quantity that has a town-level figure (the rest are
+ * listed with reasons in `catalog().quantities[].live`).
+ */
+quantities: Array<QuantityLive>, 
 /**
  * Contract v1.9: the elite estate; absent when the town has none.
  */

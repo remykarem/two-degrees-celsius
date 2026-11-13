@@ -5221,7 +5221,8 @@
             "label": "Gini",
             "value": 0.8791845161194508,
             "unit": "0..1",
-            "source": "gini"
+            "source": "gini",
+            "quantityId": "inequality"
           },
           {
             "label": "Gross emissions (month)",
@@ -5394,7 +5395,8 @@
           {
             "label": "Government debt",
             "value": 66809.53,
-            "unit": "$"
+            "unit": "$",
+            "quantityId": "public_debt"
           },
           {
             "label": "GDP (annual, nominal)",
@@ -6121,30 +6123,35 @@
             "label": "Average wellbeing",
             "value": 0.6176476596316796,
             "unit": "0..1",
-            "source": "wellbeing"
+            "source": "wellbeing",
+            "quantityId": "wellbeing"
           },
           {
             "label": "Unemployment (smoothed)",
             "value": 0.14570735787640732,
             "unit": "share",
-            "source": "unemployment"
+            "source": "unemployment",
+            "quantityId": "unemployment"
           },
           {
             "label": "Gini",
             "value": 0.8792728716404002,
             "unit": "0..1",
-            "source": "gini"
+            "source": "gini",
+            "quantityId": "inequality"
           },
           {
             "label": "Public debt / GDP",
             "value": 0.18151792218511764,
             "unit": "ratio",
-            "source": "debt"
+            "source": "debt",
+            "quantityId": "public_debt_ratio"
           },
           {
             "label": "Bank bailout this month",
             "value": 0.0,
-            "unit": "0 or 1"
+            "unit": "0 or 1",
+            "quantityId": "bailout"
           }
         ],
         "result": {
@@ -6247,18 +6254,21 @@
           {
             "label": "Bank equity",
             "value": 35908.89,
-            "unit": "$"
+            "unit": "$",
+            "quantityId": "bank_equity"
           },
           {
             "label": "Loans outstanding",
             "value": 283271.51,
-            "unit": "$"
+            "unit": "$",
+            "quantityId": "bank_loans"
           },
           {
             "label": "Capital ratio limit (policy)",
             "value": 0.1,
             "unit": "share",
-            "source": "bank_capital_ratio"
+            "source": "bank_capital_ratio",
+            "quantityId": "capital_ratio"
           },
           {
             "label": "Lending limit (equity / limit)",
@@ -6268,7 +6278,8 @@
           {
             "label": "Headroom (room to lend)",
             "value": 75817.38999999996,
-            "unit": "$"
+            "unit": "$",
+            "quantityId": "credit_headroom"
           }
         ],
         "result": {
@@ -6972,6 +6983,7 @@
         "priceDirectionWord": "rising",
         "priceCause": "cost",
         "priceCauseWord": "cost-driven",
+        "priceQuantity": "food_price",
         "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
         "priceSeries": [
           26.64,
@@ -6994,7 +7006,8 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "$1.52 on top of every $1 of cost"
+            "value": "$1.52 on top of every $1 of cost",
+            "quantityId": "markup"
           }
         ],
         "short": [
@@ -7050,6 +7063,7 @@
         "priceDirectionWord": "falling",
         "priceCause": "cost",
         "priceCauseWord": "cost-driven",
+        "priceQuantity": "price",
         "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
         "priceSeries": [
           92.52,
@@ -7072,7 +7086,8 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "$0.71 on top of every $1 of cost"
+            "value": "$0.71 on top of every $1 of cost",
+            "quantityId": "markup"
           }
         ],
         "short": [
@@ -7124,6 +7139,7 @@
         "priceDirectionWord": "falling",
         "priceCause": "cost",
         "priceCauseWord": "cost-driven",
+        "priceQuantity": "price",
         "priceNote": "Set from costs plus a markup. Empty shelves do not raise it.",
         "priceSeries": [
           73.61,
@@ -7146,7 +7162,8 @@
           {
             "id": "markup",
             "label": "Markup firms add to their costs",
-            "value": "$0.38 on top of every $1 of cost"
+            "value": "$0.38 on top of every $1 of cost",
+            "quantityId": "markup"
           }
         ],
         "short": [
@@ -7199,6 +7216,7 @@
         "priceDirectionWord": "falling",
         "priceCause": "slack",
         "priceCauseWord": "driven by unemployment",
+        "priceQuantity": "wage",
         "priceNote": "Wages respond to scarcity: they drift up when few people are out of work and down when many are.",
         "priceSeries": [
           1480.267142857143,
@@ -7221,7 +7239,8 @@
           {
             "id": "unemployment",
             "label": "Unemployment (smoothed)",
-            "value": "15 of every 100 people in the labour force"
+            "value": "15 of every 100 people in the labour force",
+            "quantityId": "unemployment"
           },
           {
             "id": "u_ref",
@@ -7355,6 +7374,7 @@
         "priceDirectionWord": "steady",
         "priceCause": "risk",
         "priceCauseWord": "driven by borrowing risk",
+        "priceQuantity": "loan_rate",
         "priceNote": "The rate is the bank's base rate plus a margin that grows as a firm borrows more. It is not raised to ration loans: when the bank runs short of room it lends less.",
         "priceSeries": [
           0.04901470941288164,
@@ -7377,7 +7397,8 @@
           {
             "id": "base_rate",
             "label": "Bank base rate",
-            "value": "$4.00 a year for every $100 borrowed"
+            "value": "$4.00 a year for every $100 borrowed",
+            "quantityId": "policy_rate"
           }
         ],
         "short": [],
@@ -8350,6 +8371,162 @@
         "forestStock": 1117.3280552278707,
         "forestRegrowth": 1.9724682549128916,
         "forestTaken": 0.9991210911357541
+      }
+    ],
+    "quantities": [
+      {
+        "id": "workers",
+        "value": 8.0
+      },
+      {
+        "id": "unemployment",
+        "value": 0.18181818181818182,
+        "previous": 0.18181818181818182,
+        "trend": "steady"
+      },
+      {
+        "id": "wage",
+        "value": 1227.07
+      },
+      {
+        "id": "min_wage",
+        "value": 1200.0
+      },
+      {
+        "id": "price",
+        "value": 52.69
+      },
+      {
+        "id": "carbon_price",
+        "value": 0.0
+      },
+      {
+        "id": "revenue",
+        "value": 30461.45
+      },
+      {
+        "id": "emissions_cap",
+        "value": 0.0
+      },
+      {
+        "id": "green_subsidy",
+        "value": 0.0
+      },
+      {
+        "id": "treasury_cash",
+        "value": 8000.0
+      },
+      {
+        "id": "green_tech",
+        "value": 0.0
+      },
+      {
+        "id": "profit",
+        "value": 13602.539999999999
+      },
+      {
+        "id": "capital",
+        "value": 227.7773072152485
+      },
+      {
+        "id": "loan_rate",
+        "value": 0.048106534791484745,
+        "previous": 0.048170196825605645,
+        "trend": "steady"
+      },
+      {
+        "id": "debt",
+        "value": 80128.34999999999
+      },
+      {
+        "id": "savings",
+        "value": 173772.18000000005
+      },
+      {
+        "id": "net_wealth",
+        "value": 2742760.91
+      },
+      {
+        "id": "food_price",
+        "value": 22.63,
+        "previous": 22.47,
+        "trend": "rising"
+      },
+      {
+        "id": "campaign_cap",
+        "value": 1.0
+      },
+      {
+        "id": "bank_equity",
+        "value": 35908.89
+      },
+      {
+        "id": "bank_loans",
+        "value": 283271.51
+      },
+      {
+        "id": "bank_deposits",
+        "value": 247362.62
+      },
+      {
+        "id": "capital_ratio",
+        "value": 0.1
+      },
+      {
+        "id": "bailout_policy",
+        "value": 0.0
+      },
+      {
+        "id": "bank_failed",
+        "value": 0.0
+      },
+      {
+        "id": "policy_rate",
+        "value": 0.04
+      },
+      {
+        "id": "public_debt",
+        "value": 66809.53
+      },
+      {
+        "id": "legitimacy",
+        "value": 0.48861969542147743,
+        "previous": 0.5028911768864973,
+        "trend": "falling"
+      },
+      {
+        "id": "wellbeing",
+        "value": 0.6080093302881678,
+        "previous": 0.6330196907783864,
+        "trend": "falling"
+      },
+      {
+        "id": "inequality",
+        "value": 0.8791845161194508,
+        "previous": 0.8793997666977341,
+        "trend": "steady"
+      },
+      {
+        "id": "public_debt_ratio",
+        "value": 0.181994015757126,
+        "previous": 0.17988414624305202,
+        "trend": "rising"
+      },
+      {
+        "id": "pilot_employed",
+        "value": 1.0
+      },
+      {
+        "id": "flight",
+        "value": 0.0
+      },
+      {
+        "id": "commons_open",
+        "value": 1.0
+      },
+      {
+        "id": "commons_enclosed",
+        "value": 0.0
       }
     ],
     "estate": {

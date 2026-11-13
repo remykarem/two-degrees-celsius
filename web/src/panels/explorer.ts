@@ -1,4 +1,5 @@
-import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, DecisionInfo, Distribution, Snapshot } from '../contract';
+import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, Catalog, DecisionInfo, Distribution, Snapshot } from '../contract';
+import { compact } from './format';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
 export const GROUP_LABEL: Record<AssumptionGroup, string> = {
@@ -80,8 +81,27 @@ export interface CausalLines {
 /** The loop mark for a quantity a decision both reads and writes. */
 export const LOOP_MARK = '\u21ba';
 
-/** The causal lines of one decision, from the `reads` and `writes` edges that touch its node. */
-export function causalLines(g: CausalGraph, decisionId: string): CausalLines {
+/**
+ * The live value of a quantity as a short phrase ("4.2 units per month, rising"), or null when it has none (unbound in the catalogue
+ * with its reason, or not on this snapshot). Everything comes from the wire: `snapshot.quantities` (value, trend id), the catalogue's
+ * unit and binding, and the Markets direction words (`markets.directions`) for the trend. Nothing here names a quantity (contract v2.9).
+ */
+export type LiveLookup = (quantityRef: string) => string | null;
+export function liveLookup(c: Catalog, snap: Snapshot | null): LiveLookup {
+  const values = new Map((snap?.quantities ?? []).map((l) => [l.id, l]));
+  const info = new Map(c.quantities.map((q) => [q.id, q]));
+  return (ref) => {
+    const l = values.get(ref);
+    const q = info.get(ref);
+    if (!l || !q) return null;
+    const trend = l.trend ? c.markets.directions[l.trend] : undefined;
+    const body = q.live.aggregate === 'flag' ? (l.value >= 0.5 ? 'yes' : 'no') : `${compact(l.value)} ${q.unit}`;
+    return trend && l.trend !== 'steady' ? `${body}, ${trend}` : body;
+  };
+}
+
+/** The causal lines of one decision, from the `reads` and `writes` edges that touch its node. `live` adds each cause's current value. */
+export function causalLines(g: CausalGraph, decisionId: string, live?: LiveLookup): CausalLines {
   const byId = new Map(g.nodes.map((n) => [n.id, n]));
   const roleLabel = (n: CausalNode): string => g.roles.find((r) => r.id === n.role)?.label ?? '';
   const name = (n: CausalNode, loop: boolean): string => {
@@ -98,7 +118,12 @@ export function causalLines(g: CausalGraph, decisionId: string): CausalLines {
   const upstream = outs.flatMap((e) => {
     const n = byId.get(e.to);
     if (!n || n.role !== 'sink' || n.upstream.length === 0) return [];
-    return [{ label: n.label, causes: n.upstream.map((u) => byId.get(u)?.label ?? u).join(', ') }];
+    const cause = (u: string): string => {
+      const un = byId.get(u);
+      const v = un && live ? live(un.refId) : null;
+      return `${un?.label ?? u}${v ? ` (${v})` : ''}`;
+    };
+    return [{ label: n.label, causes: n.upstream.map(cause).join(', ') }];
   });
   return { inputs: ins.map((e) => label(e.from, e.selfLoop)).join(', '), outputs: outs.map((e) => label(e.to, e.selfLoop)).join(', '), upstream };
 }

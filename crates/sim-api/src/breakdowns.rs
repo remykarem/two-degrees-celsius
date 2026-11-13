@@ -10,10 +10,11 @@ use crate::snapshot::firm_names;
 use crate::sources::Sources;
 use serde::{Deserialize, Serialize};
 use sim_engine::Sim;
-use sim_types::LegitStep;
+use sim_types::{LegitStep, QuantityId};
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BreakdownInput {
     pub label: String,
     pub value: f64,
@@ -21,6 +22,19 @@ pub struct BreakdownInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub source: Option<String>,
+    /// Contract v2.9: the graph quantity (`catalog().quantities[].id`) this input is, where the
+    /// registry has one. The arithmetic stays here; the cause lists come from the graph.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub quantity_id: Option<String>,
+}
+
+impl BreakdownInput {
+    /// Link this input to the graph quantity it stands for.
+    fn quantity(mut self, q: QuantityId) -> Self {
+        self.quantity_id = Some(q.as_str().to_string());
+        self
+    }
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -183,6 +197,7 @@ fn input(label: &str, value: f64, unit: &str, source: Option<&str>) -> Breakdown
         value,
         unit: unit.to_string(),
         source: source.map(str::to_string),
+        quantity_id: None,
     }
 }
 
@@ -327,7 +342,7 @@ fn gpi(sim: &Sim) -> Breakdown {
         "GPI = GDP x (1 - Gini) - social cost of carbon x 12 x gross emissions - depletion cost x 12 x depletion",
         vec![
             input("GDP (nominal, annual)", gdp_annual, "$/year", Some("gdp")),
-            input("Gini", gini, "0..1", Some("gini")),
+            input("Gini", gini, "0..1", Some("gini")).quantity(QuantityId::Inequality),
             input("Gross emissions (month)", s.nature.gross_emissions.0, "t CO2", Some("emissions")),
             input("Social cost of carbon", m.scc_usd, "$/t CO2", None),
             input("Natural capital lost (month)", s.nature.depletion.0, "units", None),
@@ -423,7 +438,8 @@ fn debt(sim: &Sim) -> Breakdown {
         "Public debt / GDP",
         "Debt / GDP = government debt / annual GDP (nominal); 0 if GDP is not positive",
         vec![
-            input("Government debt", s.gov.debt.dollars(), "$", None),
+            input("Government debt", s.gov.debt.dollars(), "$", None)
+                .quantity(QuantityId::PublicDebt),
             input(
                 "GDP (annual, nominal)",
                 s.indicators.gdp_annual.dollars(),
@@ -578,11 +594,11 @@ fn legitimacy(sim: &Sim, log: &WrapperLog) -> LegitimacyBreakdown {
         "Legitimacy",
         "Each month: legitimacy = previous + w1 x (wellbeing - 0.5) - w2 x max(0, unemployment - threshold) - w3 x max(0, Gini - threshold) - w4 x max(0, debt/GDP - 1) - bailout penalty - system-change resistance, kept within 0..1",
         vec![
-            input("Average wellbeing", st.wellbeing_input, "0..1", Some("wellbeing")),
-            input("Unemployment (smoothed)", st.unemployment_input, "share", Some("unemployment")),
-            input("Gini", st.inequality_input, "0..1", Some("gini")),
-            input("Public debt / GDP", st.debt_input, "ratio", Some("debt")),
-            input("Bank bailout this month", if st.bailout_term != 0.0 { 1.0 } else { 0.0 }, "0 or 1", None),
+            input("Average wellbeing", st.wellbeing_input, "0..1", Some("wellbeing")).quantity(QuantityId::Wellbeing),
+            input("Unemployment (smoothed)", st.unemployment_input, "share", Some("unemployment")).quantity(QuantityId::Unemployment),
+            input("Gini", st.inequality_input, "0..1", Some("gini")).quantity(QuantityId::Inequality),
+            input("Public debt / GDP", st.debt_input, "ratio", Some("debt")).quantity(QuantityId::PublicDebtRatio),
+            input("Bank bailout this month", if st.bailout_term != 0.0 { 1.0 } else { 0.0 }, "0 or 1", None).quantity(QuantityId::Bailout),
         ],
         result,
         "0..1",
@@ -648,11 +664,11 @@ fn capital_ratio(sim: &Sim, f: &Finance) -> Breakdown {
         "Bank capital ratio",
         "Capital ratio = bank equity / loans outstanding (1 when there are no loans). The bank may lend while equity / limit >= loans; headroom = equity / limit - loans",
         vec![
-            input("Bank equity", b.equity, "$", None),
-            input("Loans outstanding", b.loans, "$", None),
-            input("Capital ratio limit (policy)", b.capital_ratio_limit, "share", Some("bank_capital_ratio")),
+            input("Bank equity", b.equity, "$", None).quantity(QuantityId::BankEquity),
+            input("Loans outstanding", b.loans, "$", None).quantity(QuantityId::BankLoans),
+            input("Capital ratio limit (policy)", b.capital_ratio_limit, "share", Some("bank_capital_ratio")).quantity(QuantityId::CapitalRatio),
             input("Lending limit (equity / limit)", sim_model::util::max_loans(s.bank.equity, b.capital_ratio_limit).dollars(), "$", None),
-            input("Headroom (room to lend)", b.headroom, "$", None),
+            input("Headroom (room to lend)", b.headroom, "$", None).quantity(QuantityId::CreditHeadroom),
         ],
         b.capital_ratio,
         "share",

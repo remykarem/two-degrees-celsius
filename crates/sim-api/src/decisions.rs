@@ -7,6 +7,7 @@
 //! `sim_model::causal`.
 use crate::assumptions::{param_value, AgentKindInfo, AssumptionParam};
 use crate::error::{code, ApiError, ApiResult};
+use crate::live;
 use serde::{Deserialize, Serialize};
 use sim_model::causal::{self, EdgeKind, Node, Role};
 use sim_model::decisions::DECISIONS;
@@ -72,6 +73,15 @@ struct CausalDef {
     /// How many decisions back the "upstream causes" of a quantity reach.
     upstream_depth: usize,
     roles: Vec<RoleDef>,
+    live: LiveDef,
+}
+
+/// Words for the live-value binding: aggregates and reasons a quantity has no value.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LiveDef {
+    aggregates: Vec<RoleDef>,
+    unbound: Vec<RoleDef>,
 }
 
 #[derive(Deserialize)]
@@ -97,6 +107,36 @@ pub struct QuantityInfo {
     /// The `OwnerKind` wire name of whoever holds the quantity.
     pub owner: String,
     pub summary: String,
+    /// Contract v2.9: where the quantity's live number comes from, or why it has none.
+    pub live: LiveBinding,
+}
+
+/// Contract v2.9: the live-value binding of a quantity (`docs/features/causality-graph.md` C8). A
+/// bound quantity has a `path` into the snapshot and an `aggregate` id; its current value is on
+/// `snapshot.quantities`. An unbound one names a reason id (`catalog().causal.live.unbound`).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveBinding {
+    pub bound: bool,
+    /// The snapshot path the number is read from (`firms[].price`, `markets[food].price`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub path: Option<String>,
+    /// One of `catalog().causal.live.aggregates`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub aggregate: Option<String>,
+    /// The `LeverKey` this quantity is the setting of, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub lever: Option<String>,
+    /// The snapshot value carries a `previous` and a `trend` (the history keeps its series).
+    pub has_trend: bool,
+    /// One of `catalog().causal.live.unbound` when `bound` is false.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub unbound: Option<String>,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -147,6 +187,16 @@ pub struct CausalRole {
     pub text: String,
 }
 
+/// Contract v2.9: the words of the live-value binding (an id, a label and a sentence each).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CausalLive {
+    /// How a town-level number is made (`town`, `sum`, `mean`, `lever`, `flag`).
+    pub aggregates: Vec<CausalRole>,
+    /// Why a quantity has no live value (`private`, `computed`, `not_published`, `fixed`, `random`).
+    pub unbound: Vec<CausalRole>,
+}
+
 /// A node of the causal graph (contract v2.8): a quantity or a decision.
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -192,6 +242,8 @@ pub struct CausalEdge {
 pub struct CausalGraph {
     pub upstream_depth: usize,
     pub roles: Vec<CausalRole>,
+    /// Contract v2.9: words for the live-value binding.
+    pub live: CausalLive,
     pub nodes: Vec<CausalNode>,
     pub edges: Vec<CausalEdge>,
 }
@@ -209,6 +261,62 @@ fn node_id(n: Node) -> String {
     match n {
         Node::Quantity(q) => format!("quantity:{}", q.as_str()),
         Node::Decision(d) => format!("decision:{}", d.as_str()),
+    }
+}
+
+fn live_words(what: &str, defs: &[RoleDef], ids: Vec<&'static str>) -> ApiResult<Vec<CausalRole>> {
+    for id in &ids {
+        if !defs.iter().any(|d| d.id == *id) {
+            return Err(bad(format!("causal.live.{what} has no {id}")));
+        }
+    }
+    if let Some(d) = defs.iter().find(|d| !ids.contains(&d.id.as_str())) {
+        return Err(bad(format!("causal.live.{what}: unknown id {}", d.id)));
+    }
+    Ok(defs
+        .iter()
+        .map(|d| CausalRole {
+            id: d.id.clone(),
+            label: d.label.clone(),
+            text: d.text.clone(),
+        })
+        .collect())
+}
+
+fn build_live(l: &LiveDef) -> ApiResult<CausalLive> {
+    Ok(CausalLive {
+        aggregates: live_words(
+            "aggregates",
+            &l.aggregates,
+            live::Aggregate::ALL.iter().map(|a| a.as_str()).collect(),
+        )?,
+        unbound: live_words(
+            "unbound",
+            &l.unbound,
+            live::Unbound::ALL.iter().map(|a| a.as_str()).collect(),
+        )?,
+    })
+}
+
+/// The binding of one quantity as the catalog serves it.
+fn live_binding(q: QuantityId) -> LiveBinding {
+    match live::binding(q) {
+        live::Binding::Bound(b) => LiveBinding {
+            bound: true,
+            path: Some(b.path.to_string()),
+            aggregate: Some(b.aggregate.as_str().to_string()),
+            lever: b.lever.map(|l| l.as_str().to_string()),
+            has_trend: b.previous.is_some(),
+            unbound: None,
+        },
+        live::Binding::Unbound(u) => LiveBinding {
+            bound: false,
+            path: None,
+            aggregate: None,
+            lever: None,
+            has_trend: false,
+            unbound: Some(u.as_str().to_string()),
+        },
     }
 }
 
@@ -308,6 +416,7 @@ fn build_causal(
                 text: r.text.clone(),
             })
             .collect(),
+        live: build_live(&c.live)?,
         nodes,
         edges,
     })
@@ -423,6 +532,18 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
             unit: q.unit.clone(),
             owner: q.owner.clone(),
             summary: q.summary.clone(),
+            live: QuantityId::ALL
+                .iter()
+                .find(|i| i.as_str() == q.id)
+                .map(|i| live_binding(*i))
+                .unwrap_or(LiveBinding {
+                    bound: false,
+                    path: None,
+                    aggregate: None,
+                    lever: None,
+                    has_trend: false,
+                    unbound: None,
+                }),
         })
         .collect();
     let causal = build_causal(&f.causal, &quantities, &decisions)?;

@@ -2540,7 +2540,8 @@
           "label": "Gini",
           "value": 0.8822121621231839,
           "unit": "0..1",
-          "source": "gini"
+          "source": "gini",
+          "quantityId": "inequality"
         },
         {
           "label": "Gross emissions (month)",
@@ -2713,7 +2714,8 @@
         {
           "label": "Government debt",
           "value": 76026.04,
-          "unit": "$"
+          "unit": "$",
+          "quantityId": "public_debt"
         },
         {
           "label": "GDP (annual, nominal)",
@@ -3440,30 +3442,35 @@
           "label": "Average wellbeing",
           "value": 0.6947934324764247,
           "unit": "0..1",
-          "source": "wellbeing"
+          "source": "wellbeing",
+          "quantityId": "wellbeing"
         },
         {
           "label": "Unemployment (smoothed)",
           "value": 0.19297039520204315,
           "unit": "share",
-          "source": "unemployment"
+          "source": "unemployment",
+          "quantityId": "unemployment"
         },
         {
           "label": "Gini",
           "value": 0.8822121621231839,
           "unit": "0..1",
-          "source": "gini"
+          "source": "gini",
+          "quantityId": "inequality"
         },
         {
           "label": "Public debt / GDP",
           "value": 0.19840000317331274,
           "unit": "ratio",
-          "source": "debt"
+          "source": "debt",
+          "quantityId": "public_debt_ratio"
         },
         {
           "label": "Bank bailout this month",
           "value": 0.0,
-          "unit": "0 or 1"
+          "unit": "0 or 1",
+          "quantityId": "bailout"
         }
       ],
       "result": {
@@ -3529,18 +3536,21 @@
         {
           "label": "Bank equity",
           "value": 38326.45,
-          "unit": "$"
+          "unit": "$",
+          "quantityId": "bank_equity"
         },
         {
           "label": "Loans outstanding",
           "value": 300969.51,
-          "unit": "$"
+          "unit": "$",
+          "quantityId": "bank_loans"
         },
         {
           "label": "Capital ratio limit (policy)",
           "value": 0.1,
           "unit": "share",
-          "source": "bank_capital_ratio"
+          "source": "bank_capital_ratio",
+          "quantityId": "capital_ratio"
         },
         {
           "label": "Lending limit (equity / limit)",
@@ -3550,7 +3560,8 @@
         {
           "label": "Headroom (room to lend)",
           "value": 82294.98999999993,
-          "unit": "$"
+          "unit": "$",
+          "quantityId": "credit_headroom"
         }
       ],
       "result": {
@@ -4333,6 +4344,140 @@
     }
   ],
   "history": [],
+  "quantities": [
+    {
+      "id": "workers",
+      "value": 8.0
+    },
+    {
+      "id": "unemployment",
+      "value": 0.18181818181818182
+    },
+    {
+      "id": "wage",
+      "value": 1512.0766666666666
+    },
+    {
+      "id": "min_wage",
+      "value": 1200.0
+    },
+    {
+      "id": "price",
+      "value": 65.21666666666665
+    },
+    {
+      "id": "carbon_price",
+      "value": 0.0
+    },
+    {
+      "id": "revenue",
+      "value": 31802.98
+    },
+    {
+      "id": "emissions_cap",
+      "value": 0.0
+    },
+    {
+      "id": "green_subsidy",
+      "value": 0.0
+    },
+    {
+      "id": "treasury_cash",
+      "value": 8000.0
+    },
+    {
+      "id": "green_tech",
+      "value": 0.0
+    },
+    {
+      "id": "profit",
+      "value": 12702.92
+    },
+    {
+      "id": "capital",
+      "value": 215.09393835818412
+    },
+    {
+      "id": "debt",
+      "value": 69057.20999999999
+    },
+    {
+      "id": "savings",
+      "value": 189342.25999999998
+    },
+    {
+      "id": "net_wealth",
+      "value": 2742200.07
+    },
+    {
+      "id": "campaign_cap",
+      "value": 1.0
+    },
+    {
+      "id": "bank_equity",
+      "value": 38326.45
+    },
+    {
+      "id": "bank_loans",
+      "value": 300969.51
+    },
+    {
+      "id": "bank_deposits",
+      "value": 262643.06
+    },
+    {
+      "id": "capital_ratio",
+      "value": 0.1
+    },
+    {
+      "id": "bailout_policy",
+      "value": 0.0
+    },
+    {
+      "id": "bank_failed",
+      "value": 0.0
+    },
+    {
+      "id": "policy_rate",
+      "value": 0.04
+    },
+    {
+      "id": "public_debt",
+      "value": 76026.04
+    },
+    {
+      "id": "legitimacy",
+      "value": 0.7
+    },
+    {
+      "id": "wellbeing",
+      "value": 0.6947934324764247
+    },
+    {
+      "id": "inequality",
+      "value": 0.8822121621231839
+    },
+    {
+      "id": "public_debt_ratio",
+      "value": 0.19840000317331274
+    },
+    {
+      "id": "pilot_employed",
+      "value": 1.0
+    },
+    {
+      "id": "flight",
+      "value": 0.0
+    },
+    {
+      "id": "commons_open",
+      "value": 1.0
+    },
+    {
+      "id": "commons_enclosed",
+      "value": 0.0
+    }
+  ],
   "estate": {
     "household": 8,
     "home": 7,

@@ -280,7 +280,7 @@ The user re-scoped stages: stage 2 is now "the firm decisions" and the household
 
 **Gate results.** `statehash` (18 lines) byte-identical (`cmp`); baselines A-F (20 seeds) byte-identical (`cmp`); `cargo test --workspace` 291 passed, 0 failed; fmt and clippy `-D warnings` clean; web 506 tests passed, 12 skipped, typecheck, lint, build, check:contract and check:recording clean; golden changed only in the `agents` and `catalog` hashes (run twice); real-simulation Playwright (`web/playwright/decisions-shots.mjs`, 1440 wide) for Firms, Government, Estate, Nature and Lobbyists, no console errors. Contract 2.8.0 is additive (no `SCHEMA_VERSION` bump).
 
-## 16. Future: causality graph
+## 16. Future: causality graph (stage 0 of `docs/features/causality-graph.md` is built: live values per quantity, contract 2.9)
 
 Not built: the graph UI. What it can take from the registry today: nodes (quantities with owner and role, decisions with owner), edges (`reads`, `writes`, derived `drives`), source and sink markers, self-loop flags, components, and `upstream` for each quantity. A player-facing graph "why did X happen" would pick a quantity, take its `upstream` and the `drives` edges among them, and lay them out (the layout and any live values belong in the web; no rules).
 

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { AgentsCatalog, DecisionInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, causalLines, decisionLine, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, causalLines, decisionLine, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -108,6 +108,56 @@ describe('causal edges (contract v2.8)', () => {
       edges: [...g.edges, { from: 'quantity:qa', to: 'decision:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'decision:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
     };
     expect(causalLines(made, 'made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
+  });
+});
+
+describe('live values on causes (contract v2.9)', () => {
+  const c = ok(sim.catalog());
+  const played = createSimPort(7);
+  ok(played.submitTurn([]));
+  const snap = ok(played.importState(ok(played.exportState())));
+  it('every bound quantity has a value or a reason: bound ones read as a phrase, unbound ones are null', () => {
+    const live = liveLookup(c, snap);
+    const bound = c.quantities.filter((q) => q.live.bound);
+    const unbound = c.quantities.filter((q) => !q.live.bound);
+    expect(bound.length).toBeGreaterThan(20);
+    expect(unbound.length).toBeGreaterThan(20);
+    for (const q of unbound) {
+      expect(c.causal.live.unbound.map((r) => r.id), q.id).toContain(q.live.unbound);
+      expect(live(q.id), q.id).toBeNull();
+    }
+    expect(live('unemployment')).toMatch(/\d/);
+  });
+  it('every quantity id the snapshot links (breakdown inputs, market price and drivers) is in the catalogue', () => {
+    const ids = new Set(c.quantities.map((q) => q.id));
+    const linked: string[] = [];
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if ((k === 'quantityId' || k === 'priceQuantity') && typeof x === 'string') linked.push(x); else walk(x); }
+    };
+    walk(snap.breakdowns);
+    walk(snap.markets);
+    expect(linked.length).toBeGreaterThan(5);
+    for (const id of linked) expect(ids.has(id), id).toBe(true);
+  });
+  it('a made-up binding and value added only in the wire shows beside its cause with no web change', () => {
+    const g = c.causal;
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream });
+    const made = {
+      ...g,
+      nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
+      edges: [...g.edges, { from: 'quantity:qa', to: 'decision:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'decision:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
+    };
+    const cat2 = { ...c, quantities: [...c.quantities, { id: 'qa', label: 'Alpha', unit: 'widgets', owner: 'firm', summary: '', live: { bound: true, path: 'x', aggregate: 'town', hasTrend: true } }] };
+    const snap2 = { ...snap, quantities: [...snap.quantities, { id: 'qa', value: 3, previous: 2, trend: 'rising' }] };
+    const out = causalLines(made, 'made_up', liveLookup(cat2, snap2));
+    expect(out.upstream).toEqual([{ label: 'Beta', causes: `Alpha (3 widgets, ${c.markets.directions.rising})` }]);
+    // No lookup, no value: the old text.
+    expect(causalLines(made, 'made_up').upstream[0]!.causes).toBe('Alpha');
+  });
+  it('the "what changed" labels are catalogue text, not literals in the web', () => {
+    for (const k of ['what_changed_title', 'what_changed_button', 'what_changed_short', 'what_changed_aria', 'what_changed_empty']) expect(c.text.misc?.[k], k).toBeTruthy();
+    expect(c.text.misc!.what_changed_title).toBe('What changed this turn');
   });
 });
 

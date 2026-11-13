@@ -622,7 +622,7 @@
           "path": "government.legit_wellbeing_neutral",
           "label": "Neutral wellbeing",
           "value": 0.5,
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "path": "government.legit_unemployment",
@@ -646,7 +646,7 @@
           "path": "government.legit_gini_threshold",
           "label": "Gini threshold",
           "value": 0.45,
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "path": "government.legit_debt",

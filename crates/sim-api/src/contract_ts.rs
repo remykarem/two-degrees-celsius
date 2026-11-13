@@ -131,6 +131,15 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ),
         (
             "decisions",
+            <crate::decisions::CausalLive as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::LiveBinding as TS>::decl(&cfg),
+        ),
+        ("live", <crate::live::QuantityLive as TS>::decl(&cfg)),
+        (
+            "decisions",
             <crate::decisions::CausalNode as TS>::decl(&cfg),
         ),
         (

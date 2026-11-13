@@ -327,7 +327,12 @@
     },
     "misc": {
       "energy_unit_help": "{unit}: energy per month, in megawatt-hours. The unit is a label from the game's settings; the numbers are the model's own.",
-      "gst_reason": "Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line."
+      "gst_reason": "Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line.",
+      "what_changed_aria": "What changed this turn in {metric}",
+      "what_changed_button": "What changed this turn",
+      "what_changed_empty": "The trace is recorded when a turn is played.",
+      "what_changed_short": "what changed?",
+      "what_changed_title": "What changed this turn"
     },
     "networth": {
       "assets": "Assets",
@@ -2518,7 +2523,7 @@
         {
           "id": "unemployment",
           "label": "Unemployment",
-          "unit": "rate"
+          "unit": "share of the labour force"
         },
         {
           "id": "sector_tfp_growth",
@@ -3045,7 +3050,7 @@
         {
           "id": "random_draw",
           "label": "Random draw",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         }
       ],
       "outputs": [
@@ -3703,22 +3708,22 @@
         {
           "id": "legitimacy",
           "label": "Legitimacy",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "id": "wellbeing",
           "label": "Wellbeing",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "id": "unemployment",
           "label": "Unemployment",
-          "unit": "rate"
+          "unit": "share of the labour force"
         },
         {
           "id": "inequality",
           "label": "Inequality",
-          "unit": "Gini, 0 to 1"
+          "unit": "Gini, on a 0 to 1 scale"
         },
         {
           "id": "public_debt_ratio",
@@ -3740,7 +3745,7 @@
         {
           "id": "legitimacy",
           "label": "Legitimacy",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         }
       ],
       "params": [
@@ -3754,7 +3759,7 @@
           "path": "government.legit_wellbeing_neutral",
           "label": "Neutral wellbeing",
           "value": 0.5,
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "path": "government.legit_unemployment",
@@ -3778,7 +3783,7 @@
           "path": "government.legit_gini_threshold",
           "label": "Gini threshold",
           "value": 0.45,
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "path": "government.legit_debt",
@@ -3872,7 +3877,7 @@
         {
           "id": "random_draw",
           "label": "Random draw",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "id": "pilot_employed",
@@ -3917,7 +3922,7 @@
         {
           "id": "random_draw",
           "label": "Random draw",
-          "unit": "0 to 1"
+          "unit": "on a 0 to 1 scale"
         },
         {
           "id": "commons_open",
@@ -3948,693 +3953,1231 @@
       "label": "Expected sales",
       "unit": "units per month",
       "owner": "firm",
-      "summary": "A smoothed average of past demand for what the firm makes."
+      "summary": "A smoothed average of past demand for what the firm makes.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "inventory",
       "label": "Inventory",
       "unit": "units",
       "owner": "firm",
-      "summary": "Unsold stock the firm holds."
+      "summary": "Unsold stock the firm holds.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "inventory_cover",
       "label": "Inventory cover wanted",
       "unit": "months of expected sales",
       "owner": "firm",
-      "summary": "How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none)."
+      "summary": "How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none).",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "workers",
       "label": "Workers",
       "unit": "people",
       "owner": "firm",
-      "summary": "The people the firm employs."
+      "summary": "The people the firm employs.",
+      "live": {
+        "bound": true,
+        "path": "firms[].workers",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "skilled_workers",
       "label": "Skilled workers",
       "unit": "people",
       "owner": "firm",
-      "summary": "Workers whose skill is at or above the skilled threshold."
+      "summary": "Workers whose skill is at or above the skilled threshold.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "effective_labour",
       "label": "Effective labour per worker",
       "unit": "skill x hours",
       "owner": "firm",
-      "summary": "What an average worker contributes after skill and commute time."
+      "summary": "What an average worker contributes after skill and commute time.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "capital_output",
       "label": "Output from capital and technology",
       "unit": "units per month",
       "owner": "firm",
-      "summary": "What one unit of labour would make with the firm's capital and technology, before weather, resources and the transition take their share."
+      "summary": "What one unit of labour would make with the firm's capital and technology, before weather, resources and the transition take their share.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "weather_factor",
       "label": "Weather and climate effect on output",
       "unit": "share of output kept",
       "owner": "firm",
-      "summary": "Climate damage, drought and smoke from nearby fires, which cut what a firm can make (climate damage and drought hit farms only)."
+      "summary": "Climate damage, drought and smoke from nearby fires, which cut what a firm can make (climate damage and drought hit farms only).",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "resource_factor",
       "label": "Natural resources effect on output",
       "unit": "share of output kept",
       "owner": "firm",
-      "summary": "The health of the forest and commons a farm relies on, and the coordination cost of a community-managed commons."
+      "summary": "The health of the forest and commons a farm relies on, and the coordination cost of a community-managed commons.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "transition_factor",
       "label": "Transition effect on output",
       "unit": "share of output kept",
       "owner": "firm",
-      "summary": "Output lost while the town changes its economic system."
+      "summary": "Output lost while the town changes its economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "wanted_workers",
       "label": "Workers wanted",
       "unit": "people",
       "owner": "firm",
-      "summary": "The headcount that would produce the output the firm wants."
+      "summary": "The headcount that would produce the output the firm wants.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "vacancies",
       "label": "Vacancies",
       "unit": "jobs",
       "owner": "firm",
-      "summary": "Jobs the firm posts this month, skilled and general."
+      "summary": "Jobs the firm posts this month, skilled and general.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "over_target_months",
       "label": "Months overstaffed",
       "unit": "months",
       "owner": "firm",
-      "summary": "How many months in a row the firm has had more workers than it wants."
+      "summary": "How many months in a row the firm has had more workers than it wants.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "unemployment",
       "label": "Unemployment",
-      "unit": "rate",
+      "unit": "share of the labour force",
       "owner": "firm",
-      "summary": "The town's smoothed unemployment rate, which firms watch when they set wages."
+      "summary": "The town's smoothed unemployment rate, which firms watch when they set wages.",
+      "live": {
+        "bound": true,
+        "path": "indicators.unemployment",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "wage",
       "label": "Base wage",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "The firm's base monthly wage."
+      "summary": "The firm's base monthly wage.",
+      "live": {
+        "bound": true,
+        "path": "firms[].wage",
+        "aggregate": "mean",
+        "hasTrend": false
+      }
     },
     {
       "id": "min_wage",
       "label": "Minimum wage",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "The legal wage floor (the player's lever)."
+      "summary": "The legal wage floor (the player's lever).",
+      "live": {
+        "bound": true,
+        "path": "policy.min_wage.nominal",
+        "aggregate": "lever",
+        "lever": "min_wage",
+        "hasTrend": false
+      }
     },
     {
       "id": "sector_tfp_growth",
       "label": "Sector productivity growth",
       "unit": "share per month",
       "owner": "firm",
-      "summary": "How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart."
+      "summary": "How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "price",
       "label": "Price",
       "unit": "$ per unit",
       "owner": "firm",
-      "summary": "What the firm charges for one unit."
+      "summary": "What the firm charges for one unit.",
+      "live": {
+        "bound": true,
+        "path": "firms[].price",
+        "aggregate": "mean",
+        "hasTrend": false
+      }
     },
     {
       "id": "markup",
       "label": "Markup",
       "unit": "share of unit cost",
       "owner": "firm",
-      "summary": "The margin over unit cost the firm aims for. It is the firm's own state, set at the start and copied to a new firm, not a parameter."
+      "summary": "The margin over unit cost the firm aims for. It is the firm's own state, set at the start and copied to a new firm, not a parameter.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "unit_cost",
       "label": "Unit cost",
       "unit": "$ per unit",
       "owner": "firm",
-      "summary": "Wages plus carbon cost for each unit made."
+      "summary": "Wages plus carbon cost for each unit made.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "footprint",
       "label": "Carbon footprint",
       "unit": "tonnes per month",
       "owner": "firm",
-      "summary": "Direct emissions plus the emissions of the electricity the firm uses."
+      "summary": "Direct emissions plus the emissions of the electricity the firm uses.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "carbon_price",
       "label": "Carbon price firms plan with",
       "unit": "$ per tonne",
       "owner": "firm",
-      "summary": "The carbon price in force after lobbying, pulled toward a price the player has announced but not yet started."
+      "summary": "The carbon price in force after lobbying, pulled toward a price the player has announced but not yet started.",
+      "live": {
+        "bound": true,
+        "path": "policy.carbon_price.effective",
+        "aggregate": "lever",
+        "lever": "carbon_price",
+        "hasTrend": false
+      }
     },
     {
       "id": "revenue",
       "label": "Revenue",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "What the firm earned selling this month."
+      "summary": "What the firm earned selling this month.",
+      "live": {
+        "bound": true,
+        "path": "firms[].revenue",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "emissions_cap",
       "label": "Emissions cap",
       "unit": "tonnes per month",
       "owner": "firm",
-      "summary": "The cap in force after lobbying (0 means no cap)."
+      "summary": "The cap in force after lobbying (0 means no cap).",
+      "live": {
+        "bound": true,
+        "path": "policy.emissions_cap.effective",
+        "aggregate": "lever",
+        "lever": "emissions_cap",
+        "hasTrend": false
+      }
     },
     {
       "id": "green_subsidy",
       "label": "Green subsidy",
       "unit": "share of cost",
       "owner": "firm",
-      "summary": "The share of a green investment the treasury pays."
+      "summary": "The share of a green investment the treasury pays.",
+      "live": {
+        "bound": true,
+        "path": "policy.green_subsidy.nominal",
+        "aggregate": "lever",
+        "lever": "green_subsidy",
+        "hasTrend": false
+      }
     },
     {
       "id": "treasury_cash",
       "label": "Treasury cash",
       "unit": "$",
       "owner": "firm",
-      "summary": "Cash the government holds; it limits the subsidies it can pay."
+      "summary": "Cash the government holds; it limits the subsidies it can pay.",
+      "live": {
+        "bound": true,
+        "path": "government.cash",
+        "aggregate": "town",
+        "hasTrend": false
+      }
     },
     {
       "id": "cash",
       "label": "Cash",
       "unit": "$",
       "owner": "firm",
-      "summary": "Cash the firm holds when it decides."
+      "summary": "Cash the firm holds when it decides.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "cash_reserve",
       "label": "Cash reserve",
       "unit": "$",
       "owner": "firm",
-      "summary": "Cash kept back for payroll and debt service."
+      "summary": "Cash kept back for payroll and debt service.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "green_tech",
       "label": "Green technology",
       "unit": "share of emissions cut",
       "owner": "firm",
-      "summary": "How much of its emissions the firm has cut with clean technology."
+      "summary": "How much of its emissions the firm has cut with clean technology.",
+      "live": {
+        "bound": true,
+        "path": "firms[].greenTech",
+        "aggregate": "mean",
+        "hasTrend": false
+      }
     },
     {
       "id": "green_plan",
       "label": "Saving for green investment",
       "unit": "yes or no",
       "owner": "firm",
-      "summary": "The firm wants a green step but cannot afford it yet, so it holds cash back."
+      "summary": "The firm wants a green step but cannot afford it yet, so it holds cash back.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "profit",
       "label": "Profit",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "Profit after interest, carbon cost and tax this month."
+      "summary": "Profit after interest, carbon cost and tax this month.",
+      "live": {
+        "bound": true,
+        "path": "firms[].profit",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "profit_trend",
       "label": "Profit trend",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "A smoothed average of past profit."
+      "summary": "A smoothed average of past profit.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "capital",
       "label": "Capital",
       "unit": "units",
       "owner": "firm",
-      "summary": "The firm's capital stock after depreciation and this month's purchases."
+      "summary": "The firm's capital stock after depreciation and this month's purchases.",
+      "live": {
+        "bound": true,
+        "path": "firms[].capital",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "capital_per_sale",
       "label": "Capital needed per unit sold",
       "unit": "capital units per unit sold",
       "owner": "firm",
-      "summary": "How much capital the firm's technology needs for each unit of expected sales."
+      "summary": "How much capital the firm's technology needs for each unit of expected sales.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "loan_rate",
       "label": "Loan rate",
       "unit": "per year",
       "owner": "firm",
-      "summary": "The interest rate the bank charges the firm."
+      "summary": "The interest rate the bank charges the firm.",
+      "live": {
+        "bound": true,
+        "path": "markets[credit].price",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "distressed",
       "label": "In distress",
       "unit": "yes or no",
       "owner": "firm",
-      "summary": "The firm has been behind on payments or could not pay wages in full."
+      "summary": "The firm has been behind on payments or could not pay wages in full.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "invest_hurdle",
       "label": "Required return above the loan rate",
       "unit": "per year",
       "owner": "firm",
-      "summary": "How much more than the loan rate an investment must earn; set by the economic system."
+      "summary": "How much more than the loan rate an investment must earn; set by the economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "green_cash_share",
       "label": "Cash held for green investment",
       "unit": "share",
       "owner": "firm",
-      "summary": "The share of free cash held back while a green step is planned; set by the economic system."
+      "summary": "The share of free cash held back while a green step is planned; set by the economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "investment_plan",
       "label": "Planned investment",
       "unit": "$",
       "owner": "firm",
-      "summary": "What the firm plans to spend on capital goods next month."
+      "summary": "What the firm plans to spend on capital goods next month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "loan_request",
       "label": "Loan request",
       "unit": "$",
       "owner": "firm",
-      "summary": "What the firm asks the bank to lend for its plan."
+      "summary": "What the firm asks the bank to lend for its plan.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "payroll",
       "label": "Wages paid",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "What the firm paid its workers this month."
+      "summary": "What the firm paid its workers this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "debt_service",
       "label": "Debt service due",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "Interest plus scheduled principal due this month."
+      "summary": "Interest plus scheduled principal due this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "payout_ratio",
       "label": "Payout ratio",
       "unit": "share of profit",
       "owner": "firm",
-      "summary": "The share of profit paid out; set by the economic system."
+      "summary": "The share of profit paid out; set by the economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "dividends",
       "label": "Dividends",
       "unit": "$ per month",
       "owner": "firm",
-      "summary": "What the firm pays its owners this month."
+      "summary": "What the firm pays its owners this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "debt",
       "label": "Debt",
       "unit": "$",
       "owner": "firm",
-      "summary": "What the firm owes the bank."
+      "summary": "What the firm owes the bank.",
+      "live": {
+        "bound": true,
+        "path": "firms[].debt",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "payment_shortfall",
       "label": "Missed payments",
       "unit": "yes or no",
       "owner": "firm",
-      "summary": "Interest, scheduled principal or wages went unpaid this month."
+      "summary": "Interest, scheduled principal or wages went unpaid this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "distress_months",
       "label": "Months in distress",
       "unit": "months",
       "owner": "firm",
-      "summary": "How many months in a row the firm has missed payments."
+      "summary": "How many months in a row the firm has missed payments.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "firm_open",
       "label": "Firm open",
       "unit": "yes or no",
       "owner": "firm",
-      "summary": "Whether the firm keeps trading or defaults and closes."
+      "summary": "Whether the firm keeps trading or defaults and closes.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "sector_return",
       "label": "Sector return",
       "unit": "per year",
       "owner": "household",
-      "summary": "The average return on capital in a sector that has room for another firm."
+      "summary": "The average return on capital in a sector that has room for another firm.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "base_rate",
       "label": "Cost of borrowing",
       "unit": "per year",
       "owner": "household",
-      "summary": "The base rate plus the bank's base spread."
+      "summary": "The base rate plus the bank's base spread.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "not_published"
+      }
     },
     {
       "id": "random_draw",
       "label": "Random draw",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "household",
-      "summary": "A chance draw the simulation takes each month and hands to the decision."
+      "summary": "A chance draw the simulation takes each month and hands to the decision.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "random"
+      }
     },
     {
       "id": "new_firm",
       "label": "New firm",
       "unit": "yes or no",
       "owner": "household",
-      "summary": "A household founds a firm in the dormant slot."
+      "summary": "A household founds a firm in the dormant slot.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "savings",
       "label": "Savings",
       "unit": "$",
       "owner": "household",
-      "summary": "The deposits a household holds."
+      "summary": "The deposits a household holds.",
+      "live": {
+        "bound": true,
+        "path": "households[].savings",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "last_disposable",
       "label": "Last month's disposable income",
       "unit": "$ per month",
       "owner": "household",
-      "summary": "Income after tax, rent and loan payments last month."
+      "summary": "Income after tax, rent and loan payments last month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "net_wealth",
       "label": "Net wealth",
       "unit": "$",
       "owner": "household",
-      "summary": "Savings, homes and firm shares owned, less debt."
+      "summary": "Savings, homes and firm shares owned, less debt.",
+      "live": {
+        "bound": true,
+        "path": "households[].netWorth",
+        "aggregate": "sum",
+        "hasTrend": false
+      }
     },
     {
       "id": "food_price",
       "label": "Food price",
       "unit": "$ per unit",
       "owner": "household",
-      "summary": "The average price of food across the food firms."
+      "summary": "The average price of food across the food firms.",
+      "live": {
+        "bound": true,
+        "path": "markets[food].price",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "food_need",
       "label": "Food need",
       "unit": "units per month",
       "owner": "household",
-      "summary": "The food a household needs each month: a fixed amount per person."
+      "summary": "The food a household needs each month: a fixed amount per person.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "household_size",
       "label": "Household size",
       "unit": "people",
       "owner": "household",
-      "summary": "How many people live in the household."
+      "summary": "How many people live in the household.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "spending_propensity",
       "label": "Spending propensity",
       "unit": "share",
       "owner": "household",
-      "summary": "The share of spare income a household of this class spends rather than saves."
+      "summary": "The share of spare income a household of this class spends rather than saves.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "fixed"
+      }
     },
     {
       "id": "wealth_spending_rate",
       "label": "Spending out of wealth",
       "unit": "share of net wealth per month",
       "owner": "household",
-      "summary": "The slice of net wealth the owner classes also spend each month (zero for other classes)."
+      "summary": "The slice of net wealth the owner classes also spend each month (zero for other classes).",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "fixed"
+      }
     },
     {
       "id": "consumption_budget",
       "label": "Spending budget",
       "unit": "$ per month",
       "owner": "household",
-      "summary": "The money a buyer brings to a market: households split theirs into food, goods and services; firms and the government buy in the same markets."
+      "summary": "The money a buyer brings to a market: households split theirs into food, goods and services; firms and the government buy in the same markets.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "demand_units",
       "label": "Demand",
       "unit": "units per month",
       "owner": "firm",
-      "summary": "What buyers wanted from the firm this month, in units, even if its stock ran out."
+      "summary": "What buyers wanted from the firm this month, in units, even if its stock ran out.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "units_sold",
       "label": "Units sold",
       "unit": "units per month",
       "owner": "firm",
-      "summary": "What the firm actually sold this month."
+      "summary": "What the firm actually sold this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "capital_income",
       "label": "Capital income",
       "unit": "$ per month",
       "owner": "household",
-      "summary": "Dividends, rent and interest a household received last month."
+      "summary": "Dividends, rent and interest a household received last month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "campaign_cap",
       "label": "Campaign spending cap",
       "unit": "share of income",
       "owner": "household",
-      "summary": "The player-set limit on the share of income that may go to lobbying."
+      "summary": "The player-set limit on the share of income that may go to lobbying.",
+      "live": {
+        "bound": true,
+        "path": "policy.campaign_cap.nominal",
+        "aggregate": "lever",
+        "lever": "campaign_cap",
+        "hasTrend": false
+      }
     },
     {
       "id": "lobby_spend",
       "label": "Lobbying spend",
       "unit": "$ per month",
       "owner": "household",
-      "summary": "What a capital-owning household gives to lobbying this month."
+      "summary": "What a capital-owning household gives to lobbying this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "bank_equity",
       "label": "Bank equity",
       "unit": "$",
       "owner": "bank",
-      "summary": "The bank's own money: what its loans are worth less what it owes depositors."
+      "summary": "The bank's own money: what its loans are worth less what it owes depositors.",
+      "live": {
+        "bound": true,
+        "path": "bank.equity",
+        "aggregate": "town",
+        "hasTrend": false
+      }
     },
     {
       "id": "bank_loans",
       "label": "Bank loans",
       "unit": "$",
       "owner": "bank",
-      "summary": "All the loans the bank has made."
+      "summary": "All the loans the bank has made.",
+      "live": {
+        "bound": true,
+        "path": "bank.loans",
+        "aggregate": "town",
+        "hasTrend": false
+      }
     },
     {
       "id": "bank_deposits",
       "label": "Bank deposits",
       "unit": "$",
       "owner": "bank",
-      "summary": "What the bank owes its depositors."
+      "summary": "What the bank owes its depositors.",
+      "live": {
+        "bound": true,
+        "path": "bank.deposits",
+        "aggregate": "town",
+        "hasTrend": false
+      }
     },
     {
       "id": "capital_ratio",
       "label": "Required capital ratio",
       "unit": "share of loans",
       "owner": "bank",
-      "summary": "The player-set minimum of equity to loans."
+      "summary": "The player-set minimum of equity to loans.",
+      "live": {
+        "bound": true,
+        "path": "policy.bank_capital_ratio.nominal",
+        "aggregate": "lever",
+        "lever": "bank_capital_ratio",
+        "hasTrend": false
+      }
     },
     {
       "id": "credit_headroom",
       "label": "Lending room",
       "unit": "$",
       "owner": "bank",
-      "summary": "How much more the bank may lend before it breaks the capital ratio."
+      "summary": "How much more the bank may lend before it breaks the capital ratio.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "firm_assets",
       "label": "Firm assets",
       "unit": "$",
       "owner": "bank",
-      "summary": "What a firm owns: capital at its price plus cash."
+      "summary": "What a firm owns: capital at its price plus cash.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "loan_approved",
       "label": "Loan approved",
       "unit": "$",
       "owner": "bank",
-      "summary": "What the bank agrees to lend the firm this month."
+      "summary": "What the bank agrees to lend the firm this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "credit_spread_add",
       "label": "System credit spread",
       "unit": "per year",
       "owner": "bank",
-      "summary": "Extra interest the economic system adds on top of the usual spread."
+      "summary": "Extra interest the economic system adds on top of the usual spread.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "bank_dividend",
       "label": "Bank dividend",
       "unit": "$ per month",
       "owner": "bank",
-      "summary": "Equity above the required buffer that the bank pays to its owner."
+      "summary": "Equity above the required buffer that the bank pays to its owner.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "policy_rate",
       "label": "Policy rate",
       "unit": "per year",
       "owner": "bank",
-      "summary": "The base interest rate the player sets."
+      "summary": "The base interest rate the player sets.",
+      "live": {
+        "bound": true,
+        "path": "policy.base_rate.nominal",
+        "aggregate": "lever",
+        "lever": "base_rate",
+        "hasTrend": false
+      }
     },
     {
       "id": "bailout_policy",
       "label": "Bailout policy",
       "unit": "yes or no",
       "owner": "bank",
-      "summary": "Whether the treasury recapitalises a failing bank."
+      "summary": "Whether the treasury recapitalises a failing bank.",
+      "live": {
+        "bound": true,
+        "path": "policy.bailout.nominal",
+        "aggregate": "flag",
+        "lever": "bailout",
+        "hasTrend": false
+      }
     },
     {
       "id": "bank_failed",
       "label": "Bank failed",
       "unit": "yes or no",
       "owner": "bank",
-      "summary": "The bank is out of equity and has no bailout: depositors lose part of their savings."
+      "summary": "The bank is out of equity and has no bailout: depositors lose part of their savings.",
+      "live": {
+        "bound": true,
+        "path": "bank.failed",
+        "aggregate": "flag",
+        "hasTrend": false
+      }
     },
     {
       "id": "committed_spending",
       "label": "Committed spending",
       "unit": "$",
       "owner": "government",
-      "summary": "What the government owes this month: benefits, UBI, job-guarantee wages, upkeep and building."
+      "summary": "What the government owes this month: benefits, UBI, job-guarantee wages, upkeep and building.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "next_month_purchases",
       "label": "Next month's purchases",
       "unit": "$",
       "owner": "government",
-      "summary": "The goods the government plans to buy next month (the spending lever), held back in cash."
+      "summary": "The goods the government plans to buy next month (the spending lever), held back in cash.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "treasury_taxes",
       "label": "Taxes collected",
       "unit": "$",
       "owner": "government",
-      "summary": "Taxes and carbon payments that came in this month."
+      "summary": "Taxes and carbon payments that came in this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "not_published"
+      }
     },
     {
       "id": "public_debt",
       "label": "Public debt",
       "unit": "$",
       "owner": "government",
-      "summary": "What the government owes the bank."
+      "summary": "What the government owes the bank.",
+      "live": {
+        "bound": true,
+        "path": "government.debt",
+        "aggregate": "town",
+        "hasTrend": false
+      }
     },
     {
       "id": "borrowing",
       "label": "Borrowing",
       "unit": "$",
       "owner": "government",
-      "summary": "New loans the government takes from the bank this month."
+      "summary": "New loans the government takes from the bank this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "not_published"
+      }
     },
     {
       "id": "repayment",
       "label": "Repayment",
       "unit": "$",
       "owner": "government",
-      "summary": "Debt the government pays back this month."
+      "summary": "Debt the government pays back this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "not_published"
+      }
     },
     {
       "id": "spending_cut_ratio",
       "label": "Share of spending paid",
       "unit": "share",
       "owner": "government",
-      "summary": "The share of each committed payment the treasury can actually fund (1 means all of it)."
+      "summary": "The share of each committed payment the treasury can actually fund (1 means all of it).",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "legitimacy",
       "label": "Legitimacy",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "government",
-      "summary": "How far the town accepts the government's rule; it drifts with wellbeing, unemployment, inequality, debt, bailouts and system change."
+      "summary": "How far the town accepts the government's rule; it drifts with wellbeing, unemployment, inequality, debt, bailouts and system change.",
+      "live": {
+        "bound": true,
+        "path": "government.legitimacy",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "wellbeing",
       "label": "Wellbeing",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "government",
-      "summary": "The town's average wellbeing."
+      "summary": "The town's average wellbeing.",
+      "live": {
+        "bound": true,
+        "path": "indicators.avgWellbeing",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "inequality",
       "label": "Inequality",
-      "unit": "Gini, 0 to 1",
+      "unit": "Gini, on a 0 to 1 scale",
       "owner": "government",
-      "summary": "The Gini coefficient of household wealth."
+      "summary": "The Gini coefficient of household wealth.",
+      "live": {
+        "bound": true,
+        "path": "indicators.gini",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "public_debt_ratio",
       "label": "Public debt against GDP",
       "unit": "ratio",
       "owner": "government",
-      "summary": "Public debt divided by a year's GDP."
+      "summary": "Public debt divided by a year's GDP.",
+      "live": {
+        "bound": true,
+        "path": "government.debtToGdp",
+        "aggregate": "town",
+        "hasTrend": true
+      }
     },
     {
       "id": "bailout",
       "label": "Bank bailed out",
       "unit": "yes or no",
       "owner": "government",
-      "summary": "Whether the treasury rescued the bank this month."
+      "summary": "Whether the treasury rescued the bank this month.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "not_published"
+      }
     },
     {
       "id": "transition_resistance",
       "label": "Resistance to system change",
       "unit": "points per month",
       "owner": "government",
-      "summary": "The legitimacy lost each month while the town changes its economic system."
+      "summary": "The legitimacy lost each month while the town changes its economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "pilot_employed",
       "label": "Pilot on the payroll",
       "unit": "yes or no",
       "owner": "estate",
-      "summary": "Whether the jet's pilot works for the estate right now (true also when the town has no pilot to need)."
+      "summary": "Whether the jet's pilot works for the estate right now (true also when the town has no pilot to need).",
+      "live": {
+        "bound": true,
+        "path": "estate.pilot.status",
+        "aggregate": "flag",
+        "hasTrend": false
+      }
     },
     {
       "id": "pilot_unpaid_months",
       "label": "Months of short pay",
       "unit": "months",
       "owner": "estate",
-      "summary": "How many months in a row the estate could not pay the pilot in full."
+      "summary": "How many months in a row the estate could not pay the pilot in full.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "pilot_free",
       "label": "Pilot free to rehire",
       "unit": "yes or no",
       "owner": "estate",
-      "summary": "The pilot has no other job and is not on the job guarantee."
+      "summary": "The pilot has no other job and is not on the job guarantee.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "estate_savings",
       "label": "Estate savings",
       "unit": "$",
       "owner": "estate",
-      "summary": "The deposits the estate household holds."
+      "summary": "The deposits the estate household holds.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "private"
+      }
     },
     {
       "id": "flight",
       "label": "Jet flies",
       "unit": "yes or no",
       "owner": "estate",
-      "summary": "Whether the jet flies this month."
+      "summary": "Whether the jet flies this month.",
+      "live": {
+        "bound": true,
+        "path": "estate.jet.flyingThisMonth",
+        "aggregate": "flag",
+        "hasTrend": false
+      }
     },
     {
       "id": "enclosure_chance",
       "label": "Chance of enclosure",
       "unit": "probability per month",
       "owner": "nature",
-      "summary": "The chance each month that a wealthy owner fences off an open commons; it depends on the economic system."
+      "summary": "The chance each month that a wealthy owner fences off an open commons; it depends on the economic system.",
+      "live": {
+        "bound": false,
+        "hasTrend": false,
+        "unbound": "computed"
+      }
     },
     {
       "id": "commons_open",
       "label": "Commons open",
       "unit": "yes or no",
       "owner": "nature",
-      "summary": "Whether anyone may use the commons (not enclosed and not community-managed)."
+      "summary": "Whether anyone may use the commons (not enclosed and not community-managed).",
+      "live": {
+        "bound": true,
+        "path": "nature.commonsAccess",
+        "aggregate": "flag",
+        "hasTrend": false
+      }
     },
     {
       "id": "commons_enclosed",
       "label": "Commons enclosed",
       "unit": "yes or no",
       "owner": "nature",
-      "summary": "Whether an owner has fenced the commons off."
+      "summary": "Whether an owner has fenced the commons off.",
+      "live": {
+        "bound": true,
+        "path": "nature.commonsAccess",
+        "aggregate": "flag",
+        "hasTrend": false
+      }
     }
   ],
   "causal": {
@@ -4661,6 +5204,62 @@
         "text": "A choice that reads some quantities and writes others."
       }
     ],
+    "live": {
+      "aggregates": [
+        {
+          "id": "town",
+          "label": "Town figure",
+          "text": "One number for the whole town."
+        },
+        {
+          "id": "sum",
+          "label": "Total",
+          "text": "Added up over the active firms or over all households."
+        },
+        {
+          "id": "mean",
+          "label": "Average",
+          "text": "The average over the active firms."
+        },
+        {
+          "id": "lever",
+          "label": "Setting",
+          "text": "The setting of a policy lever now (the effective one where lobbying can change it)."
+        },
+        {
+          "id": "flag",
+          "label": "Yes or no",
+          "text": "Shown as 1 for yes and 0 for no."
+        }
+      ],
+      "unbound": [
+        {
+          "id": "private",
+          "label": "Inside one agent",
+          "text": "A working variable of a single firm, household or bank. The town has no one number for it."
+        },
+        {
+          "id": "computed",
+          "label": "Worked out each month",
+          "text": "A rule computes it fresh every month and does not keep it, so there is no stored value to show."
+        },
+        {
+          "id": "not_published",
+          "label": "Not shown yet",
+          "text": "It exists in the simulation, but the game does not publish a town figure for it yet."
+        },
+        {
+          "id": "fixed",
+          "label": "A fixed setting",
+          "text": "A fixed setting of the model's rules rather than a number that moves."
+        },
+        {
+          "id": "random",
+          "label": "Chance",
+          "text": "A random draw, different every time, with no value to track."
+        }
+      ]
+    },
     "nodes": [
       {
         "id": "quantity:expected_sales",

@@ -1,6 +1,6 @@
 # Causality graph (the "Why?" view)
 
-Status: **APPROVED (all open-question defaults).** Stage 0 in progress; later stages not built. Builds on `docs/features/decision-points.md` (sections 15 and 16: the registry, `crates/sim-model/src/causal.rs`, `catalog().causal`, contract 2.8). Claims marked *(unverified)* were not checked against code or a running build; sizes marked *(npm)* come from npm registry metadata, not a bundle build.
+Status: **APPROVED (all open-question defaults).** Stage 0 (coupling first) DONE, contract 2.9 (section 11 "As built"); stages 1 to 5 not built. Builds on `docs/features/decision-points.md` (sections 15 and 16: the registry, `crates/sim-model/src/causal.rs`, `catalog().causal`, contract 2.8). Claims marked *(unverified)* were not checked against code or a running build; sizes marked *(npm)* come from npm registry metadata, not a bundle build.
 
 ## 1. Goal and hard rules
 
@@ -182,3 +182,25 @@ Each stage that touches Rust or content follows the AGENTS.md checklist (fixture
 | Where does "Why is this changing?" go | Stays as "What changed this turn"; the graph is "What drives it" |
 | Depth default | 2 desktop, 1 mobile |
 | Show unknown-sign edges | Yes, dotted, until stage 2 covers all |
+
+## 11. Stage 0 as built (contract 2.9)
+
+No behaviour change: `statehash` and baselines A-F are byte-identical before and after; the golden changed only in snapshot, breakdown, catalog and agents hashes (the wire grew).
+
+| Audit item | Done | Where |
+|---|---|---|
+| C8 live value per quantity | **Yes.** `sim-api/src/live.rs`: `binding(QuantityId)` is an exhaustive match, so a new quantity is a compile error until it is bound (a snapshot path, an aggregate, an optional lever, an optional history series for a trend) or given an `Unbound` reason. `snapshot.quantities: QuantityLive[]` (`id, value, previous?, trend?`) serves the values of the bound quantities that have one now; `catalog().quantities[].live` (`bound, path?, aggregate?, lever?, hasTrend, unbound?`) says where each comes from or why it has none; words for aggregates and reasons are `content/decisions.json` `causal.live`. Values are read from the typed snapshot, never recomputed from `State`. 35 of 99 quantities are bound; 64 are unbound with a reason (`private`, `computed`, `not_published`, `fixed`, `random`) | `crates/sim-api/src/live.rs`, `tests/live.rs` |
+| C2 breakdown input -> node | **Yes**, for inputs: `BreakdownInput.quantityId?` on 11 inputs (Gini, public debt, wellbeing, unemployment, debt ratio, bailout, bank equity, loans, capital ratio, headroom). A test checks no id dangles and that the legitimacy breakdown's linked ids are inputs of the `government_legitimacy` decision. **Not done for `parts`**: parts are per firm or per household (`"Factory sales"`), not quantities | `breakdowns.rs` |
+| C3 Markets | **Partly.** `MarketView.priceQuantity?` and `MarketDriver.quantityId?` (`markets::price_quantity`, `driver_quantity`, in code next to the closed id sets). The cause word (`cost-driven`) is still authored per market in `content/ui.json`; deriving it from an edge needs stage 2 (signs and lags) and was not attempted. Housing rent and electricity have no registered quantity yet | `markets.rs` |
+| C6 relabel | **Yes.** The "Why is this changing?" button, window title and per-metric "why?" are now `text.misc.what_changed_*` in `content/ui.json` ("What changed this turn", "what changed?"); the word "why" is free for the graph | `WhyModal.svelte`, `MetricsPanel.svelte` |
+| C1 loop table, C4 topic prose, C5/C7 mechanism specs | Not stage 0 (C1 doc replaced in stage 3, C5/C7 in stage 1, C4 with C5) | n/a |
+
+Rules that came out of it:
+- **Trend baseline.** `previous` is the end of the previous turn: when no month of the current turn has been played yet the newest history point *is* now, so the one before it is used. `trend` ids are the Markets direction ids (`rising`, `steady`, `falling`) with the same `markets.steadyBand`; the words are `markets.directions`. Only quantities whose series the history keeps have a trend (unemployment, inequality, wellbeing, legitimacy, public debt ratio, food price, loan rate). More trends need a new `HistoryPoint` field (a saved-game change).
+- **Aggregates.** Firm quantities are a sum or a mean over active firms; household money is a sum; levers show the effective (lobbied) setting; yes/no is 1 or 0. `Price` and `Wage` are firm means, so they differ from the Markets sector prices; `FoodPrice` and `LoanRate` read the market cards.
+- **Web.** One generic use: the Agents explorer's "Causes of X" lines add each cause's value and trend word (`panels/explorer.ts` `liveLookup`; nothing there names a quantity). A made-up quantity with a binding and a value added only in the wire renders with no web change (`web/tests/agents.test.ts`). Units of five quantities were reworded in content (`on a 0 to 1 scale`, `share of the labour force`) so the phrase reads after a number.
+
+### Handoff for stage 1 (mechanism specs, DP-13)
+- New quantities (production, emissions, weather, wellbeing, rent, tax, matching) need a `QuantityId` variant, a `content/decisions.json` entry **and a `live::binding` arm** (the compiler forces it). Bind to an existing snapshot field where there is one (`nature.grossEmissionsMonthly`, `weather.stress`, `housing.rentPrivate`, `indicators.*`) so the node cannot disagree with its panel; otherwise choose an `Unbound` reason, and `not_published` is the honest one for state the snapshot does not show.
+- Likely binds: `Footprint`/gross emissions, `WeatherFactor` (from `weather.stress`), a rent quantity (`housing.rentPrivate`, then Markets housing `priceQuantity` can stop being `None`), `Wellbeing` per person.
+- Pitfalls: the test `every_bound_path_resolves_on_a_real_snapshot_and_the_value_matches` resolves paths with `a.b`, `xs[]` (active firms only) and `xs[id]` (markets); a new path shape needs the resolver in `tests/live.rs` extended. Golden and fixtures change on every wire edit (run `UPDATE_GOLDEN=1` twice). `QuantityLive` values come from the snapshot, so a binding that reads a field the snapshot builds is order-sensitive (`quantities` is filled last in `snapshot::build`).

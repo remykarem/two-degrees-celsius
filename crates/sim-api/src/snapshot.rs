@@ -522,6 +522,9 @@ pub struct Snapshot {
     /// Contract v2.6: the sustainable-yield view of the commons and the forest (always present).
     pub nature_yield: Vec<crate::yields::YieldView>,
     pub history: Vec<HistoryPoint>,
+    /// Contract v2.9: the live value of every graph quantity that has a town-level figure (the rest are
+    /// listed with reasons in `catalog().quantities[].live`).
+    pub quantities: Vec<crate::live::QuantityLive>,
     /// Contract v1.9: the elite estate; absent when the town has none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
@@ -1059,7 +1062,7 @@ pub fn build(
     let finance = crate::finance::build(sim, ledger, &meta.sources);
     let policy = policy_map(s);
     let tp = &sim.params.turn;
-    Snapshot {
+    let mut snap = Snapshot {
         schema_version: crate::SCHEMA_VERSION,
         game: meta.game,
         turn: s.turn,
@@ -1149,8 +1152,11 @@ pub fn build(
         markets,
         finance,
         history: history.to_vec(),
+        quantities: Vec::new(),
         estate: estate_view(sim, ledger),
-    }
+    };
+    snap.quantities = crate::live::build(&snap, history, meta.sources.markets.steady_band);
+    snap
 }
 
 #[cfg(test)]

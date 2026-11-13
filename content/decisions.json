@@ -83,7 +83,23 @@
         "label": "Decision",
         "text": "A choice that reads some quantities and writes others."
       }
-    ]
+    ],
+    "live": {
+      "aggregates": [
+        {"id": "town", "label": "Town figure", "text": "One number for the whole town."},
+        {"id": "sum", "label": "Total", "text": "Added up over the active firms or over all households."},
+        {"id": "mean", "label": "Average", "text": "The average over the active firms."},
+        {"id": "lever", "label": "Setting", "text": "The setting of a policy lever now (the effective one where lobbying can change it)."},
+        {"id": "flag", "label": "Yes or no", "text": "Shown as 1 for yes and 0 for no."}
+      ],
+      "unbound": [
+        {"id": "private", "label": "Inside one agent", "text": "A working variable of a single firm, household or bank. The town has no one number for it."},
+        {"id": "computed", "label": "Worked out each month", "text": "A rule computes it fresh every month and does not keep it, so there is no stored value to show."},
+        {"id": "not_published", "label": "Not shown yet", "text": "It exists in the simulation, but the game does not publish a town figure for it yet."},
+        {"id": "fixed", "label": "A fixed setting", "text": "A fixed setting of the model's rules rather than a number that moves."},
+        {"id": "random", "label": "Chance", "text": "A random draw, different every time, with no value to track."}
+      ]
+    }
   },
   "quantities": [
     {
@@ -180,7 +196,7 @@
     {
       "id": "unemployment",
       "label": "Unemployment",
-      "unit": "rate",
+      "unit": "share of the labour force",
       "owner": "firm",
       "summary": "The town's smoothed unemployment rate, which firms watch when they set wages."
     },
@@ -439,7 +455,7 @@
     {
       "id": "random_draw",
       "label": "Random draw",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "household",
       "summary": "A chance draw the simulation takes each month and hands to the decision."
     },
@@ -684,21 +700,21 @@
     {
       "id": "legitimacy",
       "label": "Legitimacy",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "government",
       "summary": "How far the town accepts the government's rule; it drifts with wellbeing, unemployment, inequality, debt, bailouts and system change."
     },
     {
       "id": "wellbeing",
       "label": "Wellbeing",
-      "unit": "0 to 1",
+      "unit": "on a 0 to 1 scale",
       "owner": "government",
       "summary": "The town's average wellbeing."
     },
     {
       "id": "inequality",
       "label": "Inequality",
-      "unit": "Gini, 0 to 1",
+      "unit": "Gini, on a 0 to 1 scale",
       "owner": "government",
       "summary": "The Gini coefficient of household wealth."
     },
@@ -1341,7 +1357,7 @@
     {
       "path": "government.legit_wellbeing_neutral",
       "label": "Neutral wellbeing",
-      "unit": "0 to 1"
+      "unit": "on a 0 to 1 scale"
     },
     {
       "path": "government.legit_unemployment",
@@ -1361,7 +1377,7 @@
     {
       "path": "government.legit_gini_threshold",
       "label": "Gini threshold",
-      "unit": "0 to 1"
+      "unit": "on a 0 to 1 scale"
     },
     {
       "path": "government.legit_debt",

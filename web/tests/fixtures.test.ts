@@ -42,7 +42,7 @@ function conforms(value: unknown, shape: Record<string, string>, where: string):
 
 const SNAPSHOT = { schemaVersion: 'number', game: 'object', turn: 'number', tick: 'number', map: 'object', buildings: 'object', gameOver: 'nullable', pc: 'object', system: 'object',
   pending: 'array', policy: 'object', netLobby: 'number', unionDensity: 'number', indicators: 'object', people: 'array', households: 'array', homes: 'array', plants: 'array', firms: 'array',
-  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?', estate: 'object?', markets: 'array', natureYield: 'array' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
+  bank: 'object', government: 'object', nature: 'object', housing: 'object', finance: 'object?', energy: 'object', history: 'array', turnPhase: 'object?', weather: 'object?', breakdowns: 'object?', policies: 'object?', industry: 'object?', estate: 'object?', markets: 'array', natureYield: 'array', quantities: 'array' } satisfies Shape<Snapshot>; // weather: contract v1.2, optional until docs/fixtures carry it
 const INDICATORS = { gdpAnnual: 'number', gdpRealAnnual: 'number', unemployment: 'number', employed: 'number', labourForce: 'number', gini: 'number', wageShare: 'number', profitShare: 'number',
   avgWellbeing: 'number', remainingBudget: 'number', budgetShare: 'number', temperature: 'number', gpiAnnual: 'number', moneyInCirculation: 'number', priceIndex: 'number',
   avgIncomePerPerson: 'number', medianIncomePerPerson: 'number', topHouseholdWealthShare: 'number' } satisfies Shape<Indicators>;

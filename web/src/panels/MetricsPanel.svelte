@@ -19,7 +19,7 @@
   import HowButton from './HowButton.svelte';
   import IndustryPanel from './IndustryPanel.svelte';
   import MarketsPanel from './MarketsPanel.svelte';
-  import { text } from '../store/catalog';
+  import { fill, text } from '../store/catalog';
   import PoliciesPanel from './PoliciesPanel.svelte';
   import TaxesTable from './TaxesTable.svelte';
 
@@ -99,7 +99,7 @@
             </svg>
             <div class="legend"><span class="s1"></span>GDP <span class="s2"></span>GPI (dashed)</div>
           {/if}
-          <button class="why" onclick={() => setUi({ why: { kind: 'income', metric: 'gdp' } })}>Why is this changing?</button>
+          <button class="why" onclick={() => setUi({ why: { kind: 'income', metric: 'gdp' } })}>{text('misc', 'what_changed_button')}</button>
         </section>
       {/if}
 
@@ -133,7 +133,7 @@
               <span class="label" title={metricHint(m.id)}>{m.label}</span>
               {#if METRIC_LEDGER[m.id]}<button class="why" onclick={() => { const l = METRIC_LEDGER[m.id]!; game.select({ kind: 'government' }); game.openLedger(l.account, l.kind); }}>see transactions</button>{/if}
               <HowButton breakdown={METRIC_BREAKDOWN[m.id]} anchor={m.metric} label={m.label} />
-              {#if m.why}<button class="why" aria-label="Why is {m.label} changing?" onclick={() => setUi({ why: { kind: m.why!, metric: m.metric } })}>why?</button>{/if}
+              {#if m.why}<button class="why" aria-label={fill(text('misc', 'what_changed_aria'), { metric: m.label })} onclick={() => setUi({ why: { kind: m.why!, metric: m.metric } })}>{text('misc', 'what_changed_short')}</button>{/if}
             </div>
             <div class="line">
               <span class="num">{m.fmt(m.value(snap))}</span>

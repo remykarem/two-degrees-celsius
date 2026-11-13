@@ -208,6 +208,11 @@
       "bank": "Bank"
     },
     "misc": {
+      "what_changed_title": "What changed this turn",
+      "what_changed_button": "What changed this turn",
+      "what_changed_short": "what changed?",
+      "what_changed_aria": "What changed this turn in {metric}",
+      "what_changed_empty": "The trace is recorded when a turn is played.",
       "gst_reason": "Households buy goods and services untaxed: the model taxes income, profit, capital, wealth and carbon, but a sales tax would need a price-and-purchase layer it does not have. Government revenue therefore has no GST line.",
       "energy_unit_help": "{unit}: energy per month, in megawatt-hours. The unit is a label from the game's settings; the numbers are the model's own."
     },

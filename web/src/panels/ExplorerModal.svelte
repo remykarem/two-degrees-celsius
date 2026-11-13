@@ -3,7 +3,7 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
   import { catalog, hasCatalog } from '../store/catalog';
@@ -79,7 +79,7 @@
                   <ul class="lo" data-testid="agent-decisions">
                     {#each kindDecisions as d (d.id)}
                       {@const l = decisionLine(d)}
-                      {@const cl = causalLines(catalog().causal, d.id)}
+                      {@const cl = causalLines(catalog().causal, d.id, liveLookup(catalog(), $gs.snapshot))}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
                         {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} decisions back): {u.causes}.</p>{/each}

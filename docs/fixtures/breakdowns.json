@@ -86,7 +86,8 @@
         "label": "Gini",
         "value": 0.8819320774496983,
         "unit": "0..1",
-        "source": "gini"
+        "source": "gini",
+        "quantityId": "inequality"
       },
       {
         "label": "Gross emissions (month)",
@@ -259,7 +260,8 @@
       {
         "label": "Government debt",
         "value": 77759.53,
-        "unit": "$"
+        "unit": "$",
+        "quantityId": "public_debt"
       },
       {
         "label": "GDP (annual, nominal)",
@@ -986,30 +988,35 @@
         "label": "Average wellbeing",
         "value": 0.6950632896394455,
         "unit": "0..1",
-        "source": "wellbeing"
+        "source": "wellbeing",
+        "quantityId": "wellbeing"
       },
       {
         "label": "Unemployment (smoothed)",
         "value": 0.19643627524703983,
         "unit": "share",
-        "source": "unemployment"
+        "source": "unemployment",
+        "quantityId": "unemployment"
       },
       {
         "label": "Gini",
         "value": 0.8820633610290379,
         "unit": "0..1",
-        "source": "gini"
+        "source": "gini",
+        "quantityId": "inequality"
       },
       {
         "label": "Public debt / GDP",
         "value": 0.18647634657805612,
         "unit": "ratio",
-        "source": "debt"
+        "source": "debt",
+        "quantityId": "public_debt_ratio"
       },
       {
         "label": "Bank bailout this month",
         "value": 0.0,
-        "unit": "0 or 1"
+        "unit": "0 or 1",
+        "quantityId": "bailout"
       }
     ],
     "result": {
@@ -1112,18 +1119,21 @@
       {
         "label": "Bank equity",
         "value": 37788.83,
-        "unit": "$"
+        "unit": "$",
+        "quantityId": "bank_equity"
       },
       {
         "label": "Loans outstanding",
         "value": 297159.51,
-        "unit": "$"
+        "unit": "$",
+        "quantityId": "bank_loans"
       },
       {
         "label": "Capital ratio limit (policy)",
         "value": 0.1,
         "unit": "share",
-        "source": "bank_capital_ratio"
+        "source": "bank_capital_ratio",
+        "quantityId": "capital_ratio"
       },
       {
         "label": "Lending limit (equity / limit)",
@@ -1133,7 +1143,8 @@
       {
         "label": "Headroom (room to lend)",
         "value": 80728.78999999998,
-        "unit": "$"
+        "unit": "$",
+        "quantityId": "credit_headroom"
       }
     ],
     "result": {
