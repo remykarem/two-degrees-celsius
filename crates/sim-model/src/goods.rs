@@ -540,9 +540,9 @@ pub const HOUSING_RENT: MechanismSpec = MechanismSpec {
     inputs: &[Q::Occupancy, Q::LastDisposable, Q::Rent],
     outputs: &[Q::Rent],
     effects: &[
-        Fx::up(Q::Occupancy, Q::Rent).unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
-        Fx::up(Q::LastDisposable, Q::Rent).unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
-        Fx::varies(Q::Rent, Q::Rent, "each month's rent is a step up or down from this one, but a higher rent also lowers the next step up because renters' burden reaches its cap").unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
+        Fx::up(Q::Occupancy, Q::Rent).system(),
+        Fx::up(Q::LastDisposable, Q::Rent).system(),
+        Fx::varies(Q::Rent, Q::Rent, "each month's rent is a step up or down from this one, but a higher rent also lowers the next step up because renters' burden reaches its cap").system(),
     ],
     params: &[
         "goods.occupancy_trigger",
@@ -561,9 +561,9 @@ pub const HOUSING_MOVES: MechanismSpec = MechanismSpec {
     inputs: &[Q::Rent, Q::LastDisposable, Q::Savings],
     outputs: &[Q::Occupancy],
     effects: &[
-        Fx::down(Q::Rent, Q::Occupancy).unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
-        Fx::up(Q::LastDisposable, Q::Occupancy).unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
-        Fx::none(Q::Savings, Q::Occupancy, "a household moves in if its rent is within a share of last month's disposable income; savings are not read").unverified("the arithmetic is inline in goods::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (the housing step reads homes and households)"),
+        Fx::down(Q::Rent, Q::Occupancy).system(),
+        Fx::up(Q::LastDisposable, Q::Occupancy).system(),
+        Fx::none(Q::Savings, Q::Occupancy, "a household moves in if its rent is within a share of last month's disposable income; savings are not read").system(),
     ],
     params: &["goods.move_rent_share", "goods.evict_after_months"],
     rule: "move_evict_by_affordability",
