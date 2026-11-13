@@ -158,6 +158,10 @@ pub struct Catalog {
     pub markets: crate::markets::MarketsContent,
     /// Contract v2.1: the entity registry (`content/entities.json`).
     pub entities: Vec<crate::entities::EntityKind>,
+    /// Contract v2.7: the registered decisions (what each reads, writes and uses), from code plus `content/decisions.json`.
+    pub decisions: Vec<crate::decisions::DecisionInfo>,
+    /// Contract v2.7: the quantity vocabulary of the decisions (labels and units).
+    pub quantities: Vec<crate::decisions::QuantityInfo>,
 }
 
 #[derive(Deserialize)]
@@ -271,6 +275,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
             "wealth_bands must end with a band whose min is null".into()
         ));
     }
+    let dec = crate::decisions::resolve(params)?;
     Ok(Catalog {
         tags: f.tags,
         wealth_bands: f.wealth_bands,
@@ -284,5 +289,7 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         net_worth_holders: nw.holders,
         markets: f.markets.validated()?,
         entities: crate::entities::load()?,
+        decisions: dec.decisions,
+        quantities: dec.quantities,
     })
 }

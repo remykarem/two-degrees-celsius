@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.6.0";
+export const CONTRACT_VERSION = "2.7.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -124,7 +124,15 @@ markets: MarketsContent,
 /**
  * Contract v2.1: the entity registry (`content/entities.json`).
  */
-entities: Array<EntityKind>, };
+entities: Array<EntityKind>, 
+/**
+ * Contract v2.7: the registered decisions (what each reads, writes and uses), from code plus `content/decisions.json`.
+ */
+decisions: Array<DecisionInfo>, 
+/**
+ * Contract v2.7: the quantity vocabulary of the decisions (labels and units).
+ */
+quantities: Array<QuantityInfo>, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -165,6 +173,30 @@ export type Cumulative = { tonnes: number, budget: number, remaining: number,
  * Share of the budget used, 0..=1 (`tonnes / budget`).
  */
 share: number, };
+
+export type DecisionInfo = { 
+/**
+ * The `DecisionId` wire name.
+ */
+id: string, title: string, 
+/**
+ * The `OwnerKind` wire name.
+ */
+owner: string, 
+/**
+ * The Agents explorer kind (`AgentKindInfo.id`) this decision belongs to.
+ */
+agentKind: string, 
+/**
+ * The simulation system it runs in.
+ */
+system: string, 
+/**
+ * One line: what it decides.
+ */
+decides: string, rule: DecisionRule, inputs: Array<QuantityRef>, outputs: Array<QuantityRef>, params: Array<AssumptionParam>, };
+
+export type DecisionRule = { id: string, label: string, text: string, };
 
 export type Direction = "up" | "down";
 
@@ -923,6 +955,18 @@ export type PublicGood = { id: string, label: string, spendingMonthly: number, b
 export type PublicOwner = "public";
 
 export type Purchase = { household: number, firm: number, sector: SectorKey, amount: number, };
+
+export type QuantityInfo = { 
+/**
+ * The `QuantityId` wire name.
+ */
+id: string, label: string, unit: string, 
+/**
+ * The `OwnerKind` wire name of whoever holds the quantity.
+ */
+owner: string, summary: string, };
+
+export type QuantityRef = { id: string, label: string, unit: string, };
 
 export type RandomDraw = { id: string, event: string, system: string, 
 /**

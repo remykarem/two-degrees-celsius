@@ -109,6 +109,22 @@ pub fn decls() -> Vec<(&'static str, String)> {
             <crate::entities::InspectorSection as TS>::decl(&cfg),
         ),
         ("entities", <crate::entities::EntityKind as TS>::decl(&cfg)),
+        (
+            "decisions",
+            <crate::decisions::QuantityInfo as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::QuantityRef as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::DecisionRule as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::DecisionInfo as TS>::decl(&cfg),
+        ),
         ("recording", <crate::recording::Recording as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::CrisisBands as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::HealthBand as TS>::decl(&cfg)),

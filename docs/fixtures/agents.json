@@ -125,23 +125,46 @@
       "actor": "agent",
       "summary": "Factory, Farm and Shop, plus one dormant slot a household can start. Each firm decides how many workers it wants, what to pay and what to charge. (Market, Regulated and Coop are not kinds of firm: they are the town-wide economic system the player picks, which changes ownership and payout rules.)",
       "decides": [
-        "How many workers to have: hire up to a monthly cap, fire after a sustained surplus",
+        "How many workers to want and how many jobs to post (hiring up to a monthly cap)",
+        "Whether to let people go: only after a sustained surplus of workers, the least skilled first",
         "The base wage, adjusted each month",
         "The price it charges",
         "How much to invest and borrow"
       ],
       "observes": [
-        "Expected sales (a smoothed average of past demand)",
-        "Its inventory and how much cover it wants",
-        "The town's smoothed unemployment rate",
+        "Expected sales: A smoothed average of past demand for what the firm makes.",
+        "Inventory: Unsold stock the firm holds.",
+        "Inventory cover wanted: How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none).",
+        "Workers: The people the firm employs.",
+        "Skilled workers: Workers whose skill is at or above the skilled threshold.",
+        "Effective labour per worker: What an average worker contributes after skill and commute time.",
+        "Output per unit of labour: What one unit of labour would make now, given the firm's capital, technology, weather and climate.",
+        "Workers wanted: The headcount that would produce the output the firm wants.",
+        "Months overstaffed: How many months in a row the firm has had more workers than it wants.",
+        "Base wage: The firm's base monthly wage.",
+        "Minimum wage: The legal wage floor (the player's lever).",
+        "Unemployment: The town's smoothed unemployment rate, which firms watch when they set wages.",
+        "Sector productivity growth: How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart.",
         "Its unit cost (wages plus carbon cost per unit)"
       ],
-      "rule": "target workers = ceil(labour needed - hire slack), where needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory); wage step = trend + wage_k x (u_ref - unemployment), capped; price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
+      "rule": "Hiring, firing and the wage have their own rules under Decisions below (generated from the code). Price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
       "params": [
+        {
+          "path": "labour.growth_aspiration",
+          "label": "Growth firms plan for",
+          "value": 0.001,
+          "unit": "share per month"
+        },
         {
           "path": "labour.inventory_cover",
           "label": "Inventory cover wanted",
           "value": 0.5,
+          "unit": "months of expected sales"
+        },
+        {
+          "path": "labour.services_inventory_cover",
+          "label": "Inventory cover wanted (services)",
+          "value": 0.0,
           "unit": "months of expected sales"
         },
         {
@@ -157,10 +180,58 @@
           "unit": "people"
         },
         {
+          "path": "labour.min_target_workers",
+          "label": "Fewest workers a firm keeps",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "labour.skilled_share",
+          "label": "Share of jobs that are skilled",
+          "value": 0.16,
+          "unit": "share"
+        },
+        {
+          "path": "labour.default_effective_per_worker",
+          "label": "Effective labour assumed for an empty firm",
+          "value": 0.5,
+          "unit": "skill x hours"
+        },
+        {
+          "path": "labour.max_hire_per_month",
+          "label": "Most people hired in a month",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "production.beta_n",
+          "label": "Output elasticity of labour",
+          "value": 0.7,
+          "unit": "exponent"
+        },
+        {
+          "path": "class.skill_threshold",
+          "label": "Skill that counts as skilled",
+          "value": 0.7,
+          "unit": "0..1"
+        },
+        {
+          "path": "labour.fire_slack",
+          "label": "Firing slack",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
           "path": "labour.fire_after_months",
           "label": "Months of surplus before firing",
           "value": 3.0,
           "unit": "months"
+        },
+        {
+          "path": "labour.max_fire_per_month",
+          "label": "Most people fired in a month",
+          "value": 1.0,
+          "unit": "people"
         },
         {
           "path": "labour.wage_k",
@@ -179,6 +250,36 @@
           "label": "Largest wage change in a month",
           "value": 0.01,
           "unit": "share"
+        },
+        {
+          "path": "labour.inflation_anchor",
+          "label": "Expected wage growth on top of productivity",
+          "value": 0.0016,
+          "unit": "share per month"
+        },
+        {
+          "path": "labour.productivity_passthrough",
+          "label": "Share of productivity growth passed into wages",
+          "value": 1.0,
+          "unit": "share"
+        },
+        {
+          "path": "production.tfp_growth_goods",
+          "label": "Productivity growth, goods",
+          "value": 0.0012,
+          "unit": "share per month"
+        },
+        {
+          "path": "production.tfp_growth_food",
+          "label": "Productivity growth, food",
+          "value": 0.0008,
+          "unit": "share per month"
+        },
+        {
+          "path": "production.tfp_growth_services",
+          "label": "Productivity growth, services",
+          "value": 0.0008,
+          "unit": "share per month"
         },
         {
           "path": "goods.price_adjust",

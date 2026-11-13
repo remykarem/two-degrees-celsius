@@ -2452,54 +2452,14 @@
         "actor": "agent",
         "summary": "Factory, Farm and Shop, plus one dormant slot a household can start. Each firm decides how many workers it wants, what to pay and what to charge. (Market, Regulated and Coop are not kinds of firm: they are the town-wide economic system the player picks, which changes ownership and payout rules.)",
         "decides": [
-          "How many workers to have: hire up to a monthly cap, fire after a sustained surplus",
-          "The base wage, adjusted each month",
           "The price it charges",
           "How much to invest and borrow"
         ],
         "observes": [
-          "Expected sales (a smoothed average of past demand)",
-          "Its inventory and how much cover it wants",
-          "The town's smoothed unemployment rate",
           "Its unit cost (wages plus carbon cost per unit)"
         ],
-        "rule": "target workers = ceil(labour needed - hire slack), where needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory); wage step = trend + wage_k x (u_ref - unemployment), capped; price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
+        "rule": "Hiring, firing and the wage have their own rules under Decisions below (generated from the code). Price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
         "params": [
-          {
-            "path": "labour.inventory_cover",
-            "label": "Inventory cover wanted",
-            "unit": "months of expected sales"
-          },
-          {
-            "path": "labour.inventory_adjust",
-            "label": "Share of the inventory gap closed per month",
-            "unit": "share"
-          },
-          {
-            "path": "labour.hire_slack",
-            "label": "Hiring slack",
-            "unit": "people"
-          },
-          {
-            "path": "labour.fire_after_months",
-            "label": "Months of surplus before firing",
-            "unit": "months"
-          },
-          {
-            "path": "labour.wage_k",
-            "label": "Wage response to unemployment",
-            "unit": "per unit of gap"
-          },
-          {
-            "path": "labour.u_ref",
-            "label": "Reference unemployment rate",
-            "unit": "rate"
-          },
-          {
-            "path": "labour.wage_cap",
-            "label": "Largest wage change in a month",
-            "unit": "share"
-          },
           {
             "path": "goods.price_adjust",
             "label": "Share of the price gap closed per month",

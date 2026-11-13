@@ -2277,5 +2277,397 @@
       "labels": {},
       "inspector": []
     }
+  ],
+  "decisions": [
+    {
+      "id": "firm_hire",
+      "title": "Hire",
+      "owner": "firm",
+      "agentKind": "firms",
+      "system": "S1 labour",
+      "decides": "How many workers to want and how many jobs to post (hiring up to a monthly cap)",
+      "rule": {
+        "id": "inventory_cover_target",
+        "label": "Size the workforce to expected sales and stock",
+        "text": "Needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory). Workers wanted = labour that output needs, in people. It posts vacancies once the gap exceeds the hiring slack, and the skilled tier gets what it is short of."
+      },
+      "inputs": [
+        {
+          "id": "expected_sales",
+          "label": "Expected sales",
+          "unit": "units per month"
+        },
+        {
+          "id": "inventory",
+          "label": "Inventory",
+          "unit": "units"
+        },
+        {
+          "id": "inventory_cover",
+          "label": "Inventory cover wanted",
+          "unit": "months of expected sales"
+        },
+        {
+          "id": "workers",
+          "label": "Workers",
+          "unit": "people"
+        },
+        {
+          "id": "skilled_workers",
+          "label": "Skilled workers",
+          "unit": "people"
+        },
+        {
+          "id": "effective_labour",
+          "label": "Effective labour per worker",
+          "unit": "skill x hours"
+        },
+        {
+          "id": "output_capacity",
+          "label": "Output per unit of labour",
+          "unit": "units per month"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "wanted_workers",
+          "label": "Workers wanted",
+          "unit": "people"
+        },
+        {
+          "id": "vacancies",
+          "label": "Vacancies",
+          "unit": "jobs"
+        }
+      ],
+      "params": [
+        {
+          "path": "labour.growth_aspiration",
+          "label": "Growth firms plan for",
+          "value": 0.001,
+          "unit": "share per month"
+        },
+        {
+          "path": "labour.inventory_cover",
+          "label": "Inventory cover wanted",
+          "value": 0.5,
+          "unit": "months of expected sales"
+        },
+        {
+          "path": "labour.services_inventory_cover",
+          "label": "Inventory cover wanted (services)",
+          "value": 0.0,
+          "unit": "months of expected sales"
+        },
+        {
+          "path": "labour.inventory_adjust",
+          "label": "Share of the inventory gap closed per month",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "labour.hire_slack",
+          "label": "Hiring slack",
+          "value": 0.1,
+          "unit": "people"
+        },
+        {
+          "path": "labour.min_target_workers",
+          "label": "Fewest workers a firm keeps",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "labour.skilled_share",
+          "label": "Share of jobs that are skilled",
+          "value": 0.16,
+          "unit": "share"
+        },
+        {
+          "path": "labour.default_effective_per_worker",
+          "label": "Effective labour assumed for an empty firm",
+          "value": 0.5,
+          "unit": "skill x hours"
+        },
+        {
+          "path": "labour.max_hire_per_month",
+          "label": "Most people hired in a month",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "production.beta_n",
+          "label": "Output elasticity of labour",
+          "value": 0.7,
+          "unit": "exponent"
+        },
+        {
+          "path": "class.skill_threshold",
+          "label": "Skill that counts as skilled",
+          "value": 0.7,
+          "unit": "0..1"
+        }
+      ]
+    },
+    {
+      "id": "firm_fire",
+      "title": "Fire",
+      "owner": "firm",
+      "agentKind": "firms",
+      "system": "S1 labour",
+      "decides": "Whether to let people go: only after a sustained surplus of workers, the least skilled first",
+      "rule": {
+        "id": "sustained_surplus",
+        "label": "Fire after months of surplus",
+        "text": "Each month the firm is overstaffed by at least the firing slack it counts one more month. After enough months in a row it lets go up to a monthly cap, and the count resets."
+      },
+      "inputs": [
+        {
+          "id": "workers",
+          "label": "Workers",
+          "unit": "people"
+        },
+        {
+          "id": "wanted_workers",
+          "label": "Workers wanted",
+          "unit": "people"
+        },
+        {
+          "id": "over_target_months",
+          "label": "Months overstaffed",
+          "unit": "months"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "workers",
+          "label": "Workers",
+          "unit": "people"
+        },
+        {
+          "id": "over_target_months",
+          "label": "Months overstaffed",
+          "unit": "months"
+        }
+      ],
+      "params": [
+        {
+          "path": "labour.min_target_workers",
+          "label": "Fewest workers a firm keeps",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "labour.fire_slack",
+          "label": "Firing slack",
+          "value": 1.0,
+          "unit": "people"
+        },
+        {
+          "path": "labour.fire_after_months",
+          "label": "Months of surplus before firing",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "labour.max_fire_per_month",
+          "label": "Most people fired in a month",
+          "value": 1.0,
+          "unit": "people"
+        }
+      ]
+    },
+    {
+      "id": "firm_wage",
+      "title": "Wage",
+      "owner": "firm",
+      "agentKind": "firms",
+      "system": "S1 labour",
+      "decides": "The base wage, adjusted each month",
+      "rule": {
+        "id": "trend_plus_slack",
+        "label": "Productivity trend plus a response to slack",
+        "text": "Wage step = trend + wage_k x (reference unemployment - unemployment), capped each month, where the trend is the expected inflation plus the sector's productivity growth. The wage never falls below the legal minimum."
+      },
+      "inputs": [
+        {
+          "id": "wage",
+          "label": "Base wage",
+          "unit": "$ per month"
+        },
+        {
+          "id": "min_wage",
+          "label": "Minimum wage",
+          "unit": "$ per month"
+        },
+        {
+          "id": "unemployment",
+          "label": "Unemployment",
+          "unit": "rate"
+        },
+        {
+          "id": "sector_tfp_growth",
+          "label": "Sector productivity growth",
+          "unit": "share per month"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "wage",
+          "label": "Base wage",
+          "unit": "$ per month"
+        }
+      ],
+      "params": [
+        {
+          "path": "labour.wage_k",
+          "label": "Wage response to unemployment",
+          "value": 0.1,
+          "unit": "per unit of gap"
+        },
+        {
+          "path": "labour.u_ref",
+          "label": "Reference unemployment rate",
+          "value": 0.09,
+          "unit": "rate"
+        },
+        {
+          "path": "labour.wage_cap",
+          "label": "Largest wage change in a month",
+          "value": 0.01,
+          "unit": "share"
+        },
+        {
+          "path": "labour.inflation_anchor",
+          "label": "Expected wage growth on top of productivity",
+          "value": 0.0016,
+          "unit": "share per month"
+        },
+        {
+          "path": "labour.productivity_passthrough",
+          "label": "Share of productivity growth passed into wages",
+          "value": 1.0,
+          "unit": "share"
+        },
+        {
+          "path": "production.tfp_growth_goods",
+          "label": "Productivity growth, goods",
+          "value": 0.0012,
+          "unit": "share per month"
+        },
+        {
+          "path": "production.tfp_growth_food",
+          "label": "Productivity growth, food",
+          "value": 0.0008,
+          "unit": "share per month"
+        },
+        {
+          "path": "production.tfp_growth_services",
+          "label": "Productivity growth, services",
+          "value": 0.0008,
+          "unit": "share per month"
+        }
+      ]
+    }
+  ],
+  "quantities": [
+    {
+      "id": "expected_sales",
+      "label": "Expected sales",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "A smoothed average of past demand for what the firm makes."
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory",
+      "unit": "units",
+      "owner": "firm",
+      "summary": "Unsold stock the firm holds."
+    },
+    {
+      "id": "inventory_cover",
+      "label": "Inventory cover wanted",
+      "unit": "months of expected sales",
+      "owner": "firm",
+      "summary": "How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none)."
+    },
+    {
+      "id": "workers",
+      "label": "Workers",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "The people the firm employs."
+    },
+    {
+      "id": "skilled_workers",
+      "label": "Skilled workers",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "Workers whose skill is at or above the skilled threshold."
+    },
+    {
+      "id": "effective_labour",
+      "label": "Effective labour per worker",
+      "unit": "skill x hours",
+      "owner": "firm",
+      "summary": "What an average worker contributes after skill and commute time."
+    },
+    {
+      "id": "output_capacity",
+      "label": "Output per unit of labour",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "What one unit of labour would make now, given the firm's capital, technology, weather and climate."
+    },
+    {
+      "id": "wanted_workers",
+      "label": "Workers wanted",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "The headcount that would produce the output the firm wants."
+    },
+    {
+      "id": "vacancies",
+      "label": "Vacancies",
+      "unit": "jobs",
+      "owner": "firm",
+      "summary": "Jobs the firm posts this month, skilled and general."
+    },
+    {
+      "id": "over_target_months",
+      "label": "Months overstaffed",
+      "unit": "months",
+      "owner": "firm",
+      "summary": "How many months in a row the firm has had more workers than it wants."
+    },
+    {
+      "id": "unemployment",
+      "label": "Unemployment",
+      "unit": "rate",
+      "owner": "firm",
+      "summary": "The town's smoothed unemployment rate, which firms watch when they set wages."
+    },
+    {
+      "id": "wage",
+      "label": "Base wage",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "The firm's base monthly wage."
+    },
+    {
+      "id": "min_wage",
+      "label": "Minimum wage",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "The legal wage floor (the player's lever)."
+    },
+    {
+      "id": "sector_tfp_growth",
+      "label": "Sector productivity growth",
+      "unit": "share per month",
+      "owner": "firm",
+      "summary": "How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart."
+    }
   ]
 }

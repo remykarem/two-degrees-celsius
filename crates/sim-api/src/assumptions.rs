@@ -248,6 +248,12 @@ pub fn resolve_agents(params: &Params, energy_unit: &str) -> ApiResult<AgentsCat
             })
         })
         .collect::<ApiResult<Vec<_>>>()?;
+    // Contract v2.7: the firm's labour decisions come from the registry, not from the file.
+    let dec = crate::decisions::resolve(params)?;
+    let mut kinds = kinds;
+    for k in &mut kinds {
+        crate::decisions::merge_into_kind(k, &dec, &dec.quantities);
+    }
     let randomness = a
         .randomness
         .iter()
