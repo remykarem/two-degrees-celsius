@@ -363,9 +363,9 @@ pub const HOUSEHOLD_SPEND: DecisionSpec = DecisionSpec {
     outputs: &[Q::FoodNeed, Q::ConsumptionBudget],
     effects: &[
         Fx::up(Q::HouseholdSize, Q::FoodNeed),
-        Fx::varies(Q::HouseholdSize, Q::ConsumptionBudget, "a bigger household buys more food but has less left over for everything else"),
+        Fx::up(Q::HouseholdSize, Q::ConsumptionBudget),
         Fx::none(Q::FoodPrice, Q::FoodNeed, "the food need is in units (people times need per person); its price only changes what it costs"),
-        Fx::varies(Q::FoodPrice, Q::ConsumptionBudget, "dearer food takes more of the money, leaving less for other goods"),
+        Fx::up(Q::FoodPrice, Q::ConsumptionBudget),
         Fx::none(Q::Savings, Q::FoodNeed, "the food need depends on household size, not on savings"),
         Fx::up(Q::Savings, Q::ConsumptionBudget),
         Fx::none(Q::LastDisposable, Q::FoodNeed, "the food need depends on household size, not on income"),

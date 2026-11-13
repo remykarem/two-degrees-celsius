@@ -176,7 +176,7 @@ pub const FIRM_FIRE: DecisionSpec = DecisionSpec {
         Fx::up(Q::WantedWorkers, Q::Workers),
         Fx::down(Q::WantedWorkers, Q::OverTargetMonths),
         Fx::down(Q::OverTargetMonths, Q::Workers),
-        Fx::up(Q::OverTargetMonths, Q::OverTargetMonths),
+        Fx::varies(Q::OverTargetMonths, Q::OverTargetMonths, "the counter adds a month while the surplus lasts, but the month the firm fires it resets to zero"),
     ],
     params: &[
         "labour.min_target_workers",

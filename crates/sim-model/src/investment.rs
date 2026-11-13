@@ -36,7 +36,7 @@ pub const FIRM_GREEN: DecisionSpec = DecisionSpec {
         Fx::up(Q::Footprint, Q::GreenPlan),
         Fx::up(Q::CarbonPrice, Q::GreenTech),
         Fx::up(Q::CarbonPrice, Q::GreenPlan),
-        Fx::varies(Q::Revenue, Q::GreenTech, "bigger sales make the step cost more but do not raise the carbon bill"),
+        Fx::down(Q::Revenue, Q::GreenTech),
         Fx::varies(Q::Revenue, Q::GreenPlan, "bigger sales make the step cost more but do not raise the carbon bill"),
         Fx::varies(Q::EmissionsCap, Q::GreenTech, "a cap of 0 means no cap, so the first tonne of cap tightens; above that a higher cap loosens"),
         Fx::varies(Q::EmissionsCap, Q::GreenPlan, "a cap of 0 means no cap, so the first tonne of cap tightens; above that a higher cap loosens"),
