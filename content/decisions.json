@@ -258,6 +258,166 @@
           "because": "a higher carbon price makes cutting emissions pay back sooner"
         }
       ]
+    },
+    "loops": {
+      "kinds": [
+        {
+          "id": "R",
+          "label": "Reinforcing",
+          "badge": "R",
+          "phrase": "a reinforcing",
+          "text": "Each trip round the loop pushes the change further the same way, so it snowballs (growth, or collapse) until something else stops it."
+        },
+        {
+          "id": "B",
+          "label": "Balancing",
+          "badge": "B",
+          "phrase": "a balancing",
+          "text": "Each trip round the loop pushes the change back, so the loop steadies things (and can overshoot when it is slow)."
+        },
+        {
+          "id": "depends",
+          "label": "Depends",
+          "badge": "?",
+          "phrase": "a mixed",
+          "text": "At least one link in this loop can push either way depending on the state of the town, so it is not called reinforcing or balancing."
+        }
+      ],
+      "sentence": "This is {kind} loop: {chain}.",
+      "start": "when {first} goes up, ",
+      "step": "{to} goes {direction}",
+      "closing": "{first} goes {direction} again",
+      "joiner": ", then ",
+      "directions": {
+        "up": "up",
+        "down": "down",
+        "either": "up or down"
+      },
+      "delay_one": "About 1 month to come round the loop.",
+      "delay_many": "About {n} months to come round the loop.",
+      "incomplete": [
+        {
+          "id": "lever",
+          "label": "Includes a policy setting",
+          "text": "One of its links is a policy setting, which the player moves, so the loop is only part of the story."
+        },
+        {
+          "id": "gap",
+          "label": "Partly modelled",
+          "text": "One of its quantities is also changed by plain code the registry does not describe (docs/known-issues.md DP-13), so the loop may be missing a link."
+        },
+        {
+          "id": "unverified",
+          "label": "A link is not measured",
+          "text": "One of its links has a sign that is declared from the code and reasoning but could not be measured (docs/known-issues.md DP-18)."
+        }
+      ],
+      "gap_quantities": [
+        "debt",
+        "bank_loans",
+        "bank_deposits",
+        "credit_spread_add",
+        "loan_approved",
+        "treasury_cash",
+        "public_debt",
+        "committed_spending",
+        "next_month_purchases",
+        "net_wealth",
+        "spending_propensity",
+        "food_price",
+        "cash",
+        "cash_reserve",
+        "capital_per_sale",
+        "distressed",
+        "invest_hurdle",
+        "payout_ratio",
+        "sector_return",
+        "estate_savings"
+      ],
+      "names": [
+        {
+          "members": [
+            "inventory",
+            "units_sold",
+            "revenue",
+            "profit",
+            "investment_plan",
+            "capital",
+            "capital_output",
+            "output"
+          ],
+          "name": "Growth",
+          "story": "Profit pays for investment, investment builds capital, capital raises output, and what is made and sold earns the next profit. It also drives emissions up."
+        },
+        {
+          "members": [
+            "expected_sales",
+            "wanted_workers",
+            "workers",
+            "payroll",
+            "dividends",
+            "savings",
+            "consumption_budget",
+            "demand_units"
+          ],
+          "name": "Wage bill squeezes payouts",
+          "story": "Hiring raises the wage bill, which leaves less profit to pay out as dividends, so households save and spend less; demand and expected sales fall, and with them hiring."
+        },
+        {
+          "members": [
+            "expected_sales",
+            "wanted_workers",
+            "workers",
+            "unemployment",
+            "wage",
+            "unit_cost",
+            "price",
+            "demand_units"
+          ],
+          "name": "Reserve army",
+          "story": "Unemployment holds wages down, lower wages cut the firm's unit cost and price, a cheaper price lifts demand and hiring, and hiring lowers unemployment."
+        },
+        {
+          "members": [
+            "commons_stock",
+            "output"
+          ],
+          "name": "Tragedy of the commons",
+          "story": "Farm output draws on the commons, and a smaller commons caps what the farm can make."
+        },
+        {
+          "members": [
+            "weather_factor",
+            "output",
+            "direct_emissions",
+            "gross_emissions",
+            "cumulative_emissions",
+            "climate_stress",
+            "drought"
+          ],
+          "name": "Overshoot bites",
+          "story": "Output makes emissions, emissions use up the carbon budget and raise climate stress and drought, and drought cuts output. The damage slows the thing that causes it."
+        },
+        {
+          "members": [
+            "forest_stock",
+            "forest_sink",
+            "cumulative_emissions",
+            "climate_stress",
+            "fire"
+          ],
+          "name": "Dying forests",
+          "story": "Emissions raise climate stress and fire risk, fire burns the forest, a smaller forest takes in less carbon, so emissions build up faster."
+        },
+        {
+          "members": [
+            "footprint",
+            "green_tech"
+          ],
+          "name": "Green investment",
+          "story": "A firm's footprint makes green technology pay, and green technology lowers the footprint. The carbon price (a policy setting) feeds green technology from outside the loop."
+        }
+      ]
     }
   },
   "quantities": [

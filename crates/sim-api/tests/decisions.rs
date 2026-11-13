@@ -552,3 +552,83 @@ fn because_overrides_are_used_in_sentences() {
         fx.sentence
     );
 }
+
+/// Contract v2.12 (causality graph stage 3): the feedback loops on the wire.
+#[test]
+fn loops_are_served_with_sentences_that_agree_with_their_kind() {
+    let c = Api::init(1).unwrap().catalog().unwrap();
+    let g = &c.causal;
+    assert_eq!(g.loops.len(), 203);
+    assert_eq!(g.loop_max_len, 8);
+    let kinds: Vec<&str> = g.loop_kinds.iter().map(|k| k.id.as_str()).collect();
+    assert_eq!(kinds, vec!["R", "B", "depends"]);
+    let node_ids: BTreeSet<&str> = g.nodes.iter().map(|n| n.id.as_str()).collect();
+    let mut ids = BTreeSet::new();
+    for l in &g.loops {
+        assert!(ids.insert(l.id.as_str()), "duplicate loop id {}", l.id);
+        assert!(kinds.contains(&l.kind.as_str()));
+        assert_eq!(l.members.len(), l.edges.len());
+        assert!(l.delay_months >= 1);
+        assert_eq!(
+            l.delay_months,
+            l.edges.iter().map(|e| e.lag_months).sum::<u32>()
+        );
+        assert!(l.sentence.starts_with("This is a"), "{}", l.sentence);
+        assert!(l.sentence.contains(": when "), "{}", l.sentence);
+        // The kind in words matches the id, and the last clause says how the loop closes.
+        let phrase = match l.kind.as_str() {
+            "R" => "reinforcing",
+            "B" => "balancing",
+            _ => "mixed",
+        };
+        assert!(l.sentence.contains(phrase), "{}", l.sentence);
+        let minus = l.edges.iter().filter(|e| e.sign == "down").count();
+        let varies = l.edges.iter().any(|e| e.sign == "varies");
+        match l.kind.as_str() {
+            "depends" => assert!(varies),
+            "B" => assert!(!varies && minus % 2 == 1 && l.sentence.contains("again")),
+            _ => assert!(!varies && minus % 2 == 0),
+        }
+        if l.kind == "R" {
+            assert!(l.sentence.ends_with("goes up again."), "{}", l.sentence);
+        }
+        if l.kind == "B" {
+            assert!(l.sentence.ends_with("goes down again."), "{}", l.sentence);
+        }
+        for (i, e) in l.edges.iter().enumerate() {
+            let (from, to) = (&l.members[i], &l.members[(i + 1) % l.members.len()]);
+            assert!(node_ids.contains(e.via.as_str()));
+            // The loop's edge is a real signed drives edge of the graph with the same sign.
+            assert!(g.edges.iter().any(|x| x.kind == "drives"
+                && &x.from == from
+                && &x.to == to
+                && x.via.as_deref() == Some(e.via.as_str())
+                && x.effect.as_ref().map(|f| f.sign.as_str()) == Some(e.sign.as_str())));
+        }
+        assert!(l.scc < g.sccs.len());
+        assert_eq!(l.incomplete, !l.incomplete_reasons.is_empty());
+    }
+    // inLoops is the inverse relation, for quantities and for the decisions and mechanisms that carry the edges.
+    for n in &g.nodes {
+        let want: Vec<&str> = g
+            .loops
+            .iter()
+            .filter(|l| l.members.contains(&n.id) || l.edges.iter().any(|e| e.via == n.id))
+            .map(|l| l.id.as_str())
+            .collect();
+        assert_eq!(
+            n.in_loops.iter().map(String::as_str).collect::<Vec<_>>(),
+            want,
+            "{}",
+            n.id
+        );
+    }
+    // Teaching names are attached to real loops.
+    let named: Vec<&str> = g.loops.iter().filter_map(|l| l.name.as_deref()).collect();
+    assert_eq!(named.len(), 7, "{named:?}");
+    assert!(g
+        .loops
+        .iter()
+        .all(|l| l.name.is_some() == l.story.is_some()));
+    assert!(named.contains(&"Reserve army"));
+}

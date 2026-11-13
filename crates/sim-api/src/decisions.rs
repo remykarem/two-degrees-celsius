@@ -10,6 +10,7 @@ use crate::error::{code, ApiError, ApiResult};
 use crate::live;
 use serde::{Deserialize, Serialize};
 use sim_model::causal::{self, EdgeKind, Node, Role};
+use sim_model::causal_loops as loops;
 use sim_model::decisions::{DECISIONS, MECHANISMS};
 use sim_params::Params;
 use sim_types::{DecisionId, MechanismId, OwnerKind, QuantityId};
@@ -86,6 +87,55 @@ struct CausalDef {
     live: LiveDef,
     /// Contract v2.11: the words of the edge sentences (`docs/features/causality-graph.md` stage 2).
     effects: EffectWords,
+    /// Contract v2.12: the words of the feedback loops (stage 3).
+    loops: LoopWords,
+}
+
+/// The words of the loop sentences and the teaching names, from `content/decisions.json`.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LoopWords {
+    kinds: Vec<LoopKindDef>,
+    /// `{kind}` and `{chain}`.
+    sentence: String,
+    start: String,
+    step: String,
+    closing: String,
+    joiner: String,
+    directions: DirectionWords,
+    delay_one: String,
+    delay_many: String,
+    incomplete: Vec<RoleDef>,
+    /// Quantities also written by plain code the registry does not describe (DP-13): a loop through one is incomplete.
+    gap_quantities: Vec<String>,
+    /// Authored teaching names, keyed by the loop's quantities.
+    names: Vec<LoopNameDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LoopKindDef {
+    id: String,
+    label: String,
+    badge: String,
+    phrase: String,
+    text: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DirectionWords {
+    up: String,
+    down: String,
+    either: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LoopNameDef {
+    members: Vec<String>,
+    name: String,
+    story: String,
 }
 
 /// Templates of the plain-English sentence of an edge, filled from the declared sign and lag so the
@@ -298,6 +348,9 @@ pub struct CausalNode {
     /// `causal.upstreamDepth` steps back (decisions or mechanisms crossed). Empty for decisions,
     /// mechanisms and sources.
     pub upstream: Vec<String>,
+    /// Contract v2.12: ids of the feedback loops (`causal.loops`) this node is in: a quantity that
+    /// is a member, a decision or mechanism that carries one of the loop's edges.
+    pub in_loops: Vec<String>,
 }
 
 /// An edge: `reads` (quantity -> decision), `writes` (decision -> quantity) or `drives`
@@ -341,6 +394,73 @@ pub struct EdgeEffect {
     pub checked: String,
 }
 
+/// Contract v2.12: one feedback loop of the quantity graph (`docs/features/causality-graph.md` stage 3).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalLoop {
+    /// `loop:` and the member quantity names sorted and joined with `+` (`~2` for a second loop over the same quantities).
+    pub id: String,
+    /// `R` (reinforcing), `B` (balancing) or `depends` (a link can go either way): one of `causal.loopKinds`.
+    pub kind: String,
+    /// The member quantity node ids in cycle order, starting at the first in the vocabulary order.
+    pub members: Vec<String>,
+    /// One edge per member: from it to the next, the last back to the first.
+    pub edges: Vec<LoopEdge>,
+    /// Months to go once round, from the tick order and the specs' lags (never 0).
+    pub delay_months: u32,
+    /// The delay in words, from `content/decisions.json`.
+    pub delay_label: String,
+    /// The plain-English sentence, generated from the cycle and its signs.
+    pub sentence: String,
+    /// An authored teaching name (`Growth`, `Reserve army`), when the content has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub name: Option<String>,
+    /// The authored story that goes with the name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub story: Option<String>,
+    /// The loop passes through a policy setting, a quantity plain code also writes, or a link that is not measured.
+    pub incomplete: bool,
+    /// Ids from `causal.loopIncomplete`.
+    pub incomplete_reasons: Vec<String>,
+    /// The strongly connected component it lies in (`causal.sccs`).
+    pub scc: usize,
+}
+
+/// One link of a loop: member `i` to member `i + 1` (the last to the first), so the ends are not repeated.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoopEdge {
+    /// The decision or mechanism node id the link goes through.
+    pub via: String,
+    /// `up`, `down` or `varies`.
+    pub sign: String,
+    pub lag_months: u32,
+}
+
+/// Contract v2.12: a strongly connected component that holds a cycle: its members can all reach each other.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalScc {
+    pub id: usize,
+    pub members: Vec<String>,
+}
+
+/// The words of a loop kind: id, label, the R/B/? badge letter and a sentence.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoopKindWord {
+    pub id: String,
+    pub label: String,
+    pub badge: String,
+    pub text: String,
+}
+
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -351,6 +471,16 @@ pub struct CausalGraph {
     pub live: CausalLive,
     pub nodes: Vec<CausalNode>,
     pub edges: Vec<CausalEdge>,
+    /// Contract v2.12: the words of `R`, `B` and `depends`.
+    pub loop_kinds: Vec<LoopKindWord>,
+    /// Contract v2.12: the reasons a loop is incomplete (`lever`, `gap`, `unverified`).
+    pub loop_incomplete: Vec<CausalRole>,
+    /// Contract v2.12: the longest loop searched, in quantities.
+    pub loop_max_len: usize,
+    /// Contract v2.12: the components that hold a cycle.
+    pub sccs: Vec<CausalScc>,
+    /// Contract v2.12: the feedback loops, shortest first (`docs/features/causality-graph.md` section 14).
+    pub loops: Vec<CausalLoop>,
 }
 
 /// The decisions and the quantity vocabulary, joined from code and content and validated.
@@ -477,6 +607,14 @@ fn build_causal(
         }
         seen_b.push((&b.spec, &b.from, &b.to));
     }
+    let (loops, sccs) = build_loops(&c.loops, quantities)?;
+    let in_loops = |n: &str| -> Vec<String> {
+        loops
+            .iter()
+            .filter(|l| l.members.iter().any(|m| m == n) || l.edges.iter().any(|e| e.via == n))
+            .map(|l| l.id.clone())
+            .collect()
+    };
     let comp: BTreeMap<Node, usize> = causal::components().into_iter().collect();
     let mut nodes = Vec::new();
     for n in causal::nodes() {
@@ -506,6 +644,7 @@ fn build_causal(
                     self_loop: causal::has_self_loop(q),
                     component: comp[&n],
                     upstream,
+                    in_loops: in_loops(&node_id(n)),
                 }
             }
             Node::Mechanism(m) => {
@@ -523,6 +662,7 @@ fn build_causal(
                     self_loop: false,
                     component: comp[&n],
                     upstream: Vec::new(),
+                    in_loops: in_loops(&node_id(n)),
                 }
             }
             Node::Decision(d) => {
@@ -540,6 +680,7 @@ fn build_causal(
                     self_loop: false,
                     component: comp[&n],
                     upstream: Vec::new(),
+                    in_loops: in_loops(&node_id(n)),
                 }
             }
         });
@@ -590,7 +731,217 @@ fn build_causal(
         live: build_live(&c.live)?,
         nodes,
         edges,
+        loop_kinds: c
+            .loops
+            .kinds
+            .iter()
+            .map(|k| LoopKindWord {
+                id: k.id.clone(),
+                label: k.label.clone(),
+                badge: k.badge.clone(),
+                text: k.text.clone(),
+            })
+            .collect(),
+        loop_incomplete: c
+            .loops
+            .incomplete
+            .iter()
+            .map(|r| CausalRole {
+                id: r.id.clone(),
+                label: r.label.clone(),
+                text: r.text.clone(),
+            })
+            .collect(),
+        loop_max_len: loops::MAX_LOOP_LEN,
+        sccs,
+        loops,
     })
+}
+
+/// Why a loop is only part of the story: it passes through a quantity that is a policy setting
+/// (`is_lever`), through one plain code also writes (`gap`, DP-13), or has a link whose sign is
+/// declared but not measured. Empty when none applies.
+fn incomplete_reasons(
+    members: &[QuantityId],
+    unverified_edge: bool,
+    is_lever: impl Fn(QuantityId) -> bool,
+    gap: &[QuantityId],
+) -> Vec<String> {
+    let mut reasons = Vec::new();
+    if members.iter().any(|q| is_lever(*q)) {
+        reasons.push("lever".to_string());
+    }
+    if members.iter().any(|q| gap.contains(q)) {
+        reasons.push("gap".to_string());
+    }
+    if unverified_edge {
+        reasons.push("unverified".to_string());
+    }
+    reasons
+}
+
+/// The feedback loops of the quantity graph (`sim_model::causal_loops`) with their words: the
+/// sentence is generated from the cycle and its signs, so it cannot disagree with the kind.
+fn build_loops(
+    w: &LoopWords,
+    quantities: &[QuantityInfo],
+) -> ApiResult<(Vec<CausalLoop>, Vec<CausalScc>)> {
+    for id in ["R", "B", "depends"] {
+        if !w.kinds.iter().any(|k| k.id == id) {
+            return Err(bad(format!("causal.loops.kinds has no {id}")));
+        }
+    }
+    if w.kinds.len() != 3 {
+        return Err(bad("causal.loops.kinds must be R, B, depends".into()));
+    }
+    for id in ["lever", "gap", "unverified"] {
+        if !w.incomplete.iter().any(|r| r.id == id) {
+            return Err(bad(format!("causal.loops.incomplete has no {id}")));
+        }
+    }
+    let qid = |name: &str| -> ApiResult<QuantityId> {
+        QuantityId::ALL
+            .iter()
+            .find(|q| q.as_str() == name)
+            .copied()
+            .ok_or_else(|| bad(format!("causal.loops: {name} is not a QuantityId")))
+    };
+    let gap: Vec<QuantityId> = w
+        .gap_quantities
+        .iter()
+        .map(|n| qid(n))
+        .collect::<ApiResult<_>>()?;
+    let label = |q: QuantityId| {
+        quantities
+            .iter()
+            .find(|x| x.id == q.as_str())
+            .map(|x| mid_sentence(&x.label))
+            .ok_or_else(|| bad(format!("quantity {} has no entry", q.as_str())))
+    };
+    let found = loops::loops();
+    let ids = loops::loop_ids(&found);
+    // Authored names must name a real loop, once.
+    let mut named: BTreeMap<String, &LoopNameDef> = BTreeMap::new();
+    for n in &w.names {
+        let mut names = n.members.clone();
+        for m in &names {
+            qid(m)?;
+        }
+        names.sort_unstable();
+        let id = format!("loop:{}", names.join("+"));
+        if !ids.contains(&id) {
+            return Err(bad(format!(
+                "causal.loops.names: {id} is not a loop of the registry"
+            )));
+        }
+        if named.insert(id.clone(), n).is_some() {
+            return Err(bad(format!("causal.loops.names: {id} appears twice")));
+        }
+    }
+    let dir = |d: i8| match d {
+        1 => &w.directions.up,
+        -1 => &w.directions.down,
+        _ => &w.directions.either,
+    };
+    let mut out = Vec::new();
+    for (l, id) in found.loops.iter().zip(&ids) {
+        let kind = match l.kind {
+            loops::LoopKind::R => "R",
+            loops::LoopKind::B => "B",
+            loops::LoopKind::Depends => "depends",
+        };
+        // The direction of each member after the change travels round (1 up, -1 down, 0 either).
+        let first = label(l.quantities[0])?;
+        let mut d: i8 = 1;
+        let start = w.start.replace("{first}", &first);
+        let mut parts: Vec<String> = Vec::new();
+        for (i, e) in l.edges.iter().enumerate() {
+            d = match e.sign {
+                sim_types::Sign::Up => d,
+                sim_types::Sign::Down => -d,
+                _ => 0,
+            };
+            if i + 1 < l.edges.len() {
+                parts.push(
+                    w.step
+                        .replace("{to}", &label(l.quantities[i + 1])?)
+                        .replace("{direction}", dir(d)),
+                );
+            }
+        }
+        parts.push(
+            w.closing
+                .replace("{first}", &first)
+                .replace("{direction}", dir(d)),
+        );
+        let phrase = &w
+            .kinds
+            .iter()
+            .find(|k| k.id == kind)
+            .ok_or_else(|| bad(format!("causal.loops.kinds has no {kind}")))?
+            .phrase;
+        let sentence = capitalise(
+            &w.sentence
+                .replace("{kind}", phrase)
+                .replace("{chain}", &format!("{start}{}", parts.join(&w.joiner))),
+        );
+        let reasons = incomplete_reasons(
+            &l.quantities,
+            l.edges.iter().any(|e| e.unverified),
+            |q| {
+                quantities
+                    .iter()
+                    .any(|x| x.id == q.as_str() && x.live.lever.is_some())
+            },
+            &gap,
+        );
+        let nm = named.get(id);
+        out.push(CausalLoop {
+            id: id.clone(),
+            kind: kind.into(),
+            members: l
+                .quantities
+                .iter()
+                .map(|q| node_id(Node::Quantity(*q)))
+                .collect(),
+            edges: l
+                .edges
+                .iter()
+                .zip(&l.edge_lags)
+                .map(|(e, lag)| LoopEdge {
+                    via: node_id(e.via),
+                    sign: match e.sign {
+                        sim_types::Sign::Up => "up",
+                        sim_types::Sign::Down => "down",
+                        _ => "varies",
+                    }
+                    .into(),
+                    lag_months: *lag,
+                })
+                .collect(),
+            delay_months: l.delay_months,
+            delay_label: match l.delay_months {
+                1 => w.delay_one.clone(),
+                n => w.delay_many.replace("{n}", &n.to_string()),
+            },
+            sentence,
+            name: nm.map(|n| n.name.clone()),
+            story: nm.map(|n| n.story.clone()),
+            incomplete: !reasons.is_empty(),
+            incomplete_reasons: reasons,
+            scc: l.scc,
+        });
+    }
+    let sccs = found
+        .sccs
+        .iter()
+        .enumerate()
+        .map(|(i, c)| CausalScc {
+            id: i,
+            members: c.iter().map(|q| node_id(Node::Quantity(*q))).collect(),
+        })
+        .collect();
+    Ok((out, sccs))
 }
 
 /// Lower-case the first letter of a label for the middle of a sentence ("Unit cost" -> "unit cost"),
@@ -986,4 +1337,27 @@ pub fn merge_into_kind(
         .join("\n");
     kind.notes = noted;
     Ok(())
+}
+
+#[cfg(test)]
+mod loop_tests {
+    use super::*;
+
+    #[test]
+    fn a_loop_through_a_lever_a_gap_or_an_unmeasured_link_is_incomplete() {
+        let (a, b) = (QuantityId::Wage, QuantityId::Price);
+        assert!(incomplete_reasons(&[a, b], false, |_| false, &[]).is_empty());
+        assert_eq!(
+            incomplete_reasons(&[a, b], false, |q| q == b, &[]),
+            vec!["lever"]
+        );
+        assert_eq!(
+            incomplete_reasons(&[a, b], false, |_| false, &[a]),
+            vec!["gap"]
+        );
+        assert_eq!(
+            incomplete_reasons(&[a, b], true, |q| q == a, &[b]),
+            vec!["lever", "gap", "unverified"]
+        );
+    }
 }

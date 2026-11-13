@@ -154,6 +154,16 @@ pub fn decls() -> Vec<(&'static str, String)> {
             "decisions",
             <crate::decisions::CausalEdge as TS>::decl(&cfg),
         ),
+        ("decisions", <crate::decisions::LoopEdge as TS>::decl(&cfg)),
+        (
+            "decisions",
+            <crate::decisions::CausalLoop as TS>::decl(&cfg),
+        ),
+        ("decisions", <crate::decisions::CausalScc as TS>::decl(&cfg)),
+        (
+            "decisions",
+            <crate::decisions::LoopKindWord as TS>::decl(&cfg),
+        ),
         (
             "decisions",
             <crate::decisions::CausalGraph as TS>::decl(&cfg),

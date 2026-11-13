@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.11.0";
+export const CONTRACT_VERSION = "2.12.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -166,7 +166,27 @@ export type CausalGraph = { upstreamDepth: number, roles: Array<CausalRole>,
 /**
  * Contract v2.9: words for the live-value binding.
  */
-live: CausalLive, nodes: Array<CausalNode>, edges: Array<CausalEdge>, };
+live: CausalLive, nodes: Array<CausalNode>, edges: Array<CausalEdge>, 
+/**
+ * Contract v2.12: the words of `R`, `B` and `depends`.
+ */
+loopKinds: Array<LoopKindWord>, 
+/**
+ * Contract v2.12: the reasons a loop is incomplete (`lever`, `gap`, `unverified`).
+ */
+loopIncomplete: Array<CausalRole>, 
+/**
+ * Contract v2.12: the longest loop searched, in quantities.
+ */
+loopMaxLen: number, 
+/**
+ * Contract v2.12: the components that hold a cycle.
+ */
+sccs: Array<CausalScc>, 
+/**
+ * Contract v2.12: the feedback loops, shortest first (`docs/features/causality-graph.md` section 14).
+ */
+loops: Array<CausalLoop>, };
 
 export type CausalLive = { 
 /**
@@ -177,6 +197,56 @@ aggregates: Array<CausalRole>,
  * Why a quantity has no live value (`private`, `computed`, `not_published`, `fixed`, `random`).
  */
 unbound: Array<CausalRole>, };
+
+export type CausalLoop = { 
+/**
+ * `loop:` and the member quantity names sorted and joined with `+` (`~2` for a second loop over the same quantities).
+ */
+id: string, 
+/**
+ * `R` (reinforcing), `B` (balancing) or `depends` (a link can go either way): one of `causal.loopKinds`.
+ */
+kind: string, 
+/**
+ * The member quantity node ids in cycle order, starting at the first in the vocabulary order.
+ */
+members: Array<string>, 
+/**
+ * One edge per member: from it to the next, the last back to the first.
+ */
+edges: Array<LoopEdge>, 
+/**
+ * Months to go once round, from the tick order and the specs' lags (never 0).
+ */
+delayMonths: number, 
+/**
+ * The delay in words, from `content/decisions.json`.
+ */
+delayLabel: string, 
+/**
+ * The plain-English sentence, generated from the cycle and its signs.
+ */
+sentence: string, 
+/**
+ * An authored teaching name (`Growth`, `Reserve army`), when the content has one.
+ */
+name?: string, 
+/**
+ * The authored story that goes with the name.
+ */
+story?: string, 
+/**
+ * The loop passes through a policy setting, a quantity plain code also writes, or a link that is not measured.
+ */
+incomplete: boolean, 
+/**
+ * Ids from `causal.loopIncomplete`.
+ */
+incompleteReasons: Array<string>, 
+/**
+ * The strongly connected component it lies in (`causal.sccs`).
+ */
+scc: number, };
 
 export type CausalNode = { 
 /**
@@ -213,9 +283,16 @@ component: number,
  * `causal.upstreamDepth` steps back (decisions or mechanisms crossed). Empty for decisions,
  * mechanisms and sources.
  */
-upstream: Array<string>, };
+upstream: Array<string>, 
+/**
+ * Contract v2.12: ids of the feedback loops (`causal.loops`) this node is in: a quantity that
+ * is a member, a decision or mechanism that carries one of the loop's edges.
+ */
+inLoops: Array<string>, };
 
 export type CausalRole = { id: string, label: string, text: string, };
+
+export type CausalScc = { id: number, members: Array<string>, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -758,6 +835,18 @@ hasTrend: boolean,
  * One of `catalog().causal.live.unbound` when `bound` is false.
  */
 unbound?: string, };
+
+export type LoopEdge = { 
+/**
+ * The decision or mechanism node id the link goes through.
+ */
+via: string, 
+/**
+ * `up`, `down` or `varies`.
+ */
+sign: string, lagMonths: number, };
+
+export type LoopKindWord = { id: string, label: string, badge: string, text: string, };
 
 export type LorenzPoint = { populationShare: number, wealthShare: number, };
 
