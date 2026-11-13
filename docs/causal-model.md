@@ -241,17 +241,21 @@ A system is a config that overrides parameters and some rule choices.
 
 ## 4. The loops that produce the game
 
-| Loop | Type | Story |
-|---|---|---|
-| Profit → investment → output → profit | **Reinforcing** | Growth. Also drives emissions up (S2). |
-| Wealth → lobbying → weaker policy → profit → wealth | **Reinforcing** | Capture. The carbon price you set erodes. |
-| Debt → interest → need for profit → more investment | **Reinforcing** | Growth imperative. |
-| Capital income grows, wage share falls → demand falls → layoffs | **Balancing (crisis)** | Inequality starves demand. |
-| Unemployment → lower wages → higher profit → hiring | **Balancing** | Reserve army. Fixes jobs, deepens inequality. |
-| Scarcity → price rises → demand falls | **Balancing** | NOT MODELLED. Goods prices are cost-plus and ignore excess demand (`docs/known-issues.md` MK-1): a shortage never raises a price. This loop does not exist in the game as built. |
-| Over-harvest → commons collapses → farm output falls | **Balancing (late)** | Tragedy of the commons. |
-| Emissions → budget used → climate damage → lower farm output and wellbeing | **Reinforcing** | Overshoot starts hurting before game over. |
-| Carbon price → green investment → lower ι → fewer emissions | **Balancing** | The main lever, weakened by lobbying. |
+**The loops are now computed, not listed.** `catalog().causal.loops` (contract 2.12, `crates/sim-model/src/causal_loops.rs`, `docs/features/causality-graph.md` section 14) holds every feedback loop of up to 8 quantities found in the declared effects of the decisions and mechanisms: **203 loops, 89 reinforcing, 107 balancing, 7 that depend on the state**. The table below keeps only the nine teaching loops as stories. Each row says what the generated graph shows for it, and the test `doc_table_rows_are_validated_against_the_generated_loops` (in `causal_loops.rs`) fails if a row's loop stops existing or changes kind, so this table cannot drift silently. The type column is the *story's* claim; the last column is what the code supports.
+
+| Loop | Type (story) | Story | Validated by test: what the code has |
+|---|---|---|---|
+| Profit → investment → output → profit | **Reinforcing** | Growth. Also drives emissions up (S2). | Yes, R: inventory, units sold, revenue, profit, planned investment, capital, capital output, output (named "Growth") |
+| Wealth → lobbying → weaker policy → profit → wealth | **Reinforcing** | Capture. The carbon price you set erodes. | **Not in the graph**: `lobby_spend` is read by nothing, so there is no loop (DP-13, `docs/known-issues.md` DP-19) |
+| Debt → interest → need for profit → more investment | **Reinforcing** | Growth imperative. | **Not in the graph**: `debt` is a starting point, nothing in the registry writes it (DP-13) |
+| Capital income grows, wage share falls → demand falls → layoffs | **Balancing (crisis)** | Inequality starves demand. | Loosely: the nearest loop is B, workers, wage bill, dividends, savings, demand, hiring (named "Wage bill squeezes payouts"); the capital-income route exists only in loops of 9 or more quantities |
+| Unemployment → lower wages → higher profit → hiring | **Balancing** | Reserve army. Fixes jobs, deepens inequality. | Yes, B, but through unit cost and price rather than profit: unemployment, wage, unit cost, price, demand, expected sales, workers wanted, workers (named "Reserve army"). The route through profit is a loop of 9 quantities and reinforcing |
+| Scarcity → price rises → demand falls | **Balancing** | NOT MODELLED. Goods prices are cost-plus and ignore excess demand (`docs/known-issues.md` MK-1): a shortage never raises a price. This loop does not exist in the game as built. | Confirmed absent: `price` reads only unit cost, the markup and itself (the test asserts it) |
+| Over-harvest → commons collapses → farm output falls | **Balancing (late)** | Tragedy of the commons. | Yes, B: commons stock and output (named "Tragedy of the commons") |
+| Emissions → budget used → climate damage → lower farm output and wellbeing | **Reinforcing** | Overshoot starts hurting before game over. | **The type disagrees.** Through output it is **balancing** (damage lowers output, and output makes the emissions): "Overshoot bites". The reinforcing version runs through the forest sink: emissions, stress, fire, forest, less uptake, more emissions ("Dying forests"). Wellbeing drives only legitimacy, which feeds back only into itself, so wellbeing is on no loop |
+| Carbon price → green investment → lower ι → fewer emissions | **Balancing** | The main lever, weakened by lobbying. | Partly: footprint and green technology form a balancing loop ("Green investment"); the carbon price is a lever, so it feeds that loop from outside and is on no loop |
+
+Loops the table never listed (shop stock and sales, hiring and matching, rent against income, savings and spending, emissions through drought into electricity demand, fire and smoke) are in the catalogue with their own sentences; the Agents view of How it works lists the ones through each kind's decisions.
 
 ---
 
