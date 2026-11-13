@@ -575,21 +575,52 @@
       "actor": "agent",
       "summary": "The government collects taxes, pays benefits and spending and borrows for deficits, all at the levels the player sets. Its own rule is legitimacy: a score that drifts with wellbeing, unemployment, inequality and debt.",
       "decides": [
-        "Nothing on its own about policy: levers are the player's",
-        "How much to borrow or repay to keep a cash target",
-        "How much of its spending it can actually fund"
+        "How to fund the month's payments: borrow the gap, or repay debt",
+        "How much of its payments to cut when the treasury runs short",
+        "How its legitimacy moves each month",
+        "Nothing on its own about policy: levers are the player's (benefits, UBI, spending and builds are paid as set)"
       ],
       "observes": [
-        "Wellbeing, smoothed unemployment, the Gini coefficient and debt against GDP",
-        "Whether the bank was bailed out this month"
+        "Committed spending: What the government owes this month: benefits, UBI, job-guarantee wages, upkeep and building.",
+        "Next month's purchases: The goods the government plans to buy next month (the spending lever), held back in cash.",
+        "Treasury cash: Cash the government holds; it limits the subsidies it can pay.",
+        "Taxes collected: Taxes and carbon payments that came in this month.",
+        "Lending room: How much more the bank may lend before it breaks the capital ratio.",
+        "Public debt: What the government owes the bank.",
+        "Borrowing: New loans the government takes from the bank this month.",
+        "Legitimacy: How far the town accepts the government's rule; it drifts with wellbeing, unemployment, inequality, debt, bailouts and system change.",
+        "Wellbeing: The town's average wellbeing.",
+        "Unemployment: The town's smoothed unemployment rate, which firms watch when they set wages.",
+        "Inequality: The Gini coefficient of household wealth.",
+        "Public debt against GDP: Public debt divided by a year's GDP.",
+        "Bank bailed out: Whether the treasury rescued the bank this month.",
+        "Resistance to system change: The legitimacy lost each month while the town changes its economic system."
       ],
       "rule": "legitimacy change = wellbeing weight x (wellbeing - 0.5) - unemployment weight x max(0, unemployment - threshold) - inequality weight x max(0, Gini - threshold) - debt weight x max(0, debt/GDP - 1) - bailout penalty",
       "params": [
+        {
+          "path": "government.repay_share",
+          "label": "Share of surplus repaid",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "government.cash_target_months",
+          "label": "Months of purchases held in cash",
+          "value": 1.0,
+          "unit": "months"
+        },
         {
           "path": "government.legit_wellbeing",
           "label": "Wellbeing weight",
           "value": 0.01,
           "unit": "points per month"
+        },
+        {
+          "path": "government.legit_wellbeing_neutral",
+          "label": "Neutral wellbeing",
+          "value": 0.5,
+          "unit": "0 to 1"
         },
         {
           "path": "government.legit_unemployment",
@@ -613,7 +644,7 @@
           "path": "government.legit_gini_threshold",
           "label": "Gini threshold",
           "value": 0.45,
-          "unit": "0..1"
+          "unit": "0 to 1"
         },
         {
           "path": "government.legit_debt",
@@ -678,9 +709,13 @@
       "actor": "non_agent",
       "summary": "Forest and commons are not agents: they follow fixed rules for growth, harvest and decay. The one chance event is an owner fencing off an open commons.",
       "decides": [
+        "Whether an owner fences off an open commons this month",
         "Nothing: it responds to emissions, harvest and fire"
       ],
       "observes": [
+        "Chance of enclosure: The chance each month that a wealthy owner fences off an open commons; it depends on the economic system.",
+        "Random draw: A chance draw the simulation takes each month and hands to the decision.",
+        "Commons open: Whether anyone may use the commons (not enclosed and not community-managed).",
         "Cumulative emissions, forest stock, commons use and access rule"
       ],
       "rule": "see the Forest and commons topic for growth and the sink; enclosure is a monthly chance while the commons are open",
@@ -742,14 +777,38 @@
       "actor": "agent",
       "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
       "decides": [
-        "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)",
-        "Whether to let the pilot go after months of short pay, and to rehire once it can afford wages again"
+        "Whether to let the pilot go, or hire the pilot back",
+        "Whether the jet flies this month",
+        "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)"
       ],
       "observes": [
-        "Its savings, the carbon price after lobbying, whether the pilot is employed"
+        "Pilot on the payroll: Whether the jet's pilot works for the estate right now (true also when the town has no pilot to need).",
+        "Months of short pay: How many months in a row the estate could not pay the pilot in full.",
+        "Pilot free to rehire: The pilot has no other job and is not on the job guarantee.",
+        "Estate savings: The deposits the estate household holds.",
+        "Random draw: A chance draw the simulation takes each month and hands to the decision.",
+        "The carbon price after lobbying, which each flight pays"
       ],
       "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
       "params": [
+        {
+          "path": "estate.pilot_unpaid_months_max",
+          "label": "Months of short pay before dismissal",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "estate.pilot_rehire_months_of_wages",
+          "label": "Months of wages needed to rehire",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "estate.pilot_wage_usd",
+          "label": "Pilot's wage",
+          "value": 1800.0,
+          "unit": "$ per month"
+        },
         {
           "path": "estate.flight_prob_monthly",
           "label": "Chance the jet flies in a month",
@@ -761,12 +820,6 @@
           "label": "Emissions of one flight",
           "value": 2.0,
           "unit": "t CO2 per flight"
-        },
-        {
-          "path": "estate.pilot_wage_usd",
-          "label": "Pilot's wage",
-          "value": 1800.0,
-          "unit": "$ per month"
         }
       ],
       "variants": [],

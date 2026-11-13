@@ -26,6 +26,12 @@ pub const DECISIONS: &[DecisionSpec] = &[
     crate::credit::BANK_SPREAD,
     crate::credit::BANK_DIVIDEND,
     crate::credit::BANK_RESCUE,
+    crate::government::GOVERNMENT_FUND,
+    crate::government::GOVERNMENT_CUT,
+    crate::government::GOVERNMENT_LEGITIMACY,
+    crate::estate::ESTATE_PILOT,
+    crate::estate::ESTATE_FLIGHT,
+    crate::nature::NATURE_ENCLOSURE,
 ];
 
 /// The spec of a decision.

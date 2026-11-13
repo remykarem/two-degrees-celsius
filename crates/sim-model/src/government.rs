@@ -3,9 +3,227 @@
 
 use crate::util::{apportion, cfg, labour_weights};
 use sim_metrics::household_wealth;
-use sim_params::Params;
+use sim_params::{GovParams, Params};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
+
+// ---- Decisions (docs/features/decision-points.md, stage 4) ----
+//
+// What the government decides: how to fund the month's committed payments (borrow, or repay), how
+// to ration them when the treasury cannot fund them all, and the legitimacy step. What it does
+// not decide: the payments themselves. Benefits, the UBI, job-guarantee wages, upkeep and builds
+// are the player's levers (and orders) executed as set; each is one figure times a head count, so
+// there is no choice in them (see known issue DP-10). `run` computes the committed total and
+// passes it to the builders.
+
+pub const GOVERNMENT_FUND: DecisionSpec = DecisionSpec {
+    id: D::GovernmentFund,
+    system: SystemId::Government,
+    inputs: &[
+        Q::CommittedSpending,
+        Q::NextMonthPurchases,
+        Q::TreasuryCash,
+        Q::TreasuryTaxes,
+        Q::CreditHeadroom,
+        Q::PublicDebt,
+    ],
+    outputs: &[Q::Borrowing, Q::Repayment],
+    params: &["government.repay_share", "government.cash_target_months"],
+    rule: "cash_and_taxes_then_borrow",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FundView {
+    /// Payments owed this tick (benefits, UBI, job-guarantee wages, upkeep, builds).
+    pub committed: Cents,
+    /// The G lever: next month's goods purchases, held back in cash.
+    pub next_month_purchases: Cents,
+    pub treasury_cash: Cents,
+    /// Taxes collected this tick.
+    pub treasury_taxes: Cents,
+    /// How much more the bank may lend (the bank's own decision).
+    pub credit_headroom: Cents,
+    pub public_debt: Cents,
+}
+
+pub fn fund_view(s: &State, p: &Params, committed: Cents, taxes: Cents) -> FundView {
+    FundView {
+        committed,
+        next_month_purchases: s
+            .policy
+            .public_spending
+            .scale(p.government.cash_target_months),
+        treasury_cash: s.gov.cash,
+        treasury_taxes: taxes,
+        credit_headroom: crate::credit::decide_headroom(&crate::credit::headroom_view(
+            s,
+            s.bank.equity,
+            s.bank.loans,
+        )),
+        public_debt: s.gov.debt,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum FundChoice {
+    /// Cash and taxes fall short: borrow the gap, within the bank's lending room.
+    Borrow { amount: Cents },
+    /// Cash and taxes cover it: repay this share of the surplus, up to the debt.
+    Repay { amount: Cents },
+}
+
+pub fn decide_fund(v: &FundView, gp: &GovParams) -> FundChoice {
+    let available = v.treasury_cash + v.treasury_taxes;
+    let need = v.committed + v.next_month_purchases - available;
+    if need > Cents::ZERO {
+        FundChoice::Borrow {
+            amount: need.min(v.credit_headroom),
+        }
+    } else {
+        FundChoice::Repay {
+            amount: (-need).scale(gp.repay_share).min(v.public_debt),
+        }
+    }
+}
+
+pub const GOVERNMENT_CUT: DecisionSpec = DecisionSpec {
+    id: D::GovernmentCut,
+    system: SystemId::Government,
+    inputs: &[
+        Q::CommittedSpending,
+        Q::TreasuryCash,
+        Q::TreasuryTaxes,
+        Q::Borrowing,
+    ],
+    outputs: &[Q::SpendingCutRatio],
+    params: &[],
+    rule: "cut_pro_rata",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CutView {
+    pub committed: Cents,
+    pub treasury_cash: Cents,
+    pub treasury_taxes: Cents,
+    /// What the fund decision borrowed.
+    pub borrowing: Cents,
+}
+
+pub fn cut_view(s: &State, committed: Cents, taxes: Cents, borrowed: Cents) -> CutView {
+    CutView {
+        committed,
+        treasury_cash: s.gov.cash,
+        treasury_taxes: taxes,
+        borrowing: borrowed,
+    }
+}
+
+/// The share of each committed payment that is paid: 1 when the treasury can fund them all,
+/// otherwise funds over commitments, so every payment is cut by the same share.
+pub fn decide_cut(v: &CutView) -> f64 {
+    let funds = v.treasury_cash + v.treasury_taxes + v.borrowing;
+    if v.committed > funds {
+        safe_div(funds.as_f64(), v.committed.as_f64(), 0.0)
+    } else {
+        1.0
+    }
+}
+
+pub const GOVERNMENT_LEGITIMACY: DecisionSpec = DecisionSpec {
+    id: D::GovernmentLegitimacy,
+    system: SystemId::Government,
+    inputs: &[
+        Q::Legitimacy,
+        Q::Wellbeing,
+        Q::Unemployment,
+        Q::Inequality,
+        Q::PublicDebtRatio,
+        Q::Bailout,
+        Q::TransitionResistance,
+    ],
+    outputs: &[Q::Legitimacy],
+    params: &[
+        "government.legit_wellbeing",
+        "government.legit_wellbeing_neutral",
+        "government.legit_unemployment",
+        "government.legit_unemployment_threshold",
+        "government.legit_gini",
+        "government.legit_gini_threshold",
+        "government.legit_debt",
+        "government.legit_bailout",
+    ],
+    rule: "legitimacy_drift",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LegitView {
+    pub legitimacy: f64,
+    pub wellbeing: f64,
+    pub unemployment: f64,
+    pub inequality: f64,
+    /// Public debt over annual GDP.
+    pub public_debt_ratio: f64,
+    /// The bank was bailed out this tick.
+    pub bailout: bool,
+    /// What the change of economic system costs this month (0 when none is under way).
+    pub transition_resistance: f64,
+}
+
+/// `bailout` is whether the bank was bailed out this tick (the credit system's decision).
+pub fn legitimacy_view(s: &State, p: &Params, bailout: bool) -> LegitView {
+    let i = &s.indicators;
+    let gdp_annual = i.gdp_annual.dollars().max(1.0);
+    let transition_resistance = match &s.transition {
+        Some(t) => cfg(s, p).resistance.max(p.systems.get(t.to).resistance),
+        None => 0.0,
+    };
+    LegitView {
+        legitimacy: s.gov.legitimacy.0,
+        wellbeing: i.avg_wellbeing.0,
+        unemployment: i.unemployment_smooth.0,
+        inequality: i.gini.0,
+        public_debt_ratio: s.gov.debt.dollars() / gdp_annual,
+        bailout,
+        transition_resistance,
+    }
+}
+
+/// The legitimacy update of one tick, term by term. The sum is taken in the same order as the
+/// model always did (before, then wellbeing, unemployment, inequality, debt, bailout, transition),
+/// so the numbers are unchanged.
+pub fn decide_legitimacy(v: &LegitView, gp: &GovParams) -> LegitStep {
+    let (wellbeing_term, unemployment_term, inequality_term, debt_term) = legitimacy_terms(
+        gp,
+        v.wellbeing,
+        v.unemployment,
+        v.inequality,
+        v.public_debt_ratio,
+    );
+    let before = v.legitimacy;
+    let mut l = before + wellbeing_term - unemployment_term - inequality_term - debt_term;
+    let bailout_term = if v.bailout { gp.legit_bailout } else { 0.0 };
+    if v.bailout {
+        l -= gp.legit_bailout;
+    }
+    l -= v.transition_resistance;
+    LegitStep {
+        before,
+        wellbeing_input: v.wellbeing,
+        wellbeing_term,
+        unemployment_input: v.unemployment,
+        unemployment_term: -unemployment_term,
+        inequality_input: v.inequality,
+        inequality_term: -inequality_term,
+        debt_input: v.public_debt_ratio,
+        debt_term: -debt_term,
+        bailout_term: -bailout_term,
+        transition_term: -v.transition_resistance,
+        raw: l,
+        after: l.clamp(0.0, 1.0),
+    }
+}
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
@@ -202,33 +420,21 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 
     // ---- Funding: cash and taxes first, then borrowing within the bank's lending limit ----
     // The goods purchases of next month (the G lever) are held back in cash.
-    let g_next = s.policy.public_spending.scale(gp.cash_target_months);
-    let available = s.gov.cash + taxes;
-    let need = committed + g_next - available;
     let mut borrowed = Cents::ZERO;
-    if need > Cents::ZERO {
-        let kappa = s.policy.bank_capital_ratio.0;
-        let max_loans = crate::util::max_loans(s.bank.equity, kappa);
-        let headroom = (max_loans - s.bank.loans).max(Cents::ZERO);
-        borrowed = need.min(headroom);
-        d.money.push(MoneyOp::Lend {
-            to: gov,
-            amount: borrowed,
-        });
-    } else {
-        let repay = (-need).scale(gp.repay_share).min(s.gov.debt);
-        d.money.push(MoneyOp::Repay {
-            from: gov,
-            amount: repay,
-        });
+    match decide_fund(&fund_view(s, p, committed, taxes), gp) {
+        FundChoice::Borrow { amount } => {
+            borrowed = amount;
+            d.money.push(MoneyOp::Lend {
+                to: gov,
+                amount: borrowed,
+            });
+        }
+        FundChoice::Repay { amount } => {
+            d.money.push(MoneyOp::Repay { from: gov, amount });
+        }
     }
     // Committed payments that the treasury cannot fund are cut pro rata, and reported.
-    let funds = available + borrowed;
-    let ratio = if committed > funds {
-        safe_div(funds.as_f64(), committed.as_f64(), 0.0)
-    } else {
-        1.0
-    };
+    let ratio = decide_cut(&cut_view(s, committed, taxes, borrowed));
     let mut paid_total = Cents::ZERO;
     for (to, amt, kind, parts) in pay {
         let a = amt.scale(ratio).min(amt);
@@ -264,48 +470,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     d
 }
 
-/// The legitimacy update of one tick from the state's indicators (S8), term by term. The sum is
-/// taken in the same order as the model always did (before, then wellbeing, unemployment,
-/// inequality, debt, bailout, transition), so the numbers are unchanged. `bailout` is whether the
-/// bank was bailed out this tick.
+/// The legitimacy update of one tick from the state's indicators (S8), term by term. `bailout` is
+/// whether the bank was bailed out this tick.
 pub fn legitimacy_step(s: &State, p: &Params, bailout: bool) -> LegitStep {
-    let gp = &p.government;
-    let i = &s.indicators;
-    let gdp_annual = i.gdp_annual.dollars().max(1.0);
-    let debt_input = s.gov.debt.dollars() / gdp_annual;
-    let (wellbeing_term, unemployment_term, inequality_term, debt_term) = legitimacy_terms(
-        gp,
-        i.avg_wellbeing.0,
-        i.unemployment_smooth.0,
-        i.gini.0,
-        debt_input,
-    );
-    let before = s.gov.legitimacy.0;
-    let mut l = before + wellbeing_term - unemployment_term - inequality_term - debt_term;
-    let bailout_term = if bailout { gp.legit_bailout } else { 0.0 };
-    if bailout {
-        l -= gp.legit_bailout;
-    }
-    let mut transition_term = 0.0;
-    if let Some(t) = &s.transition {
-        transition_term = cfg(s, p).resistance.max(p.systems.get(t.to).resistance);
-        l -= transition_term;
-    }
-    LegitStep {
-        before,
-        wellbeing_input: i.avg_wellbeing.0,
-        wellbeing_term,
-        unemployment_input: i.unemployment_smooth.0,
-        unemployment_term: -unemployment_term,
-        inequality_input: i.gini.0,
-        inequality_term: -inequality_term,
-        debt_input,
-        debt_term: -debt_term,
-        bailout_term: -bailout_term,
-        transition_term: -transition_term,
-        raw: l,
-        after: l.clamp(0.0, 1.0),
-    }
+    decide_legitimacy(&legitimacy_view(s, p, bailout), &p.government)
 }
 
 /// The four indicator terms of the legitimacy update, as magnitudes: `(wellbeing, unemployment,

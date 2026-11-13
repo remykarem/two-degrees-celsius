@@ -1,4 +1,4 @@
-// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Firms, Households and Bank on the real simulation:
+// Usage: node playwright/decisions-shots.mjs <outDir> [url]. Needs `npm run dev -- --port 5190`. How it works > Agents > Government, Estate and Nature on the real simulation:
 // the generated "Who decides" lines, the Decisions list (inputs -> decision -> outputs) and the live parameters (contract v2.7).
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -20,7 +20,7 @@ await page.getByRole('button', { name: 'Start game' }).click({ timeout: 1500 }).
 console.log('sim:', await page.evaluate(() => document.documentElement.dataset.sim));
 await page.getByTestId('how-it-works').click();
 await page.getByTestId('tab-agents').click();
-for (const [label, slug] of [['Firms', 'firms'], ['Households and people', 'households'], ['Bank', 'bank']]) {
+for (const [label, slug] of [['Government', 'government'], ['The estate and its pilot', 'estate'], ['Nature', 'nature']]) {
   await page.getByRole('button', { name: label, exact: true }).first().click();
   await page.waitForSelector('[data-testid=agent-decisions]');
   console.log(`${slug} decisions:`, await page.getByTestId('agent-decision').evaluateAll((els) => els.map((e) => e.getAttribute('data-id'))));

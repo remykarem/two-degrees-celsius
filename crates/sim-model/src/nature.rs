@@ -2,7 +2,47 @@
 
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
+
+// ---- Decision (docs/features/decision-points.md, stage 4) ----
+//
+// Nature is not an agent. The one chance event in it, the fencing off of an open commons, is a
+// decision of a wealthy owner; it is registered under the owner kind `nature` because the code
+// treats it as a monthly event of the system. Who encloses (the richest capital owner) is
+// matching and stays in `run`. Forest and commons growth, harvest and the sink are physics.
+
+pub const NATURE_ENCLOSURE: DecisionSpec = DecisionSpec {
+    id: D::NatureEnclosure,
+    system: SystemId::Nature,
+    inputs: &[Q::EnclosureChance, Q::RandomDraw, Q::CommonsOpen],
+    outputs: &[Q::CommonsEnclosed],
+    params: &[],
+    rule: "monthly_chance_while_open",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EnclosureView {
+    /// The economic system's monthly chance of enclosure.
+    pub enclosure_chance: f64,
+    /// This month's uniform draw in [0, 1), taken by `run` whatever the commons rule.
+    pub random_draw: f64,
+    /// The commons are open (not enclosed, not community-managed).
+    pub commons_open: bool,
+}
+
+pub fn enclosure_view(s: &State, p: &Params, random_draw: f64) -> EnclosureView {
+    EnclosureView {
+        enclosure_chance: crate::util::cfg(s, p).enclosure_prob,
+        random_draw,
+        commons_open: matches!(s.nature.commons_access, CommonsAccess::Open),
+    }
+}
+
+pub fn decide_enclosure(v: &EnclosureView) -> bool {
+    v.commons_open && v.enclosure_chance > 0.0 && v.random_draw < v.enclosure_chance
+}
 
 /// Tonnes of CO2 the forest absorbs per month: `sink_sigma` per unit of standing forest.
 pub fn forest_sink(p: &Params, forest: f64) -> f64 {
@@ -146,20 +186,17 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     }
 
     // Enclosure: a wealthy capital-owning cohort may fence off an open commons.
-    let c = crate::util::cfg(s, p);
     // The draw is always taken, so the commons rule the player chose never shifts the shared stream.
-    let enclosure_roll = r.chance(c.enclosure_prob);
-    if let CommonsAccess::Open = n.commons_access {
-        if c.enclosure_prob > 0.0 && enclosure_roll {
-            if let Some(h) = s
-                .households
-                .iter()
-                .filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier))
-                .max_by_key(|h| h.savings)
-            {
-                n.commons_access = CommonsAccess::Enclosed(h.id);
-                d.events.push(Event::CommonsEnclosed { owner: h.id });
-            }
+    let random_draw = r.next_f64();
+    if decide_enclosure(&enclosure_view(s, p, random_draw)) {
+        if let Some(h) = s
+            .households
+            .iter()
+            .filter(|h| matches!(h.class, Class::Capitalist | Class::Rentier))
+            .max_by_key(|h| h.savings)
+        {
+            n.commons_access = CommonsAccess::Enclosed(h.id);
+            d.events.push(Event::CommonsEnclosed { owner: h.id });
         }
     }
     d.changes.push(Delta::Nature(n));

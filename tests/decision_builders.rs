@@ -15,7 +15,9 @@
 
 use serde_json::Value;
 use sim_engine::Plan;
-use sim_model::{class, credit, goods, income, investment, labour, lobbying, util};
+use sim_model::{
+    class, credit, estate, goods, government, income, investment, labour, lobbying, nature, util,
+};
 use sim_params::{ContentJson, Params};
 use sim_types::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -42,6 +44,16 @@ fn load(params: &str) -> Params {
 const DEMAND_UNITS: f64 = 123.0;
 const HEADROOM: Cents = Cents(50_000_000);
 const MARKET_BUDGET: f64 = 1_000_000.0;
+/// `government::run` computes the committed payments and the taxes and passes them in; a total
+/// above the treasury's funds (borrow, cut) and one of nothing (repay).
+const COMMITTED_HIGH: Cents = Cents(900_000_000_000);
+const COMMITTED_LOW: Cents = Cents(0);
+const TAXES: Cents = Cents(40_000_000);
+const BORROWED: Cents = Cents(1_000_000);
+/// `estate::run` and `nature::run` take the month's draw: below any chance, and between the
+/// jet's chance (0.4) and the chance a bumped parameter gives.
+const DRAW_LOW: f64 = 0.0;
+const DRAW_HIGH: f64 = 0.5;
 
 /// One line per decision and owner: the view the builder made and the choice, as text. Comparing
 /// the view too means a leaf the builder reads shows up even when it does not tip the choice.
@@ -196,6 +208,53 @@ fn choices(s: &State, p: &Params) -> BTreeMap<String, String> {
         format!("{rv:?}"),
         format!("{:?}", credit::decide_rescue(&rv, &p.credit)),
     );
+    for (name, committed) in [("high", COMMITTED_HIGH), ("low", COMMITTED_LOW)] {
+        let fv = government::fund_view(s, p, committed, TAXES);
+        put(
+            format!("government_fund/{name}"),
+            format!("{fv:?}"),
+            format!("{:?}", government::decide_fund(&fv, &p.government)),
+        );
+        let cv = government::cut_view(s, committed, TAXES, BORROWED);
+        put(
+            format!("government_cut/{name}"),
+            format!("{cv:?}"),
+            format!("{:?}", government::decide_cut(&cv)),
+        );
+    }
+    for (name, bailed) in [("bailout", true), ("plain", false)] {
+        let lv = government::legitimacy_view(s, p, bailed);
+        put(
+            format!("government_legitimacy/{name}"),
+            format!("{lv:?}"),
+            format!("{:?}", government::decide_legitimacy(&lv, &p.government)),
+        );
+    }
+    if let Some(e) = &s.estate {
+        if let Some(pv) = estate::pilot_view(s, e) {
+            put(
+                "estate_pilot/0".into(),
+                format!("{pv:?}"),
+                format!("{:?}", estate::decide_pilot(&pv, &p.estate)),
+            );
+        }
+        for (name, draw) in [("low", DRAW_LOW), ("high", DRAW_HIGH)] {
+            let fv = estate::flight_view(draw, estate::pilot_employed(s, e));
+            put(
+                format!("estate_flight/{name}"),
+                format!("{fv:?}"),
+                format!("{:?}", estate::decide_flight(&fv, &p.estate)),
+            );
+        }
+    }
+    for (name, draw) in [("low", DRAW_LOW), ("high", DRAW_HIGH)] {
+        let ev = nature::enclosure_view(s, p, draw);
+        put(
+            format!("nature_enclosure/{name}"),
+            format!("{ev:?}"),
+            format!("{:?}", nature::decide_enclosure(&ev)),
+        );
+    }
     for sector in [Sector::Goods, Sector::Food, Sector::Services] {
         // A draw of 0: a firm is founded whenever the chance is above zero.
         if let Some(v) = class::found_view(s, p, sector, 0.0) {
@@ -338,6 +397,18 @@ const FIRE_IGNORES: &[&str] = &[
 /// Declared, but only reachable across a threshold the sampled states do not straddle, so the
 /// dead-declaration check skips them.
 const DORMANT: &[&str] = &[
+    // The economic system is an enum and its settings (`params.systems`) come from the system
+    // files, not `params.json`, so the gate perturbs neither: the transition's resistance and the
+    // enclosure chance are read through `cfg(s, p)`. A transition and the commons rule are enums.
+    "state.system",
+    "state.transition",
+    "state.nature.commons_access",
+    "params.systems",
+    // The pilot has no firm job in the samples (`None` is not a number), so only its absence is read.
+    "state.persons[].job",
+    // The pilot and the estate household are ids (a bump leaves the sampled owner).
+    "state.estate.pilot",
+    "state.estate.household",
     "params.invest.green_payback_years",
     "params.invest.green_max",
     "params.class.startup_min_excess_demand",
@@ -417,6 +488,12 @@ const COVERED: &[&str] = &[
     "bank_spread",
     "bank_dividend",
     "bank_rescue",
+    "government_fund",
+    "government_cut",
+    "government_legitimacy",
+    "estate_pilot",
+    "estate_flight",
+    "nature_enclosure",
 ];
 
 /// The leaves each decision's builder and function are declared to read. A declared path covers
@@ -542,6 +619,59 @@ fn reads(decision: &str) -> Vec<&'static str> {
             "state.bank.deposits",
             "state.policy.bailout",
         ],
+        "government_fund" => &[
+            "state.gov.cash",
+            "state.gov.debt",
+            "state.bank.equity",
+            "state.bank.loans",
+            "state.policy.bank_capital_ratio",
+            "state.policy.public_spending",
+            "params.government.cash_target_months",
+            "params.government.repay_share",
+        ],
+        "government_cut" => &["state.gov.cash"],
+        "government_legitimacy" => &[
+            "state.gov.legitimacy",
+            "state.gov.debt",
+            "state.indicators.avg_wellbeing",
+            "state.indicators.gdp_annual",
+            "state.indicators.gini",
+            "state.indicators.unemployment_smooth",
+            "state.system",
+            "state.transition",
+            "params.systems",
+            "params.government.legit_wellbeing",
+            "params.government.legit_wellbeing_neutral",
+            "params.government.legit_unemployment",
+            "params.government.legit_unemployment_threshold",
+            "params.government.legit_gini",
+            "params.government.legit_gini_threshold",
+            "params.government.legit_debt",
+            "params.government.legit_bailout",
+        ],
+        "estate_pilot" => &[
+            "state.estate.pilot",
+            "state.estate.household",
+            "state.estate.unpaid_months",
+            "state.persons[].staff_of",
+            "state.persons[].job",
+            "state.persons[].jg",
+            "state.households[].savings",
+            "params.estate.pilot_unpaid_months_max",
+            "params.estate.pilot_rehire_months_of_wages",
+            "params.estate.pilot_wage_usd",
+        ],
+        "estate_flight" => &[
+            "state.estate.pilot",
+            "state.estate.household",
+            "state.persons[].staff_of",
+            "params.estate.flight_prob_monthly",
+        ],
+        "nature_enclosure" => &[
+            "state.system",
+            "state.nature.commons_access",
+            "params.systems",
+        ],
         "bank_lend" => &[
             "state.firms[].loan_request",
             "state.firms[].capital",
@@ -591,6 +721,22 @@ fn reads(decision: &str) -> Vec<&'static str> {
 /// (so a firm can be founded), a carbon price with plenty of cash (so a green step is bought) and
 /// a bank with negative equity (rescued, or failing).
 fn variants(s: &State) -> Vec<State> {
+    // An indebted government with cash to spare (repays); an estate whose pilot has just reached
+    // the months of short pay that mean dismissal; a pilot out of work that the estate can afford.
+    let mut indebted = s.clone();
+    indebted.gov.debt = Cents(1_000_000_000_000);
+    indebted.gov.cash = Cents(100_000_000_000);
+    let mut unpaid = s.clone();
+    let mut rehire = s.clone();
+    if let Some(e) = &s.estate {
+        unpaid.estate.as_mut().unwrap().unpaid_months = 3;
+        if let Some(pid) = e.pilot {
+            rehire.persons[pid.idx()].staff_of = None;
+            rehire.persons[pid.idx()].job = None;
+            rehire.persons[pid.idx()].jg = false;
+            rehire.households[e.household.idx()].savings = Cents(700_000);
+        }
+    }
     let mut demand = s.clone();
     for f in &mut demand.firms {
         f.excess_demand = Rate(1.0);
@@ -608,7 +754,16 @@ fn variants(s: &State) -> Vec<State> {
     bailout.policy.bailout = true;
     let mut failing = bailout.clone();
     failing.policy.bailout = false;
-    vec![s.clone(), demand, carbon, bailout, failing]
+    vec![
+        s.clone(),
+        demand,
+        carbon,
+        bailout,
+        failing,
+        indebted,
+        unpaid,
+        rehire,
+    ]
 }
 
 #[test]

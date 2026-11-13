@@ -57,7 +57,7 @@ describe('decisions (generated from the registry)', () => {
     const ids = catalog.decisions.map((d) => d.id);
     for (const id of ['firm_hire', 'firm_fire', 'firm_wage', 'firm_price', 'firm_capex', 'household_found_firm']) expect(ids).toContain(id);
     for (const d of catalog.decisions) {
-      expect(['firms', 'households', 'bank']).toContain(d.agentKind);
+      expect(['firms', 'households', 'bank', 'government', 'estate', 'nature']).toContain(d.agentKind);
       expect(d.inputs.length).toBeGreaterThan(0);
       expect(d.params.every((p) => typeof p.value === 'number')).toBe(true);
     }
@@ -74,17 +74,17 @@ describe('decisions (generated from the registry)', () => {
     const mine = decisionsOfKind(catalog.decisions, 'firms');
     expect(mine.length).toBeGreaterThanOrEqual(7);
     expect(mine.every((d) => d.agentKind === 'firms')).toBe(true);
-    expect(decisionsOfKind(catalog.decisions, 'government')).toEqual([]);
+    expect(decisionsOfKind(catalog.decisions, 'weather')).toEqual([]);
     const l = decisionLine(mine.find((d) => d.id === 'firm_wage')!);
     expect(l.title).toBe('Wage');
     expect(l.inputs).toContain('Unemployment');
     expect(l.outputs).toBe('Base wage');
   });
   it('a decision added only in the catalogue appears with no web change', () => {
-    const made: DecisionInfo = { ...catalog.decisions[0]!, id: 'government_made_up', title: 'Made up', agentKind: 'government', inputs: [{ id: 'q1', label: 'Alpha', unit: 'x' }], outputs: [{ id: 'q2', label: 'Beta', unit: 'y' }] };
+    const made: DecisionInfo = { ...catalog.decisions[0]!, id: 'weather_made_up', title: 'Made up', agentKind: 'weather', inputs: [{ id: 'q1', label: 'Alpha', unit: 'x' }], outputs: [{ id: 'q2', label: 'Beta', unit: 'y' }] };
     const all = [...catalog.decisions, made];
-    expect(decisionsOfKind(all, 'government').map((d) => d.id)).toEqual(['government_made_up']);
-    expect(decisionLine(decisionsOfKind(all, 'government')[0]!)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
+    expect(decisionsOfKind(all, 'weather').map((d) => d.id)).toEqual(['weather_made_up']);
+    expect(decisionLine(decisionsOfKind(all, 'weather')[0]!)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
   });
 });
 

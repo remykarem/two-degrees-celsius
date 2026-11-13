@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **APPROVED (all section 8 defaults). Stages 1 (labour), 2 (firm decisions, section 12) and 3 (household and bank decisions, section 13) IMPLEMENTED; government, estate and nature decisions and the causal-edges wire stage not started.** See sections 10 to 13. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stages 1 (labour), 2 (firm decisions, section 12) 3 (household and bank decisions, section 13) and 4 (government, estate and nature, section 14) IMPLEMENTED; the causal-edges wire stage not started.** See sections 10 to 14. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
@@ -28,12 +28,12 @@ Precedent already in the repo: `price_target` and `wage_step` are small `pub fn`
 | 12 | Household (capital class) | Lobby spend | lobbying.rs `decide_lobby` | capital income, savings, `campaign_cap` | gift to the lobbyist household | `lobby.spend_rate` (the draft said `lobbying.spend_rate`; the section is `lobby`) | no (`expected_effective` yes) |
 | 13 | Bank | Lend to firms: headroom, approval, rate by leverage, payout, rescue (five decisions) | credit.rs `decide_headroom`, `decide_lend`, `decide_spread`, `decide_bank_dividend`, `decide_rescue` | requests, equity, loans, capital ratio, firm assets and debt | approved loans, loan rate, dividend, bailout or haircut | `credit.max_firm_leverage`, `spread_*`, `bank_*`, `bailout_target_ratio`, `haircut_margin` | no |
 | 13b | Firm | Expected sales (the demand -> hiring link) | goods.rs `decide_expect` | demand units, expected sales | expected sales | `labour.expected_smoothing` | no (missing from the draft inventory) |
-| 14 | Government | Fund spending (cash, tax, borrow) | government.rs:203-225 | cash, taxes, bank headroom | borrowing, pro-rata cuts | levers | no |
-| 15 | Government | Legitimacy | government.rs:251, `legitimacy_step` :271 | gaps, bailout | legitimacy | `gov.*` **(unverified names)** | step yes |
-| 16 | Estate | Flight, pilot dismissal | estate.rs:26-67 | RNG draw, pilot pay | flight, jet | `estate.flight_prob_monthly` | no |
-| 17 | Nature (non-agent) | Commons enclosure | nature.rs:148-160 | system chance, RNG, richest capitalist | access rule | system `enclosure_prob` | no |
+| 14 | Government | Fund spending, then ration it (3 decisions in the build: `government_fund`, `government_cut`; the legitimacy step is row 15) | government.rs `decide_fund`, `decide_cut` (was inline :203-225) | committed payments, next month's purchases (the G lever x `cash_target_months`), cash, taxes, the bank's lending room, public debt | borrow the gap within room, or repay `repay_share` of a surplus; pay every committed payment at one share | `gov.repay_share`, `gov.cash_target_months` | no (now yes) |
+| 15 | Government | Legitimacy | government.rs `decide_legitimacy` (`legitimacy_step` is a wrapper) | wellbeing, smoothed unemployment, Gini, public debt over GDP, bailout, transition resistance | legitimacy | `gov.legit_*` (8, names verified) | step yes |
+| 16 | Estate | Pilot dismissal and rehire; flight | estate.rs `decide_pilot`, `decide_flight` (was :26-67) | months of short pay, pilot employed and free, estate savings; RNG draw | keep, let go or hire; flight | `estate.pilot_*`, `estate.flight_prob_monthly` | no (now yes) |
+| 17 | Nature (non-agent) | Commons enclosure | nature.rs `decide_enclosure` (was :148-160) | the system's chance (`cfg`), RNG draw, whether the commons are open | whether an owner fences it (who: matching, in `run`) | none (system `enclosure_prob`) | no (now yes) |
 
-Not decisions (rules of physics or accounting; stay plain code): output (production.rs `capacity`, `cobb_douglas`), emissions, weather draws (weather.rs, own RNG stream), wellbeing, rent and eviction (goods.rs `housing`, :82). Government spending allocation by purpose (government.rs:55-200) is policy execution of player levers; whether it holds hidden choices is **(unverified)**.
+Not decisions (rules of physics or accounting; stay plain code): output (production.rs `capacity`, `cobb_douglas`), emissions, weather draws (weather.rs, own RNG stream), wellbeing, rent and eviction (goods.rs `housing`, :82). Government spending allocation by purpose (government.rs) is policy execution of player levers; checked in stage 4: no hidden choice (DP-10).
 
 ## 3. Target shape
 
@@ -242,3 +242,20 @@ The user re-scoped stages: stage 2 is now "the firm decisions" and the household
 **Gate results.** `statehash` (18 lines) byte-identical (`cmp`); baselines A-F identical; `cargo test --workspace` 277 passed, 0 failed; fmt and clippy `-D warnings` clean; web tests, typecheck, lint, build, check:contract (no wire type changed) and check:recording pass. The golden changed only in the `agents` and `catalog` hashes. The builder gate gained a bank-with-negative-equity variant; `household_spend` declares what `household_wealth` reads (`WEALTH`).
 
 **Not extracted (see `docs/known-issues.md` DP-5 to DP-9).** `excess_demand` (beside expected sales), the household loan and deposit interest and the government's debt service (mechanics), the `apportion` of a firm's revenue to buyers, and the accounting of a default.
+
+## 14. As built (stage 4: government, estate and nature)
+
+**Inventory check.** Section 2 rows 14 to 17 were corrected in place. Row 14 is two decisions (fund, then cut), not one. The `gov.*` legitimacy parameters are `government.legit_*` (eight, including the wellbeing neutral point). Government spending by purpose was read for hidden choices and has none (DP-10): every payment is a lever or content figure times a head count, so it is policy execution and stays plain code. The estate row is two decisions (pilot, flight) and the pilot's pay and the carbon charge stay accounting (DP-11).
+
+**Decisions registered (6 new, 24 in all).** `government_fund` (borrow the gap within the bank's lending room, or repay a share of a surplus; the room comes from `decide_headroom`, so the graph has `bank_headroom -> lending room -> government_fund`), `government_cut` (one pro-rata share for every committed payment), `government_legitimacy` (the existing step, now `decide_legitimacy(&LegitView, &GovParams)`; `legitimacy_step` is a wrapper that `breakdowns.rs` still calls), `estate_pilot` (keep, let go, hire: `PilotChoice`), `estate_flight` (draw below the monthly chance and a pilot on the payroll), `nature_enclosure` (open commons, chance above zero, draw below it; the richest Capitalist or Rentier household is matched in `run`).
+
+**New `QuantityId`s (21).** committed_spending, next_month_purchases, treasury_taxes, public_debt, borrowing, repayment, spending_cut_ratio, legitimacy, wellbeing, inequality, public_debt_ratio, bailout, transition_resistance, pilot_employed, pilot_unpaid_months, pilot_free, estate_savings, flight, enclosure_chance, commons_open, commons_enclosed. Differences from the section 11 plan: `public_debt` and `pilot_free` were added (public debt differs in meaning from a firm's `debt`; the rehire test needs the pilot's freedom), `estate_savings` is the estate household's deposits, and `unemployment` is reused from firm wages. `pilot_employed` in the flight view is true also when the content has no pilot.
+
+**RNG.** `estate::run` and `nature::run` take `r.next_f64()` (the one draw `r.chance` made, same order: estate first, nature last) and pass it as `random_draw`; the comparison with the chance moved into the decision.
+
+**Content.** Owner rows `government`, `estate`, `nature` (each its own Agents kind); 6 decision entries, 21 quantity entries, 14 parameter entries. Removed from `content/assumptions.json`: the government's two borrowing and funding lines, its observes and its legitimacy parameters; the estate's pilot line, flight chance and wage parameters. Kept by hand: the government's and nature's "nothing on its own" lines, the estate's pay-in-full line, nature's observes and enclosure chance parameter, every `rule` string.
+
+**Gate results.** `statehash` byte-identical, baselines A-F identical, workspace tests pass, fmt and clippy clean. Golden changed only in the `agents` and `catalog` hashes. The builder gate gained an indebted government, an estate whose pilot is due to be let go, and a pilot the estate can rehire; the system and transition leaves are declared and dormant (DP-12).
+
+**Not extracted.** Spending by purpose (DP-10), the pilot's pay and the flight's carbon charge, who encloses the commons (DP-11), tax collection and debt service (DP-10).
+

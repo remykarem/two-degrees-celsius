@@ -4,10 +4,13 @@
 
 use crate::class::*;
 use crate::credit::*;
+use crate::estate::*;
 use crate::goods::*;
+use crate::government::*;
 use crate::income::*;
 use crate::investment::*;
 use crate::lobbying::*;
+use crate::nature::*;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -657,4 +660,247 @@ fn rescue_reads_only_its_declared_inputs() {
         }),
     ];
     check_view_only(&BANK_RESCUE, &bases, &fields, |v| decide_rescue(v, cp));
+}
+
+#[test]
+fn fund_reads_only_its_declared_inputs() {
+    let p = params();
+    let gp = &p.government;
+    let base = |committed, cash, taxes, debt| FundView {
+        committed: Cents(committed),
+        next_month_purchases: Cents(1_000_000),
+        treasury_cash: Cents(cash),
+        treasury_taxes: Cents(taxes),
+        credit_headroom: Cents(5_000_000),
+        public_debt: Cents(debt),
+    };
+    let bases = [
+        base(20_000_000, 1_000_000, 2_000_000, 0),
+        base(1_000_000, 50_000_000, 2_000_000, 100_000_000),
+        base(20_000_000, 1_000_000, 2_000_000, 100_000_000),
+    ];
+    let FundView {
+        committed: _,
+        next_month_purchases: _,
+        treasury_cash: _,
+        treasury_taxes: _,
+        credit_headroom: _,
+        public_debt: _,
+    } = bases[0];
+    let fields: [Field<FundView>; 6] = [
+        ("committed", Q::CommittedSpending, |v| {
+            v.committed = Cents(v.committed.0 / 2)
+        }),
+        ("next_month_purchases", Q::NextMonthPurchases, |v| {
+            v.next_month_purchases = Cents(v.next_month_purchases.0 * 3)
+        }),
+        ("treasury_cash", Q::TreasuryCash, |v| {
+            v.treasury_cash = Cents(v.treasury_cash.0 + 1_000_000)
+        }),
+        ("treasury_taxes", Q::TreasuryTaxes, |v| {
+            v.treasury_taxes = Cents(v.treasury_taxes.0 + 1_000_000)
+        }),
+        ("credit_headroom", Q::CreditHeadroom, |v| {
+            v.credit_headroom = Cents(1_000)
+        }),
+        ("public_debt", Q::PublicDebt, |v| {
+            v.public_debt = Cents(1_000)
+        }),
+    ];
+    check_view_only(&GOVERNMENT_FUND, &bases, &fields, |v| decide_fund(v, gp));
+}
+
+#[test]
+fn fund_borrows_the_gap_within_room_and_repays_a_share_of_a_surplus() {
+    let p = params();
+    let v = FundView {
+        committed: Cents(10_000_000),
+        next_month_purchases: Cents(0),
+        treasury_cash: Cents(4_000_000),
+        treasury_taxes: Cents(0),
+        credit_headroom: Cents(5_000_000),
+        public_debt: Cents(1_000_000_000),
+    };
+    assert_eq!(
+        decide_fund(&v, &p.government),
+        FundChoice::Borrow {
+            amount: Cents(5_000_000)
+        }
+    );
+    let rich = FundView {
+        treasury_cash: Cents(50_000_000),
+        ..v
+    };
+    assert_eq!(
+        decide_fund(&rich, &p.government),
+        FundChoice::Repay {
+            amount: Cents(40_000_000).scale(p.government.repay_share)
+        }
+    );
+}
+
+#[test]
+fn cut_reads_only_its_declared_inputs() {
+    let bases = [
+        CutView {
+            committed: Cents(10_000_000),
+            treasury_cash: Cents(1_000_000),
+            treasury_taxes: Cents(2_000_000),
+            borrowing: Cents(0),
+        },
+        CutView {
+            committed: Cents(1_000_000),
+            treasury_cash: Cents(2_000_000),
+            treasury_taxes: Cents(0),
+            borrowing: Cents(0),
+        },
+    ];
+    let CutView {
+        committed: _,
+        treasury_cash: _,
+        treasury_taxes: _,
+        borrowing: _,
+    } = bases[0];
+    let fields: [Field<CutView>; 4] = [
+        ("committed", Q::CommittedSpending, |v| {
+            v.committed = Cents(v.committed.0 * 4)
+        }),
+        ("treasury_cash", Q::TreasuryCash, |v| {
+            v.treasury_cash = Cents(v.treasury_cash.0 + 1_000_000)
+        }),
+        ("treasury_taxes", Q::TreasuryTaxes, |v| {
+            v.treasury_taxes = Cents(v.treasury_taxes.0 + 1_000_000)
+        }),
+        ("borrowing", Q::Borrowing, |v| {
+            v.borrowing = Cents(v.borrowing.0 + 1_000_000)
+        }),
+    ];
+    check_view_only(&GOVERNMENT_CUT, &bases, &fields, decide_cut);
+}
+
+#[test]
+fn legitimacy_reads_only_its_declared_inputs() {
+    let p = params();
+    let gp = &p.government;
+    let base = |wellbeing, bailout, resistance| LegitView {
+        legitimacy: 0.6,
+        wellbeing,
+        unemployment: 0.2,
+        inequality: 0.6,
+        public_debt_ratio: 2.0,
+        bailout,
+        transition_resistance: resistance,
+    };
+    let bases = [base(0.7, false, 0.0), base(0.3, true, 0.01)];
+    let LegitView {
+        legitimacy: _,
+        wellbeing: _,
+        unemployment: _,
+        inequality: _,
+        public_debt_ratio: _,
+        bailout: _,
+        transition_resistance: _,
+    } = bases[0];
+    let fields: [Field<LegitView>; 7] = [
+        ("legitimacy", Q::Legitimacy, |v| v.legitimacy += 0.1),
+        ("wellbeing", Q::Wellbeing, |v| v.wellbeing += 0.1),
+        ("unemployment", Q::Unemployment, |v| v.unemployment += 0.1),
+        ("inequality", Q::Inequality, |v| v.inequality += 0.1),
+        ("public_debt_ratio", Q::PublicDebtRatio, |v| {
+            v.public_debt_ratio += 1.0
+        }),
+        ("bailout", Q::Bailout, |v| v.bailout = !v.bailout),
+        ("transition_resistance", Q::TransitionResistance, |v| {
+            v.transition_resistance += 0.01
+        }),
+    ];
+    check_view_only(&GOVERNMENT_LEGITIMACY, &bases, &fields, |v| {
+        decide_legitimacy(v, gp).raw.to_bits()
+    });
+}
+
+#[test]
+fn pilot_reads_only_its_declared_inputs() {
+    let p = params();
+    let ep = &p.estate;
+    let base = |employed, unpaid, free, savings| PilotView {
+        pilot_employed: employed,
+        pilot_unpaid_months: unpaid,
+        pilot_free: free,
+        estate_savings: Cents(savings),
+    };
+    let bases = [
+        base(true, 99, true, 0),
+        base(true, 0, true, 0),
+        base(false, 0, true, 1_000_000_000_000),
+        base(false, 0, false, 1_000_000_000_000),
+    ];
+    let PilotView {
+        pilot_employed: _,
+        pilot_unpaid_months: _,
+        pilot_free: _,
+        estate_savings: _,
+    } = bases[0];
+    let fields: [Field<PilotView>; 4] = [
+        ("pilot_employed", Q::PilotEmployed, |v| {
+            v.pilot_employed = !v.pilot_employed
+        }),
+        ("pilot_unpaid_months", Q::PilotUnpaidMonths, |v| {
+            v.pilot_unpaid_months = 0
+        }),
+        ("pilot_free", Q::PilotFree, |v| v.pilot_free = !v.pilot_free),
+        ("estate_savings", Q::EstateSavings, |v| {
+            v.estate_savings = Cents(0)
+        }),
+    ];
+    check_view_only(&ESTATE_PILOT, &bases, &fields, |v| decide_pilot(v, ep));
+}
+
+#[test]
+fn flight_reads_only_its_declared_inputs() {
+    let p = params();
+    let ep = &p.estate;
+    let bases = [flight_view(0.0, true), flight_view(0.0, false)];
+    let FlightView {
+        random_draw: _,
+        pilot_employed: _,
+    } = bases[0];
+    let fields: [Field<FlightView>; 2] = [
+        ("random_draw", Q::RandomDraw, |v| v.random_draw = 0.999_999),
+        ("pilot_employed", Q::PilotEmployed, |v| {
+            v.pilot_employed = !v.pilot_employed
+        }),
+    ];
+    check_view_only(&ESTATE_FLIGHT, &bases, &fields, |v| decide_flight(v, ep));
+}
+
+#[test]
+fn enclosure_reads_only_its_declared_inputs() {
+    let bases = [
+        EnclosureView {
+            enclosure_chance: 0.01,
+            random_draw: 0.005,
+            commons_open: true,
+        },
+        EnclosureView {
+            enclosure_chance: 0.01,
+            random_draw: 0.005,
+            commons_open: false,
+        },
+    ];
+    let EnclosureView {
+        enclosure_chance: _,
+        random_draw: _,
+        commons_open: _,
+    } = bases[0];
+    let fields: [Field<EnclosureView>; 3] = [
+        ("enclosure_chance", Q::EnclosureChance, |v| {
+            v.enclosure_chance = 0.0
+        }),
+        ("random_draw", Q::RandomDraw, |v| v.random_draw = 0.5),
+        ("commons_open", Q::CommonsOpen, |v| {
+            v.commons_open = !v.commons_open
+        }),
+    ];
+    check_view_only(&NATURE_ENCLOSURE, &bases, &fields, decide_enclosure);
 }

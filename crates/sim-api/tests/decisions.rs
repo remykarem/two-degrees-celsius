@@ -55,6 +55,9 @@ fn catalog_serves_every_decision_and_quantity_with_text() {
             "firm" => "firms",
             "household" => "households",
             "bank" => "bank",
+            "government" => "government",
+            "estate" => "estate",
+            "nature" => "nature",
             o => panic!("owner {o} has no agent kind in the test"),
         };
         assert_eq!(d.agent_kind, kind);

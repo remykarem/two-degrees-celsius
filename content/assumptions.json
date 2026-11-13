@@ -2441,52 +2441,11 @@
         "actor": "agent",
         "summary": "The government collects taxes, pays benefits and spending and borrows for deficits, all at the levels the player sets. Its own rule is legitimacy: a score that drifts with wellbeing, unemployment, inequality and debt.",
         "decides": [
-          "Nothing on its own about policy: levers are the player's",
-          "How much to borrow or repay to keep a cash target",
-          "How much of its spending it can actually fund"
+          "Nothing on its own about policy: levers are the player's (benefits, UBI, spending and builds are paid as set)"
         ],
-        "observes": [
-          "Wellbeing, smoothed unemployment, the Gini coefficient and debt against GDP",
-          "Whether the bank was bailed out this month"
-        ],
+        "observes": [],
         "rule": "legitimacy change = wellbeing weight x (wellbeing - 0.5) - unemployment weight x max(0, unemployment - threshold) - inequality weight x max(0, Gini - threshold) - debt weight x max(0, debt/GDP - 1) - bailout penalty",
-        "params": [
-          {
-            "path": "government.legit_wellbeing",
-            "label": "Wellbeing weight",
-            "unit": "points per month"
-          },
-          {
-            "path": "government.legit_unemployment",
-            "label": "Unemployment weight",
-            "unit": "points per month"
-          },
-          {
-            "path": "government.legit_unemployment_threshold",
-            "label": "Unemployment threshold",
-            "unit": "rate"
-          },
-          {
-            "path": "government.legit_gini",
-            "label": "Inequality weight",
-            "unit": "points per month"
-          },
-          {
-            "path": "government.legit_gini_threshold",
-            "label": "Gini threshold",
-            "unit": "0..1"
-          },
-          {
-            "path": "government.legit_debt",
-            "label": "Debt weight",
-            "unit": "points per month"
-          },
-          {
-            "path": "government.legit_bailout",
-            "label": "Bailout penalty",
-            "unit": "points"
-          }
-        ],
+        "params": [],
         "code": [
           "crates/sim-model/src/government.rs"
         ]
@@ -2586,28 +2545,17 @@
         "actor": "agent",
         "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
         "decides": [
-          "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)",
-          "Whether to let the pilot go after months of short pay, and to rehire once it can afford wages again"
+          "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)"
         ],
         "observes": [
-          "Its savings, the carbon price after lobbying, whether the pilot is employed"
+          "The carbon price after lobbying, which each flight pays"
         ],
         "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
         "params": [
           {
-            "path": "estate.flight_prob_monthly",
-            "label": "Chance the jet flies in a month",
-            "unit": "probability per month"
-          },
-          {
             "path": "estate.flight_tonnes",
             "label": "Emissions of one flight",
             "unit": "t CO2 per flight"
-          },
-          {
-            "path": "estate.pilot_wage_usd",
-            "label": "Pilot's wage",
-            "unit": "$ per month"
           }
         ],
         "code": [

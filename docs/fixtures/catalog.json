@@ -3572,6 +3572,367 @@
           "unit": "multiple"
         }
       ]
+    },
+    {
+      "id": "government_fund",
+      "title": "Funding the month",
+      "owner": "government",
+      "agentKind": "government",
+      "system": "S8 government",
+      "decides": "How to fund the month's payments: borrow the gap, or repay debt",
+      "rule": {
+        "id": "cash_and_taxes_then_borrow",
+        "label": "Cash and taxes first, then the bank, within its lending room",
+        "text": "The treasury needs this month's committed payments plus next month's planned purchases. If cash and taxes fall short, it borrows the gap, up to the bank's lending room. If they cover it, it repays a share of the surplus, up to what it owes."
+      },
+      "inputs": [
+        {
+          "id": "committed_spending",
+          "label": "Committed spending",
+          "unit": "$"
+        },
+        {
+          "id": "next_month_purchases",
+          "label": "Next month's purchases",
+          "unit": "$"
+        },
+        {
+          "id": "treasury_cash",
+          "label": "Treasury cash",
+          "unit": "$"
+        },
+        {
+          "id": "treasury_taxes",
+          "label": "Taxes collected",
+          "unit": "$"
+        },
+        {
+          "id": "credit_headroom",
+          "label": "Lending room",
+          "unit": "$"
+        },
+        {
+          "id": "public_debt",
+          "label": "Public debt",
+          "unit": "$"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "borrowing",
+          "label": "Borrowing",
+          "unit": "$"
+        },
+        {
+          "id": "repayment",
+          "label": "Repayment",
+          "unit": "$"
+        }
+      ],
+      "params": [
+        {
+          "path": "government.repay_share",
+          "label": "Share of surplus repaid",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "government.cash_target_months",
+          "label": "Months of purchases held in cash",
+          "value": 1.0,
+          "unit": "months"
+        }
+      ]
+    },
+    {
+      "id": "government_cut",
+      "title": "Cutting spending",
+      "owner": "government",
+      "agentKind": "government",
+      "system": "S8 government",
+      "decides": "How much of its payments to cut when the treasury runs short",
+      "rule": {
+        "id": "cut_pro_rata",
+        "label": "Every payment is cut by the same share",
+        "text": "If cash, taxes and borrowing cannot cover the committed payments, each payment is paid at the same share (funds over commitments) and the shortfall is reported. Otherwise everything is paid in full."
+      },
+      "inputs": [
+        {
+          "id": "committed_spending",
+          "label": "Committed spending",
+          "unit": "$"
+        },
+        {
+          "id": "treasury_cash",
+          "label": "Treasury cash",
+          "unit": "$"
+        },
+        {
+          "id": "treasury_taxes",
+          "label": "Taxes collected",
+          "unit": "$"
+        },
+        {
+          "id": "borrowing",
+          "label": "Borrowing",
+          "unit": "$"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "spending_cut_ratio",
+          "label": "Share of spending paid",
+          "unit": "share"
+        }
+      ],
+      "params": []
+    },
+    {
+      "id": "government_legitimacy",
+      "title": "Legitimacy",
+      "owner": "government",
+      "agentKind": "government",
+      "system": "S8 government",
+      "decides": "How its legitimacy moves each month",
+      "rule": {
+        "id": "legitimacy_drift",
+        "label": "Drifts with wellbeing, unemployment, inequality, debt, bailouts and system change",
+        "text": "Legitimacy changes by a wellbeing weight x (wellbeing - neutral), less a weight x the amount unemployment and the Gini exceed their thresholds, less a weight x the amount public debt exceeds a year's GDP, less a penalty if the bank was bailed out, less the resistance to a system change under way. It stays between 0 and 1."
+      },
+      "inputs": [
+        {
+          "id": "legitimacy",
+          "label": "Legitimacy",
+          "unit": "0 to 1"
+        },
+        {
+          "id": "wellbeing",
+          "label": "Wellbeing",
+          "unit": "0 to 1"
+        },
+        {
+          "id": "unemployment",
+          "label": "Unemployment",
+          "unit": "rate"
+        },
+        {
+          "id": "inequality",
+          "label": "Inequality",
+          "unit": "Gini, 0 to 1"
+        },
+        {
+          "id": "public_debt_ratio",
+          "label": "Public debt against GDP",
+          "unit": "ratio"
+        },
+        {
+          "id": "bailout",
+          "label": "Bank bailed out",
+          "unit": "yes or no"
+        },
+        {
+          "id": "transition_resistance",
+          "label": "Resistance to system change",
+          "unit": "points per month"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "legitimacy",
+          "label": "Legitimacy",
+          "unit": "0 to 1"
+        }
+      ],
+      "params": [
+        {
+          "path": "government.legit_wellbeing",
+          "label": "Wellbeing weight",
+          "value": 0.01,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_wellbeing_neutral",
+          "label": "Neutral wellbeing",
+          "value": 0.5,
+          "unit": "0 to 1"
+        },
+        {
+          "path": "government.legit_unemployment",
+          "label": "Unemployment weight",
+          "value": 0.02,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_unemployment_threshold",
+          "label": "Unemployment threshold",
+          "value": 0.1,
+          "unit": "rate"
+        },
+        {
+          "path": "government.legit_gini",
+          "label": "Inequality weight",
+          "value": 0.012,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_gini_threshold",
+          "label": "Gini threshold",
+          "value": 0.45,
+          "unit": "0 to 1"
+        },
+        {
+          "path": "government.legit_debt",
+          "label": "Debt weight",
+          "value": 0.008,
+          "unit": "points per month"
+        },
+        {
+          "path": "government.legit_bailout",
+          "label": "Bailout penalty",
+          "value": 0.05,
+          "unit": "points"
+        }
+      ]
+    },
+    {
+      "id": "estate_pilot",
+      "title": "Keeping the pilot",
+      "owner": "estate",
+      "agentKind": "estate",
+      "system": "S12 estate",
+      "decides": "Whether to let the pilot go, or hire the pilot back",
+      "rule": {
+        "id": "dismiss_after_short_pay_rehire_when_flush",
+        "label": "Let go after months of short pay, hired back once savings cover wages",
+        "text": "If the pilot is employed and has gone unpaid in full for the maximum number of months in a row, the pilot is let go. If not employed, with no other job, and the estate's savings cover the set months of wages, the pilot is hired back."
+      },
+      "inputs": [
+        {
+          "id": "pilot_employed",
+          "label": "Pilot on the payroll",
+          "unit": "yes or no"
+        },
+        {
+          "id": "pilot_unpaid_months",
+          "label": "Months of short pay",
+          "unit": "months"
+        },
+        {
+          "id": "pilot_free",
+          "label": "Pilot free to rehire",
+          "unit": "yes or no"
+        },
+        {
+          "id": "estate_savings",
+          "label": "Estate savings",
+          "unit": "$"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "pilot_employed",
+          "label": "Pilot on the payroll",
+          "unit": "yes or no"
+        }
+      ],
+      "params": [
+        {
+          "path": "estate.pilot_unpaid_months_max",
+          "label": "Months of short pay before dismissal",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "estate.pilot_rehire_months_of_wages",
+          "label": "Months of wages needed to rehire",
+          "value": 3.0,
+          "unit": "months"
+        },
+        {
+          "path": "estate.pilot_wage_usd",
+          "label": "Pilot's wage",
+          "value": 1800.0,
+          "unit": "$ per month"
+        }
+      ]
+    },
+    {
+      "id": "estate_flight",
+      "title": "Flying the jet",
+      "owner": "estate",
+      "agentKind": "estate",
+      "system": "S12 estate",
+      "decides": "Whether the jet flies this month",
+      "rule": {
+        "id": "monthly_chance_with_pilot",
+        "label": "A monthly chance, and only with a pilot",
+        "text": "The simulation takes one random draw each month. The jet flies if the draw falls below the monthly chance and a pilot is on the payroll (or the town has no pilot)."
+      },
+      "inputs": [
+        {
+          "id": "random_draw",
+          "label": "Random draw",
+          "unit": "0 to 1"
+        },
+        {
+          "id": "pilot_employed",
+          "label": "Pilot on the payroll",
+          "unit": "yes or no"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "flight",
+          "label": "Jet flies",
+          "unit": "yes or no"
+        }
+      ],
+      "params": [
+        {
+          "path": "estate.flight_prob_monthly",
+          "label": "Chance the jet flies in a month",
+          "value": 0.4,
+          "unit": "probability per month"
+        }
+      ]
+    },
+    {
+      "id": "nature_enclosure",
+      "title": "Fencing off the commons",
+      "owner": "nature",
+      "agentKind": "nature",
+      "system": "S7 natural capital",
+      "decides": "Whether an owner fences off an open commons this month",
+      "rule": {
+        "id": "monthly_chance_while_open",
+        "label": "A monthly chance while the commons are open",
+        "text": "While the commons are open, each month's random draw is compared with the economic system's chance of enclosure; below it, the richest capital-owning household fences the commons off. Who that is, is matched in the simulation."
+      },
+      "inputs": [
+        {
+          "id": "enclosure_chance",
+          "label": "Chance of enclosure",
+          "unit": "probability per month"
+        },
+        {
+          "id": "random_draw",
+          "label": "Random draw",
+          "unit": "0 to 1"
+        },
+        {
+          "id": "commons_open",
+          "label": "Commons open",
+          "unit": "yes or no"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "commons_enclosed",
+          "label": "Commons enclosed",
+          "unit": "yes or no"
+        }
+      ],
+      "params": []
     }
   ],
   "quantities": [
@@ -4120,6 +4481,153 @@
       "unit": "yes or no",
       "owner": "bank",
       "summary": "The bank is out of equity and has no bailout: depositors lose part of their savings."
+    },
+    {
+      "id": "committed_spending",
+      "label": "Committed spending",
+      "unit": "$",
+      "owner": "government",
+      "summary": "What the government owes this month: benefits, UBI, job-guarantee wages, upkeep and building."
+    },
+    {
+      "id": "next_month_purchases",
+      "label": "Next month's purchases",
+      "unit": "$",
+      "owner": "government",
+      "summary": "The goods the government plans to buy next month (the spending lever), held back in cash."
+    },
+    {
+      "id": "treasury_taxes",
+      "label": "Taxes collected",
+      "unit": "$",
+      "owner": "government",
+      "summary": "Taxes and carbon payments that came in this month."
+    },
+    {
+      "id": "public_debt",
+      "label": "Public debt",
+      "unit": "$",
+      "owner": "government",
+      "summary": "What the government owes the bank."
+    },
+    {
+      "id": "borrowing",
+      "label": "Borrowing",
+      "unit": "$",
+      "owner": "government",
+      "summary": "New loans the government takes from the bank this month."
+    },
+    {
+      "id": "repayment",
+      "label": "Repayment",
+      "unit": "$",
+      "owner": "government",
+      "summary": "Debt the government pays back this month."
+    },
+    {
+      "id": "spending_cut_ratio",
+      "label": "Share of spending paid",
+      "unit": "share",
+      "owner": "government",
+      "summary": "The share of each committed payment the treasury can actually fund (1 means all of it)."
+    },
+    {
+      "id": "legitimacy",
+      "label": "Legitimacy",
+      "unit": "0 to 1",
+      "owner": "government",
+      "summary": "How far the town accepts the government's rule; it drifts with wellbeing, unemployment, inequality, debt, bailouts and system change."
+    },
+    {
+      "id": "wellbeing",
+      "label": "Wellbeing",
+      "unit": "0 to 1",
+      "owner": "government",
+      "summary": "The town's average wellbeing."
+    },
+    {
+      "id": "inequality",
+      "label": "Inequality",
+      "unit": "Gini, 0 to 1",
+      "owner": "government",
+      "summary": "The Gini coefficient of household wealth."
+    },
+    {
+      "id": "public_debt_ratio",
+      "label": "Public debt against GDP",
+      "unit": "ratio",
+      "owner": "government",
+      "summary": "Public debt divided by a year's GDP."
+    },
+    {
+      "id": "bailout",
+      "label": "Bank bailed out",
+      "unit": "yes or no",
+      "owner": "government",
+      "summary": "Whether the treasury rescued the bank this month."
+    },
+    {
+      "id": "transition_resistance",
+      "label": "Resistance to system change",
+      "unit": "points per month",
+      "owner": "government",
+      "summary": "The legitimacy lost each month while the town changes its economic system."
+    },
+    {
+      "id": "pilot_employed",
+      "label": "Pilot on the payroll",
+      "unit": "yes or no",
+      "owner": "estate",
+      "summary": "Whether the jet's pilot works for the estate right now (true also when the town has no pilot to need)."
+    },
+    {
+      "id": "pilot_unpaid_months",
+      "label": "Months of short pay",
+      "unit": "months",
+      "owner": "estate",
+      "summary": "How many months in a row the estate could not pay the pilot in full."
+    },
+    {
+      "id": "pilot_free",
+      "label": "Pilot free to rehire",
+      "unit": "yes or no",
+      "owner": "estate",
+      "summary": "The pilot has no other job and is not on the job guarantee."
+    },
+    {
+      "id": "estate_savings",
+      "label": "Estate savings",
+      "unit": "$",
+      "owner": "estate",
+      "summary": "The deposits the estate household holds."
+    },
+    {
+      "id": "flight",
+      "label": "Jet flies",
+      "unit": "yes or no",
+      "owner": "estate",
+      "summary": "Whether the jet flies this month."
+    },
+    {
+      "id": "enclosure_chance",
+      "label": "Chance of enclosure",
+      "unit": "probability per month",
+      "owner": "nature",
+      "summary": "The chance each month that a wealthy owner fences off an open commons; it depends on the economic system."
+    },
+    {
+      "id": "commons_open",
+      "label": "Commons open",
+      "unit": "yes or no",
+      "owner": "nature",
+      "summary": "Whether anyone may use the commons (not enclosed and not community-managed)."
+    },
+    {
+      "id": "commons_enclosed",
+      "label": "Commons enclosed",
+      "unit": "yes or no",
+      "owner": "nature",
+      "summary": "Whether an owner has fenced the commons off."
     }
   ]
 }

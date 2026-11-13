@@ -24,7 +24,7 @@ macro_rules! named_enum {
 }
 
 named_enum! {
-    /// Who makes a decision. Firm, Household and Bank have registered decisions so far.
+    /// Who makes a decision. Every owner kind has registered decisions (Nature is not an agent; its one decision is the commons enclosure).
     pub enum OwnerKind {
         Firm => "firm",
         Household => "household",
@@ -56,6 +56,12 @@ named_enum! {
         BankSpread => "bank_spread",
         BankDividend => "bank_dividend",
         BankRescue => "bank_rescue",
+        GovernmentFund => "government_fund",
+        GovernmentCut => "government_cut",
+        GovernmentLegitimacy => "government_legitimacy",
+        EstatePilot => "estate_pilot",
+        EstateFlight => "estate_flight",
+        NatureEnclosure => "nature_enclosure",
     }
 }
 
@@ -81,6 +87,11 @@ impl DecisionId {
             | DecisionId::BankSpread
             | DecisionId::BankDividend
             | DecisionId::BankRescue => OwnerKind::Bank,
+            DecisionId::GovernmentFund
+            | DecisionId::GovernmentCut
+            | DecisionId::GovernmentLegitimacy => OwnerKind::Government,
+            DecisionId::EstatePilot | DecisionId::EstateFlight => OwnerKind::Estate,
+            DecisionId::NatureEnclosure => OwnerKind::Nature,
         }
     }
 }
@@ -166,6 +177,27 @@ named_enum! {
         BailoutPolicy => "bailout_policy",
         BankFailed => "bank_failed",
         PolicyRate => "policy_rate",
+        CommittedSpending => "committed_spending",
+        NextMonthPurchases => "next_month_purchases",
+        TreasuryTaxes => "treasury_taxes",
+        PublicDebt => "public_debt",
+        Borrowing => "borrowing",
+        Repayment => "repayment",
+        SpendingCutRatio => "spending_cut_ratio",
+        Legitimacy => "legitimacy",
+        Wellbeing => "wellbeing",
+        Inequality => "inequality",
+        PublicDebtRatio => "public_debt_ratio",
+        Bailout => "bailout",
+        TransitionResistance => "transition_resistance",
+        PilotEmployed => "pilot_employed",
+        PilotUnpaidMonths => "pilot_unpaid_months",
+        PilotFree => "pilot_free",
+        EstateSavings => "estate_savings",
+        Flight => "flight",
+        EnclosureChance => "enclosure_chance",
+        CommonsOpen => "commons_open",
+        CommonsEnclosed => "commons_enclosed",
     }
 }
 
