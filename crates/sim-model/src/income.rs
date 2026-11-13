@@ -2,14 +2,101 @@
 //! This is where the economic system plugs in: `match firm.owner` decides who gets the dividends.
 
 use crate::util::{apportion, monthly, person_pay, workers_of};
-use sim_params::Params;
+use sim_params::{IncomeParams, InvestParams, Params};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
+
+// ---- Decision: the dividend ----
+
+pub const FIRM_PAYOUT: DecisionSpec = DecisionSpec {
+    id: D::FirmPayout,
+    system: SystemId::Income,
+    inputs: &[
+        Q::Profit,
+        Q::Cash,
+        Q::Payroll,
+        Q::DebtService,
+        Q::GreenPlan,
+        Q::Revenue,
+        Q::GreenSubsidy,
+        Q::PayoutRatio,
+    ],
+    outputs: &[Q::Dividends],
+    params: &[
+        "income.cash_reserve_months",
+        "income.excess_cash_months",
+        "income.excess_payout_rate",
+        "invest.green_spend_share",
+    ],
+    rule: "payout_ratio_above_reserve",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PayoutView {
+    /// Profit after tax this month.
+    pub profit: Cents,
+    /// Cash left after wages, carbon cost and tax.
+    pub cash: Cents,
+    pub payroll: Cents,
+    /// Interest and scheduled principal due.
+    pub debt_service: Cents,
+    pub green_plan: bool,
+    pub revenue: Cents,
+    pub green_subsidy: f64,
+    /// The share of profit the economic system pays out.
+    pub payout_ratio: f64,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn payout_view(
+    s: &State,
+    p: &Params,
+    f: &Firm,
+    profit: Cents,
+    cash: Cents,
+    wages_paid: Cents,
+    interest_due: Cents,
+    amort_due: Cents,
+) -> PayoutView {
+    PayoutView {
+        profit,
+        cash,
+        payroll: wages_paid,
+        debt_service: interest_due + amort_due,
+        green_plan: f.green_plan,
+        revenue: f.revenue,
+        green_subsidy: s.policy.green_subsidy.0,
+        payout_ratio: crate::util::cfg(s, p).payout_ratio,
+    }
+}
+
+pub fn decide_payout(v: &PayoutView, ic: &IncomeParams, ip: &InvestParams) -> Cents {
+    let outgoings = v.payroll + v.debt_service;
+    let mut reserve = outgoings.scale(ic.cash_reserve_months);
+    if v.green_plan {
+        // Retained cash for the planned green investment.
+        reserve += v
+            .revenue
+            .scale(ip.green_spend_share * (1.0 - v.green_subsidy));
+    }
+    let regular = v
+        .profit
+        .max(Cents::ZERO)
+        .scale(v.payout_ratio)
+        .min((v.cash - reserve).max(Cents::ZERO));
+    // Idle cash well above what payroll and debt service need is distributed too.
+    let idle_line = reserve + outgoings.scale(ic.excess_cash_months);
+    let excess = (v.cash - regular - idle_line)
+        .max(Cents::ZERO)
+        .scale(ic.excess_payout_rate);
+    regular + excess
+}
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let n_h = s.households.len();
-    let payout = crate::util::cfg(s, p).payout_ratio;
     // What each household receives in this system before it pays rent.
     let mut incoming = vec![Cents::ZERO; n_h];
 
@@ -83,25 +170,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         let profit = pre_tax - tax;
 
         // Dividends: payout ratio of profit, never below the cash reserve for payroll and debt service.
-        let mut reserve =
-            (wages_paid + interest_due + amort_due).scale(p.income.cash_reserve_months);
-        if f.green_plan {
-            // Retained cash for the planned green investment.
-            reserve += f
-                .revenue
-                .scale(p.invest.green_spend_share * (1.0 - s.policy.green_subsidy.0));
-        }
-        let regular = profit
-            .max(Cents::ZERO)
-            .scale(payout)
-            .min((cash - reserve).max(Cents::ZERO));
-        // Idle cash well above what payroll and debt service need is distributed too.
-        let idle_line =
-            reserve + (wages_paid + interest_due + amort_due).scale(p.income.excess_cash_months);
-        let excess = (cash - regular - idle_line)
-            .max(Cents::ZERO)
-            .scale(p.income.excess_payout_rate);
-        let dividends = regular + excess;
+        let dividends = decide_payout(
+            &payout_view(s, p, f, profit, cash, wages_paid, interest_due, amort_due),
+            &p.income,
+            &p.invest,
+        );
         match f.owner {
             Owner::Household(h) => {
                 d.transfer_as(

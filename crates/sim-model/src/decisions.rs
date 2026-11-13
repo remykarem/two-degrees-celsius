@@ -11,6 +11,12 @@ pub const DECISIONS: &[DecisionSpec] = &[
     crate::labour::FIRM_HIRE,
     crate::labour::FIRM_FIRE,
     crate::labour::FIRM_WAGE,
+    crate::goods::FIRM_PRICE,
+    crate::investment::FIRM_GREEN,
+    crate::investment::FIRM_CAPEX,
+    crate::income::FIRM_PAYOUT,
+    crate::credit::FIRM_EXIT,
+    crate::class::HOUSEHOLD_FOUND_FIRM,
 ];
 
 /// The spec of a decision.

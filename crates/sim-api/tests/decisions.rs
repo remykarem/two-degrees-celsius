@@ -51,8 +51,12 @@ fn catalog_serves_every_decision_and_quantity_with_text() {
         for p in &d.params {
             assert!(!p.label.is_empty() && !p.unit.is_empty(), "{}", p.path);
         }
-        assert_eq!(d.agent_kind, "firms");
-        assert_eq!(d.owner, "firm");
+        let kind = match d.owner.as_str() {
+            "firm" => "firms",
+            "household" => "households",
+            o => panic!("owner {o} has no agent kind in the test"),
+        };
+        assert_eq!(d.agent_kind, kind);
     }
     assert!(c
         .quantities
@@ -66,9 +70,9 @@ fn catalog_serves_every_decision_and_quantity_with_text() {
 fn agents_who_decides_is_generated_and_not_hand_written() {
     let api = Api::init(1).unwrap();
     let a = api.agents().unwrap();
-    let firms = a.kinds.iter().find(|k| k.id == "firms").unwrap();
     let c = api.catalog().unwrap();
     for d in &c.decisions {
+        let firms = a.kinds.iter().find(|k| k.id == d.agent_kind).unwrap();
         assert!(
             firms.decides.contains(&d.decides),
             "{} missing from decides",
@@ -89,37 +93,37 @@ fn agents_who_decides_is_generated_and_not_hand_written() {
             );
         }
     }
-    // The authored file: parse the firms kind and check nothing generated is hand-written.
+    // The authored file: nothing generated is hand-written, for any kind that has decisions.
     let raw: serde_json::Value = serde_json::from_str(sim_api::assumptions::CATALOG).unwrap();
-    let kind = raw["agents"]["kinds"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|k| k["id"] == "firms")
-        .unwrap();
-    let hand_params: Vec<&str> = kind["params"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|p| p["path"].as_str().unwrap())
-        .collect();
-    let hand_decides: Vec<&str> = kind["decides"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|p| p.as_str().unwrap())
-        .collect();
-    for d in &c.decisions {
-        for p in &d.params {
-            assert!(
-                !hand_params.contains(&p.path.as_str()),
-                "{} is hand-written",
-                p.path
-            );
+    for kind in raw["agents"]["kinds"].as_array().unwrap() {
+        let id = kind["id"].as_str().unwrap();
+        let strs = |key: &str| -> Vec<String> {
+            kind[key]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_str().unwrap().to_string())
+                .collect()
+        };
+        let hand_params: Vec<String> = kind["params"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p["path"].as_str().unwrap().to_string())
+            .collect();
+        let mine: Vec<_> = c.decisions.iter().filter(|d| d.agent_kind == id).collect();
+        if mine.is_empty() {
+            continue;
         }
-        assert!(!hand_decides.contains(&d.decides.as_str()));
+        for d in &mine {
+            for p in &d.params {
+                assert!(!hand_params.contains(&p.path), "{} is hand-written", p.path);
+            }
+            assert!(!strs("decides").contains(&d.decides));
+        }
+        let served = a.kinds.iter().find(|k| k.id == id).unwrap();
+        assert_eq!(served.decides.len(), mine.len() + strs("decides").len());
     }
-    assert_eq!(firms.decides.len(), c.decisions.len() + hand_decides.len());
 }
 
 #[test]

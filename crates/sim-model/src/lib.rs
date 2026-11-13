@@ -6,6 +6,8 @@
 
 pub mod class;
 pub mod credit;
+#[cfg(test)]
+mod decision_tests;
 pub mod decisions;
 pub mod estate;
 pub mod goods;

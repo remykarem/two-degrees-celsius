@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) IMPLEMENTED; stages 2-5 under way, amended by section 11 (the pilot's lessons).** See section 10, "As built (stage 1)" and section 11. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) and stage 2 (the firm decisions, in a re-scoped form: section 12) IMPLEMENTED; goods spending/shop, bank, government, estate, nature and lobbying decisions and the wire stage not started.** See sections 10, 11 and 12. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
@@ -204,3 +204,24 @@ The lists are the plan; the as-built section of each stage records the final nam
 **RNG.** Draws stay in the system, in the same order, and enter the decision as plain data (`random_draw`, or the Bernoulli outcome as a boolean): `class::run` draws once always before use, `estate::run` first, `nature::run` the enclosure draw last.
 
 **Not decisions (stay plain code):** production and capacity, emissions, weather, wellbeing, rent and eviction, the matching of hires and loans, who is fired, and the apportioning of money among households.
+
+## 12. As built (stage 2: the firm decisions, plus founding a firm)
+
+The user re-scoped stages: stage 2 is now "the firm decisions" and the household and bank decisions are the next stage. The table in section 11 is the old plan; this section is what exists.
+
+**Decisions (9 registered in all: 3 labour from stage 1, 6 new).** `firm_price` (goods.rs `decide_price`), `firm_green` and `firm_capex` (investment.rs: the green step, then next month's capital purchase and the loan request that funds it), `firm_payout` (income.rs, the dividend), `firm_exit` (credit.rs, default after months of missed payments), `household_found_firm` (class.rs, the go or no-go for founding in the dormant slot). Quantity split: `output_capacity` is gone; the hire view carries `production::CapacityFactors` (capital_output, farm_health, climate, drought, community, smoke, transition) and the quantities `capital_output`, `weather_factor`, `resource_factor`, `transition_factor` (DP-2 closed: the graph now has weather -> hire).
+
+**New `QuantityId`s (36 added, 1 removed).** price, markup, unit_cost, footprint, carbon_price, revenue, emissions_cap, green_subsidy, treasury_cash, cash, cash_reserve, green_tech, green_plan, profit, profit_trend, capital, capital_per_sale, loan_rate, distressed, invest_hurdle, green_cash_share, investment_plan, loan_request, payroll, debt_service, payout_ratio, dividends, debt, payment_shortfall, distress_months, firm_open, sector_return, base_rate, random_draw, new_firm (plus the four weather and resource quantities above). Quantities for the economic system's settings (`invest_hurdle`, `green_cash_share`, `payout_ratio`) are inputs because those values come from the selected system (`cfg(s, p)`), which is not a path in `params.json`.
+
+**Content.** `content/decisions.json`: owner `household` -> Agents kind `households`; 6 decision entries; 35 quantity entries; 20 parameter entries. Hand-written lines for these decisions were removed from `content/assumptions.json` (firms: price, invest and borrow, unit cost, `goods.price_adjust`; households: founding a firm).
+
+**Conventions settled.**
+- A decision is `decide_x(&View, &ParamsStruct) -> Choice`; its builder is `x_view(s, p, f, ...)`. Where `run` computes an intermediate that the view needs (cash after the green step, capital after depreciation and this tick's purchases, wages paid, the interest due), `run` passes it to the builder as an argument; the builder gate feeds these from the state's own fields.
+- The RNG draw is a plain `random_draw` field of the view (`FoundView`); `class::run` still draws it first, always. `decide_found` returns only the chance test; who may found (a Worker or Manager household with the savings) and which slot are matching, in `run`.
+- `decide_exit` returns the new distress count and whether the firm closes; who gets the residual cash, the write-off and the workers losing jobs are accounting and stay in `run`.
+- The views are plain `Copy` structs; the shared per-decision `check_view_only` helper now lives in `crates/sim-model/src/decision_tests.rs` (labour's tests use it too).
+- The builder gate is `tests/decision_builders.rs` (registered as a test of `sim-engine`). It compares the view and the choice, perturbs every numeric or boolean leaf of `State` and of `params.json`, over 3 states of a seed-42 run and two variants (every sector has unmet demand; a carbon price with rich firms), about 6 seconds. It ran empty first and reported every read; the `reads()` table is that output curated.
+
+**Gate results.** `statehash` (3 seeds x plans, 18 lines) byte-identical before and after (`cmp`); baselines A-F identical (`cmp` of the full output); `cargo test --workspace` 268 passed, 0 failed; fmt and clippy `-D warnings` clean. The golden changed only in the `agents` and `catalog` wire hashes; the per-turn state hashes did not change.
+
+**Not extracted here (see `docs/known-issues.md`).** Production and capacity are physics, not a decision (the capex plan is the capacity decision); `firm_exit` has no `State` builder (its view is built from this month's payments inside `credit::run`).

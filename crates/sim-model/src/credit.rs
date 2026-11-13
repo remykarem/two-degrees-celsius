@@ -3,9 +3,50 @@
 //! This is, with government borrowing in S8, the only place money is created or destroyed.
 
 use crate::util::{cfg, monthly};
-use sim_params::Params;
+use sim_params::{CreditParams, Params};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
+
+// ---- Decision: a firm that cannot pay for long enough closes ----
+
+pub const FIRM_EXIT: DecisionSpec = DecisionSpec {
+    id: D::FirmExit,
+    system: SystemId::Credit,
+    inputs: &[Q::PaymentShortfall, Q::DistressMonths, Q::Debt],
+    outputs: &[Q::DistressMonths, Q::FirmOpen],
+    params: &["credit.default_after_months"],
+    rule: "default_after_months",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ExitView {
+    /// Interest or scheduled principal or wages went unpaid this month.
+    pub payment_shortfall: bool,
+    pub distress_months: u32,
+    /// Debt left after this month's payments.
+    pub debt: Cents,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ExitChoice {
+    pub distress_months: u32,
+    /// The firm defaults and closes. (Who gets what is left is accounting and stays in `run`.)
+    pub closes: bool,
+}
+
+pub fn decide_exit(v: &ExitView, cp: &CreditParams) -> ExitChoice {
+    let distress_months = if v.payment_shortfall {
+        v.distress_months + 1
+    } else {
+        0
+    };
+    ExitChoice {
+        distress_months,
+        closes: distress_months >= cp.default_after_months && v.debt > Cents::ZERO,
+    }
+}
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
@@ -44,9 +85,18 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         loans -= pay_p;
         let cash = f.cash - pay_i - pay_p;
         let debt = f.debt - pay_p;
-        let short = pay_i < interest_due || pay_p < principal_due || f.wage_shortfall;
-        let distress = if short { f.distress_months + 1 } else { 0 };
-        if distress >= cp.default_after_months && debt > Cents::ZERO {
+        let exit = decide_exit(
+            &ExitView {
+                payment_shortfall: pay_i < interest_due
+                    || pay_p < principal_due
+                    || f.wage_shortfall,
+                distress_months: f.distress_months,
+                debt,
+            },
+            cp,
+        );
+        let distress = exit.distress_months;
+        if exit.closes {
             // Default: cash goes to the bank first, the rest of the debt is written off,
             // anything left goes to the owner. The firm closes.
             let repay = cash.min(debt);

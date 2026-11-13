@@ -6,6 +6,8 @@
 use crate::util::{apportion, labour_weights, person_pay};
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 
 /// Does this household own productive assets: a firm (or a co-op it works in), the bank, or a
@@ -83,7 +85,7 @@ pub fn classify(s: &State, p: &Params, h: &Household) -> Class {
 
 /// Average return on capital of a sector's active firms, if demand there exceeds supply enough
 /// to leave room for another firm.
-fn sector_return(s: &State, p: &Params, sector: Sector) -> Option<f64> {
+pub fn sector_return(s: &State, p: &Params, sector: Sector) -> Option<f64> {
     let kp = p.invest.capital_price_usd * 100.0;
     let firms: Vec<&Firm> = s
         .firms
@@ -105,6 +107,43 @@ fn sector_return(s: &State, p: &Params, sector: Sector) -> Option<f64> {
             .sum::<f64>()
             / n,
     )
+}
+
+// ---- Decision: a household founds a firm ----
+
+pub const HOUSEHOLD_FOUND_FIRM: DecisionSpec = DecisionSpec {
+    id: D::HouseholdFoundFirm,
+    system: SystemId::Class,
+    inputs: &[Q::SectorReturn, Q::BaseRate, Q::RandomDraw],
+    outputs: &[Q::NewFirm],
+    params: &["class.mobility_rate"],
+    rule: "return_over_loan_rate",
+};
+
+/// Who may found (a Worker or Manager household with the savings) and which slot are matching,
+/// done in `run`; this is the go or no-go for that household and slot.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FoundView {
+    /// Average return on capital in the slot's sector.
+    pub sector_return: f64,
+    /// What borrowing costs: the base rate plus the bank's base spread.
+    pub base_rate: f64,
+    /// This month's uniform draw in [0, 1), taken by `run` whether or not a firm can be founded.
+    pub random_draw: f64,
+}
+
+/// The view of a founding decision for a slot in `sector` with this month's draw.
+pub fn found_view(s: &State, p: &Params, sector: Sector, random_draw: f64) -> Option<FoundView> {
+    Some(FoundView {
+        sector_return: sector_return(s, p, sector)?,
+        base_rate: s.policy.base_rate.0 + p.credit.spread_base,
+        random_draw,
+    })
+}
+
+pub fn decide_found(v: &FoundView, cp: &sim_params::ClassParams) -> bool {
+    let prob = (cp.mobility_rate * (v.sector_return - v.base_rate).max(0.0)).clamp(0.0, 1.0);
+    v.random_draw < prob
 }
 
 pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
@@ -164,9 +203,16 @@ pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     // never shifts the shared stream for the draws that follow.
     let roll = r.next_f64();
     if let (Some(src), Some((slot, ret))) = (source, slot) {
-        let prob = (cp.mobility_rate * (ret - base_rate).max(0.0)).clamp(0.0, 1.0);
+        let found = decide_found(
+            &FoundView {
+                sector_return: ret,
+                base_rate,
+                random_draw: roll,
+            },
+            cp,
+        );
         let startup = Cents::from_dollars(cp.startup_cost_usd);
-        if let (true, Some(tile)) = (roll < prob, site(slot)) {
+        if let (true, Some(tile)) = (found, site(slot)) {
             // Fund the firm: part cash, part construction of its first capital.
             let capital_part = startup.scale(cp.startup_capital_share);
             let cash_part = startup - capital_part;

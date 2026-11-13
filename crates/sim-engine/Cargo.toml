@@ -37,3 +37,7 @@ path = "../../tests/ledger.rs"
 [[test]]
 name = "estate"
 path = "../../tests/estate.rs"
+
+[[test]]
+name = "decision_builders"
+path = "../../tests/decision_builders.rs"

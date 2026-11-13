@@ -41,6 +41,12 @@ named_enum! {
         FirmHire => "firm_hire",
         FirmFire => "firm_fire",
         FirmWage => "firm_wage",
+        FirmPrice => "firm_price",
+        FirmGreen => "firm_green",
+        FirmCapex => "firm_capex",
+        FirmPayout => "firm_payout",
+        FirmExit => "firm_exit",
+        HouseholdFoundFirm => "household_found_firm",
     }
 }
 
@@ -48,7 +54,15 @@ impl DecisionId {
     /// The owner is derived from the id (an exhaustive match), never stored, so the two cannot disagree.
     pub const fn owner(self) -> OwnerKind {
         match self {
-            DecisionId::FirmHire | DecisionId::FirmFire | DecisionId::FirmWage => OwnerKind::Firm,
+            DecisionId::FirmHire
+            | DecisionId::FirmFire
+            | DecisionId::FirmWage
+            | DecisionId::FirmPrice
+            | DecisionId::FirmGreen
+            | DecisionId::FirmCapex
+            | DecisionId::FirmPayout
+            | DecisionId::FirmExit => OwnerKind::Firm,
+            DecisionId::HouseholdFoundFirm => OwnerKind::Household,
         }
     }
 }
@@ -62,7 +76,10 @@ named_enum! {
         Workers => "workers",
         SkilledWorkers => "skilled_workers",
         EffectiveLabour => "effective_labour",
-        OutputCapacity => "output_capacity",
+        CapitalOutput => "capital_output",
+        WeatherFactor => "weather_factor",
+        ResourceFactor => "resource_factor",
+        TransitionFactor => "transition_factor",
         WantedWorkers => "wanted_workers",
         Vacancies => "vacancies",
         OverTargetMonths => "over_target_months",
@@ -70,6 +87,41 @@ named_enum! {
         Wage => "wage",
         MinWage => "min_wage",
         SectorTfpGrowth => "sector_tfp_growth",
+        Price => "price",
+        Markup => "markup",
+        UnitCost => "unit_cost",
+        Footprint => "footprint",
+        CarbonPrice => "carbon_price",
+        Revenue => "revenue",
+        EmissionsCap => "emissions_cap",
+        GreenSubsidy => "green_subsidy",
+        TreasuryCash => "treasury_cash",
+        Cash => "cash",
+        CashReserve => "cash_reserve",
+        GreenTech => "green_tech",
+        GreenPlan => "green_plan",
+        Profit => "profit",
+        ProfitTrend => "profit_trend",
+        Capital => "capital",
+        CapitalPerSale => "capital_per_sale",
+        LoanRate => "loan_rate",
+        Distressed => "distressed",
+        InvestHurdle => "invest_hurdle",
+        GreenCashShare => "green_cash_share",
+        InvestmentPlan => "investment_plan",
+        LoanRequest => "loan_request",
+        Payroll => "payroll",
+        DebtService => "debt_service",
+        PayoutRatio => "payout_ratio",
+        Dividends => "dividends",
+        Debt => "debt",
+        PaymentShortfall => "payment_shortfall",
+        DistressMonths => "distress_months",
+        FirmOpen => "firm_open",
+        SectorReturn => "sector_return",
+        BaseRate => "base_rate",
+        RandomDraw => "random_draw",
+        NewFirm => "new_firm",
     }
 }
 

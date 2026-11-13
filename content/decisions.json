@@ -1,65 +1,682 @@
 {
   "owners": [
-    { "kind": "firm", "agent_kind": "firms" }
+    {
+      "kind": "firm",
+      "agent_kind": "firms"
+    },
+    {
+      "kind": "household",
+      "agent_kind": "households"
+    }
   ],
   "quantities": [
-    { "id": "expected_sales", "label": "Expected sales", "unit": "units per month", "owner": "firm", "summary": "A smoothed average of past demand for what the firm makes." },
-    { "id": "inventory", "label": "Inventory", "unit": "units", "owner": "firm", "summary": "Unsold stock the firm holds." },
-    { "id": "inventory_cover", "label": "Inventory cover wanted", "unit": "months of expected sales", "owner": "firm", "summary": "How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none)." },
-    { "id": "workers", "label": "Workers", "unit": "people", "owner": "firm", "summary": "The people the firm employs." },
-    { "id": "skilled_workers", "label": "Skilled workers", "unit": "people", "owner": "firm", "summary": "Workers whose skill is at or above the skilled threshold." },
-    { "id": "effective_labour", "label": "Effective labour per worker", "unit": "skill x hours", "owner": "firm", "summary": "What an average worker contributes after skill and commute time." },
-    { "id": "output_capacity", "label": "Output per unit of labour", "unit": "units per month", "owner": "firm", "summary": "What one unit of labour would make now, given the firm's capital, technology, weather and climate." },
-    { "id": "wanted_workers", "label": "Workers wanted", "unit": "people", "owner": "firm", "summary": "The headcount that would produce the output the firm wants." },
-    { "id": "vacancies", "label": "Vacancies", "unit": "jobs", "owner": "firm", "summary": "Jobs the firm posts this month, skilled and general." },
-    { "id": "over_target_months", "label": "Months overstaffed", "unit": "months", "owner": "firm", "summary": "How many months in a row the firm has had more workers than it wants." },
-    { "id": "unemployment", "label": "Unemployment", "unit": "rate", "owner": "firm", "summary": "The town's smoothed unemployment rate, which firms watch when they set wages." },
-    { "id": "wage", "label": "Base wage", "unit": "$ per month", "owner": "firm", "summary": "The firm's base monthly wage." },
-    { "id": "min_wage", "label": "Minimum wage", "unit": "$ per month", "owner": "firm", "summary": "The legal wage floor (the player's lever)." },
-    { "id": "sector_tfp_growth", "label": "Sector productivity growth", "unit": "share per month", "owner": "firm", "summary": "How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart." }
+    {
+      "id": "expected_sales",
+      "label": "Expected sales",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "A smoothed average of past demand for what the firm makes."
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory",
+      "unit": "units",
+      "owner": "firm",
+      "summary": "Unsold stock the firm holds."
+    },
+    {
+      "id": "inventory_cover",
+      "label": "Inventory cover wanted",
+      "unit": "months of expected sales",
+      "owner": "firm",
+      "summary": "How many months of sales the firm likes to hold as stock (services cannot be stored, so they hold none)."
+    },
+    {
+      "id": "workers",
+      "label": "Workers",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "The people the firm employs."
+    },
+    {
+      "id": "skilled_workers",
+      "label": "Skilled workers",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "Workers whose skill is at or above the skilled threshold."
+    },
+    {
+      "id": "effective_labour",
+      "label": "Effective labour per worker",
+      "unit": "skill x hours",
+      "owner": "firm",
+      "summary": "What an average worker contributes after skill and commute time."
+    },
+    {
+      "id": "capital_output",
+      "label": "Output from capital and technology",
+      "unit": "units per month",
+      "owner": "firm",
+      "summary": "What one unit of labour would make with the firm's capital and technology, before weather, resources and the transition take their share."
+    },
+    {
+      "id": "weather_factor",
+      "label": "Weather and climate effect on output",
+      "unit": "share of output kept",
+      "owner": "firm",
+      "summary": "Climate damage, drought and smoke from nearby fires, which cut what a firm can make (climate damage and drought hit farms only)."
+    },
+    {
+      "id": "resource_factor",
+      "label": "Natural resources effect on output",
+      "unit": "share of output kept",
+      "owner": "firm",
+      "summary": "The health of the forest and commons a farm relies on, and the coordination cost of a community-managed commons."
+    },
+    {
+      "id": "transition_factor",
+      "label": "Transition effect on output",
+      "unit": "share of output kept",
+      "owner": "firm",
+      "summary": "Output lost while the town changes its economic system."
+    },
+    {
+      "id": "wanted_workers",
+      "label": "Workers wanted",
+      "unit": "people",
+      "owner": "firm",
+      "summary": "The headcount that would produce the output the firm wants."
+    },
+    {
+      "id": "vacancies",
+      "label": "Vacancies",
+      "unit": "jobs",
+      "owner": "firm",
+      "summary": "Jobs the firm posts this month, skilled and general."
+    },
+    {
+      "id": "over_target_months",
+      "label": "Months overstaffed",
+      "unit": "months",
+      "owner": "firm",
+      "summary": "How many months in a row the firm has had more workers than it wants."
+    },
+    {
+      "id": "unemployment",
+      "label": "Unemployment",
+      "unit": "rate",
+      "owner": "firm",
+      "summary": "The town's smoothed unemployment rate, which firms watch when they set wages."
+    },
+    {
+      "id": "wage",
+      "label": "Base wage",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "The firm's base monthly wage."
+    },
+    {
+      "id": "min_wage",
+      "label": "Minimum wage",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "The legal wage floor (the player's lever)."
+    },
+    {
+      "id": "sector_tfp_growth",
+      "label": "Sector productivity growth",
+      "unit": "share per month",
+      "owner": "firm",
+      "summary": "How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart."
+    },
+    {
+      "id": "price",
+      "label": "Price",
+      "unit": "$ per unit",
+      "owner": "firm",
+      "summary": "What the firm charges for one unit."
+    },
+    {
+      "id": "markup",
+      "label": "Markup",
+      "unit": "share of unit cost",
+      "owner": "firm",
+      "summary": "The margin over unit cost the firm aims for. It is the firm's own state, set at the start and copied to a new firm, not a parameter."
+    },
+    {
+      "id": "unit_cost",
+      "label": "Unit cost",
+      "unit": "$ per unit",
+      "owner": "firm",
+      "summary": "Wages plus carbon cost for each unit made."
+    },
+    {
+      "id": "footprint",
+      "label": "Carbon footprint",
+      "unit": "tonnes per month",
+      "owner": "firm",
+      "summary": "Direct emissions plus the emissions of the electricity the firm uses."
+    },
+    {
+      "id": "carbon_price",
+      "label": "Carbon price firms plan with",
+      "unit": "$ per tonne",
+      "owner": "firm",
+      "summary": "The carbon price in force after lobbying, pulled toward a price the player has announced but not yet started."
+    },
+    {
+      "id": "revenue",
+      "label": "Revenue",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "What the firm earned selling this month."
+    },
+    {
+      "id": "emissions_cap",
+      "label": "Emissions cap",
+      "unit": "tonnes per month",
+      "owner": "firm",
+      "summary": "The cap in force after lobbying (0 means no cap)."
+    },
+    {
+      "id": "green_subsidy",
+      "label": "Green subsidy",
+      "unit": "share of cost",
+      "owner": "firm",
+      "summary": "The share of a green investment the treasury pays."
+    },
+    {
+      "id": "treasury_cash",
+      "label": "Treasury cash",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "Cash the government holds; it limits the subsidies it can pay."
+    },
+    {
+      "id": "cash",
+      "label": "Cash",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "Cash the firm holds when it decides."
+    },
+    {
+      "id": "cash_reserve",
+      "label": "Cash reserve",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "Cash kept back for payroll and debt service."
+    },
+    {
+      "id": "green_tech",
+      "label": "Green technology",
+      "unit": "share of emissions cut",
+      "owner": "firm",
+      "summary": "How much of its emissions the firm has cut with clean technology."
+    },
+    {
+      "id": "green_plan",
+      "label": "Saving for green investment",
+      "unit": "yes or no",
+      "owner": "firm",
+      "summary": "The firm wants a green step but cannot afford it yet, so it holds cash back."
+    },
+    {
+      "id": "profit",
+      "label": "Profit",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "Profit after interest, carbon cost and tax this month."
+    },
+    {
+      "id": "profit_trend",
+      "label": "Profit trend",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "A smoothed average of past profit."
+    },
+    {
+      "id": "capital",
+      "label": "Capital",
+      "unit": "units",
+      "owner": "firm",
+      "summary": "The firm's capital stock after depreciation and this month's purchases."
+    },
+    {
+      "id": "capital_per_sale",
+      "label": "Capital needed per unit sold",
+      "unit": "capital units per unit sold",
+      "owner": "firm",
+      "summary": "How much capital the firm's technology needs for each unit of expected sales."
+    },
+    {
+      "id": "loan_rate",
+      "label": "Loan rate",
+      "unit": "per year",
+      "owner": "firm",
+      "summary": "The interest rate the bank charges the firm."
+    },
+    {
+      "id": "distressed",
+      "label": "In distress",
+      "unit": "yes or no",
+      "owner": "firm",
+      "summary": "The firm has been behind on payments or could not pay wages in full."
+    },
+    {
+      "id": "invest_hurdle",
+      "label": "Required return above the loan rate",
+      "unit": "per year",
+      "owner": "firm",
+      "summary": "How much more than the loan rate an investment must earn; set by the economic system."
+    },
+    {
+      "id": "green_cash_share",
+      "label": "Cash held for green investment",
+      "unit": "share",
+      "owner": "firm",
+      "summary": "The share of free cash held back while a green step is planned; set by the economic system."
+    },
+    {
+      "id": "investment_plan",
+      "label": "Planned investment",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "What the firm plans to spend on capital goods next month."
+    },
+    {
+      "id": "loan_request",
+      "label": "Loan request",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "What the firm asks the bank to lend for its plan."
+    },
+    {
+      "id": "payroll",
+      "label": "Wages paid",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "What the firm paid its workers this month."
+    },
+    {
+      "id": "debt_service",
+      "label": "Debt service due",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "Interest plus scheduled principal due this month."
+    },
+    {
+      "id": "payout_ratio",
+      "label": "Payout ratio",
+      "unit": "share of profit",
+      "owner": "firm",
+      "summary": "The share of profit paid out; set by the economic system."
+    },
+    {
+      "id": "dividends",
+      "label": "Dividends",
+      "unit": "$ per month",
+      "owner": "firm",
+      "summary": "What the firm pays its owners this month."
+    },
+    {
+      "id": "debt",
+      "label": "Debt",
+      "unit": "$",
+      "owner": "firm",
+      "summary": "What the firm owes the bank."
+    },
+    {
+      "id": "payment_shortfall",
+      "label": "Missed payments",
+      "unit": "yes or no",
+      "owner": "firm",
+      "summary": "Interest, scheduled principal or wages went unpaid this month."
+    },
+    {
+      "id": "distress_months",
+      "label": "Months in distress",
+      "unit": "months",
+      "owner": "firm",
+      "summary": "How many months in a row the firm has missed payments."
+    },
+    {
+      "id": "firm_open",
+      "label": "Firm open",
+      "unit": "yes or no",
+      "owner": "firm",
+      "summary": "Whether the firm keeps trading or defaults and closes."
+    },
+    {
+      "id": "sector_return",
+      "label": "Sector return",
+      "unit": "per year",
+      "owner": "household",
+      "summary": "The average return on capital in a sector that has room for another firm."
+    },
+    {
+      "id": "base_rate",
+      "label": "Cost of borrowing",
+      "unit": "per year",
+      "owner": "household",
+      "summary": "The base rate plus the bank's base spread."
+    },
+    {
+      "id": "random_draw",
+      "label": "Random draw",
+      "unit": "0 to 1",
+      "owner": "household",
+      "summary": "A chance draw the simulation takes each month and hands to the decision."
+    },
+    {
+      "id": "new_firm",
+      "label": "New firm",
+      "unit": "yes or no",
+      "owner": "household",
+      "summary": "A household founds a firm in the dormant slot."
+    }
   ],
   "decisions": [
     {
       "id": "firm_hire",
       "title": "Hire",
       "decides": "How many workers to want and how many jobs to post (hiring up to a monthly cap)",
-      "rule": { "id": "inventory_cover_target", "label": "Size the workforce to expected sales and stock", "text": "Needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory). Workers wanted = labour that output needs, in people. It posts vacancies once the gap exceeds the hiring slack, and the skilled tier gets what it is short of." }
+      "rule": {
+        "id": "inventory_cover_target",
+        "label": "Size the workforce to expected sales and stock",
+        "text": "Needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory). Workers wanted = labour that output needs, in people. It posts vacancies once the gap exceeds the hiring slack, and the skilled tier gets what it is short of."
+      }
     },
     {
       "id": "firm_fire",
       "title": "Fire",
       "decides": "Whether to let people go: only after a sustained surplus of workers, the least skilled first",
-      "rule": { "id": "sustained_surplus", "label": "Fire after months of surplus", "text": "Each month the firm is overstaffed by at least the firing slack it counts one more month. After enough months in a row it lets go up to a monthly cap, and the count resets." }
+      "rule": {
+        "id": "sustained_surplus",
+        "label": "Fire after months of surplus",
+        "text": "Each month the firm is overstaffed by at least the firing slack it counts one more month. After enough months in a row it lets go up to a monthly cap, and the count resets."
+      }
     },
     {
       "id": "firm_wage",
       "title": "Wage",
       "decides": "The base wage, adjusted each month",
-      "rule": { "id": "trend_plus_slack", "label": "Productivity trend plus a response to slack", "text": "Wage step = trend + wage_k x (reference unemployment - unemployment), capped each month, where the trend is the expected inflation plus the sector's productivity growth. The wage never falls below the legal minimum." }
+      "rule": {
+        "id": "trend_plus_slack",
+        "label": "Productivity trend plus a response to slack",
+        "text": "Wage step = trend + wage_k x (reference unemployment - unemployment), capped each month, where the trend is the expected inflation plus the sector's productivity growth. The wage never falls below the legal minimum."
+      }
+    },
+    {
+      "id": "firm_price",
+      "title": "Price",
+      "decides": "The price it charges, adjusted each month",
+      "rule": {
+        "id": "cost_plus",
+        "label": "Move toward unit cost plus a markup",
+        "text": "Price moves a share (price adjust) of the way toward (1 + markup) x unit cost each month, never below the minimum price. Demand never enters: excess demand shows up in hiring, not in the price."
+      }
+    },
+    {
+      "id": "firm_green",
+      "title": "Green technology",
+      "decides": "Whether to buy a step of clean technology this month, and whether to save for one",
+      "rule": {
+        "id": "carbon_payback",
+        "label": "Buy when the carbon bill over the payback period beats the cost",
+        "text": "A step is worthwhile when the carbon bill over the payback period is larger than its cost, or an emissions cap binds, and the firm is below the technology ceiling. The firm buys it if its cash above the reserve covers its share after any subsidy; otherwise it holds cash back for it."
+      }
+    },
+    {
+      "id": "firm_capex",
+      "title": "Investment and borrowing",
+      "decides": "How much capital to buy next month and how much to borrow for it",
+      "rule": {
+        "id": "accelerator_with_return_gate",
+        "label": "Replace capital and grow toward expected sales, if the return beats the loan rate",
+        "text": "Planned capital = depreciation + accelerator x (capital that expected sales call for - capital), scaled by a gate that is high when the smoothed return beats the loan rate plus the hurdle, and capped. It pays part from free cash and asks the bank for the rest. A firm in distress plans nothing."
+      }
+    },
+    {
+      "id": "firm_payout",
+      "title": "Dividends",
+      "decides": "How much to pay its owners",
+      "rule": {
+        "id": "payout_ratio_above_reserve",
+        "label": "Pay a share of profit, never below the cash reserve",
+        "text": "Regular dividend = payout ratio x profit, but only out of cash above the reserve for payroll and debt service. Idle cash well above that is also paid out at a set rate."
+      }
+    },
+    {
+      "id": "firm_exit",
+      "title": "Closing down",
+      "decides": "Whether to default and close",
+      "rule": {
+        "id": "default_after_months",
+        "label": "Default after months of missed payments",
+        "text": "Each month the firm misses interest, principal or wages it counts one more month in distress; a clean month resets the count. After enough months in a row, if it still owes money, it defaults and closes."
+      }
+    },
+    {
+      "id": "household_found_firm",
+      "title": "Founding a firm",
+      "decides": "Whether to found a firm in the dormant slot",
+      "rule": {
+        "id": "return_over_loan_rate",
+        "label": "A chance that grows with the return over the cost of borrowing",
+        "text": "Which household can found (a Worker or Manager with enough savings) and which slot are matched first. The chance this month = mobility rate x (sector return - cost of borrowing), between 0 and 1; the firm is founded if the month's random draw falls below it."
+      }
     }
   ],
   "params": [
-    { "path": "labour.growth_aspiration", "label": "Growth firms plan for", "unit": "share per month" },
-    { "path": "labour.inventory_cover", "label": "Inventory cover wanted", "unit": "months of expected sales" },
-    { "path": "labour.services_inventory_cover", "label": "Inventory cover wanted (services)", "unit": "months of expected sales" },
-    { "path": "labour.inventory_adjust", "label": "Share of the inventory gap closed per month", "unit": "share" },
-    { "path": "labour.hire_slack", "label": "Hiring slack", "unit": "people" },
-    { "path": "labour.min_target_workers", "label": "Fewest workers a firm keeps", "unit": "people" },
-    { "path": "labour.skilled_share", "label": "Share of jobs that are skilled", "unit": "share" },
-    { "path": "labour.default_effective_per_worker", "label": "Effective labour assumed for an empty firm", "unit": "skill x hours" },
-    { "path": "labour.max_hire_per_month", "label": "Most people hired in a month", "unit": "people" },
-    { "path": "production.beta_n", "label": "Output elasticity of labour", "unit": "exponent" },
-    { "path": "class.skill_threshold", "label": "Skill that counts as skilled", "unit": "0..1" },
-    { "path": "labour.fire_slack", "label": "Firing slack", "unit": "people" },
-    { "path": "labour.fire_after_months", "label": "Months of surplus before firing", "unit": "months" },
-    { "path": "labour.max_fire_per_month", "label": "Most people fired in a month", "unit": "people" },
-    { "path": "labour.wage_k", "label": "Wage response to unemployment", "unit": "per unit of gap" },
-    { "path": "labour.u_ref", "label": "Reference unemployment rate", "unit": "rate" },
-    { "path": "labour.wage_cap", "label": "Largest wage change in a month", "unit": "share" },
-    { "path": "labour.inflation_anchor", "label": "Expected wage growth on top of productivity", "unit": "share per month" },
-    { "path": "labour.productivity_passthrough", "label": "Share of productivity growth passed into wages", "unit": "share" },
-    { "path": "production.tfp_growth_goods", "label": "Productivity growth, goods", "unit": "share per month" },
-    { "path": "production.tfp_growth_food", "label": "Productivity growth, food", "unit": "share per month" },
-    { "path": "production.tfp_growth_services", "label": "Productivity growth, services", "unit": "share per month" }
+    {
+      "path": "labour.growth_aspiration",
+      "label": "Growth firms plan for",
+      "unit": "share per month"
+    },
+    {
+      "path": "labour.inventory_cover",
+      "label": "Inventory cover wanted",
+      "unit": "months of expected sales"
+    },
+    {
+      "path": "labour.services_inventory_cover",
+      "label": "Inventory cover wanted (services)",
+      "unit": "months of expected sales"
+    },
+    {
+      "path": "labour.inventory_adjust",
+      "label": "Share of the inventory gap closed per month",
+      "unit": "share"
+    },
+    {
+      "path": "labour.hire_slack",
+      "label": "Hiring slack",
+      "unit": "people"
+    },
+    {
+      "path": "labour.min_target_workers",
+      "label": "Fewest workers a firm keeps",
+      "unit": "people"
+    },
+    {
+      "path": "labour.skilled_share",
+      "label": "Share of jobs that are skilled",
+      "unit": "share"
+    },
+    {
+      "path": "labour.default_effective_per_worker",
+      "label": "Effective labour assumed for an empty firm",
+      "unit": "skill x hours"
+    },
+    {
+      "path": "labour.max_hire_per_month",
+      "label": "Most people hired in a month",
+      "unit": "people"
+    },
+    {
+      "path": "production.beta_n",
+      "label": "Output elasticity of labour",
+      "unit": "exponent"
+    },
+    {
+      "path": "class.skill_threshold",
+      "label": "Skill that counts as skilled",
+      "unit": "0..1"
+    },
+    {
+      "path": "labour.fire_slack",
+      "label": "Firing slack",
+      "unit": "people"
+    },
+    {
+      "path": "labour.fire_after_months",
+      "label": "Months of surplus before firing",
+      "unit": "months"
+    },
+    {
+      "path": "labour.max_fire_per_month",
+      "label": "Most people fired in a month",
+      "unit": "people"
+    },
+    {
+      "path": "labour.wage_k",
+      "label": "Wage response to unemployment",
+      "unit": "per unit of gap"
+    },
+    {
+      "path": "labour.u_ref",
+      "label": "Reference unemployment rate",
+      "unit": "rate"
+    },
+    {
+      "path": "labour.wage_cap",
+      "label": "Largest wage change in a month",
+      "unit": "share"
+    },
+    {
+      "path": "labour.inflation_anchor",
+      "label": "Expected wage growth on top of productivity",
+      "unit": "share per month"
+    },
+    {
+      "path": "labour.productivity_passthrough",
+      "label": "Share of productivity growth passed into wages",
+      "unit": "share"
+    },
+    {
+      "path": "production.tfp_growth_goods",
+      "label": "Productivity growth, goods",
+      "unit": "share per month"
+    },
+    {
+      "path": "production.tfp_growth_food",
+      "label": "Productivity growth, food",
+      "unit": "share per month"
+    },
+    {
+      "path": "production.tfp_growth_services",
+      "label": "Productivity growth, services",
+      "unit": "share per month"
+    },
+    {
+      "path": "goods.price_adjust",
+      "label": "Share of the price gap closed per month",
+      "unit": "share"
+    },
+    {
+      "path": "goods.min_price_usd",
+      "label": "Lowest price",
+      "unit": "$ per unit"
+    },
+    {
+      "path": "invest.green_payback_years",
+      "label": "Payback period for green investment",
+      "unit": "years"
+    },
+    {
+      "path": "invest.green_cost_share",
+      "label": "Cost of a green step",
+      "unit": "years of revenue"
+    },
+    {
+      "path": "invest.green_spend_share",
+      "label": "Most revenue spent on green in a month",
+      "unit": "share"
+    },
+    {
+      "path": "invest.cap_binding_share",
+      "label": "Footprint share of the cap that counts as binding",
+      "unit": "share"
+    },
+    {
+      "path": "invest.green_max",
+      "label": "Technology ceiling",
+      "unit": "share"
+    },
+    {
+      "path": "invest.green_step",
+      "label": "Size of one green step",
+      "unit": "share"
+    },
+    {
+      "path": "invest.capital_price_usd",
+      "label": "Price of one unit of capital",
+      "unit": "$"
+    },
+    {
+      "path": "invest.smoothing",
+      "label": "Smoothing of profit",
+      "unit": "share"
+    },
+    {
+      "path": "invest.depreciation",
+      "label": "Capital lost per month",
+      "unit": "share"
+    },
+    {
+      "path": "invest.accelerator",
+      "label": "Share of the capital gap closed per month",
+      "unit": "share"
+    },
+    {
+      "path": "invest.max_invest_share",
+      "label": "Largest growth in capital per month",
+      "unit": "share"
+    },
+    {
+      "path": "invest.return_scale",
+      "label": "Return range over which the investment gate opens",
+      "unit": "per year"
+    },
+    {
+      "path": "invest.retain_share",
+      "label": "Share of free cash used before borrowing",
+      "unit": "share"
+    },
+    {
+      "path": "income.cash_reserve_months",
+      "label": "Months of payroll and debt service kept as reserve",
+      "unit": "months"
+    },
+    {
+      "path": "income.excess_cash_months",
+      "label": "Extra months of cash before idle cash is paid out",
+      "unit": "months"
+    },
+    {
+      "path": "income.excess_payout_rate",
+      "label": "Share of idle cash paid out",
+      "unit": "share"
+    },
+    {
+      "path": "credit.default_after_months",
+      "label": "Months of missed payments before default",
+      "unit": "months"
+    },
+    {
+      "path": "class.mobility_rate",
+      "label": "Chance of founding per unit of return over borrowing cost",
+      "unit": "per year of return"
+    }
   ]
 }

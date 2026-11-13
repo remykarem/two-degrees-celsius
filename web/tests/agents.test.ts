@@ -54,24 +54,26 @@ describe('agents catalogue (the real simulation)', () => {
 describe('decisions (generated from the registry)', () => {
   const catalog = ok(sim.catalog());
   it('the firm labour decisions are on the wire with labelled inputs, outputs and live parameters', () => {
-    expect(catalog.decisions.map((d) => d.id)).toEqual(['firm_hire', 'firm_fire', 'firm_wage']);
+    const ids = catalog.decisions.map((d) => d.id);
+    for (const id of ['firm_hire', 'firm_fire', 'firm_wage', 'firm_price', 'firm_capex', 'household_found_firm']) expect(ids).toContain(id);
     for (const d of catalog.decisions) {
-      expect(d.agentKind).toBe('firms');
+      expect(['firms', 'households']).toContain(d.agentKind);
       expect(d.inputs.length).toBeGreaterThan(0);
       expect(d.params.every((p) => typeof p.value === 'number')).toBe(true);
     }
     expect(catalog.quantities.length).toBeGreaterThanOrEqual(10);
   });
-  it('Who decides for firms is generated: every decision is a decides line and its parameters are listed', () => {
-    const firms = cat.kinds.find((k) => k.id === 'firms')!;
+  it('Who decides is generated: every decision is a decides line of its kind and its parameters are listed', () => {
     for (const d of catalog.decisions) {
-      expect(firms.decides).toContain(d.decides);
-      for (const p of d.params) expect(firms.params.map((x) => x.path)).toContain(p.path);
+      const kind = cat.kinds.find((k) => k.id === d.agentKind)!;
+      expect(kind.decides).toContain(d.decides);
+      for (const p of d.params) expect(kind.params.map((x) => x.path)).toContain(p.path);
     }
   });
   it('groups decisions by agent kind and draws the inputs -> decision -> outputs line from wire labels', () => {
     const mine = decisionsOfKind(catalog.decisions, 'firms');
-    expect(mine).toHaveLength(3);
+    expect(mine.length).toBeGreaterThanOrEqual(7);
+    expect(mine.every((d) => d.agentKind === 'firms')).toBe(true);
     expect(decisionsOfKind(catalog.decisions, 'bank')).toEqual([]);
     const l = decisionLine(mine.find((d) => d.id === 'firm_wage')!);
     expect(l.title).toBe('Wage');

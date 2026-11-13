@@ -7,7 +7,7 @@
 //! `run` builds the view, decides, then applies the choice as deltas. Matching unemployed people
 //! to vacancies and picking whom to fire are mechanics and stay in `run`.
 
-use crate::production::capacity;
+use crate::production::{capacity_factors, CapacityFactors};
 use crate::util::{cfg, workers_of};
 use libm::pow;
 use sim_params::{LabourParams, Params, ProductionParams};
@@ -35,7 +35,10 @@ pub const FIRM_HIRE: DecisionSpec = DecisionSpec {
         Q::Workers,
         Q::SkilledWorkers,
         Q::EffectiveLabour,
-        Q::OutputCapacity,
+        Q::CapitalOutput,
+        Q::WeatherFactor,
+        Q::ResourceFactor,
+        Q::TransitionFactor,
     ],
     outputs: &[Q::WantedWorkers, Q::Vacancies],
     params: &[
@@ -66,8 +69,9 @@ pub struct HireView {
     pub skilled_workers: f64,
     /// Average effective labour (skill x hours) per worker.
     pub effective_labour: f64,
-    /// Output one unit of labour would make now.
-    pub output_capacity: f64,
+    /// What one unit of labour would make now, as the factors capacity multiplies: capital and
+    /// technology, weather, resources and the transition (`production::CapacityFactors`).
+    pub capacity: CapacityFactors,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -105,7 +109,7 @@ pub fn hire_view(s: &State, p: &Params, f: &Firm, mine: &[&Person]) -> HireView 
             .filter(|x| x.skill.0 >= p.class.skill_threshold)
             .count() as f64,
         effective_labour: avg_eff,
-        output_capacity: capacity(s, p, f, 1.0),
+        capacity: capacity_factors(s, p, f, 1.0),
     }
 }
 
@@ -116,8 +120,9 @@ pub fn decide_hire(v: &HireView, lp: &LabourParams, pp: &ProductionParams) -> Hi
     let expected = v.expected_sales * (1.0 + lp.growth_aspiration);
     let needed =
         (expected + lp.inventory_adjust * (v.inventory_cover * expected - v.inventory)).max(0.0);
-    let l_need = if v.output_capacity > 0.0 {
-        pow(needed / v.output_capacity, 1.0 / pp.beta_n)
+    let output_capacity = v.capacity.product();
+    let l_need = if output_capacity > 0.0 {
+        pow(needed / output_capacity, 1.0 / pp.beta_n)
     } else {
         0.0
     };
@@ -437,65 +442,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
 #[cfg(test)]
 mod decision_tests {
     use super::*;
-    use sim_params::ContentJson;
-
-    fn params() -> Params {
-        Params::from_content(&ContentJson {
-            params: include_str!("../../../content/params.json"),
-            initial_town: include_str!("../../../content/initial_town.json"),
-            market: include_str!("../../../content/systems/market.json"),
-            regulated: include_str!("../../../content/systems/regulated.json"),
-            coop: include_str!("../../../content/systems/coop.json"),
-        })
-        .unwrap()
-    }
-
-    type Field<V> = (&'static str, Q, fn(&mut V));
-
-    /// View-only reads (`docs/features/decision-points.md` section 6). Three checks on one decision:
-    /// every view field is a quantity the spec lists as an input (the table below is built from an
-    /// exhaustive destructure at each call site, so a new view field fails to compile until it is
-    /// added); every listed input is a view field; and perturbing each field changes the choice
-    /// for at least one base view (so the declaration is not decoration).
-    fn check_view_only<V: Copy + std::fmt::Debug, C: PartialEq + std::fmt::Debug>(
-        spec: &DecisionSpec,
-        bases: &[V],
-        fields: &[Field<V>],
-        decide: impl Fn(&V) -> C,
-    ) {
-        for (name, q, _) in fields {
-            assert!(
-                spec.inputs.contains(q),
-                "{:?}: view field {name} reads {} which the spec does not list",
-                spec.id,
-                q.as_str()
-            );
-        }
-        for q in spec.inputs {
-            assert!(
-                fields.iter().any(|(_, fq, _)| fq == q),
-                "{:?} lists input {} that no view field carries",
-                spec.id,
-                q.as_str()
-            );
-        }
-        for (name, _, bump) in fields {
-            let moved = bases.iter().any(|b| {
-                let mut v = *b;
-                bump(&mut v);
-                decide(&v) != decide(b)
-            });
-            assert!(
-                moved,
-                "{:?}: perturbing {name} never changed the choice",
-                spec.id
-            );
-        }
-        // No hidden state: the same view gives the same choice.
-        for b in bases {
-            assert_eq!(decide(b), decide(b));
-        }
-    }
+    use crate::decision_tests::{check_view_only, params, Field};
 
     #[test]
     fn hire_reads_only_its_declared_inputs() {
@@ -507,7 +454,15 @@ mod decision_tests {
             workers,
             skilled_workers: skilled,
             effective_labour: 1.0,
-            output_capacity: 2.0,
+            capacity: CapacityFactors {
+                capital_output: 2.0,
+                farm_health: 1.0,
+                climate: 1.0,
+                drought: 1.0,
+                community: 1.0,
+                smoke: 1.0,
+                transition: 1.0,
+            },
         };
         let bases = [
             base(100.0, 10.0, 1.0, 2.0, 0.0),
@@ -521,9 +476,18 @@ mod decision_tests {
             workers: _,
             skilled_workers: _,
             effective_labour: _,
-            output_capacity: _,
+            capacity: _,
         } = bases[0];
-        let fields: [Field<HireView>; 7] = [
+        let CapacityFactors {
+            capital_output: _,
+            farm_health: _,
+            climate: _,
+            drought: _,
+            community: _,
+            smoke: _,
+            transition: _,
+        } = bases[0].capacity;
+        let fields: [Field<HireView>; 13] = [
             ("expected_sales", Q::ExpectedSales, |v| {
                 v.expected_sales = v.expected_sales * 2.0 + 50.0
             }),
@@ -540,8 +504,20 @@ mod decision_tests {
             ("effective_labour", Q::EffectiveLabour, |v| {
                 v.effective_labour *= 2.0
             }),
-            ("output_capacity", Q::OutputCapacity, |v| {
-                v.output_capacity *= 2.0
+            ("capital_output", Q::CapitalOutput, |v| {
+                v.capacity.capital_output *= 2.0
+            }),
+            ("farm_health", Q::ResourceFactor, |v| {
+                v.capacity.farm_health *= 0.5
+            }),
+            ("climate", Q::WeatherFactor, |v| v.capacity.climate *= 0.5),
+            ("drought", Q::WeatherFactor, |v| v.capacity.drought *= 0.5),
+            ("community", Q::ResourceFactor, |v| {
+                v.capacity.community *= 0.5
+            }),
+            ("smoke", Q::WeatherFactor, |v| v.capacity.smoke *= 0.5),
+            ("transition", Q::TransitionFactor, |v| {
+                v.capacity.transition *= 0.5
             }),
         ];
         check_view_only(&FIRM_HIRE, &bases, &fields, |v| {

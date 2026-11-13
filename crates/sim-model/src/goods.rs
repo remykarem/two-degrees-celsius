@@ -8,8 +8,10 @@
 use crate::util::{apportion, capex_available, wage_bill};
 use libm::pow;
 use sim_metrics::household_wealth;
-use sim_params::Params;
+use sim_params::{GoodsParams, Params};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 
 struct Allocation {
@@ -240,6 +242,50 @@ pub fn price_target(markup: f64, unit_cost: f64) -> f64 {
     (1.0 + markup) * unit_cost
 }
 
+// ---- Decision: the price ----
+
+pub const FIRM_PRICE: DecisionSpec = DecisionSpec {
+    id: D::FirmPrice,
+    system: SystemId::Goods,
+    inputs: &[Q::Price, Q::Markup, Q::UnitCost],
+    outputs: &[Q::Price],
+    params: &["goods.price_adjust", "goods.min_price_usd"],
+    rule: "cost_plus",
+};
+
+/// What a firm sees when it sets its price. `markup` is firm state (not a parameter).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PriceView {
+    pub price: Cents,
+    pub markup: f64,
+    /// Wages plus carbon cost per unit made (0 when it made nothing).
+    pub unit_cost: f64,
+}
+
+pub fn price_view(s: &State, p: &Params, f: &Firm) -> PriceView {
+    PriceView {
+        price: f.price,
+        markup: f.markup.0,
+        unit_cost: safe_div(
+            (wage_bill(s, p, f) + f.carbon_cost).as_f64(),
+            f.output.0,
+            0.0,
+        ),
+    }
+}
+
+/// Close a share of the gap to `(1 + markup) x unit cost` each month; never below the floor.
+pub fn decide_price(v: &PriceView, gp: &GoodsParams) -> Cents {
+    let min_price = gp.min_price_usd * 100.0;
+    let price = v.price.as_f64().max(min_price);
+    let target = price_target(v.markup, v.unit_cost);
+    if v.unit_cost > 0.0 {
+        Cents::from_f64(price + gp.price_adjust * (target - price)).max(Cents::from_f64(min_price))
+    } else {
+        v.price
+    }
+}
+
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
     let gp = &p.goods;
@@ -402,18 +448,7 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                 }
             }
             // Price follows unit cost plus a markup, closing a share of the gap each month.
-            let unit_cost = safe_div(
-                (wage_bill(s, p, f) + f.carbon_cost).as_f64(),
-                f.output.0,
-                0.0,
-            );
-            let target = price_target(f.markup.0, unit_cost);
-            let new_price = if unit_cost > 0.0 {
-                Cents::from_f64(price + gp.price_adjust * (target - price))
-                    .max(Cents::from_f64(min_price))
-            } else {
-                f.price
-            };
+            let new_price = decide_price(&price_view(s, p, f), gp);
             let supply = if f.output.0 > 0.0 {
                 f.output.0
             } else {

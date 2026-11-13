@@ -6,18 +6,26 @@
       "actor": "agent",
       "summary": "Nine households of people. A household decides how much of its money to spend each month and which shop gets it. People do not choose jobs one by one: firms hire from the unemployed (cheapest reservation wage first, ties to higher skill). A household's class is a label worked out from what it owns and earns; it is never chosen.",
       "decides": [
+        "Whether to found a firm in the dormant slot",
         "How much to spend on food, goods and services this month",
         "Which firm in each sector gets that spending",
-        "Whether to found a firm in the dormant slot (a Worker or Manager household with enough savings)",
         "Capital-owning households: how much to give lobbying"
       ],
       "observes": [
+        "Sector return: The average return on capital in a sector that has room for another firm.",
+        "Cost of borrowing: The base rate plus the bank's base spread.",
+        "Random draw: A chance draw the simulation takes each month and hands to the decision.",
         "Its savings and last disposable income",
-        "Every shop's price and stock",
-        "The interest rate, firms' profit and unmet demand (for founding a firm)"
+        "Every shop's price and stock"
       ],
       "rule": "food = min(need x food price, savings); discretionary = min(propensity x max(0, disposable - food need) + wealth spending, savings - food); services = services share x discretionary; goods = the rest. Shop weight = stock x (average price / price) ^ elasticity, where the average price is weighted by stock",
       "params": [
+        {
+          "path": "class.mobility_rate",
+          "label": "Chance of founding per unit of return over borrowing cost",
+          "value": 0.03,
+          "unit": "per year of return"
+        },
         {
           "path": "goods.food_need_units_pc",
           "label": "Food need per person",
@@ -128,8 +136,11 @@
         "How many workers to want and how many jobs to post (hiring up to a monthly cap)",
         "Whether to let people go: only after a sustained surplus of workers, the least skilled first",
         "The base wage, adjusted each month",
-        "The price it charges",
-        "How much to invest and borrow"
+        "The price it charges, adjusted each month",
+        "Whether to buy a step of clean technology this month, and whether to save for one",
+        "How much capital to buy next month and how much to borrow for it",
+        "How much to pay its owners",
+        "Whether to default and close"
       ],
       "observes": [
         "Expected sales: A smoothed average of past demand for what the firm makes.",
@@ -138,16 +149,45 @@
         "Workers: The people the firm employs.",
         "Skilled workers: Workers whose skill is at or above the skilled threshold.",
         "Effective labour per worker: What an average worker contributes after skill and commute time.",
-        "Output per unit of labour: What one unit of labour would make now, given the firm's capital, technology, weather and climate.",
+        "Output from capital and technology: What one unit of labour would make with the firm's capital and technology, before weather, resources and the transition take their share.",
+        "Weather and climate effect on output: Climate damage, drought and smoke from nearby fires, which cut what a firm can make (climate damage and drought hit farms only).",
+        "Natural resources effect on output: The health of the forest and commons a farm relies on, and the coordination cost of a community-managed commons.",
+        "Transition effect on output: Output lost while the town changes its economic system.",
         "Workers wanted: The headcount that would produce the output the firm wants.",
         "Months overstaffed: How many months in a row the firm has had more workers than it wants.",
         "Base wage: The firm's base monthly wage.",
         "Minimum wage: The legal wage floor (the player's lever).",
         "Unemployment: The town's smoothed unemployment rate, which firms watch when they set wages.",
         "Sector productivity growth: How fast output per worker grows in the firm's sector; wages follow it so that wages and prices do not drift apart.",
-        "Its unit cost (wages plus carbon cost per unit)"
+        "Price: What the firm charges for one unit.",
+        "Markup: The margin over unit cost the firm aims for. It is the firm's own state, set at the start and copied to a new firm, not a parameter.",
+        "Unit cost: Wages plus carbon cost for each unit made.",
+        "Carbon footprint: Direct emissions plus the emissions of the electricity the firm uses.",
+        "Carbon price firms plan with: The carbon price in force after lobbying, pulled toward a price the player has announced but not yet started.",
+        "Revenue: What the firm earned selling this month.",
+        "Emissions cap: The cap in force after lobbying (0 means no cap).",
+        "Green subsidy: The share of a green investment the treasury pays.",
+        "Treasury cash: Cash the government holds; it limits the subsidies it can pay.",
+        "Cash: Cash the firm holds when it decides.",
+        "Cash reserve: Cash kept back for payroll and debt service.",
+        "Green technology: How much of its emissions the firm has cut with clean technology.",
+        "Capital: The firm's capital stock after depreciation and this month's purchases.",
+        "Profit trend: A smoothed average of past profit.",
+        "Profit: Profit after interest, carbon cost and tax this month.",
+        "Loan rate: The interest rate the bank charges the firm.",
+        "Required return above the loan rate: How much more than the loan rate an investment must earn; set by the economic system.",
+        "Capital needed per unit sold: How much capital the firm's technology needs for each unit of expected sales.",
+        "In distress: The firm has been behind on payments or could not pay wages in full.",
+        "Saving for green investment: The firm wants a green step but cannot afford it yet, so it holds cash back.",
+        "Cash held for green investment: The share of free cash held back while a green step is planned; set by the economic system.",
+        "Wages paid: What the firm paid its workers this month.",
+        "Debt service due: Interest plus scheduled principal due this month.",
+        "Payout ratio: The share of profit paid out; set by the economic system.",
+        "Missed payments: Interest, scheduled principal or wages went unpaid this month.",
+        "Months in distress: How many months in a row the firm has missed payments.",
+        "Debt: What the firm owes the bank."
       ],
-      "rule": "Hiring, firing and the wage have their own rules under Decisions below (generated from the code). Price moves a share of the way to (1 + markup) x unit cost; expected sales = smoothing x demand + (1 - smoothing) x previous",
+      "rule": "Each decision a firm makes has its own rule under Decisions below (generated from the code). expected sales = smoothing x demand + (1 - smoothing) x previous",
       "params": [
         {
           "path": "labour.growth_aspiration",
@@ -286,6 +326,114 @@
           "label": "Share of the price gap closed per month",
           "value": 0.05,
           "unit": "share"
+        },
+        {
+          "path": "goods.min_price_usd",
+          "label": "Lowest price",
+          "value": 0.01,
+          "unit": "$ per unit"
+        },
+        {
+          "path": "invest.green_payback_years",
+          "label": "Payback period for green investment",
+          "value": 5.0,
+          "unit": "years"
+        },
+        {
+          "path": "invest.green_cost_share",
+          "label": "Cost of a green step",
+          "value": 0.1,
+          "unit": "years of revenue"
+        },
+        {
+          "path": "invest.green_spend_share",
+          "label": "Most revenue spent on green in a month",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "invest.cap_binding_share",
+          "label": "Footprint share of the cap that counts as binding",
+          "value": 0.999,
+          "unit": "share"
+        },
+        {
+          "path": "invest.green_max",
+          "label": "Technology ceiling",
+          "value": 0.8,
+          "unit": "share"
+        },
+        {
+          "path": "invest.green_step",
+          "label": "Size of one green step",
+          "value": 0.05,
+          "unit": "share"
+        },
+        {
+          "path": "invest.capital_price_usd",
+          "label": "Price of one unit of capital",
+          "value": 1500.0,
+          "unit": "$"
+        },
+        {
+          "path": "invest.smoothing",
+          "label": "Smoothing of profit",
+          "value": 0.15,
+          "unit": "share"
+        },
+        {
+          "path": "invest.depreciation",
+          "label": "Capital lost per month",
+          "value": 0.008,
+          "unit": "share"
+        },
+        {
+          "path": "invest.accelerator",
+          "label": "Share of the capital gap closed per month",
+          "value": 0.05,
+          "unit": "share"
+        },
+        {
+          "path": "invest.max_invest_share",
+          "label": "Largest growth in capital per month",
+          "value": 0.02,
+          "unit": "share"
+        },
+        {
+          "path": "invest.return_scale",
+          "label": "Return range over which the investment gate opens",
+          "value": 0.3,
+          "unit": "per year"
+        },
+        {
+          "path": "invest.retain_share",
+          "label": "Share of free cash used before borrowing",
+          "value": 0.7,
+          "unit": "share"
+        },
+        {
+          "path": "income.cash_reserve_months",
+          "label": "Months of payroll and debt service kept as reserve",
+          "value": 1.0,
+          "unit": "months"
+        },
+        {
+          "path": "income.excess_cash_months",
+          "label": "Extra months of cash before idle cash is paid out",
+          "value": 6.0,
+          "unit": "months"
+        },
+        {
+          "path": "income.excess_payout_rate",
+          "label": "Share of idle cash paid out",
+          "value": 0.1,
+          "unit": "share"
+        },
+        {
+          "path": "credit.default_after_months",
+          "label": "Months of missed payments before default",
+          "value": 3.0,
+          "unit": "months"
         },
         {
           "path": "labour.expected_smoothing",

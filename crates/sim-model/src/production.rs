@@ -31,29 +31,80 @@ pub fn cobb_douglas(p: &Params, tfp: f64, k: f64, l: f64) -> f64 {
     tfp * pow(k, p.production.alpha_k) * pow(l, p.production.beta_n)
 }
 
+/// The factors `capacity` multiplies, kept apart so that a decision can read weather and
+/// resources as separate quantities (`docs/features/decision-points.md` section 11). A factor that
+/// does not apply to the firm is exactly 1.0, so the product is bit-identical to the old chain.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CapacityFactors {
+    /// Technology x capital^alpha x labour^beta (0 when there is no capital or labour).
+    pub capital_output: f64,
+    /// Farm health: forest and commons relative to capacity (food only).
+    pub farm_health: f64,
+    /// Climate damage (food only).
+    pub climate: f64,
+    /// Drought loss (food only).
+    pub drought: f64,
+    /// Coordination cost of a community-managed commons (food only).
+    pub community: f64,
+    /// Smoke from a fire nearby.
+    pub smoke: f64,
+    /// Output lost while the economic system changes.
+    pub transition: f64,
+}
+
+impl CapacityFactors {
+    /// The product, multiplied in the order the model always used.
+    pub fn product(&self) -> f64 {
+        let mut y = self.capital_output;
+        y *= self.farm_health;
+        y *= self.climate;
+        y *= self.drought;
+        y *= self.community;
+        y *= self.smoke;
+        y * self.transition
+    }
+}
+
+/// The factors of a firm's output with `l` effective labour.
+pub fn capacity_factors(s: &State, p: &Params, f: &Firm, l: f64) -> CapacityFactors {
+    let mut c = CapacityFactors {
+        capital_output: if l <= 0.0 || f.capital.0 <= 0.0 {
+            0.0
+        } else {
+            cobb_douglas(p, f.tfp.0, f.capital.0, l)
+        },
+        farm_health: 1.0,
+        climate: 1.0,
+        drought: 1.0,
+        community: 1.0,
+        smoke: 1.0,
+        transition: (1.0 - s.output_penalty.0).max(0.0),
+    };
+    if f.sector == Sector::Food {
+        c.farm_health = pow(
+            resource_health(s, p).max(crate::util::NUMERIC_FLOOR),
+            p.production.farm_health_exp,
+        );
+        c.climate = climate_factor(s, p).max(0.0);
+        // Drought (S11): the farm loses output while it lasts.
+        c.drought = (1.0 - p.weather.a_f * crate::weather::effective_drought(s, p)).max(0.0);
+        if let CommonsAccess::Community { .. } = s.nature.commons_access {
+            c.community = 1.0 - p.nature.community_coord_cost;
+        }
+    }
+    // Smoke from a fire nearby costs every firm a little output (S11).
+    if crate::weather::burning_near(s, f.tile, p.weather.smoke_radius) {
+        c.smoke = 1.0 - p.weather.smoke_productivity;
+    }
+    c
+}
+
 /// Output the firm would produce with `l` effective labour, before rationing and caps.
 pub fn capacity(s: &State, p: &Params, f: &Firm, l: f64) -> f64 {
     if l <= 0.0 || f.capital.0 <= 0.0 {
         return 0.0;
     }
-    let mut y = cobb_douglas(p, f.tfp.0, f.capital.0, l);
-    if f.sector == Sector::Food {
-        y *= pow(
-            resource_health(s, p).max(crate::util::NUMERIC_FLOOR),
-            p.production.farm_health_exp,
-        );
-        y *= climate_factor(s, p).max(0.0);
-        // Drought (S11): the farm loses output while it lasts.
-        y *= (1.0 - p.weather.a_f * crate::weather::effective_drought(s, p)).max(0.0);
-        if let CommonsAccess::Community { .. } = s.nature.commons_access {
-            y *= 1.0 - p.nature.community_coord_cost;
-        }
-    }
-    // Smoke from a fire nearby costs every firm a little output (S11).
-    if crate::weather::burning_near(s, f.tile, p.weather.smoke_radius) {
-        y *= 1.0 - p.weather.smoke_productivity;
-    }
-    y * (1.0 - s.output_penalty.0).max(0.0)
+    capacity_factors(s, p, f, l).product()
 }
 
 /// Effective labour of a firm: the sum over its workers of skill x effective hours.
