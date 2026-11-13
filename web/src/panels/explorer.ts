@@ -167,3 +167,60 @@ export function effectLines(g: CausalGraph, nodeId: string): EffectLine[] {
       return { text: `${label(e.from)} (${glyph}) -> ${label(e.to)}, ${tail}`, sign: fx.sign, sentence: fx.sentence, checked: fx.checked, basis: fx.basis };
     });
 }
+
+export interface LoopLine {
+  id: string;
+  /** The wire's kind id (`R`, `B`, `depends`): picks the badge shape, never read as a rule. */
+  kind: string;
+  /** The wire's badge letter (`R`, `B`, `?`) and kind label, shown as text so the kind never rests on colour alone. */
+  badge: string;
+  kindLabel: string;
+  /** The loop's name when the content has one, else its quantities in cycle order (`Wage -> Unit cost -> ... -> Wage`). */
+  title: string;
+  /** The quantities in cycle order, closed back to the first. */
+  chain: string;
+  /** The wire's sentence. */
+  sentence: string;
+  delay: string;
+  story: string | null;
+  /** Labels of the reasons the loop is incomplete (wire words); empty when it is not. */
+  incomplete: string[];
+}
+
+/**
+ * The feedback loops (contract v2.12) that pass through any of the given nodes, in the wire's order (shortest first, a loop of a single quantity last). Membership comes from the nodes'
+ * `inLoops`, the kind words, the sentence, the delay and the incomplete reasons from the wire; this only joins and lays them out, so a loop
+ * added only to the catalogue renders with no change here.
+ */
+export function loopLines(g: CausalGraph, nodeIds: string[]): LoopLine[] {
+  const wanted = new Set(g.nodes.filter((n) => nodeIds.includes(n.id)).flatMap((n) => n.inLoops));
+  const byId = new Map(g.nodes.map((n) => [n.id, n]));
+  const label = (id: string): string => byId.get(id)?.label ?? id;
+  // Ordering only: loops of several quantities first, then a quantity's own carry-over (a loop of one), each in the wire's order.
+  const mine = g.loops.filter((l) => wanted.has(l.id));
+  return [...mine.filter((l) => l.members.length > 1), ...mine.filter((l) => l.members.length === 1)]
+    .map((l) => {
+      const k = g.loopKinds.find((x) => x.id === l.kind);
+      const chain = [...l.members, l.members[0]!].map(label).join(' -> ');
+      return {
+        id: l.id,
+        kind: l.kind,
+        badge: k?.badge ?? l.kind,
+        kindLabel: k?.label ?? l.kind,
+        title: l.name ?? chain,
+        chain,
+        sentence: l.sentence,
+        delay: l.delayLabel,
+        story: l.story ?? null,
+        incomplete: l.incompleteReasons.map((r) => g.loopIncomplete.find((x) => x.id === r)?.label ?? r),
+      };
+    });
+}
+
+/** "In 12 feedback loops: 5 Reinforcing, 6 Balancing, 1 Depends" for one decision or mechanism node, or '' when it is in none. */
+export function loopSummary(g: CausalGraph, nodeId: string): string {
+  const lines = loopLines(g, [nodeId]);
+  if (!lines.length) return '';
+  const parts = g.loopKinds.map((k) => ({ k, n: lines.filter((l) => l.kind === k.id).length })).filter((p) => p.n > 0);
+  return `In ${lines.length} feedback loop${lines.length === 1 ? '' : 's'}: ${parts.map((p) => `${p.n} ${p.k.label.toLowerCase()}`).join(', ')}`;
+}

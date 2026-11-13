@@ -3,7 +3,8 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, mechanismLine, effectLines, mechanismsOfKind, nodeLines, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import type { LoopLine } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, mechanismLine, effectLines, loopLines, loopSummary, mechanismsOfKind, nodeLines, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
   import { catalog, hasCatalog } from '../store/catalog';
@@ -25,6 +26,8 @@
   const kind = $derived(found.kinds.find((k) => k.id === chosenKind) ?? found.kinds[0] ?? null);
   const kindMechanisms = $derived(kind && open && hasCatalog() ? mechanismsOfKind(catalog().mechanisms, kind.id) : []);
   const kindDecisions = $derived(kind && open && hasCatalog() ? decisionsOfKind(catalog().decisions, kind.id) : []);
+  const LOOP_PREVIEW = 8;
+  const kindLoops = $derived(kind && open && hasCatalog() ? loopLines(catalog().causal, [...kindDecisions.map((d) => `decision:${d.id}`), ...kindMechanisms.map((m) => `mechanism:${m.id}`)]) : []);
   // A link names an anchor or a topic id: resolve it when the explorer opens.
   $effect(() => {
     const want = $ui.explorer?.topic;
@@ -66,7 +69,11 @@
           {:else}<p class="dim">No topic matches.</p>{/each}
           {/if}
         </nav>
-        <article aria-live="polite">
+        {#snippet loopItem(l: LoopLine)}
+  <li class="lp" data-testid="agent-loop" data-id={l.id} data-kind={l.kind}><span class="lpb {l.kind}" title={l.kindLabel} aria-label={l.kindLabel}>{l.badge}</span> <span class="lpk">{l.kindLabel}</span> <b>{l.title}</b>{#if l.incomplete.length} <span class="lpi" title={l.incomplete.join(' ')}>(partly modelled)</span>{/if}
+    <details><summary class="dim">{l.title === l.chain ? 'What this means' : l.chain}</summary><p>{l.sentence}</p>{#if l.story}<p>{l.story}</p>{/if}<p class="dim">{l.delay}{#if l.incomplete.length} {l.incomplete.join('; ')}.{/if}</p></details></li>
+{/snippet}
+<article aria-live="polite">
           {#if section === 'agents'}
             {#if !agents}<p role="alert">The simulation has no agents catalogue{ares && !ares.ok ? `: ${ares.error.message}` : ''}.</p>
             {:else}
@@ -84,6 +91,7 @@
                       {@const fl = effectLines(catalog().causal, `decision:${d.id}`)}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        {#if loopSummary(catalog().causal, `decision:${d.id}`)}<p class="dim edge" data-testid="agent-loop-summary">{loopSummary(catalog().causal, `decision:${d.id}`)}.</p>{/if}
                         {#if fl.length}<details data-testid="agent-effects"><summary class="dim">How each input pushes each output ({fl.length})</summary><ul class="lo">{#each fl as f (f.text)}<li class="fx {f.sign}" title={f.sentence} data-testid="agent-effect"><span class="fxl">{f.text}</span><details><summary class="dim">why</summary><p>{f.sentence}</p><p class="dim">{f.checked}</p></details></li>{/each}</ul></details>{/if}
                         {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} steps back): {u.causes}.</p>{/each}
                         <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}.{d.params.length ? ` Parameters: ${d.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
@@ -99,10 +107,23 @@
                       {@const fl = effectLines(catalog().causal, `mechanism:${m.id}`)}
                       <li data-testid="agent-mechanism" data-id={m.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-mechanism-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        {#if loopSummary(catalog().causal, `mechanism:${m.id}`)}<p class="dim edge" data-testid="agent-loop-summary">{loopSummary(catalog().causal, `mechanism:${m.id}`)}.</p>{/if}
                         {#if fl.length}<details data-testid="agent-effects"><summary class="dim">How each input pushes each output ({fl.length})</summary><ul class="lo">{#each fl as f (f.text)}<li class="fx {f.sign}" title={f.sentence} data-testid="agent-effect"><span class="fxl">{f.text}</span><details><summary class="dim">why</summary><p>{f.sentence}</p><p class="dim">{f.checked}</p></details></li>{/each}</ul></details>{/if}
                         <details><summary class="dim">{m.rule.label}</summary><p>{m.explains}</p><p>{m.rule.text}</p><p class="dim">Runs in {m.system}.{m.params.length ? ` Parameters: ${m.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
                   </ul>
+                {/if}
+                {#if kindLoops.length}
+                  <h4>Feedback loops ({kindLoops.length})</h4>
+                  <p class="dim" data-testid="agent-loops-intro">Loops that pass through this kind's decisions and mechanisms: a change goes round and comes back. Shortest first.</p>
+                  <ul class="lo loops" data-testid="agent-loops">
+                    {#each kindLoops.slice(0, LOOP_PREVIEW) as l (l.id)}{@render loopItem(l)}{/each}
+                  </ul>
+                  {#if kindLoops.length > LOOP_PREVIEW}
+                    <details data-testid="agent-loops-more"><summary class="dim">Show the other {kindLoops.length - LOOP_PREVIEW} loops</summary>
+                      <ul class="lo loops">{#each kindLoops.slice(LOOP_PREVIEW) as l (l.id)}{@render loopItem(l)}{/each}</ul>
+                    </details>
+                  {/if}
                 {/if}
                 {#if kind.notes.length}
                   <h4>Not decided here</h4><ul class="lo" data-testid="agent-notes">{#each kind.notes as n (n)}<li>{n}</li>{/each}</ul>
@@ -174,6 +195,9 @@
   .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px solid var(--border); border-radius: 8px; padding: 1px 6px; vertical-align: middle; } .badge.placeholder { color: var(--warn); border-color: var(--warn); } .badge.tuned { color: var(--good); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; } th[scope='row'] { text-align: left; font-weight: 400; } .path { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); } .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
   .fx.none { opacity: 0.6; } .fx details { display: inline; } .fx details > p { margin: 2px 0; }
+  .lpb { display: inline-block; min-width: 1.5em; text-align: center; font-weight: 700; font-size: 12px; padding: 0 4px; border: 1.5px solid currentColor; }
+  .lpb.R { border-radius: 50%; } .lpb.B { border-radius: 2px; } .lpb.depends { border-radius: 2px; transform: rotate(45deg) scale(0.8); display: inline-block; }
+  .lpk { font-size: 12px; } .lpi { font-size: 12px; opacity: 0.75; } .loops li { margin: 4px 0; }
   .exm { margin: 3px 0; } .lo { margin: 0; padding-left: 18px; } .edge { margin: 2px 0; } .rel { border: 1px solid var(--border); background: var(--surface); color: var(--accent); border-radius: 10px; padding: 1px 8px; margin-right: 4px; cursor: pointer; font: inherit; font-size: 12px; }
   @media (max-width: 900px) { .ex { grid-template-columns: 1fr; } nav { max-height: 24vh; } }
 </style>

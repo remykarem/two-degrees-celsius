@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { AgentsCatalog, DecisionInfo, MechanismInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, causalLines, decisionLine, effectLines, mechanismLine, mechanismsOfKind, nodeLines, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, causalLines, decisionLine, effectLines, loopLines, loopSummary, mechanismLine, mechanismsOfKind, nodeLines, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -103,7 +103,7 @@ describe('causal edges (contract v2.8)', () => {
     expect(leg.upstream[0]!.causes.length).toBeGreaterThan(0);
   });
   it('a made-up decision and edges added only in the catalogue appear with no web change', () => {
-    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream });
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
     const made = {
       ...g,
       nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
@@ -143,7 +143,7 @@ describe('mechanisms (contract v2.10)', () => {
     expect(stress.inputs).toContain('Net emissions so far');
   });
   it('a mechanism added only in the catalogue appears with no web change', () => {
-    const node = (id: string, kind: string, role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'weather', selfLoop: false, component: 99, upstream });
+    const node = (id: string, kind: string, role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'weather', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
     const g = c.causal;
     const made = {
       ...g,
@@ -189,7 +189,7 @@ describe('live values on causes (contract v2.9)', () => {
   });
   it('a made-up binding and value added only in the wire shows beside its cause with no web change', () => {
     const g = c.causal;
-    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream });
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
     const made = {
       ...g,
       nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
@@ -235,7 +235,7 @@ describe('signed edges (contract v2.11)', () => {
     expect(w.sentence).toMatch(/^When base wage goes up, unit cost goes up \(the same month\), because /);
   });
   it('a sign added only in the catalogue renders with no web change', () => {
-    const node = (id: string, kind: string, role: string, label: string) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[] });
+    const node = (id: string, kind: string, role: string, label: string) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops: [] as string[] });
     const fx = (sign: string, lagLabel: string) => ({ sign, lagMonths: 3, basis: 'perturbed', lagLabel, sentence: `When alpha goes up, beta goes ${sign}.`, checked: 'Checked.' });
     const made = {
       ...g,
@@ -244,5 +244,38 @@ describe('signed edges (contract v2.11)', () => {
     };
     const [line] = effectLines(made, 'mechanism:made_up');
     expect(line).toMatchObject({ text: 'Alpha (-) -> Beta, 3 months later', sign: 'down', sentence: 'When alpha goes up, beta goes down.' });
+  });
+});
+
+describe('feedback loops (contract v2.12)', () => {
+  const c = ok(sim.catalog());
+  const g = c.causal;
+  it('the wire serves loops with kinds, sentences and inLoops, and they read off as lines', () => {
+    expect(g.loops.length).toBeGreaterThan(100);
+    expect(g.loopKinds.map((k) => k.id)).toEqual(['R', 'B', 'depends']);
+    const lines = loopLines(g, ['mechanism:climate_stress_curve']);
+    expect(lines.length).toBeGreaterThan(0);
+    for (const l of lines) {
+      expect(['R', 'B', '?']).toContain(l.badge);
+      expect(l.sentence).toMatch(/^This is an? (reinforcing|balancing|mixed) loop: /);
+      expect(l.chain.split(' -> ').length).toBeGreaterThan(1);
+    }
+    const firstSingle = lines.findIndex((l) => !l.chain.slice(0, -1).includes(' -> '));
+    if (firstSingle >= 0) expect(lines.slice(firstSingle).every((l) => !l.chain.slice(0, -1).includes(' -> '))).toBe(true);
+    expect(lines.some((l) => l.title === 'Overshoot bites' && l.kind === 'B')).toBe(true);
+    expect(loopSummary(g, 'mechanism:climate_stress_curve')).toMatch(/^In \d+ feedback loops?: /);
+    expect(loopSummary(g, 'quantity:nonexistent')).toBe('');
+  });
+  it('a loop added only in the catalogue renders with no web change', () => {
+    const node = (id: string, label: string, inLoops: string[]) => ({ id, kind: 'quantity', role: 'derived', refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops });
+    const made = {
+      ...g,
+      nodes: [...g.nodes, node('quantity:qa', 'Alpha', ['loop:qa+qb']), node('quantity:qb', 'Beta', ['loop:qa+qb']), { ...node('mechanism:made_up', 'Made up', ['loop:qa+qb']), kind: 'mechanism', role: 'mechanism' }],
+      loops: [...g.loops, { id: 'loop:qa+qb', kind: 'B', members: ['quantity:qa', 'quantity:qb'], edges: [{ via: 'mechanism:made_up', sign: 'up', lagMonths: 1 }, { via: 'mechanism:made_up', sign: 'down', lagMonths: 2 }], delayMonths: 3, delayLabel: 'About 3 months to come round the loop.', sentence: 'This is a balancing loop: when alpha goes up, beta goes up, then alpha goes down again.', incomplete: true, incompleteReasons: ['lever'], scc: 0 }],
+    };
+    const [l] = loopLines(made, ['mechanism:made_up']);
+    expect(l).toMatchObject({ id: 'loop:qa+qb', kind: 'B', badge: 'B', kindLabel: 'Balancing', title: 'Alpha -> Beta -> Alpha', delay: 'About 3 months to come round the loop.' });
+    expect(l!.incomplete).toEqual([g.loopIncomplete.find((r) => r.id === 'lever')!.label]);
+    expect(loopSummary(made, 'mechanism:made_up')).toBe('In 1 feedback loop: 1 balancing');
   });
 });
