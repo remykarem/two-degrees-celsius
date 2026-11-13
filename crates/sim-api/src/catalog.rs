@@ -162,6 +162,8 @@ pub struct Catalog {
     pub decisions: Vec<crate::decisions::DecisionInfo>,
     /// Contract v2.7: the quantity vocabulary of the decisions (labels and units).
     pub quantities: Vec<crate::decisions::QuantityInfo>,
+    /// Contract v2.8: the causal graph of the decisions (nodes, edges, source and sink markers), derived from the registry.
+    pub causal: crate::decisions::CausalGraph,
 }
 
 #[derive(Deserialize)]
@@ -291,5 +293,6 @@ pub fn resolve(params: &Params) -> ApiResult<Catalog> {
         entities: crate::entities::load()?,
         decisions: dec.decisions,
         quantities: dec.quantities,
+        causal: dec.causal,
     })
 }

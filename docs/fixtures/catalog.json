@@ -3932,7 +3932,14 @@
           "unit": "yes or no"
         }
       ],
-      "params": []
+      "params": [
+        {
+          "path": "systems.market.enclosure_prob",
+          "label": "Monthly chance of enclosure, Market system",
+          "value": 0.002,
+          "unit": "probability per month"
+        }
+      ]
     }
   ],
   "quantities": [
@@ -4629,5 +4636,4070 @@
       "owner": "nature",
       "summary": "Whether an owner has fenced the commons off."
     }
-  ]
+  ],
+  "causal": {
+    "upstreamDepth": 3,
+    "roles": [
+      {
+        "id": "source",
+        "label": "Starting point",
+        "text": "No decision writes it: a state variable, a lever or a setting the chain starts from."
+      },
+      {
+        "id": "derived",
+        "label": "In the middle",
+        "text": "A decision writes it and another decision reads it."
+      },
+      {
+        "id": "sink",
+        "label": "End point",
+        "text": "Written by a decision, but no other decision reads it: an outcome."
+      },
+      {
+        "id": "decision",
+        "label": "Decision",
+        "text": "A choice that reads some quantities and writes others."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "quantity:expected_sales",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "expected_sales",
+        "label": "Expected sales",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:demand_units",
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price",
+          "quantity:household_size",
+          "quantity:food_price",
+          "quantity:savings",
+          "quantity:last_disposable",
+          "quantity:spending_propensity",
+          "quantity:net_wealth",
+          "quantity:wealth_spending_rate",
+          "quantity:markup",
+          "quantity:unit_cost"
+        ]
+      },
+      {
+        "id": "quantity:inventory",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "inventory",
+        "label": "Inventory",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:inventory_cover",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "inventory_cover",
+        "label": "Inventory cover wanted",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:workers",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "workers",
+        "label": "Workers",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:wanted_workers",
+          "quantity:over_target_months",
+          "quantity:expected_sales",
+          "quantity:inventory",
+          "quantity:inventory_cover",
+          "quantity:skilled_workers",
+          "quantity:effective_labour",
+          "quantity:capital_output",
+          "quantity:weather_factor",
+          "quantity:resource_factor",
+          "quantity:transition_factor",
+          "quantity:demand_units"
+        ]
+      },
+      {
+        "id": "quantity:skilled_workers",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "skilled_workers",
+        "label": "Skilled workers",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:effective_labour",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "effective_labour",
+        "label": "Effective labour per worker",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:capital_output",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "capital_output",
+        "label": "Output from capital and technology",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:weather_factor",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "weather_factor",
+        "label": "Weather and climate effect on output",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:resource_factor",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "resource_factor",
+        "label": "Natural resources effect on output",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:transition_factor",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "transition_factor",
+        "label": "Transition effect on output",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:wanted_workers",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "wanted_workers",
+        "label": "Workers wanted",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:expected_sales",
+          "quantity:inventory",
+          "quantity:inventory_cover",
+          "quantity:workers",
+          "quantity:skilled_workers",
+          "quantity:effective_labour",
+          "quantity:capital_output",
+          "quantity:weather_factor",
+          "quantity:resource_factor",
+          "quantity:transition_factor",
+          "quantity:demand_units",
+          "quantity:over_target_months",
+          "quantity:consumption_budget",
+          "quantity:price"
+        ]
+      },
+      {
+        "id": "quantity:vacancies",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "vacancies",
+        "label": "Vacancies",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:expected_sales",
+          "quantity:inventory",
+          "quantity:inventory_cover",
+          "quantity:workers",
+          "quantity:skilled_workers",
+          "quantity:effective_labour",
+          "quantity:capital_output",
+          "quantity:weather_factor",
+          "quantity:resource_factor",
+          "quantity:transition_factor",
+          "quantity:demand_units",
+          "quantity:wanted_workers",
+          "quantity:over_target_months",
+          "quantity:consumption_budget",
+          "quantity:price"
+        ]
+      },
+      {
+        "id": "quantity:over_target_months",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "over_target_months",
+        "label": "Months overstaffed",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:workers",
+          "quantity:wanted_workers",
+          "quantity:expected_sales",
+          "quantity:inventory",
+          "quantity:inventory_cover",
+          "quantity:skilled_workers",
+          "quantity:effective_labour",
+          "quantity:capital_output",
+          "quantity:weather_factor",
+          "quantity:resource_factor",
+          "quantity:transition_factor",
+          "quantity:demand_units"
+        ]
+      },
+      {
+        "id": "quantity:unemployment",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "unemployment",
+        "label": "Unemployment",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:wage",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "wage",
+        "label": "Base wage",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 1,
+        "upstream": [
+          "quantity:min_wage",
+          "quantity:unemployment",
+          "quantity:sector_tfp_growth"
+        ]
+      },
+      {
+        "id": "quantity:min_wage",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "min_wage",
+        "label": "Minimum wage",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:sector_tfp_growth",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "sector_tfp_growth",
+        "label": "Sector productivity growth",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:price",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "price",
+        "label": "Price",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:markup",
+          "quantity:unit_cost"
+        ]
+      },
+      {
+        "id": "quantity:markup",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "markup",
+        "label": "Markup",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:unit_cost",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "unit_cost",
+        "label": "Unit cost",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:footprint",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "footprint",
+        "label": "Carbon footprint",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:carbon_price",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "carbon_price",
+        "label": "Carbon price firms plan with",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:revenue",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "revenue",
+        "label": "Revenue",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:emissions_cap",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "emissions_cap",
+        "label": "Emissions cap",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:green_subsidy",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "green_subsidy",
+        "label": "Green subsidy",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:treasury_cash",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "treasury_cash",
+        "label": "Treasury cash",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:cash",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "cash",
+        "label": "Cash",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:cash_reserve",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "cash_reserve",
+        "label": "Cash reserve",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:green_tech",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "green_tech",
+        "label": "Green technology",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:cash",
+          "quantity:cash_reserve"
+        ]
+      },
+      {
+        "id": "quantity:green_plan",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "green_plan",
+        "label": "Saving for green investment",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:cash",
+          "quantity:cash_reserve",
+          "quantity:green_tech"
+        ]
+      },
+      {
+        "id": "quantity:profit",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "profit",
+        "label": "Profit",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:profit_trend",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "profit_trend",
+        "label": "Profit trend",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:capital",
+          "quantity:profit",
+          "quantity:loan_rate",
+          "quantity:invest_hurdle",
+          "quantity:expected_sales",
+          "quantity:capital_per_sale",
+          "quantity:distressed",
+          "quantity:cash",
+          "quantity:cash_reserve",
+          "quantity:green_plan",
+          "quantity:green_cash_share",
+          "quantity:policy_rate",
+          "quantity:debt",
+          "quantity:firm_assets",
+          "quantity:credit_spread_add",
+          "quantity:demand_units",
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:green_tech",
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price"
+        ]
+      },
+      {
+        "id": "quantity:capital",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "capital",
+        "label": "Capital",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:capital_per_sale",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "capital_per_sale",
+        "label": "Capital needed per unit sold",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:loan_rate",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "loan_rate",
+        "label": "Loan rate",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:policy_rate",
+          "quantity:debt",
+          "quantity:firm_assets",
+          "quantity:credit_spread_add"
+        ]
+      },
+      {
+        "id": "quantity:distressed",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "distressed",
+        "label": "In distress",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:invest_hurdle",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "invest_hurdle",
+        "label": "Required return above the loan rate",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:green_cash_share",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "green_cash_share",
+        "label": "Cash held for green investment",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:investment_plan",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "investment_plan",
+        "label": "Planned investment",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:capital",
+          "quantity:profit_trend",
+          "quantity:profit",
+          "quantity:loan_rate",
+          "quantity:invest_hurdle",
+          "quantity:expected_sales",
+          "quantity:capital_per_sale",
+          "quantity:distressed",
+          "quantity:cash",
+          "quantity:cash_reserve",
+          "quantity:green_plan",
+          "quantity:green_cash_share",
+          "quantity:policy_rate",
+          "quantity:debt",
+          "quantity:firm_assets",
+          "quantity:credit_spread_add",
+          "quantity:demand_units",
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:green_tech",
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price"
+        ]
+      },
+      {
+        "id": "quantity:loan_request",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "loan_request",
+        "label": "Loan request",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:capital",
+          "quantity:profit_trend",
+          "quantity:profit",
+          "quantity:loan_rate",
+          "quantity:invest_hurdle",
+          "quantity:expected_sales",
+          "quantity:capital_per_sale",
+          "quantity:distressed",
+          "quantity:cash",
+          "quantity:cash_reserve",
+          "quantity:green_plan",
+          "quantity:green_cash_share",
+          "quantity:policy_rate",
+          "quantity:debt",
+          "quantity:firm_assets",
+          "quantity:credit_spread_add",
+          "quantity:demand_units",
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:green_tech",
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price"
+        ]
+      },
+      {
+        "id": "quantity:payroll",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "payroll",
+        "label": "Wages paid",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:debt_service",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "debt_service",
+        "label": "Debt service due",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:payout_ratio",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "payout_ratio",
+        "label": "Payout ratio",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:dividends",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "dividends",
+        "label": "Dividends",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:profit",
+          "quantity:cash",
+          "quantity:payroll",
+          "quantity:debt_service",
+          "quantity:green_plan",
+          "quantity:revenue",
+          "quantity:green_subsidy",
+          "quantity:payout_ratio",
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:emissions_cap",
+          "quantity:treasury_cash",
+          "quantity:cash_reserve",
+          "quantity:green_tech"
+        ]
+      },
+      {
+        "id": "quantity:debt",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "debt",
+        "label": "Debt",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:payment_shortfall",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "payment_shortfall",
+        "label": "Missed payments",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:distress_months",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "distress_months",
+        "label": "Months in distress",
+        "owner": "firm",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:payment_shortfall",
+          "quantity:debt"
+        ]
+      },
+      {
+        "id": "quantity:firm_open",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "firm_open",
+        "label": "Firm open",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:payment_shortfall",
+          "quantity:distress_months",
+          "quantity:debt"
+        ]
+      },
+      {
+        "id": "quantity:sector_return",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "sector_return",
+        "label": "Sector return",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:base_rate",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "base_rate",
+        "label": "Cost of borrowing",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:random_draw",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "random_draw",
+        "label": "Random draw",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:new_firm",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "new_firm",
+        "label": "New firm",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": [
+          "quantity:sector_return",
+          "quantity:base_rate",
+          "quantity:random_draw"
+        ]
+      },
+      {
+        "id": "quantity:savings",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "savings",
+        "label": "Savings",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:last_disposable",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "last_disposable",
+        "label": "Last month's disposable income",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:net_wealth",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "net_wealth",
+        "label": "Net wealth",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:food_price",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "food_price",
+        "label": "Food price",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:food_need",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "food_need",
+        "label": "Food need",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:household_size",
+          "quantity:food_price",
+          "quantity:savings",
+          "quantity:last_disposable",
+          "quantity:spending_propensity",
+          "quantity:net_wealth",
+          "quantity:wealth_spending_rate"
+        ]
+      },
+      {
+        "id": "quantity:household_size",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "household_size",
+        "label": "Household size",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:spending_propensity",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "spending_propensity",
+        "label": "Spending propensity",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:wealth_spending_rate",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "wealth_spending_rate",
+        "label": "Spending out of wealth",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:consumption_budget",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "consumption_budget",
+        "label": "Spending budget",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:household_size",
+          "quantity:food_price",
+          "quantity:savings",
+          "quantity:last_disposable",
+          "quantity:spending_propensity",
+          "quantity:net_wealth",
+          "quantity:wealth_spending_rate"
+        ]
+      },
+      {
+        "id": "quantity:demand_units",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "demand_units",
+        "label": "Demand",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price",
+          "quantity:household_size",
+          "quantity:food_price",
+          "quantity:savings",
+          "quantity:last_disposable",
+          "quantity:spending_propensity",
+          "quantity:net_wealth",
+          "quantity:wealth_spending_rate",
+          "quantity:markup",
+          "quantity:unit_cost"
+        ]
+      },
+      {
+        "id": "quantity:units_sold",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "units_sold",
+        "label": "Units sold",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:consumption_budget",
+          "quantity:inventory",
+          "quantity:price",
+          "quantity:household_size",
+          "quantity:food_price",
+          "quantity:savings",
+          "quantity:last_disposable",
+          "quantity:spending_propensity",
+          "quantity:net_wealth",
+          "quantity:wealth_spending_rate",
+          "quantity:markup",
+          "quantity:unit_cost"
+        ]
+      },
+      {
+        "id": "quantity:capital_income",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "capital_income",
+        "label": "Capital income",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:campaign_cap",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "campaign_cap",
+        "label": "Campaign spending cap",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:lobby_spend",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "lobby_spend",
+        "label": "Lobbying spend",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:capital_income",
+          "quantity:savings",
+          "quantity:campaign_cap"
+        ]
+      },
+      {
+        "id": "quantity:bank_equity",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "bank_equity",
+        "label": "Bank equity",
+        "owner": "bank",
+        "selfLoop": true,
+        "component": 0,
+        "upstream": [
+          "quantity:bank_loans",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:bank_loans",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "bank_loans",
+        "label": "Bank loans",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:bank_deposits",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "bank_deposits",
+        "label": "Bank deposits",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:capital_ratio",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "capital_ratio",
+        "label": "Required capital ratio",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:credit_headroom",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "credit_headroom",
+        "label": "Lending room",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:firm_assets",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "firm_assets",
+        "label": "Firm assets",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:loan_approved",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "loan_approved",
+        "label": "Loan approved",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:loan_request",
+          "quantity:credit_headroom",
+          "quantity:firm_assets",
+          "quantity:debt",
+          "quantity:capital",
+          "quantity:profit_trend",
+          "quantity:profit",
+          "quantity:loan_rate",
+          "quantity:invest_hurdle",
+          "quantity:expected_sales",
+          "quantity:capital_per_sale",
+          "quantity:distressed",
+          "quantity:cash",
+          "quantity:cash_reserve",
+          "quantity:green_plan",
+          "quantity:green_cash_share",
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio",
+          "quantity:policy_rate",
+          "quantity:credit_spread_add",
+          "quantity:demand_units",
+          "quantity:footprint",
+          "quantity:carbon_price",
+          "quantity:revenue",
+          "quantity:emissions_cap",
+          "quantity:green_subsidy",
+          "quantity:treasury_cash",
+          "quantity:green_tech",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:credit_spread_add",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "credit_spread_add",
+        "label": "System credit spread",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:bank_dividend",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "bank_dividend",
+        "label": "Bank dividend",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:bailout_policy",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "bailout_policy",
+        "label": "Bailout policy",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:bank_failed",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "bank_failed",
+        "label": "Bank failed",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:policy_rate",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "policy_rate",
+        "label": "Policy rate",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:committed_spending",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "committed_spending",
+        "label": "Committed spending",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:next_month_purchases",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "next_month_purchases",
+        "label": "Next month's purchases",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:treasury_taxes",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "treasury_taxes",
+        "label": "Taxes collected",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:public_debt",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "public_debt",
+        "label": "Public debt",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "quantity:borrowing",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "borrowing",
+        "label": "Borrowing",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:committed_spending",
+          "quantity:next_month_purchases",
+          "quantity:treasury_cash",
+          "quantity:treasury_taxes",
+          "quantity:credit_headroom",
+          "quantity:public_debt",
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:repayment",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "repayment",
+        "label": "Repayment",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:committed_spending",
+          "quantity:next_month_purchases",
+          "quantity:treasury_cash",
+          "quantity:treasury_taxes",
+          "quantity:credit_headroom",
+          "quantity:public_debt",
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio",
+          "quantity:bank_deposits",
+          "quantity:bailout_policy"
+        ]
+      },
+      {
+        "id": "quantity:spending_cut_ratio",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "spending_cut_ratio",
+        "label": "Share of spending paid",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": [
+          "quantity:committed_spending",
+          "quantity:treasury_cash",
+          "quantity:treasury_taxes",
+          "quantity:borrowing",
+          "quantity:next_month_purchases",
+          "quantity:credit_headroom",
+          "quantity:public_debt",
+          "quantity:bank_equity",
+          "quantity:bank_loans",
+          "quantity:capital_ratio"
+        ]
+      },
+      {
+        "id": "quantity:legitimacy",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "legitimacy",
+        "label": "Legitimacy",
+        "owner": "government",
+        "selfLoop": true,
+        "component": 1,
+        "upstream": [
+          "quantity:wellbeing",
+          "quantity:unemployment",
+          "quantity:inequality",
+          "quantity:public_debt_ratio",
+          "quantity:bailout",
+          "quantity:transition_resistance"
+        ]
+      },
+      {
+        "id": "quantity:wellbeing",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "wellbeing",
+        "label": "Wellbeing",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:inequality",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "inequality",
+        "label": "Inequality",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:public_debt_ratio",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "public_debt_ratio",
+        "label": "Public debt against GDP",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:bailout",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "bailout",
+        "label": "Bank bailed out",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:transition_resistance",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "transition_resistance",
+        "label": "Resistance to system change",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "quantity:pilot_employed",
+        "kind": "quantity",
+        "role": "derived",
+        "refId": "pilot_employed",
+        "label": "Pilot on the payroll",
+        "owner": "estate",
+        "selfLoop": true,
+        "component": 2,
+        "upstream": [
+          "quantity:pilot_unpaid_months",
+          "quantity:pilot_free",
+          "quantity:estate_savings"
+        ]
+      },
+      {
+        "id": "quantity:pilot_unpaid_months",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "pilot_unpaid_months",
+        "label": "Months of short pay",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:pilot_free",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "pilot_free",
+        "label": "Pilot free to rehire",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:estate_savings",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "estate_savings",
+        "label": "Estate savings",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:flight",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "flight",
+        "label": "Jet flies",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": [
+          "quantity:random_draw",
+          "quantity:pilot_employed",
+          "quantity:pilot_unpaid_months",
+          "quantity:pilot_free",
+          "quantity:estate_savings"
+        ]
+      },
+      {
+        "id": "quantity:enclosure_chance",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "enclosure_chance",
+        "label": "Chance of enclosure",
+        "owner": "nature",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:commons_open",
+        "kind": "quantity",
+        "role": "source",
+        "refId": "commons_open",
+        "label": "Commons open",
+        "owner": "nature",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "quantity:commons_enclosed",
+        "kind": "quantity",
+        "role": "sink",
+        "refId": "commons_enclosed",
+        "label": "Commons enclosed",
+        "owner": "nature",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": [
+          "quantity:enclosure_chance",
+          "quantity:random_draw",
+          "quantity:commons_open"
+        ]
+      },
+      {
+        "id": "decision:firm_hire",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_hire",
+        "label": "Hire",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_fire",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_fire",
+        "label": "Fire",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_wage",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_wage",
+        "label": "Wage",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_price",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_price",
+        "label": "Price",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_green",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_green",
+        "label": "Green technology",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_capex",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_capex",
+        "label": "Investment and borrowing",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_payout",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_payout",
+        "label": "Dividends",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_exit",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_exit",
+        "label": "Closing down",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:household_found_firm",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "household_found_firm",
+        "label": "Founding a firm",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "decision:household_spend",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "household_spend",
+        "label": "Spending",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:household_shop",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "household_shop",
+        "label": "Shopping",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:firm_expect",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "firm_expect",
+        "label": "Expecting sales",
+        "owner": "firm",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:household_lobby",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "household_lobby",
+        "label": "Lobbying",
+        "owner": "household",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:bank_headroom",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "bank_headroom",
+        "label": "Lending room",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:bank_lend",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "bank_lend",
+        "label": "Lending",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:bank_spread",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "bank_spread",
+        "label": "Interest rate",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:bank_dividend",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "bank_dividend",
+        "label": "Bank payout",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:bank_rescue",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "bank_rescue",
+        "label": "Rescue or failure",
+        "owner": "bank",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:government_fund",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "government_fund",
+        "label": "Funding the month",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:government_cut",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "government_cut",
+        "label": "Cutting spending",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 0,
+        "upstream": []
+      },
+      {
+        "id": "decision:government_legitimacy",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "government_legitimacy",
+        "label": "Legitimacy",
+        "owner": "government",
+        "selfLoop": false,
+        "component": 1,
+        "upstream": []
+      },
+      {
+        "id": "decision:estate_pilot",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "estate_pilot",
+        "label": "Keeping the pilot",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "decision:estate_flight",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "estate_flight",
+        "label": "Flying the jet",
+        "owner": "estate",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      },
+      {
+        "id": "decision:nature_enclosure",
+        "kind": "decision",
+        "role": "decision",
+        "refId": "nature_enclosure",
+        "label": "Fencing off the commons",
+        "owner": "nature",
+        "selfLoop": false,
+        "component": 2,
+        "upstream": []
+      }
+    ],
+    "edges": [
+      {
+        "from": "quantity:expected_sales",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory_cover",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:workers",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:skilled_workers",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:effective_labour",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_output",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:weather_factor",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:resource_factor",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:transition_factor",
+        "to": "decision:firm_hire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_hire",
+        "to": "quantity:wanted_workers",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_hire",
+        "to": "quantity:vacancies",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:workers",
+        "to": "decision:firm_fire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:wanted_workers",
+        "to": "decision:firm_fire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:over_target_months",
+        "to": "decision:firm_fire",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_fire",
+        "to": "quantity:workers",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_fire",
+        "to": "quantity:over_target_months",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:wage",
+        "to": "decision:firm_wage",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:min_wage",
+        "to": "decision:firm_wage",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unemployment",
+        "to": "decision:firm_wage",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:sector_tfp_growth",
+        "to": "decision:firm_wage",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_wage",
+        "to": "quantity:wage",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:price",
+        "to": "decision:firm_price",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:markup",
+        "to": "decision:firm_price",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unit_cost",
+        "to": "decision:firm_price",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_price",
+        "to": "quantity:price",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:footprint",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:carbon_price",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:revenue",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:emissions_cap",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_subsidy",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_tech",
+        "to": "decision:firm_green",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_green",
+        "to": "quantity:green_tech",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_green",
+        "to": "quantity:green_plan",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit_trend",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:profit",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_rate",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:invest_hurdle",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_per_sale",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distressed",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_cash_share",
+        "to": "decision:firm_capex",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_capex",
+        "to": "quantity:investment_plan",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_capex",
+        "to": "quantity:loan_request",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_capex",
+        "to": "quantity:profit_trend",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:profit",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payroll",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt_service",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:revenue",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_subsidy",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payout_ratio",
+        "to": "decision:firm_payout",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_payout",
+        "to": "quantity:dividends",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payment_shortfall",
+        "to": "decision:firm_exit",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distress_months",
+        "to": "decision:firm_exit",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:debt",
+        "to": "decision:firm_exit",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:firm_exit",
+        "to": "quantity:distress_months",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_exit",
+        "to": "quantity:firm_open",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:sector_return",
+        "to": "decision:household_found_firm",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:base_rate",
+        "to": "decision:household_found_firm",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "decision:household_found_firm",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_found_firm",
+        "to": "quantity:new_firm",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:household_size",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:food_price",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:savings",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:last_disposable",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:spending_propensity",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:net_wealth",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:wealth_spending_rate",
+        "to": "decision:household_spend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_spend",
+        "to": "quantity:food_need",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_spend",
+        "to": "quantity:consumption_budget",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:consumption_budget",
+        "to": "decision:household_shop",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "decision:household_shop",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:price",
+        "to": "decision:household_shop",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_shop",
+        "to": "quantity:units_sold",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_shop",
+        "to": "quantity:demand_units",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:demand_units",
+        "to": "decision:firm_expect",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "decision:firm_expect",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:firm_expect",
+        "to": "quantity:expected_sales",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:capital_income",
+        "to": "decision:household_lobby",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:savings",
+        "to": "decision:household_lobby",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:campaign_cap",
+        "to": "decision:household_lobby",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:household_lobby",
+        "to": "quantity:lobby_spend",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "decision:bank_headroom",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "decision:bank_headroom",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_ratio",
+        "to": "decision:bank_headroom",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:bank_headroom",
+        "to": "quantity:credit_headroom",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_request",
+        "to": "decision:bank_lend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_headroom",
+        "to": "decision:bank_lend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:firm_assets",
+        "to": "decision:bank_lend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "decision:bank_lend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:bank_lend",
+        "to": "quantity:loan_approved",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:policy_rate",
+        "to": "decision:bank_spread",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "decision:bank_spread",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:firm_assets",
+        "to": "decision:bank_spread",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_spread_add",
+        "to": "decision:bank_spread",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:bank_spread",
+        "to": "quantity:loan_rate",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "decision:bank_dividend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "decision:bank_dividend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_ratio",
+        "to": "decision:bank_dividend",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:bank_dividend",
+        "to": "quantity:bank_dividend",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "decision:bank_rescue",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "decision:bank_rescue",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_deposits",
+        "to": "decision:bank_rescue",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bailout_policy",
+        "to": "decision:bank_rescue",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:bank_rescue",
+        "to": "quantity:bank_equity",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "decision:bank_rescue",
+        "to": "quantity:bank_failed",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:committed_spending",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:next_month_purchases",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_taxes",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_headroom",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:public_debt",
+        "to": "decision:government_fund",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:government_fund",
+        "to": "quantity:borrowing",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:government_fund",
+        "to": "quantity:repayment",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:committed_spending",
+        "to": "decision:government_cut",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "decision:government_cut",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_taxes",
+        "to": "decision:government_cut",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:borrowing",
+        "to": "decision:government_cut",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:government_cut",
+        "to": "quantity:spending_cut_ratio",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:legitimacy",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:wellbeing",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unemployment",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inequality",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:public_debt_ratio",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bailout",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:transition_resistance",
+        "to": "decision:government_legitimacy",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:government_legitimacy",
+        "to": "quantity:legitimacy",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:pilot_employed",
+        "to": "decision:estate_pilot",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:pilot_unpaid_months",
+        "to": "decision:estate_pilot",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:pilot_free",
+        "to": "decision:estate_pilot",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:estate_savings",
+        "to": "decision:estate_pilot",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:estate_pilot",
+        "to": "quantity:pilot_employed",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "decision:estate_flight",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:pilot_employed",
+        "to": "decision:estate_flight",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:estate_flight",
+        "to": "quantity:flight",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:enclosure_chance",
+        "to": "decision:nature_enclosure",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "decision:nature_enclosure",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:commons_open",
+        "to": "decision:nature_enclosure",
+        "kind": "reads",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "decision:nature_enclosure",
+        "to": "quantity:commons_enclosed",
+        "kind": "writes",
+        "via": null,
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory_cover",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory_cover",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:workers",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:workers",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:skilled_workers",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:skilled_workers",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:effective_labour",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:effective_labour",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_output",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_output",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:weather_factor",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:weather_factor",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:resource_factor",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:resource_factor",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:transition_factor",
+        "to": "quantity:wanted_workers",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:transition_factor",
+        "to": "quantity:vacancies",
+        "kind": "drives",
+        "via": "decision:firm_hire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:workers",
+        "to": "quantity:workers",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:workers",
+        "to": "quantity:over_target_months",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:wanted_workers",
+        "to": "quantity:workers",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:wanted_workers",
+        "to": "quantity:over_target_months",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:over_target_months",
+        "to": "quantity:workers",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:over_target_months",
+        "to": "quantity:over_target_months",
+        "kind": "drives",
+        "via": "decision:firm_fire",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:wage",
+        "to": "quantity:wage",
+        "kind": "drives",
+        "via": "decision:firm_wage",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:min_wage",
+        "to": "quantity:wage",
+        "kind": "drives",
+        "via": "decision:firm_wage",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unemployment",
+        "to": "quantity:wage",
+        "kind": "drives",
+        "via": "decision:firm_wage",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:sector_tfp_growth",
+        "to": "quantity:wage",
+        "kind": "drives",
+        "via": "decision:firm_wage",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:price",
+        "to": "quantity:price",
+        "kind": "drives",
+        "via": "decision:firm_price",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:markup",
+        "to": "quantity:price",
+        "kind": "drives",
+        "via": "decision:firm_price",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unit_cost",
+        "to": "quantity:price",
+        "kind": "drives",
+        "via": "decision:firm_price",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:footprint",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:footprint",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:carbon_price",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:carbon_price",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:revenue",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:revenue",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:emissions_cap",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:emissions_cap",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_subsidy",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_subsidy",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_tech",
+        "to": "quantity:green_tech",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:green_tech",
+        "to": "quantity:green_plan",
+        "kind": "drives",
+        "via": "decision:firm_green",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit_trend",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit_trend",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit_trend",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:profit",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_rate",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_rate",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_rate",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:invest_hurdle",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:invest_hurdle",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:invest_hurdle",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_per_sale",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_per_sale",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_per_sale",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distressed",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distressed",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distressed",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash_reserve",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_cash_share",
+        "to": "quantity:investment_plan",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_cash_share",
+        "to": "quantity:loan_request",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_cash_share",
+        "to": "quantity:profit_trend",
+        "kind": "drives",
+        "via": "decision:firm_capex",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:profit",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:cash",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payroll",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt_service",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_plan",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:revenue",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:green_subsidy",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payout_ratio",
+        "to": "quantity:dividends",
+        "kind": "drives",
+        "via": "decision:firm_payout",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payment_shortfall",
+        "to": "quantity:distress_months",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:payment_shortfall",
+        "to": "quantity:firm_open",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:distress_months",
+        "to": "quantity:distress_months",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:distress_months",
+        "to": "quantity:firm_open",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "quantity:distress_months",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "quantity:firm_open",
+        "kind": "drives",
+        "via": "decision:firm_exit",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:sector_return",
+        "to": "quantity:new_firm",
+        "kind": "drives",
+        "via": "decision:household_found_firm",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:base_rate",
+        "to": "quantity:new_firm",
+        "kind": "drives",
+        "via": "decision:household_found_firm",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "quantity:new_firm",
+        "kind": "drives",
+        "via": "decision:household_found_firm",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:household_size",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:household_size",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:food_price",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:food_price",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:savings",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:savings",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:last_disposable",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:last_disposable",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:spending_propensity",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:spending_propensity",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:net_wealth",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:net_wealth",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:wealth_spending_rate",
+        "to": "quantity:food_need",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:wealth_spending_rate",
+        "to": "quantity:consumption_budget",
+        "kind": "drives",
+        "via": "decision:household_spend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:consumption_budget",
+        "to": "quantity:units_sold",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:consumption_budget",
+        "to": "quantity:demand_units",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "quantity:units_sold",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inventory",
+        "to": "quantity:demand_units",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:price",
+        "to": "quantity:units_sold",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:price",
+        "to": "quantity:demand_units",
+        "kind": "drives",
+        "via": "decision:household_shop",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:demand_units",
+        "to": "quantity:expected_sales",
+        "kind": "drives",
+        "via": "decision:firm_expect",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:expected_sales",
+        "to": "quantity:expected_sales",
+        "kind": "drives",
+        "via": "decision:firm_expect",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:capital_income",
+        "to": "quantity:lobby_spend",
+        "kind": "drives",
+        "via": "decision:household_lobby",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:savings",
+        "to": "quantity:lobby_spend",
+        "kind": "drives",
+        "via": "decision:household_lobby",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:campaign_cap",
+        "to": "quantity:lobby_spend",
+        "kind": "drives",
+        "via": "decision:household_lobby",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "quantity:credit_headroom",
+        "kind": "drives",
+        "via": "decision:bank_headroom",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "quantity:credit_headroom",
+        "kind": "drives",
+        "via": "decision:bank_headroom",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_ratio",
+        "to": "quantity:credit_headroom",
+        "kind": "drives",
+        "via": "decision:bank_headroom",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:loan_request",
+        "to": "quantity:loan_approved",
+        "kind": "drives",
+        "via": "decision:bank_lend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_headroom",
+        "to": "quantity:loan_approved",
+        "kind": "drives",
+        "via": "decision:bank_lend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:firm_assets",
+        "to": "quantity:loan_approved",
+        "kind": "drives",
+        "via": "decision:bank_lend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "quantity:loan_approved",
+        "kind": "drives",
+        "via": "decision:bank_lend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:policy_rate",
+        "to": "quantity:loan_rate",
+        "kind": "drives",
+        "via": "decision:bank_spread",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:debt",
+        "to": "quantity:loan_rate",
+        "kind": "drives",
+        "via": "decision:bank_spread",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:firm_assets",
+        "to": "quantity:loan_rate",
+        "kind": "drives",
+        "via": "decision:bank_spread",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_spread_add",
+        "to": "quantity:loan_rate",
+        "kind": "drives",
+        "via": "decision:bank_spread",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "quantity:bank_dividend",
+        "kind": "drives",
+        "via": "decision:bank_dividend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "quantity:bank_dividend",
+        "kind": "drives",
+        "via": "decision:bank_dividend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:capital_ratio",
+        "to": "quantity:bank_dividend",
+        "kind": "drives",
+        "via": "decision:bank_dividend",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "quantity:bank_equity",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:bank_equity",
+        "to": "quantity:bank_failed",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "quantity:bank_equity",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_loans",
+        "to": "quantity:bank_failed",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_deposits",
+        "to": "quantity:bank_equity",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bank_deposits",
+        "to": "quantity:bank_failed",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bailout_policy",
+        "to": "quantity:bank_equity",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bailout_policy",
+        "to": "quantity:bank_failed",
+        "kind": "drives",
+        "via": "decision:bank_rescue",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:committed_spending",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:committed_spending",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:next_month_purchases",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:next_month_purchases",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_taxes",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_taxes",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_headroom",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:credit_headroom",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:public_debt",
+        "to": "quantity:borrowing",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:public_debt",
+        "to": "quantity:repayment",
+        "kind": "drives",
+        "via": "decision:government_fund",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:committed_spending",
+        "to": "quantity:spending_cut_ratio",
+        "kind": "drives",
+        "via": "decision:government_cut",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_cash",
+        "to": "quantity:spending_cut_ratio",
+        "kind": "drives",
+        "via": "decision:government_cut",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:treasury_taxes",
+        "to": "quantity:spending_cut_ratio",
+        "kind": "drives",
+        "via": "decision:government_cut",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:borrowing",
+        "to": "quantity:spending_cut_ratio",
+        "kind": "drives",
+        "via": "decision:government_cut",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:legitimacy",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:wellbeing",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:unemployment",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:inequality",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:public_debt_ratio",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:bailout",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:transition_resistance",
+        "to": "quantity:legitimacy",
+        "kind": "drives",
+        "via": "decision:government_legitimacy",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:pilot_employed",
+        "to": "quantity:pilot_employed",
+        "kind": "drives",
+        "via": "decision:estate_pilot",
+        "selfLoop": true
+      },
+      {
+        "from": "quantity:pilot_unpaid_months",
+        "to": "quantity:pilot_employed",
+        "kind": "drives",
+        "via": "decision:estate_pilot",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:pilot_free",
+        "to": "quantity:pilot_employed",
+        "kind": "drives",
+        "via": "decision:estate_pilot",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:estate_savings",
+        "to": "quantity:pilot_employed",
+        "kind": "drives",
+        "via": "decision:estate_pilot",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "quantity:flight",
+        "kind": "drives",
+        "via": "decision:estate_flight",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:pilot_employed",
+        "to": "quantity:flight",
+        "kind": "drives",
+        "via": "decision:estate_flight",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:enclosure_chance",
+        "to": "quantity:commons_enclosed",
+        "kind": "drives",
+        "via": "decision:nature_enclosure",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:random_draw",
+        "to": "quantity:commons_enclosed",
+        "kind": "drives",
+        "via": "decision:nature_enclosure",
+        "selfLoop": false
+      },
+      {
+        "from": "quantity:commons_open",
+        "to": "quantity:commons_enclosed",
+        "kind": "drives",
+        "via": "decision:nature_enclosure",
+        "selfLoop": false
+      }
+    ]
+  }
 }

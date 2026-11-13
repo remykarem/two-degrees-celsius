@@ -125,6 +125,22 @@ pub fn decls() -> Vec<(&'static str, String)> {
             "decisions",
             <crate::decisions::DecisionInfo as TS>::decl(&cfg),
         ),
+        (
+            "decisions",
+            <crate::decisions::CausalRole as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::CausalNode as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::CausalEdge as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::CausalGraph as TS>::decl(&cfg),
+        ),
         ("recording", <crate::recording::Recording as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::CrisisBands as TS>::decl(&cfg)),
         ("catalog", <crate::catalog::HealthBand as TS>::decl(&cfg)),

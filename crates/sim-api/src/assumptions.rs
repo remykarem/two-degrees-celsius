@@ -110,6 +110,8 @@ pub struct KindDef {
     pub summary: String,
     pub decides: Vec<String>,
     pub observes: Vec<String>,
+    /// Empty for a kind with registered decisions (generated from them).
+    #[serde(default)]
     pub rule: String,
     pub params: Vec<ParamRef>,
     #[serde(default)]
@@ -166,6 +168,8 @@ pub struct AgentKindInfo {
     pub observes: Vec<String>,
     pub rule: String,
     pub params: Vec<AssumptionParam>,
+    /// Contract v2.8: what the kind does that no registered decision covers, and why (documented exceptions, `content/decisions.json`).
+    pub notes: Vec<String>,
     pub variants: Vec<AgentVariant>,
     pub class_params: Vec<AssumptionParam>,
     pub code: Vec<String>,
@@ -242,6 +246,7 @@ pub fn resolve_agents(params: &Params, energy_unit: &str) -> ApiResult<AgentsCat
                 observes: k.observes.clone(),
                 rule: k.rule.clone(),
                 params: resolve_refs(&pj, &k.params, energy_unit, &k.id)?,
+                notes: Vec::new(),
                 variants: k.variants.clone(),
                 class_params: resolve_refs(&pj, &k.class_params, energy_unit, &k.id)?,
                 code: k.code.clone(),
@@ -252,7 +257,26 @@ pub fn resolve_agents(params: &Params, energy_unit: &str) -> ApiResult<AgentsCat
     let dec = crate::decisions::resolve(params)?;
     let mut kinds = kinds;
     for k in &mut kinds {
-        crate::decisions::merge_into_kind(k, &dec, &dec.quantities);
+        crate::decisions::merge_into_kind(k, &dec, &dec.quantities)?;
+    }
+    for (kind, _) in &dec.notes {
+        if !kinds.iter().any(|k| k.id == *kind) {
+            return Err(ApiError::new(
+                code::BAD_METADATA,
+                format!("content/decisions.json: kind_notes names unknown agents kind {kind}"),
+            ));
+        }
+    }
+    for o in &dec.decisions {
+        if !kinds.iter().any(|k| k.id == o.agent_kind) {
+            return Err(ApiError::new(
+                code::BAD_METADATA,
+                format!(
+                    "content/decisions.json: decision {} names unknown agents kind {}",
+                    o.id, o.agent_kind
+                ),
+            ));
+        }
     }
     let randomness = a
         .randomness

@@ -18,7 +18,8 @@ pub const NATURE_ENCLOSURE: DecisionSpec = DecisionSpec {
     system: SystemId::Nature,
     inputs: &[Q::EnclosureChance, Q::RandomDraw, Q::CommonsOpen],
     outputs: &[Q::CommonsEnclosed],
-    params: &[],
+    // The economic system's setting, read through `cfg(s, p)` (shown here for the Market system).
+    params: &["systems.market.enclosure_prob"],
     rule: "monthly_chance_while_open",
 };
 

@@ -385,7 +385,11 @@ fn agents_catalog_resolves_and_covers_every_kind() {
         assert!(ids.contains(&want), "missing kind {want}");
     }
     for k in &a.kinds {
-        assert!(!k.decides.is_empty() && !k.observes.is_empty() && !k.rule.is_empty());
+        assert!(
+            (!k.decides.is_empty() || !k.notes.is_empty())
+                && !k.observes.is_empty()
+                && !k.rule.is_empty()
+        );
     }
     let classes: Vec<&str> = a.kinds[0].variants.iter().map(|v| v.id.as_str()).collect();
     assert_eq!(

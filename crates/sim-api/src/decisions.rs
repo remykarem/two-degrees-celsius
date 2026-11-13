@@ -2,11 +2,13 @@
 //! (`sim_model::decisions::DECISIONS`) says what each decision reads, writes and uses; the words,
 //! labels and units are authored in `content/decisions.json`. This module joins the two, checks they
 //! agree, and serves `catalog.decisions` and `catalog.quantities`. It also generates the "decides",
-//! "observes" and parameter lines of the Agents explorer for the kinds that own registered
-//! decisions, so those lines cannot drift from the code.
+//! "observes", parameter and rule lines of the Agents explorer for every kind that owns registered
+//! decisions, so those lines cannot drift from the code, and the causal graph (contract v2.8) from
+//! `sim_model::causal`.
 use crate::assumptions::{param_value, AgentKindInfo, AssumptionParam};
 use crate::error::{code, ApiError, ApiResult};
 use serde::{Deserialize, Serialize};
+use sim_model::causal::{self, EdgeKind, Node, Role};
 use sim_model::decisions::DECISIONS;
 use sim_params::Params;
 use sim_types::{DecisionId, OwnerKind, QuantityId};
@@ -51,8 +53,34 @@ struct ParamDef {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct NoteDef {
+    agent_kind: String,
+    notes: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RoleDef {
+    id: String,
+    label: String,
+    text: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CausalDef {
+    /// How many decisions back the "upstream causes" of a quantity reach.
+    upstream_depth: usize,
+    roles: Vec<RoleDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct File {
     owners: Vec<OwnerDef>,
+    /// Documented exceptions: what an Agents kind does that no registered decision covers.
+    kind_notes: Vec<NoteDef>,
+    causal: CausalDef,
     quantities: Vec<QuantityDef>,
     decisions: Vec<DecisionDef>,
     params: Vec<ParamDef>,
@@ -110,10 +138,179 @@ pub struct DecisionInfo {
     pub params: Vec<AssumptionParam>,
 }
 
+/// A word for a node role (`source`, `derived`, `sink`, `decision`), from content.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CausalRole {
+    pub id: String,
+    pub label: String,
+    pub text: String,
+}
+
+/// A node of the causal graph (contract v2.8): a quantity or a decision.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalNode {
+    /// `quantity:<id>` or `decision:<id>` (a quantity and a decision can share a bare id).
+    pub id: String,
+    /// `quantity` or `decision`.
+    pub kind: String,
+    /// `source` (nothing writes it), `derived`, `sink` (nothing else reads it) or `decision`.
+    pub role: String,
+    /// The bare `QuantityId` or `DecisionId` wire name.
+    pub ref_id: String,
+    pub label: String,
+    /// The `OwnerKind` wire name.
+    pub owner: String,
+    /// A decision both reads and writes this quantity (legitimacy is an example).
+    pub self_loop: bool,
+    /// The weakly connected component, numbered in node order.
+    pub component: usize,
+    /// Quantity node ids that can change this quantity, nearest first, up to
+    /// `causal.upstreamDepth` decisions back. Empty for decisions and sources.
+    pub upstream: Vec<String>,
+}
+
+/// An edge: `reads` (quantity -> decision), `writes` (decision -> quantity) or `drives`
+/// (quantity -> quantity through `via`).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalEdge {
+    pub from: String,
+    pub to: String,
+    pub kind: String,
+    /// The decision node id a `drives` edge goes through.
+    pub via: Option<String>,
+    pub self_loop: bool,
+}
+
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalGraph {
+    pub upstream_depth: usize,
+    pub roles: Vec<CausalRole>,
+    pub nodes: Vec<CausalNode>,
+    pub edges: Vec<CausalEdge>,
+}
+
 /// The decisions and the quantity vocabulary, joined from code and content and validated.
 pub struct Resolved {
     pub decisions: Vec<DecisionInfo>,
     pub quantities: Vec<QuantityInfo>,
+    pub causal: CausalGraph,
+    /// Documented notes by Agents kind id.
+    pub notes: Vec<(String, Vec<String>)>,
+}
+
+fn node_id(n: Node) -> String {
+    match n {
+        Node::Quantity(q) => format!("quantity:{}", q.as_str()),
+        Node::Decision(d) => format!("decision:{}", d.as_str()),
+    }
+}
+
+fn build_causal(
+    c: &CausalDef,
+    quantities: &[QuantityInfo],
+    decisions: &[DecisionInfo],
+) -> ApiResult<CausalGraph> {
+    let role_text = |id: &str| -> ApiResult<()> {
+        c.roles
+            .iter()
+            .any(|r| r.id == id)
+            .then_some(())
+            .ok_or_else(|| bad(format!("causal.roles has no {id}")))
+    };
+    for id in ["source", "derived", "sink", "decision"] {
+        role_text(id)?;
+    }
+    if c.roles.len() != 4 {
+        return Err(bad(
+            "causal.roles must be source, derived, sink, decision".into()
+        ));
+    }
+    let comp: BTreeMap<Node, usize> = causal::components().into_iter().collect();
+    let mut nodes = Vec::new();
+    for n in causal::nodes() {
+        nodes.push(match n {
+            Node::Quantity(q) => {
+                let info = quantities
+                    .iter()
+                    .find(|x| x.id == q.as_str())
+                    .ok_or_else(|| bad(format!("quantity {} has no entry", q.as_str())))?;
+                let upstream = causal::causes_of(q, c.upstream_depth)
+                    .quantities
+                    .into_iter()
+                    .map(|(u, _)| node_id(Node::Quantity(u)))
+                    .collect();
+                CausalNode {
+                    id: node_id(n),
+                    kind: "quantity".into(),
+                    role: match causal::role(q) {
+                        Role::Source => "source",
+                        Role::Derived => "derived",
+                        Role::Sink => "sink",
+                    }
+                    .into(),
+                    ref_id: q.as_str().into(),
+                    label: info.label.clone(),
+                    owner: info.owner.clone(),
+                    self_loop: causal::has_self_loop(q),
+                    component: comp[&n],
+                    upstream,
+                }
+            }
+            Node::Decision(d) => {
+                let info = decisions
+                    .iter()
+                    .find(|x| x.id == d.as_str())
+                    .ok_or_else(|| bad(format!("decision {} has no entry", d.as_str())))?;
+                CausalNode {
+                    id: node_id(n),
+                    kind: "decision".into(),
+                    role: "decision".into(),
+                    ref_id: d.as_str().into(),
+                    label: info.title.clone(),
+                    owner: info.owner.clone(),
+                    self_loop: false,
+                    component: comp[&n],
+                    upstream: Vec::new(),
+                }
+            }
+        });
+    }
+    let edges = causal::edges()
+        .into_iter()
+        .map(|e| CausalEdge {
+            from: node_id(e.from),
+            to: node_id(e.to),
+            kind: match e.kind {
+                EdgeKind::Reads => "reads",
+                EdgeKind::Writes => "writes",
+                EdgeKind::Drives => "drives",
+            }
+            .into(),
+            via: e.via.map(|d| node_id(Node::Decision(d))),
+            self_loop: e.self_loop,
+        })
+        .collect();
+    Ok(CausalGraph {
+        upstream_depth: c.upstream_depth,
+        roles: c
+            .roles
+            .iter()
+            .map(|r| CausalRole {
+                id: r.id.clone(),
+                label: r.label.clone(),
+                text: r.text.clone(),
+            })
+            .collect(),
+        nodes,
+        edges,
+    })
 }
 
 fn bad(m: String) -> ApiError {
@@ -217,7 +414,7 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
     {
         return Err(bad(format!("decision {} is not a DecisionId", d.id)));
     }
-    let quantities = f
+    let quantities: Vec<QuantityInfo> = f
         .quantities
         .iter()
         .map(|q| QuantityInfo {
@@ -228,49 +425,89 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
             summary: q.summary.clone(),
         })
         .collect();
+    let causal = build_causal(&f.causal, &quantities, &decisions)?;
+    let notes = f
+        .kind_notes
+        .into_iter()
+        .map(|n| (n.agent_kind, n.notes))
+        .collect();
     Ok(Resolved {
         decisions,
         quantities,
+        causal,
+        notes,
     })
 }
 
-/// Put the generated lines in front of the hand-written ones of the Agents kind that owns the
-/// decisions: `decides` from each decision, `observes` from the labels and summaries of the
-/// inputs, `params` from the specs (live values). What stays in `content/assumptions.json` is only
-/// what no registered decision covers yet.
-pub fn merge_into_kind(kind: &mut AgentKindInfo, r: &Resolved, quantities: &[QuantityInfo]) {
+/// Fill the Agents kind from the registry: `decides` from each decision, `observes` from the
+/// labels and summaries of the inputs, `params` from the specs (live values) and `rule` from the
+/// decisions' rule texts. Nothing about decisions may be hand-written: a kind with registered
+/// decisions must have empty `decides`, `observes`, `params` and `rule` in
+/// `content/assumptions.json`; a kind without one must have empty `decides` and a documented note
+/// in `content/decisions.json` `kind_notes` ("nothing decided here", and why). The notes of any
+/// kind are served as `notes`. Its own mechanism lines (`observes`, `params`, `rule` of
+/// lobbyists and weather, which have no decision) stay as authored.
+pub fn merge_into_kind(
+    kind: &mut AgentKindInfo,
+    r: &Resolved,
+    quantities: &[QuantityInfo],
+) -> ApiResult<()> {
     let mine: Vec<&DecisionInfo> = r
         .decisions
         .iter()
         .filter(|d| d.agent_kind == kind.id)
         .collect();
-    if mine.is_empty() {
-        return;
+    let noted: Vec<String> = r
+        .notes
+        .iter()
+        .filter(|(k, _)| *k == kind.id)
+        .flat_map(|(_, n)| n.clone())
+        .collect();
+    if !kind.decides.is_empty() {
+        return Err(bad(format!(
+            "agents kind {}: hand-written `decides` (generate it, or add a kind_notes entry)",
+            kind.id
+        )));
     }
-    let mut decides: Vec<String> = mine.iter().map(|d| d.decides.clone()).collect();
-    let mut observes: Vec<String> = Vec::new();
-    let mut params: Vec<AssumptionParam> = Vec::new();
+    if mine.is_empty() {
+        if noted.is_empty() {
+            return Err(bad(format!(
+                "agents kind {} has no registered decision and no kind_notes entry",
+                kind.id
+            )));
+        }
+        kind.notes = noted;
+        return Ok(());
+    }
+    if !kind.observes.is_empty() || !kind.params.is_empty() || !kind.rule.is_empty() {
+        return Err(bad(format!(
+            "agents kind {}: hand-written observes, params or rule next to registered decisions",
+            kind.id
+        )));
+    }
     for d in &mine {
+        kind.decides.push(d.decides.clone());
         for q in &d.inputs {
             let summary = quantities
                 .iter()
                 .find(|x| x.id == q.id)
                 .map_or("", |x| x.summary.as_str());
             let line = format!("{}: {summary}", q.label);
-            if !observes.contains(&line) {
-                observes.push(line);
+            if !kind.observes.contains(&line) {
+                kind.observes.push(line);
             }
         }
         for p in &d.params {
-            if !params.iter().any(|x| x.path == p.path) {
-                params.push(p.clone());
+            if !kind.params.iter().any(|x| x.path == p.path) {
+                kind.params.push(p.clone());
             }
         }
     }
-    decides.append(&mut kind.decides);
-    observes.append(&mut kind.observes);
-    params.append(&mut kind.params);
-    kind.decides = decides;
-    kind.observes = observes;
-    kind.params = params;
+    kind.rule = mine
+        .iter()
+        .map(|d| format!("{}: {}", d.title, d.rule.text))
+        .collect::<Vec<_>>()
+        .join("\n");
+    kind.notes = noted;
+    Ok(())
 }

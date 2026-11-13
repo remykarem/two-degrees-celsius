@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.7.0";
+export const CONTRACT_VERSION = "2.8.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -29,7 +29,11 @@ export type Actor = "agent" | "non_agent";
 
 export type AgeBandKey = "child" | "adult" | "retired";
 
-export type AgentKindInfo = { id: string, title: string, actor: Actor, summary: string, decides: Array<string>, observes: Array<string>, rule: string, params: Array<AssumptionParam>, variants: Array<AgentVariant>, classParams: Array<AssumptionParam>, code: Array<string>, };
+export type AgentKindInfo = { id: string, title: string, actor: Actor, summary: string, decides: Array<string>, observes: Array<string>, rule: string, params: Array<AssumptionParam>, 
+/**
+ * Contract v2.8: what the kind does that no registered decision covers, and why (documented exceptions, `content/decisions.json`).
+ */
+notes: Array<string>, variants: Array<AgentVariant>, classParams: Array<AssumptionParam>, code: Array<string>, };
 
 export type AgentVariant = { 
 /**
@@ -132,7 +136,56 @@ decisions: Array<DecisionInfo>,
 /**
  * Contract v2.7: the quantity vocabulary of the decisions (labels and units).
  */
-quantities: Array<QuantityInfo>, };
+quantities: Array<QuantityInfo>, 
+/**
+ * Contract v2.8: the causal graph of the decisions (nodes, edges, source and sink markers), derived from the registry.
+ */
+causal: CausalGraph, };
+
+export type CausalEdge = { from: string, to: string, kind: string, 
+/**
+ * The decision node id a `drives` edge goes through.
+ */
+via: string | null, selfLoop: boolean, };
+
+export type CausalGraph = { upstreamDepth: number, roles: Array<CausalRole>, nodes: Array<CausalNode>, edges: Array<CausalEdge>, };
+
+export type CausalNode = { 
+/**
+ * `quantity:<id>` or `decision:<id>` (a quantity and a decision can share a bare id).
+ */
+id: string, 
+/**
+ * `quantity` or `decision`.
+ */
+kind: string, 
+/**
+ * `source` (nothing writes it), `derived`, `sink` (nothing else reads it) or `decision`.
+ */
+role: string, 
+/**
+ * The bare `QuantityId` or `DecisionId` wire name.
+ */
+refId: string, label: string, 
+/**
+ * The `OwnerKind` wire name.
+ */
+owner: string, 
+/**
+ * A decision both reads and writes this quantity (legitimacy is an example).
+ */
+selfLoop: boolean, 
+/**
+ * The weakly connected component, numbered in node order.
+ */
+component: number, 
+/**
+ * Quantity node ids that can change this quantity, nearest first, up to
+ * `causal.upstreamDepth` decisions back. Empty for decisions and sources.
+ */
+upstream: Array<string>, };
+
+export type CausalRole = { id: string, label: string, text: string, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 

@@ -25,6 +25,66 @@
       "agent_kind": "nature"
     }
   ],
+  "kind_notes": [
+    {
+      "agent_kind": "government",
+      "notes": [
+        "Policy execution is not a decision: benefits, basic income, job-guarantee wages, upkeep and builds are paid as the player's levers say, so the government chooses only how to fund them, how to cut them pro rata and how its legitimacy moves (known-issues DP-10).",
+        "Tax collection and debt service are mechanics, not choices."
+      ]
+    },
+    {
+      "agent_kind": "estate",
+      "notes": [
+        "The estate pays the pilot in full each month, or what it holds up to the wage. That is accounting, not a choice, so it is not a registered decision (known-issues DP-11).",
+        "A flight adds its tonnes (estate.flight_tonnes) to emissions and the estate pays the carbon price (after lobbying) on them; the pilot's wage moves from the estate to the pilot's household. Both are accounting."
+      ]
+    },
+    {
+      "agent_kind": "nature",
+      "notes": [
+        "Nature is not an agent. It responds to cumulative emissions, the forest stock, commons use and the access rule, and to harvest and fire; only the enclosure of the commons is a registered decision. See the Forest and commons topic for growth and the sink.",
+        "Who encloses the commons is matched in the simulation (the richest capital-owning household), not decided here (known-issues DP-11)."
+      ]
+    },
+    {
+      "agent_kind": "lobbyists",
+      "notes": [
+        "Nothing is decided here: each capital-owning household's gift is a decision listed under Households. Here that money becomes pressure on policy levers, held back by union strength."
+      ]
+    },
+    {
+      "agent_kind": "weather",
+      "notes": [
+        "Nothing is decided here: the odds follow climate stress, dryness and fire station coverage, and the outcome is a random draw."
+      ]
+    }
+  ],
+  "causal": {
+    "upstream_depth": 3,
+    "roles": [
+      {
+        "id": "source",
+        "label": "Starting point",
+        "text": "No decision writes it: a state variable, a lever or a setting the chain starts from."
+      },
+      {
+        "id": "derived",
+        "label": "In the middle",
+        "text": "A decision writes it and another decision reads it."
+      },
+      {
+        "id": "sink",
+        "label": "End point",
+        "text": "Written by a decision, but no other decision reads it: an outcome."
+      },
+      {
+        "id": "decision",
+        "label": "Decision",
+        "text": "A choice that reads some quantities and writes others."
+      }
+    ]
+  },
   "quantities": [
     {
       "id": "expected_sales",
@@ -1331,6 +1391,11 @@
     {
       "path": "estate.flight_prob_monthly",
       "label": "Chance the jet flies in a month",
+      "unit": "probability per month"
+    },
+    {
+      "path": "systems.market.enclosure_prob",
+      "label": "Monthly chance of enclosure, Market system",
       "unit": "probability per month"
     }
   ]

@@ -28,7 +28,7 @@
         "Capital income: Dividends, rent and interest a household received last month.",
         "Campaign spending cap: The player-set limit on the share of income that may go to lobbying."
       ],
-      "rule": "food = min(need x food price, savings); discretionary = min(propensity x max(0, disposable - food need) + wealth spending, savings - food); services = services share x discretionary; goods = the rest. Shop weight = stock x (average price / price) ^ elasticity, where the average price is weighted by stock",
+      "rule": "Founding a firm: Which household can found (a Worker or Manager with enough savings) and which slot are matched first. The chance this month = mobility rate x (sector return - cost of borrowing), between 0 and 1; the firm is founded if the month's random draw falls below it.\nSpending: Food need = people x food per person; the household buys that first, up to its savings. Of what is left of last month's disposable income it spends its class's propensity; the owner classes also spend a small slice of net wealth. The total cannot exceed savings, and is split into goods and services.\nShopping: Each firm's weight = its stock x (average price / its price) ^ elasticity. The budget is shared in proportion to weight, in two passes so a firm cannot sell more than it holds. What buyers wanted at their share, even beyond stock, is its demand. Firms buying capital goods and the government use the same split.\nLobbying: Spend = capital income x the smaller of the spend rate and the campaign cap, never more than savings. Which households lobby (Capitalists and Rentiers) and who receives the money are matched first.",
       "params": [
         {
           "path": "class.mobility_rate",
@@ -103,6 +103,7 @@
           "unit": "share"
         }
       ],
+      "notes": [],
       "variants": [
         {
           "id": "capitalist",
@@ -229,7 +230,7 @@
         "Debt: What the firm owes the bank.",
         "Demand: What buyers wanted from the firm this month, in units, even if its stock ran out."
       ],
-      "rule": "Each decision a firm makes has its own rule under Decisions below (generated from the code). expected sales = smoothing x demand + (1 - smoothing) x previous",
+      "rule": "Hire: Needed output = expected sales x (1 + growth aspiration) + inventory adjust x (cover x expected sales - inventory). Workers wanted = labour that output needs, in people. It posts vacancies once the gap exceeds the hiring slack, and the skilled tier gets what it is short of.\nFire: Each month the firm is overstaffed by at least the firing slack it counts one more month. After enough months in a row it lets go up to a monthly cap, and the count resets.\nWage: Wage step = trend + wage_k x (reference unemployment - unemployment), capped each month, where the trend is the expected inflation plus the sector's productivity growth. The wage never falls below the legal minimum.\nPrice: Price moves a share (price adjust) of the way toward (1 + markup) x unit cost each month, never below the minimum price. Demand never enters: excess demand shows up in hiring, not in the price.\nGreen technology: A step is worthwhile when the carbon bill over the payback period is larger than its cost, or an emissions cap binds, and the firm is below the technology ceiling. The firm buys it if its cash above the reserve covers its share after any subsidy; otherwise it holds cash back for it.\nInvestment and borrowing: Planned capital = depreciation + accelerator x (capital that expected sales call for - capital), scaled by a gate that is high when the smoothed return beats the loan rate plus the hurdle, and capped. It pays part from free cash and asks the bank for the rest. A firm in distress plans nothing.\nDividends: Regular dividend = payout ratio x profit, but only out of cash above the reserve for payroll and debt service. Idle cash well above that is also paid out at a set rate.\nClosing down: Each month the firm misses interest, principal or wages it counts one more month in distress; a clean month resets the count. After enough months in a row, if it still owes money, it defaults and closes.\nExpecting sales: Expected sales = weight x this month's demand + (1 - weight) x last expectation. Hiring and production read it, so spending reaches jobs here.",
       "params": [
         {
           "path": "labour.growth_aspiration",
@@ -484,6 +485,7 @@
           "unit": "share"
         }
       ],
+      "notes": [],
       "variants": [],
       "classParams": [],
       "code": [
@@ -518,7 +520,7 @@
         "Bank deposits: What the bank owes its depositors.",
         "Bailout policy: Whether the treasury recapitalises a failing bank."
       ],
-      "rule": "firm loan rate = base rate + base spread + leverage spread x leverage + system spread; leverage = debt / (capital value + cash); borrowing limited to max leverage x assets",
+      "rule": "Lending room: Most the bank may have lent = equity / required capital ratio (nothing if the ratio is zero). Room = that less its loans, never below zero.\nLending: Approved = the smallest of the request, the bank's remaining room, and (maximum leverage x firm assets - its debt), never below zero. Firms are served in order until the room is used up.\nInterest rate: Rate = policy rate + base spread + leverage spread x (debt / assets) + any extra spread the economic system adds. Riskier, more indebted firms pay more.\nBank payout: Required = loans x capital ratio x (1 + buffer). Excess = equity - required (never below zero). It pays out the payout share of the excess to its owner.\nRescue or failure: If equity is negative and the bailout policy is on, new money restores equity to the target share of loans. Without it the bank fails and every deposit loses a share: the shortfall over deposits, plus a margin.",
       "params": [
         {
           "path": "credit.max_firm_leverage",
@@ -563,6 +565,7 @@
           "unit": "multiple"
         }
       ],
+      "notes": [],
       "variants": [],
       "classParams": [],
       "code": [
@@ -577,8 +580,7 @@
       "decides": [
         "How to fund the month's payments: borrow the gap, or repay debt",
         "How much of its payments to cut when the treasury runs short",
-        "How its legitimacy moves each month",
-        "Nothing on its own about policy: levers are the player's (benefits, UBI, spending and builds are paid as set)"
+        "How its legitimacy moves each month"
       ],
       "observes": [
         "Committed spending: What the government owes this month: benefits, UBI, job-guarantee wages, upkeep and building.",
@@ -596,7 +598,7 @@
         "Bank bailed out: Whether the treasury rescued the bank this month.",
         "Resistance to system change: The legitimacy lost each month while the town changes its economic system."
       ],
-      "rule": "legitimacy change = wellbeing weight x (wellbeing - 0.5) - unemployment weight x max(0, unemployment - threshold) - inequality weight x max(0, Gini - threshold) - debt weight x max(0, debt/GDP - 1) - bailout penalty",
+      "rule": "Funding the month: The treasury needs this month's committed payments plus next month's planned purchases. If cash and taxes fall short, it borrows the gap, up to the bank's lending room. If they cover it, it repays a share of the surplus, up to what it owes.\nCutting spending: If cash, taxes and borrowing cannot cover the committed payments, each payment is paid at the same share (funds over commitments) and the shortfall is reported. Otherwise everything is paid in full.\nLegitimacy: Legitimacy changes by a wellbeing weight x (wellbeing - neutral), less a weight x the amount unemployment and the Gini exceed their thresholds, less a weight x the amount public debt exceeds a year's GDP, less a penalty if the bank was bailed out, less the resistance to a system change under way. It stays between 0 and 1.",
       "params": [
         {
           "path": "government.repay_share",
@@ -659,6 +661,10 @@
           "unit": "points"
         }
       ],
+      "notes": [
+        "Policy execution is not a decision: benefits, basic income, job-guarantee wages, upkeep and builds are paid as the player's levers say, so the government chooses only how to fund them, how to cut them pro rata and how its legitimacy moves (known-issues DP-10).",
+        "Tax collection and debt service are mechanics, not choices."
+      ],
       "variants": [],
       "classParams": [],
       "code": [
@@ -670,9 +676,7 @@
       "title": "Lobbyists",
       "actor": "agent",
       "summary": "Not a separate body: Capitalist and Rentier households give a share of their capital income to the wealthiest Manager household, which acts as the lobbyist. Together with union density this erodes the policies the player sets. The player sees the nominal lever and the effective one.",
-      "decides": [
-        "Nothing of its own: each capital-owning household's gift is a decision listed under Households; here that money becomes pressure on policy levers, held back by union strength"
-      ],
+      "decides": [],
       "observes": [
         "GDP, wage share and unemployment (for union strength)"
       ],
@@ -697,6 +701,9 @@
           "unit": "share"
         }
       ],
+      "notes": [
+        "Nothing is decided here: each capital-owning household's gift is a decision listed under Households. Here that money becomes pressure on policy levers, held back by union strength."
+      ],
       "variants": [],
       "classParams": [],
       "code": [
@@ -709,16 +716,14 @@
       "actor": "non_agent",
       "summary": "Forest and commons are not agents: they follow fixed rules for growth, harvest and decay. The one chance event is an owner fencing off an open commons.",
       "decides": [
-        "Whether an owner fences off an open commons this month",
-        "Nothing: it responds to emissions, harvest and fire"
+        "Whether an owner fences off an open commons this month"
       ],
       "observes": [
         "Chance of enclosure: The chance each month that a wealthy owner fences off an open commons; it depends on the economic system.",
         "Random draw: A chance draw the simulation takes each month and hands to the decision.",
-        "Commons open: Whether anyone may use the commons (not enclosed and not community-managed).",
-        "Cumulative emissions, forest stock, commons use and access rule"
+        "Commons open: Whether anyone may use the commons (not enclosed and not community-managed)."
       ],
-      "rule": "see the Forest and commons topic for growth and the sink; enclosure is a monthly chance while the commons are open",
+      "rule": "Fencing off the commons: While the commons are open, each month's random draw is compared with the economic system's chance of enclosure; below it, the richest capital-owning household fences the commons off. Who that is, is matched in the simulation.",
       "params": [
         {
           "path": "systems.market.enclosure_prob",
@@ -726,6 +731,10 @@
           "value": 0.002,
           "unit": "probability per month"
         }
+      ],
+      "notes": [
+        "Nature is not an agent. It responds to cumulative emissions, the forest stock, commons use and the access rule, and to harvest and fire; only the enclosure of the commons is a registered decision. See the Forest and commons topic for growth and the sink.",
+        "Who encloses the commons is matched in the simulation (the richest capital-owning household), not decided here (known-issues DP-11)."
       ],
       "variants": [],
       "classParams": [],
@@ -738,9 +747,7 @@
       "title": "Weather",
       "actor": "non_agent",
       "summary": "Droughts and fires are not decisions. Their odds rise with climate stress, which rises as the carbon budget runs down. They are the main place where the random seed matters.",
-      "decides": [
-        "Nothing: odds follow climate stress, dryness and fire stations"
-      ],
+      "decides": [],
       "observes": [
         "Climate stress, forest tiles, drought severity, fire station coverage"
       ],
@@ -765,6 +772,9 @@
           "unit": "probability per month"
         }
       ],
+      "notes": [
+        "Nothing is decided here: the odds follow climate stress, dryness and fire station coverage, and the outcome is a random draw."
+      ],
       "variants": [],
       "classParams": [],
       "code": [
@@ -778,18 +788,16 @@
       "summary": "One very rich household that does not work, owns the Farm, a posh house, a private jet and a runway. It is an ordinary household for spending, tax and class (it comes out Capitalist), with two extra rules: the jet flies by chance and pays the carbon price, and the estate pays a pilot, who is a worker in another household.",
       "decides": [
         "Whether to let the pilot go, or hire the pilot back",
-        "Whether the jet flies this month",
-        "Whether to pay the pilot in full each month (it pays what it holds, up to the wage)"
+        "Whether the jet flies this month"
       ],
       "observes": [
         "Pilot on the payroll: Whether the jet's pilot works for the estate right now (true also when the town has no pilot to need).",
         "Months of short pay: How many months in a row the estate could not pay the pilot in full.",
         "Pilot free to rehire: The pilot has no other job and is not on the job guarantee.",
         "Estate savings: The deposits the estate household holds.",
-        "Random draw: A chance draw the simulation takes each month and hands to the decision.",
-        "The carbon price after lobbying, which each flight pays"
+        "Random draw: A chance draw the simulation takes each month and hands to the decision."
       ],
-      "rule": "each month one random draw decides whether the jet flies (only with an employed pilot); a flight adds its tonnes to emissions and charges carbon price x tonnes; the pilot's wage moves from the estate to the pilot's household; unpaid for the maximum number of months: let go; savings cover the rehire months of wages: hired back",
+      "rule": "Keeping the pilot: If the pilot is employed and has gone unpaid in full for the maximum number of months in a row, the pilot is let go. If not employed, with no other job, and the estate's savings cover the set months of wages, the pilot is hired back.\nFlying the jet: The simulation takes one random draw each month. The jet flies if the draw falls below the monthly chance and a pilot is on the payroll (or the town has no pilot).",
       "params": [
         {
           "path": "estate.pilot_unpaid_months_max",
@@ -814,13 +822,11 @@
           "label": "Chance the jet flies in a month",
           "value": 0.4,
           "unit": "probability per month"
-        },
-        {
-          "path": "estate.flight_tonnes",
-          "label": "Emissions of one flight",
-          "value": 2.0,
-          "unit": "t CO2 per flight"
         }
+      ],
+      "notes": [
+        "The estate pays the pilot in full each month, or what it holds up to the wage. That is accounting, not a choice, so it is not a registered decision (known-issues DP-11).",
+        "A flight adds its tonnes (estate.flight_tonnes) to emissions and the estate pays the carbon price (after lobbying) on them; the pilot's wage moves from the estate to the pilot's household. Both are accounting."
       ],
       "variants": [],
       "classParams": [],
