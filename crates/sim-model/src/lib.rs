@@ -6,6 +6,7 @@
 
 pub mod class;
 pub mod credit;
+pub mod decisions;
 pub mod estate;
 pub mod goods;
 pub mod government;

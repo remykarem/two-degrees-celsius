@@ -1,12 +1,19 @@
 //! S1 labour market: named jobs. Each unemployed adult applies to firms with vacancies,
 //! the cheapest first (ties by skill). Firing removes named people. Wages, skill and the
 //! job guarantee follow.
+//!
+//! The firm's three labour decisions (hire, fire, wage) are pure `decide_*` functions over a
+//! read-only view built only from `State` and `Params` (`docs/features/decision-points.md`).
+//! `run` builds the view, decides, then applies the choice as deltas. Matching unemployed people
+//! to vacancies and picking whom to fire are mechanics and stay in `run`.
 
 use crate::production::capacity;
 use crate::util::{cfg, workers_of};
 use libm::pow;
-use sim_params::Params;
+use sim_params::{LabourParams, Params, ProductionParams};
 use sim_rng::Rng;
+use sim_types::DecisionId as D;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 use std::cmp::Ordering;
 
@@ -14,6 +21,228 @@ use std::cmp::Ordering;
 /// reference rate, capped each month. Wages, unlike goods prices, respond to slack.
 pub fn wage_step(lp: &sim_params::LabourParams, trend: f64, unemployment: f64) -> f64 {
     (trend + lp.wage_k * (lp.u_ref - unemployment)).clamp(-lp.wage_cap, lp.wage_cap)
+}
+
+// ---- Decision: how many workers to want, and the vacancies to post ----
+
+pub const FIRM_HIRE: DecisionSpec = DecisionSpec {
+    id: D::FirmHire,
+    system: SystemId::Labour,
+    inputs: &[
+        Q::ExpectedSales,
+        Q::Inventory,
+        Q::InventoryCover,
+        Q::Workers,
+        Q::SkilledWorkers,
+        Q::EffectiveLabour,
+        Q::OutputCapacity,
+    ],
+    outputs: &[Q::WantedWorkers, Q::Vacancies],
+    params: &[
+        "labour.growth_aspiration",
+        "labour.inventory_cover",
+        "labour.services_inventory_cover",
+        "labour.inventory_adjust",
+        "labour.hire_slack",
+        "labour.min_target_workers",
+        "labour.skilled_share",
+        "labour.default_effective_per_worker",
+        "labour.max_hire_per_month",
+        "production.beta_n",
+        "class.skill_threshold",
+    ],
+    rule: "inventory_cover_target",
+};
+
+/// What a firm sees when it sizes its workforce.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HireView {
+    pub expected_sales: f64,
+    pub inventory: f64,
+    /// Months of sales held as stock (services hold none).
+    pub inventory_cover: f64,
+    /// Headcount now.
+    pub workers: f64,
+    pub skilled_workers: f64,
+    /// Average effective labour (skill x hours) per worker.
+    pub effective_labour: f64,
+    /// Output one unit of labour would make now.
+    pub output_capacity: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HireChoice {
+    /// Workers needed, in people (before the hiring slack and the minimum).
+    pub workers_wanted: f64,
+    pub skilled_vacancies: f64,
+    pub general_vacancies: f64,
+    /// The most it takes on this month.
+    pub max_hires: u32,
+}
+
+pub fn hire_view(s: &State, p: &Params, f: &Firm, mine: &[&Person]) -> HireView {
+    let lp = &p.labour;
+    let n_now = mine.len() as f64;
+    let avg_eff = if mine.is_empty() {
+        lp.default_effective_per_worker
+    } else {
+        mine.iter()
+            .map(|x| x.skill.0 * x.effective_hours.0)
+            .sum::<f64>()
+            / n_now
+    };
+    HireView {
+        expected_sales: f.expected_sales.0,
+        inventory: f.inventory.0,
+        inventory_cover: if f.sector == Sector::Services {
+            lp.services_inventory_cover
+        } else {
+            lp.inventory_cover
+        },
+        workers: n_now,
+        skilled_workers: mine
+            .iter()
+            .filter(|x| x.skill.0 >= p.class.skill_threshold)
+            .count() as f64,
+        effective_labour: avg_eff,
+        output_capacity: capacity(s, p, f, 1.0),
+    }
+}
+
+/// How much output the firm wants, so how many effective hours of labour and how many people. A
+/// firm posts vacancies up to the next whole person once the gap exceeds `hire_slack`; the
+/// skilled tier gets what it is short of.
+pub fn decide_hire(v: &HireView, lp: &LabourParams, pp: &ProductionParams) -> HireChoice {
+    let expected = v.expected_sales * (1.0 + lp.growth_aspiration);
+    let needed =
+        (expected + lp.inventory_adjust * (v.inventory_cover * expected - v.inventory)).max(0.0);
+    let l_need = if v.output_capacity > 0.0 {
+        pow(needed / v.output_capacity, 1.0 / pp.beta_n)
+    } else {
+        0.0
+    };
+    let x = l_need / v.effective_labour.max(crate::util::TINY_DIVISOR);
+    let target = (x - lp.hire_slack).ceil().max(lp.min_target_workers);
+    let target_skilled = (lp.skilled_share * target).round();
+    let gap = (target - v.workers).max(0.0);
+    let skilled_vacancies = (target_skilled - v.skilled_workers).max(0.0).min(gap);
+    HireChoice {
+        workers_wanted: x,
+        skilled_vacancies,
+        general_vacancies: gap - skilled_vacancies,
+        max_hires: lp.max_hire_per_month,
+    }
+}
+
+// ---- Decision: fire after a sustained surplus ----
+
+pub const FIRM_FIRE: DecisionSpec = DecisionSpec {
+    id: D::FirmFire,
+    system: SystemId::Labour,
+    inputs: &[Q::Workers, Q::WantedWorkers, Q::OverTargetMonths],
+    outputs: &[Q::Workers, Q::OverTargetMonths],
+    params: &[
+        "labour.min_target_workers",
+        "labour.fire_slack",
+        "labour.fire_after_months",
+        "labour.max_fire_per_month",
+    ],
+    rule: "sustained_surplus",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FireView {
+    pub workers: f64,
+    /// The hire decision's `workers_wanted`.
+    pub workers_wanted: f64,
+    pub over_target_months: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FireChoice {
+    pub over_target_months: u32,
+    /// How many to let go this month (the least skilled go first, chosen in `run`).
+    pub to_fire: u32,
+}
+
+pub fn fire_view(f: &Firm, workers: f64, hire: &HireChoice) -> FireView {
+    FireView {
+        workers,
+        workers_wanted: hire.workers_wanted,
+        over_target_months: f.over_target_months,
+    }
+}
+
+pub fn decide_fire(v: &FireView, lp: &LabourParams) -> FireChoice {
+    let mut over = v.over_target_months;
+    if v.workers - v.workers_wanted.max(lp.min_target_workers) >= lp.fire_slack {
+        over += 1;
+    } else {
+        over = 0;
+    }
+    let mut to_fire = 0;
+    if over >= lp.fire_after_months {
+        let surplus = (v.workers - v.workers_wanted.max(lp.min_target_workers))
+            .max(0.0)
+            .floor() as u32;
+        to_fire = surplus.min(lp.max_fire_per_month);
+        over = 0;
+    }
+    FireChoice {
+        over_target_months: over,
+        to_fire,
+    }
+}
+
+// ---- Decision: the wage ----
+
+pub const FIRM_WAGE: DecisionSpec = DecisionSpec {
+    id: D::FirmWage,
+    system: SystemId::Labour,
+    inputs: &[Q::Wage, Q::MinWage, Q::Unemployment, Q::SectorTfpGrowth],
+    outputs: &[Q::Wage],
+    params: &[
+        "labour.wage_k",
+        "labour.u_ref",
+        "labour.wage_cap",
+        "labour.inflation_anchor",
+        "labour.productivity_passthrough",
+        "production.tfp_growth_goods",
+        "production.tfp_growth_food",
+        "production.tfp_growth_services",
+    ],
+    rule: "trend_plus_slack",
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WageView {
+    pub wage: Cents,
+    pub min_wage: Cents,
+    /// The town's smoothed unemployment rate.
+    pub unemployment: f64,
+    /// The sector's productivity growth per month.
+    pub sector_tfp_growth: f64,
+}
+
+pub fn wage_view(p: &Params, f: &Firm, unemployment: f64, min_wage: Cents) -> WageView {
+    WageView {
+        wage: f.wage,
+        min_wage,
+        unemployment,
+        sector_tfp_growth: match f.sector {
+            Sector::Goods => p.production.tfp_growth_goods,
+            Sector::Food => p.production.tfp_growth_food,
+            Sector::Services => p.production.tfp_growth_services,
+        },
+    }
+}
+
+/// w *= 1 + trend + k (u_ref - u), capped each month. The trend is the sector's productivity
+/// growth, so that wages and prices do not drift apart.
+pub fn decide_wage(v: &WageView, lp: &LabourParams) -> Cents {
+    let trend = lp.inflation_anchor + lp.productivity_passthrough * v.sector_tfp_growth;
+    let step = wage_step(lp, trend, v.unemployment);
+    Cents::from_f64(v.wage.as_f64() * (1.0 + step)).max(v.min_wage)
 }
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
@@ -28,45 +257,17 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     for f in s.firms.iter().filter(|f| f.active) {
         let mine: Vec<&Person> = workers_of(s, f.id).collect();
         let n_now = mine.len() as f64;
-        let avg_eff = if mine.is_empty() {
-            lp.default_effective_per_worker
-        } else {
-            mine.iter()
-                .map(|x| x.skill.0 * x.effective_hours.0)
-                .sum::<f64>()
-                / n_now
-        };
 
-        // How much output the firm wants, and so how many effective hours of labour.
-        let expected = f.expected_sales.0 * (1.0 + lp.growth_aspiration);
-        let cover = if f.sector == Sector::Services {
-            lp.services_inventory_cover
-        } else {
-            lp.inventory_cover
-        };
-        let needed = (expected + lp.inventory_adjust * (cover * expected - f.inventory.0)).max(0.0);
-        let one_unit = capacity(s, p, f, 1.0);
-        let l_need = if one_unit > 0.0 {
-            pow(needed / one_unit, 1.0 / p.production.beta_n)
-        } else {
-            0.0
-        };
-        // Workers needed, in people. A firm hires up to the next whole person once the gap
-        // exceeds `hire_slack`, and fires only when it is `fire_slack` people overstaffed.
-        let x = l_need / avg_eff.max(crate::util::TINY_DIVISOR);
-        let target = (x - lp.hire_slack).ceil().max(lp.min_target_workers);
-        let target_skilled = (lp.skilled_share * target).round();
-        let have_skilled = mine.iter().filter(|x| skilled(x)).count() as f64;
-        // Vacancies: the headcount gap, of which the skilled tier gets what it is short of.
-        let gap = (target - n_now).max(0.0);
-        let skilled_vacancies = (target_skilled - have_skilled).max(0.0).min(gap);
-        let general_vacancies = gap - skilled_vacancies;
+        // Decide: how many workers, and the vacancies.
+        let hire = decide_hire(&hire_view(s, p, f, &mine), lp, &p.production);
+        let (skilled_vacancies, general_vacancies) =
+            (hire.skilled_vacancies, hire.general_vacancies);
 
         // Hire: the cheapest unemployed people of the right tier, up to the monthly cap.
         let mut unfilled = false;
         let posted = (skilled_vacancies + general_vacancies) as u32;
         let mut open_after = 0u32;
-        let mut hires_left = lp.max_hire_per_month;
+        let mut hires_left = hire.max_hires;
         let mut hired_now = 0.0;
         for (want_skilled, vac) in [(true, skilled_vacancies), (false, general_vacancies)] {
             let mut vacancies = vac as u32;
@@ -114,16 +315,11 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         });
 
         // Fire after a sustained surplus: the least skilled go first.
-        let mut over = f.over_target_months;
-        if n_now - x.max(lp.min_target_workers) >= lp.fire_slack {
-            over += 1;
-        } else {
-            over = 0;
-        }
+        let fire = decide_fire(&fire_view(f, n_now, &hire), lp);
+        let over = fire.over_target_months;
         let mut fired_now = 0.0;
-        if over >= lp.fire_after_months {
-            let surplus = (n_now - x.max(lp.min_target_workers)).max(0.0).floor() as u32;
-            let mut to_fire = surplus.min(lp.max_fire_per_month);
+        if fire.to_fire > 0 {
+            let mut to_fire = fire.to_fire;
             let mut order: Vec<&Person> = mine.clone();
             order.sort_by(|a, b| {
                 a.skill
@@ -144,20 +340,10 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
                     firm: f.id,
                 });
             }
-            over = 0;
         }
 
-        // Wage adjustment follows employment: w *= 1 + trend + k (u_ref - u), capped each month.
-        // The trend is the sector's productivity growth, so that wages and prices do not drift apart.
-        let trend = lp.inflation_anchor
-            + lp.productivity_passthrough
-                * match f.sector {
-                    Sector::Goods => p.production.tfp_growth_goods,
-                    Sector::Food => p.production.tfp_growth_food,
-                    Sector::Services => p.production.tfp_growth_services,
-                };
-        let step = wage_step(lp, trend, unemployment);
-        let wage = Cents::from_f64(f.wage.as_f64() * (1.0 + step)).max(min_wage);
+        // Decide the wage.
+        let wage = decide_wage(&wage_view(p, f, unemployment, min_wage), lp);
         d.firm(
             f.id,
             FirmPatch {
@@ -246,4 +432,185 @@ pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
         }
     }
     d
+}
+
+#[cfg(test)]
+mod decision_tests {
+    use super::*;
+    use sim_params::ContentJson;
+
+    fn params() -> Params {
+        Params::from_content(&ContentJson {
+            params: include_str!("../../../content/params.json"),
+            initial_town: include_str!("../../../content/initial_town.json"),
+            market: include_str!("../../../content/systems/market.json"),
+            regulated: include_str!("../../../content/systems/regulated.json"),
+            coop: include_str!("../../../content/systems/coop.json"),
+        })
+        .unwrap()
+    }
+
+    type Field<V> = (&'static str, Q, fn(&mut V));
+
+    /// View-only reads (`docs/features/decision-points.md` section 6). Three checks on one decision:
+    /// every view field is a quantity the spec lists as an input (the table below is built from an
+    /// exhaustive destructure at each call site, so a new view field fails to compile until it is
+    /// added); every listed input is a view field; and perturbing each field changes the choice
+    /// for at least one base view (so the declaration is not decoration).
+    fn check_view_only<V: Copy + std::fmt::Debug, C: PartialEq + std::fmt::Debug>(
+        spec: &DecisionSpec,
+        bases: &[V],
+        fields: &[Field<V>],
+        decide: impl Fn(&V) -> C,
+    ) {
+        for (name, q, _) in fields {
+            assert!(
+                spec.inputs.contains(q),
+                "{:?}: view field {name} reads {} which the spec does not list",
+                spec.id,
+                q.as_str()
+            );
+        }
+        for q in spec.inputs {
+            assert!(
+                fields.iter().any(|(_, fq, _)| fq == q),
+                "{:?} lists input {} that no view field carries",
+                spec.id,
+                q.as_str()
+            );
+        }
+        for (name, _, bump) in fields {
+            let moved = bases.iter().any(|b| {
+                let mut v = *b;
+                bump(&mut v);
+                decide(&v) != decide(b)
+            });
+            assert!(
+                moved,
+                "{:?}: perturbing {name} never changed the choice",
+                spec.id
+            );
+        }
+        // No hidden state: the same view gives the same choice.
+        for b in bases {
+            assert_eq!(decide(b), decide(b));
+        }
+    }
+
+    #[test]
+    fn hire_reads_only_its_declared_inputs() {
+        let p = params();
+        let base = |sales, inv, cover, workers, skilled| HireView {
+            expected_sales: sales,
+            inventory: inv,
+            inventory_cover: cover,
+            workers,
+            skilled_workers: skilled,
+            effective_labour: 1.0,
+            output_capacity: 2.0,
+        };
+        let bases = [
+            base(100.0, 10.0, 1.0, 2.0, 0.0),
+            base(400.0, 300.0, 0.0, 10.0, 1.0),
+            base(900.0, 0.0, 2.0, 1.0, 0.0),
+        ];
+        let HireView {
+            expected_sales: _,
+            inventory: _,
+            inventory_cover: _,
+            workers: _,
+            skilled_workers: _,
+            effective_labour: _,
+            output_capacity: _,
+        } = bases[0];
+        let fields: [Field<HireView>; 7] = [
+            ("expected_sales", Q::ExpectedSales, |v| {
+                v.expected_sales = v.expected_sales * 2.0 + 50.0
+            }),
+            ("inventory", Q::Inventory, |v| {
+                v.inventory = v.inventory * 2.0 + 50.0
+            }),
+            ("inventory_cover", Q::InventoryCover, |v| {
+                v.inventory_cover += 1.0
+            }),
+            ("workers", Q::Workers, |v| v.workers += 5.0),
+            ("skilled_workers", Q::SkilledWorkers, |v| {
+                v.skilled_workers += 3.0
+            }),
+            ("effective_labour", Q::EffectiveLabour, |v| {
+                v.effective_labour *= 2.0
+            }),
+            ("output_capacity", Q::OutputCapacity, |v| {
+                v.output_capacity *= 2.0
+            }),
+        ];
+        check_view_only(&FIRM_HIRE, &bases, &fields, |v| {
+            decide_hire(v, &p.labour, &p.production)
+        });
+    }
+
+    #[test]
+    fn fire_reads_only_its_declared_inputs() {
+        let p = params();
+        let lp = &p.labour;
+        let base = |w, want, over| FireView {
+            workers: w,
+            workers_wanted: want,
+            over_target_months: over,
+        };
+        let bases = [
+            base(20.0, 5.0, lp.fire_after_months.saturating_sub(1)),
+            base(20.0, 5.0, 0),
+            base(2.0, 2.0, 3),
+        ];
+        let FireView {
+            workers: _,
+            workers_wanted: _,
+            over_target_months: _,
+        } = bases[0];
+        let fields: [Field<FireView>; 3] = [
+            ("workers", Q::Workers, |v| v.workers -= 15.0),
+            ("workers_wanted", Q::WantedWorkers, |v| {
+                v.workers_wanted += 30.0
+            }),
+            ("over_target_months", Q::OverTargetMonths, |v| {
+                v.over_target_months += 1
+            }),
+        ];
+        check_view_only(&FIRM_FIRE, &bases, &fields, |v| decide_fire(v, lp));
+    }
+
+    #[test]
+    fn wage_reads_only_its_declared_inputs() {
+        let p = params();
+        let lp = &p.labour;
+        let base = |wage: i64, min: i64, u, g| WageView {
+            wage: Cents(wage),
+            min_wage: Cents(min),
+            unemployment: u,
+            sector_tfp_growth: g,
+        };
+        let bases = [
+            base(300_000, 100_000, 0.05, 0.001),
+            base(300_000, 400_000, 0.05, 0.001),
+            base(300_000, 100_000, lp.u_ref, 0.0),
+        ];
+        let WageView {
+            wage: _,
+            min_wage: _,
+            unemployment: _,
+            sector_tfp_growth: _,
+        } = bases[0];
+        let fields: [Field<WageView>; 4] = [
+            ("wage", Q::Wage, |v| v.wage = Cents(v.wage.0 * 2)),
+            ("min_wage", Q::MinWage, |v| {
+                v.min_wage = Cents(v.min_wage.0 + 200_000)
+            }),
+            ("unemployment", Q::Unemployment, |v| v.unemployment += 0.01),
+            ("sector_tfp_growth", Q::SectorTfpGrowth, |v| {
+                v.sector_tfp_growth += 0.0005
+            }),
+        ];
+        check_view_only(&FIRM_WAGE, &bases, &fields, |v| decide_wage(v, lp));
+    }
 }

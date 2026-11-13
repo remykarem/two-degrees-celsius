@@ -2,6 +2,7 @@
 //! The only logic here is the arithmetic of the quantity newtypes.
 #![forbid(unsafe_code)]
 
+pub mod decisions;
 pub mod deltas;
 pub mod enums;
 pub mod ids;
@@ -10,6 +11,7 @@ pub mod state;
 pub mod turn;
 pub mod units;
 
+pub use decisions::*;
 pub use deltas::*;
 pub use enums::*;
 pub use ids::*;
