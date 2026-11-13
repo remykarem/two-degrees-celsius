@@ -8,6 +8,7 @@
 use crate::assumptions::{param_value, AgentKindInfo, AssumptionParam};
 use crate::error::{code, ApiError, ApiResult};
 use crate::live;
+use crate::strength::{StrengthDef, Strengths};
 use serde::{Deserialize, Serialize};
 use sim_model::causal::{self, EdgeKind, NetSign, Node, Role};
 use sim_model::causal_loops as loops;
@@ -93,6 +94,8 @@ struct CausalDef {
     net_signs: Vec<RoleDef>,
     /// Contract v2.13: which UI anchor (a metric, a lever or a market id) opens "Why?" for which quantity.
     entry_points: Vec<EntryPointDef>,
+    /// Contract v2.14: the words and thresholds of link strength (stage 5).
+    strength: StrengthDef,
 }
 
 #[derive(Deserialize)]
@@ -379,6 +382,118 @@ pub struct CauseRef {
     /// sign: it pushes both ways, never reduced to one) or `none` (no route of signed links). One of
     /// `causal.netSigns`. Taken over every route of at most `causal.upstreamDepth` steps.
     pub net_sign: String,
+    /// Contract v2.14: how big the overall push is (see `NetStrength`); absent when no route of
+    /// sized links reaches the focus.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub net_strength: Option<NetStrength>,
+}
+
+/// Contract v2.14: the overall size of a cause on the focus: the sum over every route of at most
+/// `causal.upstreamDepth` steps of the product of the elasticities of its links (the first-order
+/// chain rule), so routes that push opposite ways cancel. Routes through a link with no elasticity
+/// are left out (`partial`). A small-nudge slope at typical states, not a forecast.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetStrength {
+    /// The signed sum of the route elasticities.
+    pub value: f64,
+    /// The sum of their magnitudes (what the routes would add up to without cancelling).
+    pub gross: f64,
+    /// Routes counted.
+    pub routes: u32,
+    /// Some route was left out for want of a size.
+    pub partial: bool,
+    /// Routes pushed both ways, so they cancelled in part (use `causal.strength.netCancel`).
+    pub cancels: bool,
+    /// The signed number as shown ("+0.30", "-1.2").
+    pub label: String,
+    /// The sum of the magnitudes as shown.
+    pub gross_label: String,
+    /// One of `causal.strength.words`.
+    pub word: String,
+    /// 0 to 1: line thickness on the scale in `causal.strength`.
+    pub weight: f64,
+}
+
+/// Contract v2.14: what a size is measured as.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StrengthKind {
+    Elasticity,
+    Slope,
+    Switch,
+    Unmeasured,
+}
+
+/// Contract v2.14: how big one link is, measured on the real code by nudging the input over a
+/// fixed set of states (`crates/sim-model/src/sign_probe.rs`, generated into `content/strengths.json`).
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeStrength {
+    /// `elasticity` (a unit-free size: comparable between links), `slope` (has its own unit: not
+    /// comparable), `switch` (a yes or no output) or `unmeasured`.
+    pub kind: StrengthKind,
+    /// The median signed value over the samples where the output moved (elasticity or slope).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+    /// First and third quartile over the same samples.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub low: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub high: Option<f64>,
+    /// Samples that gave a value, samples where the output moved, samples tried.
+    pub samples: u32,
+    pub live: u32,
+    pub total: u32,
+    /// The magnitude as shown ("0.42"); empty when there is no value.
+    pub label: String,
+    /// `weak`, `moderate` or `strong` (one of `causal.strength.words`); elasticity only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub word: Option<String>,
+    /// 0 to 1: line thickness on the log scale in `causal.strength`; elasticity only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f64>,
+    /// The sentence, from `content/decisions.json`.
+    pub text: String,
+}
+
+/// Contract v2.14: a strength word with the elasticity it starts at.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StrengthWord {
+    pub id: String,
+    pub label: String,
+    /// The smallest elasticity magnitude that gets this word.
+    pub min: f64,
+    /// The thickness weight (0 to 1) at that magnitude, for the legend's sample lines.
+    pub weight: f64,
+    pub text: String,
+}
+
+/// Contract v2.14: the words and the thickness scale of link strength.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StrengthInfo {
+    /// The magnitudes where the thickness weight is 0 and 1 (log scale between).
+    pub floor: f64,
+    pub ceiling: f64,
+    pub words: Vec<StrengthWord>,
+    pub kinds: Vec<CausalRole>,
+    /// The sentences of a net strength with `{value}` (signed), `{word}` (a label), `{gross}`; the
+    /// web fills them from `NetStrength`, so the text is not repeated per cause (`netPartial` is
+    /// appended when `partial`).
+    pub net: String,
+    pub net_cancel: String,
+    pub net_partial: String,
+    /// Said of a link whose sign depends on the state.
+    pub depends: String,
+    /// Said of a link that could not be tested.
+    pub unverified: String,
 }
 
 /// Contract v2.13: a UI anchor that opens "Why?" for a quantity.
@@ -430,6 +545,10 @@ pub struct EdgeEffect {
     pub sentence: String,
     /// How it was checked, in words.
     pub checked: String,
+    /// Contract v2.14: how big it is. Absent for `varies` and `none` effects and for those
+    /// `declared_unverified` (the web says "depends" or "not measured" from `causal.strength`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strength: Option<EdgeStrength>,
 }
 
 /// Contract v2.12: one feedback loop of the quantity graph (`docs/features/causality-graph.md` stage 3).
@@ -519,6 +638,8 @@ pub struct CausalGraph {
     pub net_signs: Vec<CausalRole>,
     /// Contract v2.13: the UI anchors that open "Why?" and the quantity each one is about.
     pub entry_points: Vec<EntryPoint>,
+    /// Contract v2.14: the words and thickness scale of link strength.
+    pub strength: StrengthInfo,
     /// Contract v2.12: the components that hold a cycle.
     pub sccs: Vec<CausalScc>,
     /// Contract v2.12: the feedback loops, shortest first (`docs/features/causality-graph.md` section 14).
@@ -533,6 +654,15 @@ pub struct Resolved {
     pub causal: CausalGraph,
     /// Documented notes by Agents kind id.
     pub notes: Vec<(String, Vec<String>)>,
+}
+
+/// The bare id of a decision or mechanism (the `via` of `content/strengths.json`).
+pub(crate) fn node_ref(n: Node) -> String {
+    match n {
+        Node::Quantity(q) => q.as_str().to_string(),
+        Node::Decision(d) => d.as_str().to_string(),
+        Node::Mechanism(m) => m.as_str().to_string(),
+    }
 }
 
 fn node_id(n: Node) -> String {
@@ -604,7 +734,9 @@ fn build_causal(
     quantities: &[QuantityInfo],
     decisions: &[DecisionInfo],
     mechanisms: &[MechanismInfo],
+    strengths: &Strengths,
 ) -> ApiResult<CausalGraph> {
+    c.strength.validate().map_err(bad)?;
     let role_text = |id: &str| -> ApiResult<()> {
         c.roles
             .iter()
@@ -687,7 +819,7 @@ fn build_causal(
                     component: comp[&n],
                     upstream,
                     in_loops: in_loops(&node_id(n)),
-                    causes: causes_of(q, c.upstream_depth),
+                    causes: causes_of(q, c.upstream_depth, &c.strength, strengths),
                 }
             }
             Node::Mechanism(m) => {
@@ -770,6 +902,8 @@ fn build_causal(
                     o,
                     fx,
                     causal::edge_lag_months(&e).unwrap_or(0),
+                    &c.strength,
+                    strengths,
                 )?),
                 _ => None,
             };
@@ -826,6 +960,17 @@ fn build_causal(
         loop_max_len: loops::MAX_LOOP_LEN,
         net_signs,
         entry_points,
+        strength: StrengthInfo {
+            floor: c.strength.floor,
+            ceiling: c.strength.ceiling,
+            words: c.strength.words(),
+            kinds: c.strength.kinds(),
+            net: c.strength.net.clone(),
+            net_cancel: c.strength.net_cancel.clone(),
+            net_partial: c.strength.net_partial.clone(),
+            depends: c.strength.depends.clone(),
+            unverified: c.strength.unverified.clone(),
+        },
         sccs,
         loops,
     })
@@ -833,21 +978,35 @@ fn build_causal(
 
 /// The causes of `q` for the "Why?" view: the quantities of `causal::causes_of` (nearest first) with
 /// their depth and their net sign on `q` over every route of at most `max_depth` steps (`sign_of`).
-fn causes_of(q: QuantityId, max_depth: usize) -> Vec<CauseRef> {
+fn causes_of(
+    q: QuantityId,
+    max_depth: usize,
+    sw: &StrengthDef,
+    strengths: &Strengths,
+) -> Vec<CauseRef> {
     causal::causes_of(q, max_depth)
         .quantities
         .into_iter()
-        .map(|(u, depth)| CauseRef {
-            id: node_id(Node::Quantity(u)),
-            depth,
-            net_sign: match causal::sign_of(u, q, max_depth) {
-                NetSign::Up => "up",
-                NetSign::Down => "down",
-                NetSign::Varies => "varies",
-                NetSign::Mixed => "mixed",
-                NetSign::NoPath => "none",
+        .map(|(u, depth)| {
+            let paths = causal::paths(u, q, max_depth);
+            CauseRef {
+                id: node_id(Node::Quantity(u)),
+                depth,
+                net_sign: match causal::net_sign(&paths) {
+                    NetSign::Up => "up",
+                    NetSign::Down => "down",
+                    NetSign::Varies => "varies",
+                    NetSign::Mixed => "mixed",
+                    NetSign::NoPath => "none",
+                }
+                .into(),
+                net_strength: sw.net(&paths, &|via, from, to| {
+                    strengths
+                        .get(via, from, to)
+                        .filter(|e| e.kind == "elasticity")
+                        .map(|e| e.median)
+                }),
             }
-            .into(),
         })
         .collect()
 }
@@ -1078,6 +1237,8 @@ fn edge_effect(
     to: QuantityId,
     fx: sim_types::Effect,
     lag: u32,
+    sw: &StrengthDef,
+    strengths: &Strengths,
 ) -> ApiResult<EdgeEffect> {
     let label = |q: QuantityId| {
         quantities
@@ -1162,7 +1323,16 @@ fn edge_effect(
         sim_types::Basis::DeclaredUnverified(r) if reason.is_none() => Some(r.to_string()),
         _ => reason,
     };
+    // Only a signed, tested link has a size: a `varies` link has no single one and an unverified
+    // link was never measured.
+    let strength = match (sign, fx.basis) {
+        ("up" | "down", sim_types::Basis::Perturbed | sim_types::Basis::PerturbedSystem) => {
+            strengths.get(&node_ref(via), from, to).map(|e| sw.edge(e))
+        }
+        _ => None,
+    };
     Ok(EdgeEffect {
+        strength,
         sign: sign.into(),
         lag_months: lag,
         basis: basis.into(),
@@ -1361,7 +1531,8 @@ pub fn resolve(params: &Params) -> ApiResult<Resolved> {
                 }),
         })
         .collect();
-    let causal = build_causal(&f.causal, &quantities, &decisions, &mechanisms)?;
+    let strengths = Strengths::load().map_err(bad)?;
+    let causal = build_causal(&f.causal, &quantities, &decisions, &mechanisms, &strengths)?;
     let notes = f
         .kind_notes
         .into_iter()

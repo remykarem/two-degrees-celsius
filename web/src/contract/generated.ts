@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.13.0";
+export const CONTRACT_VERSION = "2.14.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -188,6 +188,10 @@ netSigns: Array<CausalRole>,
  */
 entryPoints: Array<EntryPoint>, 
 /**
+ * Contract v2.14: the words and thickness scale of link strength.
+ */
+strength: StrengthInfo, 
+/**
  * Contract v2.12: the components that hold a cycle.
  */
 sccs: Array<CausalScc>, 
@@ -313,7 +317,12 @@ export type CauseRef = { id: string, depth: number,
  * sign: it pushes both ways, never reduced to one) or `none` (no route of signed links). One of
  * `causal.netSigns`. Taken over every route of at most `causal.upstreamDepth` steps.
  */
-netSign: string, };
+netSign: string, 
+/**
+ * Contract v2.14: how big the overall push is (see `NetStrength`); absent when no route of
+ * sized links reaches the focus.
+ */
+netStrength?: NetStrength | null, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -414,7 +423,47 @@ sentence: string,
 /**
  * How it was checked, in words.
  */
-checked: string, };
+checked: string, 
+/**
+ * Contract v2.14: how big it is. Absent for `varies` and `none` effects and for those
+ * `declared_unverified` (the web says "depends" or "not measured" from `causal.strength`).
+ */
+strength?: EdgeStrength | null, };
+
+export type EdgeStrength = { 
+/**
+ * `elasticity` (a unit-free size: comparable between links), `slope` (has its own unit: not
+ * comparable), `switch` (a yes or no output) or `unmeasured`.
+ */
+kind: StrengthKind, 
+/**
+ * The median signed value over the samples where the output moved (elasticity or slope).
+ */
+value?: number | null, 
+/**
+ * First and third quartile over the same samples.
+ */
+low?: number | null, high?: number | null, 
+/**
+ * Samples that gave a value, samples where the output moved, samples tried.
+ */
+samples: number, live: number, total: number, 
+/**
+ * The magnitude as shown ("0.42"); empty when there is no value.
+ */
+label: string, 
+/**
+ * `weak`, `moderate` or `strong` (one of `causal.strength.words`); elasticity only.
+ */
+word?: string | null, 
+/**
+ * 0 to 1: line thickness on the log scale in `causal.strength`; elasticity only.
+ */
+weight?: number | null, 
+/**
+ * The sentence, from `content/decisions.json`.
+ */
+text: string, };
 
 export type EmissionCategory = "industry" | "homes" | "energy" | "aviation" | "waste";
 
@@ -1090,6 +1139,44 @@ commonsStock: number, commonsAccess: CommonsAccessKey, cumulativeTonnes: number,
  */
 forestHealth: number, commonsHealth: number, farmHealth: number, };
 
+export type NetStrength = { 
+/**
+ * The signed sum of the route elasticities.
+ */
+value: number, 
+/**
+ * The sum of their magnitudes (what the routes would add up to without cancelling).
+ */
+gross: number, 
+/**
+ * Routes counted.
+ */
+routes: number, 
+/**
+ * Some route was left out for want of a size.
+ */
+partial: boolean, 
+/**
+ * Routes pushed both ways, so they cancelled in part (use `causal.strength.netCancel`).
+ */
+cancels: boolean, 
+/**
+ * The signed number as shown ("+0.30", "-1.2").
+ */
+label: string, 
+/**
+ * The sum of the magnitudes as shown.
+ */
+grossLabel: string, 
+/**
+ * One of `causal.strength.words`.
+ */
+word: string, 
+/**
+ * 0 to 1: line thickness on the scale in `causal.strength`.
+ */
+weight: number, };
+
 export type NetWorthCategory = "asset" | "liability";
 
 export type NetWorthHolder = { id: string, label: string, note: string, inHeadline: boolean, households: number, people: number, assets: number, liabilities: number, netWorth: number, howId?: string, };
@@ -1369,6 +1456,38 @@ export type StaffCommute = { person: number, household: number,
 employer: number, from: Tile | null, to: Tile, tiles: number, minutes: number, wage: number, };
 
 export type Status = "placeholder" | "tuned" | "rough_real_world";
+
+export type StrengthInfo = { 
+/**
+ * The magnitudes where the thickness weight is 0 and 1 (log scale between).
+ */
+floor: number, ceiling: number, words: Array<StrengthWord>, kinds: Array<CausalRole>, 
+/**
+ * The sentences of a net strength with `{value}` (signed), `{word}` (a label), `{gross}`; the
+ * web fills them from `NetStrength`, so the text is not repeated per cause (`netPartial` is
+ * appended when `partial`).
+ */
+net: string, netCancel: string, netPartial: string, 
+/**
+ * Said of a link whose sign depends on the state.
+ */
+depends: string, 
+/**
+ * Said of a link that could not be tested.
+ */
+unverified: string, };
+
+export type StrengthKind = "elasticity" | "slope" | "switch" | "unmeasured";
+
+export type StrengthWord = { id: string, label: string, 
+/**
+ * The smallest elasticity magnitude that gets this word.
+ */
+min: number, 
+/**
+ * The thickness weight (0 to 1) at that magnitude, for the legend's sample lines.
+ */
+weight: number, text: string, };
 
 export type SystemCard = { key: SystemKey, 
 /**

@@ -14,6 +14,7 @@ ts = ["dep:ts-rs"]
 [dependencies]
 ts-rs = { version = "12", optional = true, default-features = false, features = ["serde-compat"] }
 serde.workspace = true
+libm.workspace = true
 # float_roundtrip: exported saves must restore every f64 bit-for-bit.
 serde_json = { workspace = true, features = ["float_roundtrip"] }
 sim-types.workspace = true

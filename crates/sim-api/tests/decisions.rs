@@ -3,7 +3,7 @@ use sim_api::decisions::DECISIONS_JSON;
 use sim_api::Api;
 use sim_model::decisions::{DECISIONS, MECHANISMS};
 use sim_types::{DecisionId, MechanismId, QuantityId};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// The loaded `Params` as JSON: includes `systems.*`, which come from the system files.
 fn params_json() -> serde_json::Value {
@@ -728,4 +728,118 @@ fn entry_points_name_real_quantities_once_each() {
         .entry_points
         .iter()
         .all(|e| nodes.contains(e.quantity.as_str())));
+}
+
+// ---- stage 5: strength (contract 2.14) ----
+
+#[test]
+fn every_verified_signed_effect_has_a_strength_and_the_others_have_none() {
+    let g = Api::init(1).unwrap().catalog().unwrap().causal;
+    let (mut sized, mut depends, mut none, mut kinds) = (0, 0, 0, BTreeMap::new());
+    for e in g.edges.iter().filter(|e| e.kind == "drives") {
+        let fx = e.effect.as_ref().unwrap();
+        let label = format!("{} {} -> {}", e.via.as_deref().unwrap(), e.from, e.to);
+        match (fx.sign.as_str(), fx.basis.as_str()) {
+            ("up" | "down", "perturbed" | "system") => {
+                let s = fx
+                    .strength
+                    .as_ref()
+                    .unwrap_or_else(|| panic!("{label}: no strength"));
+                *kinds.entry(format!("{:?}", s.kind)).or_insert(0) += 1;
+                assert!(s.live <= s.total && s.samples <= s.live, "{label}");
+                assert!(!s.text.is_empty(), "{label}");
+                if let Some(v) = s.value {
+                    assert!(v.is_finite(), "{label}");
+                    // The measured slope has the declared sign (the sign test's rule, reused).
+                    assert_eq!(v > 0.0, fx.sign == "up", "{label}: {v} against {}", fx.sign);
+                    assert!(s.low.unwrap() <= v && v <= s.high.unwrap(), "{label}");
+                    assert!(s.samples >= 1, "{label}");
+                    sized += 1;
+                }
+                if let Some(w) = s.weight {
+                    assert!((0.0..=1.0).contains(&w), "{label}");
+                    assert!(s.word.is_some(), "{label}");
+                }
+            }
+            ("varies", _) => {
+                assert!(
+                    fx.strength.is_none(),
+                    "{label}: varies has no single strength"
+                );
+                depends += 1;
+            }
+            _ => {
+                assert!(fx.strength.is_none(), "{label}: {} {}", fx.sign, fx.basis);
+                none += 1;
+            }
+        }
+    }
+    println!("sized {sized}, depends {depends}, none or unverified {none}, kinds {kinds:?}");
+    assert!(sized > 200, "only {sized} sized links");
+}
+
+#[test]
+fn strengths_file_has_no_stray_entries() {
+    use sim_api::strength::Strengths;
+    let s = Strengths::load().unwrap();
+    let g = Api::init(1).unwrap().catalog().unwrap().causal;
+    let real: BTreeSet<(String, String, String)> = g
+        .edges
+        .iter()
+        .filter(|e| e.kind == "drives")
+        .map(|e| {
+            let via = e.via.as_deref().unwrap().split(':').nth(1).unwrap();
+            let from = e.from.split(':').nth(1).unwrap();
+            let to = e.to.split(':').nth(1).unwrap();
+            (via.into(), from.into(), to.into())
+        })
+        .collect();
+    let mut seen = BTreeSet::new();
+    for e in s.entries() {
+        let k = (e.via.clone(), e.from.clone(), e.to.clone());
+        assert!(real.contains(&k), "{k:?} is not an edge of the registry");
+        assert!(seen.insert(k.clone()), "{k:?} appears twice");
+        assert!(e.median.is_finite() && e.low <= e.median && e.median <= e.high);
+    }
+}
+
+#[test]
+fn strength_is_deterministic_and_net_strength_agrees_with_the_signs() {
+    let a = Api::init(1).unwrap().catalog().unwrap().causal;
+    let b = Api::init(2).unwrap().catalog().unwrap().causal;
+    assert_eq!(a.edges, b.edges, "strength must not depend on the seed");
+    assert_eq!(a.nodes, b.nodes);
+    let mut with = 0;
+    let mut cancelled = 0;
+    for n in a.nodes.iter().filter(|n| n.kind == "quantity") {
+        for c in &n.causes {
+            let Some(ns) = &c.net_strength else { continue };
+            with += 1;
+            assert!(
+                ns.value.is_finite() && ns.gross.is_finite(),
+                "{} -> {}",
+                c.id,
+                n.id
+            );
+            assert!(ns.value.abs() <= ns.gross + 1e-9 && ns.routes >= 1);
+            assert!((0.0..=1.0).contains(&ns.weight));
+            assert!(a.strength.words.iter().any(|w| w.id == ns.word));
+            if !ns.partial {
+                match c.net_sign.as_str() {
+                    "up" => assert!(ns.value > 0.0, "{} -> {}", c.id, n.id),
+                    "down" => assert!(ns.value < 0.0, "{} -> {}", c.id, n.id),
+                    _ => {}
+                }
+            }
+            if ns.value.abs() + 1e-9 < ns.gross {
+                cancelled += 1;
+            }
+        }
+    }
+    println!("{with} causes have a net strength, {cancelled} of them cancel in part");
+    assert!(with > 500);
+    assert!(cancelled > 0, "no cause where routes cancel");
+    // The thresholds come from content and rise.
+    let mins: Vec<f64> = a.strength.words.iter().map(|w| w.min).collect();
+    assert!(mins.windows(2).all(|w| w[0] < w[1]));
 }

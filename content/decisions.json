@@ -73,6 +73,32 @@
       { "id": "mixed", "label": "Both ways", "text": "Different routes push in opposite directions: it raises the quantity along one route and lowers it along another, so no single sign is given." },
       { "id": "none", "label": "No direct push", "text": "The quantity reads this, but no route of signed links carries a change of it to the quantity." }
     ],
+    "strength": {
+      "floor": 0.05,
+      "ceiling": 5.0,
+      "words": [
+        { "id": "weak", "label": "Weak", "min": 0.0, "text": "Less than a 2 per cent change in the output for a 10 per cent rise in the input." },
+        { "id": "moderate", "label": "Moderate", "min": 0.2, "text": "Between 2 and 10 per cent for a 10 per cent rise in the input." },
+        { "id": "strong", "label": "Strong", "min": 1.0, "text": "At least as large as the rise in the input: 10 per cent or more for a 10 per cent rise." }
+      ],
+      "kinds": [
+        { "id": "elasticity", "label": "Elasticity", "text": "The per cent change in the output for a one per cent change in the input, measured on the real code. It has no unit, so it can be compared between links." },
+        { "id": "slope", "label": "Raw slope", "text": "Output units per input unit. The input had no level to compare with, so the number has a unit of its own and is not comparable with other links." },
+        { "id": "switch", "label": "Yes or no", "text": "The output is a yes or no choice, so there is no size to measure." },
+        { "id": "unmeasured", "label": "Not sized", "text": "The input is a flag or a category, or the output was zero in the samples, so no size could be measured." }
+      ],
+      "edge_elasticity": "Strength: {word}. A 10 per cent rise in the input moves the output about {pct} per cent (elasticity {value}; the middle half of the samples gave {low} to {high}; {n} of {of} states). A small-nudge slope at typical states, not a forecast.",
+      "edge_slope": "Raw slope {value} output units per input unit (middle half {low} to {high}). It has its own unit, so it is not compared with other links.",
+      "edge_switch": "The output is a yes or no choice, so this link has no size.",
+      "edge_unmeasured": "No size: the input is a flag or a category, or the output was zero in the samples.",
+      "depends": "Depends on the state of the town: no single strength.",
+      "unverified": "Not measured: this link could not be tested on the real code.",
+      "net": "Overall {value} ({word}): the sum of the sizes along each route of at most three steps (each route is the product of its links).",
+      "net_cancel": "Overall {value} ({word}), after routes that push opposite ways cancel; added up without signs they come to {gross}.",
+      "net_partial": " Routes through links with no size are left out.",
+      "sign_plus": "+",
+      "sign_minus": "-"
+    },
     "entry_points": [
       { "anchor": "unemployment", "quantity": "unemployment" },
       { "anchor": "emissions", "quantity": "net_emissions" },

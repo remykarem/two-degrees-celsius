@@ -163,6 +163,26 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ("decisions", <crate::decisions::CauseRef as TS>::decl(&cfg)),
         (
             "decisions",
+            <crate::decisions::NetStrength as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::StrengthKind as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::EdgeStrength as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::StrengthWord as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
+            <crate::decisions::StrengthInfo as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
             <crate::decisions::EntryPoint as TS>::decl(&cfg),
         ),
         (
