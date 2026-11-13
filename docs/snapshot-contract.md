@@ -584,3 +584,12 @@ Review finding F8 (thin renderer). The state hash is unchanged.
 - Stage 1 registers three decisions: `firm_hire`, `firm_fire`, `firm_wage` (system `S1 labour`), over 14 quantities.
 - `CONTRACT_VERSION` is "2.7.0". Fixtures `catalog.json`, `agents.json`, the golden's `agents` and `catalog` hashes and the recording changed; the state hashes did not.
 
+## 29. Contract v2.8: causal graph and Agents notes (feature `docs/features/decision-points.md` section 15; ADDITIVE, `SCHEMA_VERSION` stays 8)
+
+- `Catalog.causal: CausalGraph` = `{upstreamDepth, roles: CausalRole[], nodes: CausalNode[], edges: CausalEdge[]}` (`crates/sim-api/src/decisions.rs`; structure from `sim_model::causal`, words from `content/decisions.json` `causal`).
+  - `CausalNode` is `{id, kind, role, refId, label, owner, selfLoop, component, upstream}`. `id` is `quantity:<QuantityId>` or `decision:<DecisionId>`; `kind` is `quantity` or `decision`; `role` is `source` (no decision writes it), `derived`, `sink` (read only by the decisions that write it) or `decision`; `component` is the weakly connected component, numbered in node order; `upstream` is the quantity node ids that can change this quantity, nearest first, up to `upstreamDepth` decisions back (empty for sources and decisions). Nodes are the quantities in `QuantityId` order, then the decisions in registry order.
+  - `CausalEdge` is `{from, to, kind, via, selfLoop}`: `reads` (quantity -> decision), `writes` (decision -> quantity), `drives` (quantity -> quantity, `via` the decision node id). `selfLoop` is true when the decision both reads and writes that quantity. Order: reads and writes per decision in registry order, then the drives edges.
+  - `CausalRole` is `{id, label, text}` for the four roles.
+- `AgentKindInfo.notes: string[]`: documented exceptions per Agents kind (`content/decisions.json` `kind_notes`). `decides`, `observes`, `params` and `rule` are now generated for every kind that owns registered decisions (`rule` is the decisions' rule texts, one per line); a kind with no decision (lobbyists, weather) has empty `decides` and its own `observes`, `params` and `rule`.
+- `CONTRACT_VERSION` is "2.8.0". Fixtures `catalog.json`, `agents.json`, the golden's `agents` and `catalog` hashes and the recording changed; the state hashes did not.
+
