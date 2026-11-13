@@ -5156,6 +5156,7 @@
         "priceDirectionWord": "too early to say",
         "priceCause": "scarcity",
         "priceCauseWord": "driven by empty homes",
+        "priceQuantity": "rent",
         "priceNote": "Rent responds to scarcity: it rises while almost every home is taken and renters can bear it, and falls otherwise. Public rent is set by the government.",
         "priceSeries": [
           344.74
@@ -5636,6 +5637,118 @@
       {
         "id": "commons_enclosed",
         "value": 0.0
+      },
+      {
+        "id": "forest_stock",
+        "value": 0.7057299818854753
+      },
+      {
+        "id": "commons_stock",
+        "value": 0.7738373621896999
+      },
+      {
+        "id": "commons_community",
+        "value": 0.0
+      },
+      {
+        "id": "commons_harvest",
+        "value": 1.0
+      },
+      {
+        "id": "cumulative_emissions",
+        "value": 11.422382189193018
+      },
+      {
+        "id": "gross_emissions",
+        "value": 12.833999683803963
+      },
+      {
+        "id": "forest_sink",
+        "value": 1.4116174946109463
+      },
+      {
+        "id": "net_emissions",
+        "value": 11.422382189193018
+      },
+      {
+        "id": "direct_emissions",
+        "value": 2.576289617141134
+      },
+      {
+        "id": "plant_emissions",
+        "value": 7.237710066662831
+      },
+      {
+        "id": "grid_intensity",
+        "value": 1.0
+      },
+      {
+        "id": "renewable_share",
+        "value": 0.0
+      },
+      {
+        "id": "plant_capacity",
+        "value": 10.0
+      },
+      {
+        "id": "energy_demand",
+        "value": 7.237710066662831
+      },
+      {
+        "id": "electricity_served",
+        "value": 1.0
+      },
+      {
+        "id": "climate_stress",
+        "value": 0.0
+      },
+      {
+        "id": "drought",
+        "value": 0.0
+      },
+      {
+        "id": "fire",
+        "value": 0.0
+      },
+      {
+        "id": "resilience_spending",
+        "value": 0.0
+      },
+      {
+        "id": "system_change",
+        "value": 0.0
+      },
+      {
+        "id": "output",
+        "value": 860.405857741335
+      },
+      {
+        "id": "rent",
+        "value": 344.74
+      },
+      {
+        "id": "occupancy",
+        "value": 1.0
+      },
+      {
+        "id": "profit_tax_rate",
+        "value": 0.11184271640833218
+      },
+      {
+        "id": "wage_tax_rate",
+        "value": 0.3
+      },
+      {
+        "id": "capital_tax_rate",
+        "value": 0.4
+      },
+      {
+        "id": "wealth_tax_rate",
+        "value": 0.0
+      },
+      {
+        "id": "wealth_threshold",
+        "value": 150000.0
       }
     ],
     "estate": {

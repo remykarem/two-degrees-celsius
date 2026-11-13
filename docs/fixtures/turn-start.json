@@ -4599,6 +4599,118 @@
       {
         "id": "commons_enclosed",
         "value": 0.0
+      },
+      {
+        "id": "forest_stock",
+        "value": 0.7058087473054732
+      },
+      {
+        "id": "commons_stock",
+        "value": 0.7748084318812566
+      },
+      {
+        "id": "commons_community",
+        "value": 0.0
+      },
+      {
+        "id": "commons_harvest",
+        "value": 1.0
+      },
+      {
+        "id": "cumulative_emissions",
+        "value": 0.0
+      },
+      {
+        "id": "gross_emissions",
+        "value": 14.51900669993357
+      },
+      {
+        "id": "forest_sink",
+        "value": 1.4116176677951557
+      },
+      {
+        "id": "net_emissions",
+        "value": 13.107389032138414
+      },
+      {
+        "id": "direct_emissions",
+        "value": 2.4184289486241664
+      },
+      {
+        "id": "plant_emissions",
+        "value": 7.080577751309404
+      },
+      {
+        "id": "grid_intensity",
+        "value": 1.0
+      },
+      {
+        "id": "renewable_share",
+        "value": 0.0
+      },
+      {
+        "id": "plant_capacity",
+        "value": 10.0
+      },
+      {
+        "id": "energy_demand",
+        "value": 7.080577751309404
+      },
+      {
+        "id": "electricity_served",
+        "value": 1.0
+      },
+      {
+        "id": "climate_stress",
+        "value": 0.0
+      },
+      {
+        "id": "drought",
+        "value": 0.0
+      },
+      {
+        "id": "fire",
+        "value": 0.0
+      },
+      {
+        "id": "resilience_spending",
+        "value": 0.0
+      },
+      {
+        "id": "system_change",
+        "value": 0.0
+      },
+      {
+        "id": "output",
+        "value": 782.7526434566491
+      },
+      {
+        "id": "rent",
+        "value": 343.02
+      },
+      {
+        "id": "occupancy",
+        "value": 1.0
+      },
+      {
+        "id": "profit_tax_rate",
+        "value": 0.11257521169142745
+      },
+      {
+        "id": "wage_tax_rate",
+        "value": 0.3
+      },
+      {
+        "id": "capital_tax_rate",
+        "value": 0.4
+      },
+      {
+        "id": "wealth_tax_rate",
+        "value": 0.0
+      },
+      {
+        "id": "wealth_threshold",
+        "value": 150000.0
       }
     ],
     "estate": {

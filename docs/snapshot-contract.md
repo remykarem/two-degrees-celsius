@@ -600,3 +600,10 @@ Review finding F8 (thin renderer). The state hash is unchanged.
 - `BreakdownInput.quantityId?`, `MarketView.priceQuantity?`, `MarketDriver.quantityId?`: the catalog quantity an input, a market price or a driver stands for, where the registry has one.
 - `CONTRACT_VERSION` is "2.9.0". `content/ui.json` `text.misc.what_changed_*` (the "Why is this changing?" window). Fixtures `catalog.json`, `agents.json`, `snapshot-turn1.json`, `breakdowns.json`, the turn-result and month fixtures, the golden's snapshot, breakdown, catalog and agents hashes and the recording changed; the state hashes did not.
 
+
+## 31. Contract v2.10: mechanisms (feature `docs/features/causality-graph.md` stage 1; ADDITIVE, `SCHEMA_VERSION` stays 8)
+
+- `Catalog.mechanisms: MechanismInfo[]` = `{id, title, owner, agentKind, system, explains, rule: {id, label, text}, inputs: QuantityRef[], outputs: QuantityRef[], params: AssumptionParam[]}` (`crates/sim-api/src/decisions.rs`; spec from `sim_model::decisions::MECHANISMS`, words from `content/decisions.json` `mechanisms`). A mechanism is plain code (physics or accounting), not a choice; it has no `decides`. `agentKind` is the Agents explorer kind that lists it (`weather` for the new `OwnerKind::Weather`).
+- `Catalog.causal.nodes[]` gains `kind: "mechanism"` (id `mechanism:<MechanismId>`, `role: "mechanism"`, `refId`, `label` = the title, `owner`); `causal.roles` has a fifth word, `mechanism`, and the words for `source`, `derived` and `sink` now say "decision or plain code". `CausalEdge.via` may be a `mechanism:` node id. Node order: quantities, decisions, mechanisms. `upstream` counts steps (decisions or mechanisms crossed), still `causal.upstreamDepth` = 3.
+- 30 new `QuantityId`s (129 in all), each with a `live` binding; `MarketView.priceQuantity` of the housing card is `rent`.
+- `CONTRACT_VERSION` is "2.10.0". Fixtures `catalog.json`, `agents.json` (unchanged text), the snapshot and turn-result fixtures (`quantities`, the housing card), the golden's snapshot-based and catalog hashes and the recording changed; the state hashes did not.
