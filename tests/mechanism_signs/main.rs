@@ -13,6 +13,7 @@ mod common;
 mod group_a;
 mod group_b;
 mod group_c;
+mod group_d;
 
 use sim_model::causal::Node;
 use sim_model::decisions::MECHANISMS;
@@ -25,6 +26,7 @@ fn declared_system_signs_agree_with_the_real_systems() {
     group_a::probe_all(&mut r);
     group_b::probe_all(&mut r);
     group_c::probe_all(&mut r);
+    group_d::probe_all(&mut r);
     let mut missing = Vec::new();
     for m in MECHANISMS {
         for e in m
