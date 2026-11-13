@@ -45,9 +45,10 @@ system run(s,p,rng):  for each owner -> view = View::from(s,p,owner)   // read-o
 **Quantity vocabulary** (`QuantityId`, a closed enum, snake_case on the wire): every state variable or flow that decisions read or write: `price`, `wage`, `workers`, `vacancies`, `inventory`, `expected_sales`, `unmet_demand`, `unit_cost`, `profit`, `cash`, `loan_request`, `green_tech`, `footprint`, `emissions`, `carbon_price`, `unemployment`, `savings`, `consumption_budget`, `legitimacy`, ... Each carries a label, unit and owner kind in `content/` (text lives in content, per AGENTS.md rule 9).
 
 ```rust
+// One enum, not two: the owner kind is a method on DecisionId (an exhaustive match), never a stored field, so the two cannot disagree.
+// (A nested `Decision::Firm(FirmDecision::Price)` is an equivalent option if firms gain many more decisions.)
 pub struct DecisionSpec {
-    pub id: DecisionId,            // enum: FirmPrice, FirmHire, FirmFire, FirmWage, ...
-    pub owner: OwnerKind,          // Firm | Household | Bank | Government | Estate
+    pub id: DecisionId,            // enum: FirmPrice, FirmHire, FirmFire, FirmWage, ...; the owner is derived: DecisionId::owner() -> OwnerKind
     pub system: SystemId,          // where it runs
     pub inputs: &'static [QuantityId],
     pub outputs: &'static [QuantityId],
