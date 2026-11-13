@@ -9,6 +9,7 @@
 use sim_params::{EstateParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -29,6 +30,12 @@ pub const ESTATE_PILOT: DecisionSpec = DecisionSpec {
         Q::EstateSavings,
     ],
     outputs: &[Q::PilotEmployed],
+    effects: &[
+        Fx::up(Q::PilotEmployed, Q::PilotEmployed),
+        Fx::down(Q::PilotUnpaidMonths, Q::PilotEmployed),
+        Fx::up(Q::PilotFree, Q::PilotEmployed),
+        Fx::up(Q::EstateSavings, Q::PilotEmployed),
+    ],
     params: &[
         "estate.pilot_unpaid_months_max",
         "estate.pilot_rehire_months_of_wages",
@@ -85,6 +92,10 @@ pub const ESTATE_FLIGHT: DecisionSpec = DecisionSpec {
     system: SystemId::Estate,
     inputs: &[Q::RandomDraw, Q::PilotEmployed],
     outputs: &[Q::Flight],
+    effects: &[
+        Fx::down(Q::RandomDraw, Q::Flight),
+        Fx::up(Q::PilotEmployed, Q::Flight),
+    ],
     params: &["estate.flight_prob_monthly"],
     rule: "monthly_chance_with_pilot",
 };

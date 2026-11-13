@@ -21,6 +21,7 @@ use libm::exp;
 use sim_metrics::{climate_stress, commons_health};
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -213,6 +214,10 @@ pub const FIRE_BURNS_FOREST: MechanismSpec = MechanismSpec {
     system: SystemId::Weather,
     inputs: &[Q::Fire, Q::ForestStock],
     outputs: &[Q::ForestStock],
+    effects: &[
+        Fx::down(Q::Fire, Q::ForestStock),
+        Fx::up(Q::ForestStock, Q::ForestStock),
+    ],
     params: &["weather.burn_frac"],
     rule: "burning_tiles_lose_forest",
 };
@@ -223,6 +228,7 @@ pub const CLIMATE_STRESS_CURVE: MechanismSpec = MechanismSpec {
     system: SystemId::Weather,
     inputs: &[Q::CumulativeEmissions],
     outputs: &[Q::ClimateStress],
+    effects: &[Fx::up(Q::CumulativeEmissions, Q::ClimateStress)],
     params: &[
         "weather.onset",
         "weather.full",
@@ -238,6 +244,10 @@ pub const DROUGHT_ONSET: MechanismSpec = MechanismSpec {
     system: SystemId::Weather,
     inputs: &[Q::ClimateStress, Q::Drought],
     outputs: &[Q::Drought],
+    effects: &[
+        Fx::up(Q::ClimateStress, Q::Drought),
+        Fx::up(Q::Drought, Q::Drought),
+    ],
     params: &[
         "weather.drought_base",
         "weather.drought_stress_gain",
@@ -263,6 +273,13 @@ pub const FIRE_IGNITION: MechanismSpec = MechanismSpec {
         Q::Fire,
     ],
     outputs: &[Q::Fire],
+    effects: &[
+        Fx::up(Q::ClimateStress, Q::Fire),
+        Fx::up(Q::Drought, Q::Fire),
+        Fx::down(Q::CommonsStock, Q::Fire),
+        Fx::down(Q::ResilienceSpending, Q::Fire),
+        Fx::varies(Q::Fire, Q::Fire, "burning tiles cannot ignite again (fewer new fires) but they spread to their neighbours (more fire)"),
+    ],
     params: &[
         "weather.fire_base",
         "weather.fire_stress_gain",

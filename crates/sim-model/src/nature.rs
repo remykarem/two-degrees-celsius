@@ -3,6 +3,7 @@
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -19,6 +20,11 @@ pub const NATURE_ENCLOSURE: DecisionSpec = DecisionSpec {
     system: SystemId::Nature,
     inputs: &[Q::EnclosureChance, Q::RandomDraw, Q::CommonsOpen],
     outputs: &[Q::CommonsEnclosed],
+    effects: &[
+        Fx::up(Q::EnclosureChance, Q::CommonsEnclosed),
+        Fx::down(Q::RandomDraw, Q::CommonsEnclosed),
+        Fx::up(Q::CommonsOpen, Q::CommonsEnclosed),
+    ],
     // The economic system's setting, read through `cfg(s, p)` (shown here for the Market system).
     params: &["systems.market.enclosure_prob"],
     rule: "monthly_chance_while_open",
@@ -64,6 +70,12 @@ pub const EMISSIONS_ACCOUNTING: MechanismSpec = MechanismSpec {
         Q::Flight,
     ],
     outputs: &[Q::GrossEmissions],
+    effects: &[
+        Fx::up(Q::DirectEmissions, Q::GrossEmissions),
+        Fx::up(Q::PlantEmissions, Q::GrossEmissions),
+        Fx::up(Q::HouseholdSize, Q::GrossEmissions),
+        Fx::up(Q::Flight, Q::GrossEmissions),
+    ],
     params: &[
         "nature.household_footprint_base",
         "estate.household_emissions_t",
@@ -78,6 +90,18 @@ pub const CARBON_BUDGET: MechanismSpec = MechanismSpec {
     system: SystemId::Nature,
     inputs: &[Q::GrossEmissions, Q::ForestSink, Q::CumulativeEmissions],
     outputs: &[Q::NetEmissions, Q::CumulativeEmissions],
+    effects: &[
+        Fx::up(Q::GrossEmissions, Q::NetEmissions),
+        Fx::up(Q::GrossEmissions, Q::CumulativeEmissions),
+        Fx::down(Q::ForestSink, Q::NetEmissions),
+        Fx::down(Q::ForestSink, Q::CumulativeEmissions),
+        Fx::none(
+            Q::CumulativeEmissions,
+            Q::NetEmissions,
+            "this month's net emissions do not depend on the total so far",
+        ),
+        Fx::up(Q::CumulativeEmissions, Q::CumulativeEmissions),
+    ],
     params: &[],
     rule: "net_emissions_accumulate",
 };
@@ -88,6 +112,7 @@ pub const FOREST_SINK_UPTAKE: MechanismSpec = MechanismSpec {
     system: SystemId::Nature,
     inputs: &[Q::ForestStock],
     outputs: &[Q::ForestSink],
+    effects: &[Fx::up(Q::ForestStock, Q::ForestSink)],
     params: &["nature.sink_sigma"],
     rule: "sink_per_unit_forest",
 };
@@ -98,6 +123,10 @@ pub const FOREST_STOCK_CHANGE: MechanismSpec = MechanismSpec {
     system: SystemId::Nature,
     inputs: &[Q::ForestStock, Q::Output],
     outputs: &[Q::ForestStock],
+    effects: &[
+        Fx::varies(Q::ForestStock, Q::ForestStock, "logistic regrowth peaks at half the maximum stock: below it a bigger forest regrows faster, above it slower"),
+        Fx::down(Q::Output, Q::ForestStock),
+    ],
     params: &[
         "nature.forest_growth",
         "nature.forest_max",
@@ -121,6 +150,16 @@ pub const COMMONS_STOCK_CHANGE: MechanismSpec = MechanismSpec {
         Q::CommonsCommunity,
     ],
     outputs: &[Q::CommonsStock],
+    effects: &[
+        Fx::varies(Q::CommonsStock, Q::CommonsStock, "logistic regrowth peaks at half the maximum stock: below it a bigger commons regrows faster, above it slower"),
+        Fx::down(Q::Output, Q::CommonsStock),
+        Fx::down(Q::CommonsHarvest, Q::CommonsStock),
+        Fx::down(Q::Drought, Q::CommonsStock),
+        Fx::up(Q::ResilienceSpending, Q::CommonsStock),
+        Fx::none(Q::CommonsOpen, Q::CommonsStock, "open access is the baseline the other two rules are measured against; enclosure and the community cap carry the change"),
+        Fx::down(Q::CommonsEnclosed, Q::CommonsStock),
+        Fx::up(Q::CommonsCommunity, Q::CommonsStock),
+    ],
     params: &[
         "nature.commons_growth",
         "nature.commons_max",

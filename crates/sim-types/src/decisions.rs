@@ -328,6 +328,93 @@ named_enum! {
     }
 }
 
+/// Which way an effect pushes (causality graph stage 2, `docs/features/causality-graph.md` section 5).
+/// `Up`: more of the input gives more of the output, other things equal. `Down`: more of the input
+/// gives less of the output. `Varies`: the direction changes with the state (a hump, a threshold, a
+/// category); the reason is the plain-English why. `None`: the spec reads the input but it has no
+/// direct effect on this output (the input matters for another output of the same spec), so the
+/// edge is listed for completeness and is skipped by path signs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Sign {
+    Up,
+    Down,
+    Varies(&'static str),
+    None(&'static str),
+}
+
+/// How an effect's declared sign is checked. `Perturbed`: the sign test measures it on the real code
+/// (`crates/sim-model/src/sign_tests`), failing when the measured sign disagrees. `DeclaredUnverified`:
+/// no pure function or isolable system exists to perturb it; the declaration stands on the reading of
+/// the code and economic reasoning, the reason says why it was not measured, and it is listed in
+/// `docs/known-issues.md` (DP-18).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Basis {
+    Perturbed,
+    DeclaredUnverified(&'static str),
+}
+
+/// One input -> output pair of a spec: the effect of `from` on `to`. `lag_months` counts months the
+/// spec itself adds (0: the output is written in the same tick the spec runs; 1: it lands next
+/// month); the wait for the input to be written by an earlier or later system comes from
+/// `TICK_ORDER` and is added in `causal::edge_lag_months`, never authored.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Effect {
+    pub from: QuantityId,
+    pub to: QuantityId,
+    pub sign: Sign,
+    pub lag_months: u8,
+    pub basis: Basis,
+}
+
+impl Effect {
+    pub const fn up(from: QuantityId, to: QuantityId) -> Self {
+        Self {
+            from,
+            to,
+            sign: Sign::Up,
+            lag_months: 0,
+            basis: Basis::Perturbed,
+        }
+    }
+    pub const fn down(from: QuantityId, to: QuantityId) -> Self {
+        Self {
+            from,
+            to,
+            sign: Sign::Down,
+            lag_months: 0,
+            basis: Basis::Perturbed,
+        }
+    }
+    pub const fn varies(from: QuantityId, to: QuantityId, why: &'static str) -> Self {
+        Self {
+            from,
+            to,
+            sign: Sign::Varies(why),
+            lag_months: 0,
+            basis: Basis::Perturbed,
+        }
+    }
+    pub const fn none(from: QuantityId, to: QuantityId, why: &'static str) -> Self {
+        Self {
+            from,
+            to,
+            sign: Sign::None(why),
+            lag_months: 0,
+            basis: Basis::Perturbed,
+        }
+    }
+    /// Months the spec adds before the output shows the change.
+    pub const fn lag(mut self, months: u8) -> Self {
+        self.lag_months = months;
+        self
+    }
+    /// The sign cannot be measured on the real code; `why` says why.
+    pub const fn unverified(mut self, why: &'static str) -> Self {
+        self.basis = Basis::DeclaredUnverified(why);
+        self
+    }
+}
+
 /// The declaration of one decision. `inputs` and `outputs` are the edges of the causal graph;
 /// `params` are dotted paths into `content/params.json`; `rule` is the id of the default rule
 /// (its words are in `content/decisions.json`).
@@ -337,6 +424,8 @@ pub struct DecisionSpec {
     pub system: SystemId,
     pub inputs: &'static [QuantityId],
     pub outputs: &'static [QuantityId],
+    /// One effect per input -> output pair (a test checks none is missing).
+    pub effects: &'static [Effect],
     pub params: &'static [&'static str],
     pub rule: &'static str,
 }
@@ -359,6 +448,8 @@ pub struct MechanismSpec {
     pub system: SystemId,
     pub inputs: &'static [QuantityId],
     pub outputs: &'static [QuantityId],
+    /// One effect per input -> output pair (a test checks none is missing).
+    pub effects: &'static [Effect],
     pub params: &'static [&'static str],
     pub rule: &'static str,
 }

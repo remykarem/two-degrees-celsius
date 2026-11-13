@@ -7,6 +7,7 @@ use crate::util::{apportion, labour_weights, person_pay};
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -116,6 +117,11 @@ pub const HOUSEHOLD_FOUND_FIRM: DecisionSpec = DecisionSpec {
     system: SystemId::Class,
     inputs: &[Q::SectorReturn, Q::BaseRate, Q::RandomDraw],
     outputs: &[Q::NewFirm],
+    effects: &[
+        Fx::up(Q::SectorReturn, Q::NewFirm),
+        Fx::down(Q::BaseRate, Q::NewFirm),
+        Fx::down(Q::RandomDraw, Q::NewFirm),
+    ],
     params: &["class.mobility_rate"],
     rule: "return_over_loan_rate",
 };

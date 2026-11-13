@@ -6,6 +6,7 @@ use crate::util::{cfg, monthly};
 use sim_params::{CreditParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -16,6 +17,14 @@ pub const FIRM_EXIT: DecisionSpec = DecisionSpec {
     system: SystemId::Credit,
     inputs: &[Q::PaymentShortfall, Q::DistressMonths, Q::Debt],
     outputs: &[Q::DistressMonths, Q::FirmOpen],
+    effects: &[
+        Fx::up(Q::PaymentShortfall, Q::DistressMonths),
+        Fx::down(Q::PaymentShortfall, Q::FirmOpen),
+        Fx::up(Q::DistressMonths, Q::DistressMonths),
+        Fx::down(Q::DistressMonths, Q::FirmOpen),
+        Fx::none(Q::Debt, Q::DistressMonths, "the debt decides only whether a firm that is distressed long enough closes, not how many months it has been distressed"),
+        Fx::down(Q::Debt, Q::FirmOpen),
+    ],
     params: &["credit.default_after_months"],
     rule: "default_after_months",
 };
@@ -55,6 +64,11 @@ pub const BANK_HEADROOM: DecisionSpec = DecisionSpec {
     system: SystemId::Credit,
     inputs: &[Q::BankEquity, Q::BankLoans, Q::CapitalRatio],
     outputs: &[Q::CreditHeadroom],
+    effects: &[
+        Fx::up(Q::BankEquity, Q::CreditHeadroom),
+        Fx::down(Q::BankLoans, Q::CreditHeadroom),
+        Fx::down(Q::CapitalRatio, Q::CreditHeadroom),
+    ],
     params: &[],
     rule: "capital_ratio_limit",
 };
@@ -92,6 +106,12 @@ pub const BANK_LEND: DecisionSpec = DecisionSpec {
     system: SystemId::Credit,
     inputs: &[Q::LoanRequest, Q::CreditHeadroom, Q::FirmAssets, Q::Debt],
     outputs: &[Q::LoanApproved],
+    effects: &[
+        Fx::up(Q::LoanRequest, Q::LoanApproved),
+        Fx::up(Q::CreditHeadroom, Q::LoanApproved),
+        Fx::up(Q::FirmAssets, Q::LoanApproved),
+        Fx::down(Q::Debt, Q::LoanApproved),
+    ],
     params: &["credit.max_firm_leverage"],
     rule: "headroom_and_leverage_cap",
 };
@@ -136,6 +156,12 @@ pub const BANK_SPREAD: DecisionSpec = DecisionSpec {
     system: SystemId::Credit,
     inputs: &[Q::PolicyRate, Q::Debt, Q::FirmAssets, Q::CreditSpreadAdd],
     outputs: &[Q::LoanRate],
+    effects: &[
+        Fx::up(Q::PolicyRate, Q::LoanRate).lag(1),
+        Fx::up(Q::Debt, Q::LoanRate).lag(1),
+        Fx::down(Q::FirmAssets, Q::LoanRate).lag(1),
+        Fx::up(Q::CreditSpreadAdd, Q::LoanRate).lag(1),
+    ],
     params: &["credit.spread_base", "credit.spread_leverage"],
     rule: "base_plus_leverage_spread",
 };
@@ -171,6 +197,11 @@ pub const BANK_DIVIDEND: DecisionSpec = DecisionSpec {
     system: SystemId::Credit,
     inputs: &[Q::BankEquity, Q::BankLoans, Q::CapitalRatio],
     outputs: &[Q::BankDividend],
+    effects: &[
+        Fx::up(Q::BankEquity, Q::BankDividend),
+        Fx::down(Q::BankLoans, Q::BankDividend),
+        Fx::down(Q::CapitalRatio, Q::BankDividend),
+    ],
     params: &["credit.bank_buffer", "credit.bank_payout"],
     rule: "pay_out_excess_equity",
 };
@@ -197,6 +228,16 @@ pub const BANK_RESCUE: DecisionSpec = DecisionSpec {
         Q::BailoutPolicy,
     ],
     outputs: &[Q::BankEquity, Q::BankFailed],
+    effects: &[
+        Fx::down(Q::BankEquity, Q::BankEquity),
+        Fx::down(Q::BankEquity, Q::BankFailed),
+        Fx::up(Q::BankLoans, Q::BankEquity),
+        Fx::none(Q::BankLoans, Q::BankFailed, "whether the bank fails depends on its equity going negative and on the bailout choice, not on loans directly"),
+        Fx::none(Q::BankDeposits, Q::BankEquity, "deposits set the depositors' haircut, not the bailout"),
+        Fx::none(Q::BankDeposits, Q::BankFailed, "deposits set the depositors' haircut, not whether the bank fails"),
+        Fx::up(Q::BailoutPolicy, Q::BankEquity),
+        Fx::down(Q::BailoutPolicy, Q::BankFailed),
+    ],
     params: &["credit.bailout_target_ratio", "credit.haircut_margin"],
     rule: "bailout_or_haircut",
 };

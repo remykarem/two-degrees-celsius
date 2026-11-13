@@ -11,6 +11,7 @@ use sim_metrics::household_wealth;
 use sim_params::{GoodsParams, LabourParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -22,6 +23,14 @@ pub const HOUSEHOLD_SHOP: DecisionSpec = DecisionSpec {
     system: SystemId::Goods,
     inputs: &[Q::ConsumptionBudget, Q::Inventory, Q::Price],
     outputs: &[Q::UnitsSold, Q::DemandUnits],
+    effects: &[
+        Fx::up(Q::ConsumptionBudget, Q::UnitsSold),
+        Fx::up(Q::ConsumptionBudget, Q::DemandUnits),
+        Fx::up(Q::Inventory, Q::UnitsSold),
+        Fx::up(Q::Inventory, Q::DemandUnits),
+        Fx::down(Q::Price, Q::UnitsSold),
+        Fx::down(Q::Price, Q::DemandUnits),
+    ],
     params: &["goods.price_elasticity", "goods.min_price_usd"],
     rule: "stock_and_price_weighted",
 };
@@ -295,6 +304,11 @@ pub const FIRM_PRICE: DecisionSpec = DecisionSpec {
     system: SystemId::Goods,
     inputs: &[Q::Price, Q::Markup, Q::UnitCost],
     outputs: &[Q::Price],
+    effects: &[
+        Fx::up(Q::Price, Q::Price),
+        Fx::up(Q::Markup, Q::Price),
+        Fx::up(Q::UnitCost, Q::Price),
+    ],
     params: &["goods.price_adjust", "goods.min_price_usd"],
     rule: "cost_plus",
 };
@@ -347,6 +361,22 @@ pub const HOUSEHOLD_SPEND: DecisionSpec = DecisionSpec {
         Q::WealthSpendingRate,
     ],
     outputs: &[Q::FoodNeed, Q::ConsumptionBudget],
+    effects: &[
+        Fx::up(Q::HouseholdSize, Q::FoodNeed),
+        Fx::varies(Q::HouseholdSize, Q::ConsumptionBudget, "a bigger household buys more food but has less left over for everything else"),
+        Fx::none(Q::FoodPrice, Q::FoodNeed, "the food need is in units (people times need per person); its price only changes what it costs"),
+        Fx::varies(Q::FoodPrice, Q::ConsumptionBudget, "dearer food takes more of the money, leaving less for other goods"),
+        Fx::none(Q::Savings, Q::FoodNeed, "the food need depends on household size, not on savings"),
+        Fx::up(Q::Savings, Q::ConsumptionBudget),
+        Fx::none(Q::LastDisposable, Q::FoodNeed, "the food need depends on household size, not on income"),
+        Fx::up(Q::LastDisposable, Q::ConsumptionBudget),
+        Fx::none(Q::SpendingPropensity, Q::FoodNeed, "the food need depends on household size, not on the propensity"),
+        Fx::up(Q::SpendingPropensity, Q::ConsumptionBudget),
+        Fx::none(Q::NetWealth, Q::FoodNeed, "the food need depends on household size, not on wealth"),
+        Fx::up(Q::NetWealth, Q::ConsumptionBudget),
+        Fx::none(Q::WealthSpendingRate, Q::FoodNeed, "the food need depends on household size, not on the wealth spending rate"),
+        Fx::up(Q::WealthSpendingRate, Q::ConsumptionBudget),
+    ],
     params: &[
         "goods.food_need_units_pc",
         "goods.services_share",
@@ -431,6 +461,10 @@ pub const FIRM_EXPECT: DecisionSpec = DecisionSpec {
     system: SystemId::Goods,
     inputs: &[Q::DemandUnits, Q::ExpectedSales],
     outputs: &[Q::ExpectedSales],
+    effects: &[
+        Fx::up(Q::DemandUnits, Q::ExpectedSales),
+        Fx::up(Q::ExpectedSales, Q::ExpectedSales),
+    ],
     params: &["labour.expected_smoothing"],
     rule: "exponential_smoothing",
 };
@@ -464,6 +498,20 @@ pub const GOODS_SETTLEMENT: MechanismSpec = MechanismSpec {
     system: SystemId::Goods,
     inputs: &[Q::UnitsSold, Q::Price],
     outputs: &[Q::Revenue, Q::Inventory, Q::Savings, Q::Consumption],
+    effects: &[
+        Fx::up(Q::UnitsSold, Q::Revenue),
+        Fx::down(Q::UnitsSold, Q::Inventory),
+        Fx::down(Q::UnitsSold, Q::Savings),
+        Fx::up(Q::UnitsSold, Q::Consumption),
+        Fx::up(Q::Price, Q::Revenue),
+        Fx::none(
+            Q::Price,
+            Q::Inventory,
+            "selling a unit takes one unit of stock whatever it costs",
+        ),
+        Fx::down(Q::Price, Q::Savings),
+        Fx::up(Q::Price, Q::Consumption),
+    ],
     params: &[],
     rule: "units_times_price",
 };
@@ -474,6 +522,13 @@ pub const UNIT_COST_BUILDUP: MechanismSpec = MechanismSpec {
     system: SystemId::Goods,
     inputs: &[Q::Wage, Q::Workers, Q::CarbonPrice, Q::Footprint, Q::Output],
     outputs: &[Q::UnitCost],
+    effects: &[
+        Fx::up(Q::Wage, Q::UnitCost),
+        Fx::up(Q::Workers, Q::UnitCost),
+        Fx::up(Q::CarbonPrice, Q::UnitCost),
+        Fx::up(Q::Footprint, Q::UnitCost),
+        Fx::down(Q::Output, Q::UnitCost),
+    ],
     params: &[],
     rule: "wages_plus_carbon_per_unit",
 };
@@ -484,6 +539,11 @@ pub const HOUSING_RENT: MechanismSpec = MechanismSpec {
     system: SystemId::Goods,
     inputs: &[Q::Occupancy, Q::LastDisposable, Q::Rent],
     outputs: &[Q::Rent],
+    effects: &[
+        Fx::up(Q::Occupancy, Q::Rent),
+        Fx::up(Q::LastDisposable, Q::Rent),
+        Fx::varies(Q::Rent, Q::Rent, "each month's rent is a step up or down from this one, but a higher rent also lowers the next step up because renters' burden reaches its cap"),
+    ],
     params: &[
         "goods.occupancy_trigger",
         "goods.rent_burden_cap",
@@ -500,6 +560,11 @@ pub const HOUSING_MOVES: MechanismSpec = MechanismSpec {
     system: SystemId::Goods,
     inputs: &[Q::Rent, Q::LastDisposable, Q::Savings],
     outputs: &[Q::Occupancy],
+    effects: &[
+        Fx::down(Q::Rent, Q::Occupancy),
+        Fx::up(Q::LastDisposable, Q::Occupancy),
+        Fx::none(Q::Savings, Q::Occupancy, "a household moves in if its rent is within a share of last month's disposable income; savings are not read"),
+    ],
     params: &["goods.move_rent_share", "goods.evict_after_months"],
     rule: "move_evict_by_affordability",
 };

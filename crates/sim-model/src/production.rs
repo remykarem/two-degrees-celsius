@@ -5,6 +5,7 @@
 use libm::pow;
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -179,6 +180,10 @@ pub const ELECTRICITY_RATIONING: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::EnergyDemand, Q::PlantCapacity],
     outputs: &[Q::ElectricityServed],
+    effects: &[
+        Fx::up(Q::EnergyDemand, Q::ElectricityServed),
+        Fx::up(Q::PlantCapacity, Q::ElectricityServed),
+    ],
     params: &[],
     rule: "served_share",
 };
@@ -189,6 +194,7 @@ pub const GRID_INTENSITY_MIX: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::RenewableShare],
     outputs: &[Q::GridIntensity],
+    effects: &[Fx::down(Q::RenewableShare, Q::GridIntensity)],
     params: &["energy.factor_fossil"],
     rule: "fossil_share_times_factor",
 };
@@ -199,6 +205,11 @@ pub const PLANT_EMISSIONS_OUTPUT: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::EnergyDemand, Q::ElectricityServed, Q::RenewableShare],
     outputs: &[Q::PlantEmissions],
+    effects: &[
+        Fx::up(Q::EnergyDemand, Q::PlantEmissions),
+        Fx::up(Q::ElectricityServed, Q::PlantEmissions),
+        Fx::down(Q::RenewableShare, Q::PlantEmissions),
+    ],
     params: &["energy.factor_fossil"],
     rule: "fossil_plants_emit",
 };
@@ -209,6 +220,11 @@ pub const PRODUCTION_TECHNOLOGY: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Capital, Q::EffectiveLabour, Q::Technology],
     outputs: &[Q::CapitalOutput],
+    effects: &[
+        Fx::up(Q::Capital, Q::CapitalOutput),
+        Fx::up(Q::EffectiveLabour, Q::CapitalOutput),
+        Fx::up(Q::Technology, Q::CapitalOutput),
+    ],
     params: &["production.alpha_k", "production.beta_n"],
     rule: "cobb_douglas",
 };
@@ -219,6 +235,7 @@ pub const TECHNOLOGY_GROWTH: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Technology],
     outputs: &[Q::Technology],
+    effects: &[Fx::up(Q::Technology, Q::Technology)],
     params: &[
         "production.tfp_growth_goods",
         "production.tfp_growth_food",
@@ -233,6 +250,10 @@ pub const EFFECTIVE_LABOUR_SUPPLY: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Workers, Q::SkilledWorkers],
     outputs: &[Q::EffectiveLabour],
+    effects: &[
+        Fx::up(Q::Workers, Q::EffectiveLabour),
+        Fx::up(Q::SkilledWorkers, Q::EffectiveLabour),
+    ],
     params: &[],
     rule: "skill_times_hours",
 };
@@ -243,6 +264,11 @@ pub const FARM_HEALTH_FACTOR: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::ForestStock, Q::CommonsStock, Q::CommonsCommunity],
     outputs: &[Q::ResourceFactor],
+    effects: &[
+        Fx::up(Q::ForestStock, Q::ResourceFactor),
+        Fx::up(Q::CommonsStock, Q::ResourceFactor),
+        Fx::none(Q::CommonsCommunity, Q::ResourceFactor, "the farm's health reads the forest and commons stocks; who controls access changes how they are used, not the health factor"),
+    ],
     params: &[
         "production.farm_health_exp",
         "nature.community_coord_cost",
@@ -258,6 +284,7 @@ pub const CLIMATE_DAMAGE: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::CumulativeEmissions],
     outputs: &[Q::WeatherFactor],
+    effects: &[Fx::down(Q::CumulativeEmissions, Q::WeatherFactor)],
     params: &[
         "production.climate_damage",
         "production.climate_ratio_cap",
@@ -272,6 +299,10 @@ pub const DROUGHT_LOSS: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Drought, Q::ResilienceSpending],
     outputs: &[Q::WeatherFactor],
+    effects: &[
+        Fx::down(Q::Drought, Q::WeatherFactor),
+        Fx::up(Q::ResilienceSpending, Q::WeatherFactor),
+    ],
     params: &[
         "weather.a_f",
         "weather.resilience_drought_cut_max",
@@ -286,6 +317,7 @@ pub const FIRE_SMOKE: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Fire],
     outputs: &[Q::WeatherFactor],
+    effects: &[Fx::down(Q::Fire, Q::WeatherFactor)],
     params: &["weather.smoke_productivity", "weather.smoke_radius"],
     rule: "smoke_output_loss",
 };
@@ -296,6 +328,7 @@ pub const TRANSITION_LOSS: MechanismSpec = MechanismSpec {
     system: SystemId::Policy,
     inputs: &[Q::SystemChange],
     outputs: &[Q::TransitionFactor],
+    effects: &[Fx::down(Q::SystemChange, Q::TransitionFactor)],
     params: &[],
     rule: "transition_output_penalty",
 };
@@ -314,6 +347,15 @@ pub const PRODUCTION_OUTPUT: MechanismSpec = MechanismSpec {
         Q::GridIntensity,
     ],
     outputs: &[Q::Output],
+    effects: &[
+        Fx::up(Q::CapitalOutput, Q::Output),
+        Fx::up(Q::ResourceFactor, Q::Output),
+        Fx::up(Q::WeatherFactor, Q::Output),
+        Fx::up(Q::TransitionFactor, Q::Output),
+        Fx::up(Q::ElectricityServed, Q::Output),
+        Fx::varies(Q::EmissionsCap, Q::Output, "a cap of 0 means no cap, so the first tonne of cap tightens; above that a higher cap lets firms make more"),
+        Fx::down(Q::GridIntensity, Q::Output),
+    ],
     params: &[],
     rule: "capacity_rationed_capped",
 };
@@ -331,6 +373,18 @@ pub const FOOD_CAP: MechanismSpec = MechanismSpec {
         Q::CommonsHarvest,
     ],
     outputs: &[Q::Output],
+    effects: &[
+        Fx::up(Q::ForestStock, Q::Output),
+        Fx::up(Q::CommonsStock, Q::Output),
+        Fx::none(
+            Q::CommonsOpen,
+            Q::Output,
+            "open access is the baseline the other two rules are measured against",
+        ),
+        Fx::up(Q::CommonsEnclosed, Q::Output),
+        Fx::down(Q::CommonsCommunity, Q::Output),
+        Fx::up(Q::CommonsHarvest, Q::Output),
+    ],
     params: &[
         "nature.farm_cap_share_commons",
         "nature.farm_cap_share_forest",
@@ -349,6 +403,10 @@ pub const INVENTORY_STOCK: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Inventory, Q::Output],
     outputs: &[Q::Inventory],
+    effects: &[
+        Fx::up(Q::Inventory, Q::Inventory),
+        Fx::up(Q::Output, Q::Inventory),
+    ],
     params: &["goods.holding_cost", "goods.services_holding_cost"],
     rule: "stock_decay_plus_output",
 };
@@ -368,6 +426,16 @@ pub const ELECTRICITY_DEMAND: MechanismSpec = MechanismSpec {
         Q::Drought,
     ],
     outputs: &[Q::EnergyDemand],
+    effects: &[
+        Fx::up(Q::CapitalOutput, Q::EnergyDemand),
+        Fx::up(Q::ResourceFactor, Q::EnergyDemand),
+        Fx::up(Q::WeatherFactor, Q::EnergyDemand),
+        Fx::up(Q::TransitionFactor, Q::EnergyDemand),
+        Fx::down(Q::GreenTech, Q::EnergyDemand),
+        Fx::up(Q::HouseholdSize, Q::EnergyDemand),
+        Fx::up(Q::Consumption, Q::EnergyDemand),
+        Fx::up(Q::Drought, Q::EnergyDemand),
+    ],
     params: &[
         "energy.hh_energy_base_pc",
         "energy.hh_energy_consumption_pc",
@@ -383,6 +451,16 @@ pub const FIRM_EMISSIONS: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Output, Q::GreenTech, Q::Drought, Q::GridIntensity],
     outputs: &[Q::DirectEmissions, Q::Footprint],
+    effects: &[
+        Fx::up(Q::Output, Q::DirectEmissions),
+        Fx::up(Q::Output, Q::Footprint),
+        Fx::down(Q::GreenTech, Q::DirectEmissions),
+        Fx::down(Q::GreenTech, Q::Footprint),
+        Fx::none(Q::Drought, Q::DirectEmissions, "a drought raises the electricity a firm needs, not its direct emissions"),
+        Fx::up(Q::Drought, Q::Footprint),
+        Fx::none(Q::GridIntensity, Q::DirectEmissions, "the grid's emissions are the plants' and are counted in the footprint, not in a firm's direct emissions"),
+        Fx::up(Q::GridIntensity, Q::Footprint),
+    ],
     params: &[],
     rule: "intensity_times_output",
 };

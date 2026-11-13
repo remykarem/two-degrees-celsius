@@ -20,6 +20,8 @@ pub mod lobbying;
 pub mod nature;
 pub mod policy;
 pub mod production;
+#[cfg(test)]
+mod sign_tests;
 pub mod space;
 pub mod util;
 pub mod weather;

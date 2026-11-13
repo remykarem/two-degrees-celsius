@@ -8,7 +8,7 @@
 //! in `DECISIONS` order, then mechanisms in `MECHANISMS` order; no hash maps.
 
 use crate::decisions::{DECISIONS, MECHANISMS};
-use sim_types::{DecisionId, MechanismId, QuantityId};
+use sim_types::{DecisionId, Effect, MechanismId, QuantityId, Sign, SystemId};
 use std::collections::BTreeSet;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -37,6 +37,9 @@ pub struct Edge {
     pub via: Option<Node>,
     /// The same decision or mechanism both reads and writes this quantity (for example legitimacy).
     pub self_loop: bool,
+    /// The declared effect (sign, lag) of a `Drives` edge: it belongs to the (via, from, to)
+    /// triple, so two writers of one quantity can disagree. `None` for reads and writes.
+    pub effect: Option<Effect>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,8 +56,10 @@ pub enum Role {
 #[derive(Clone, Copy)]
 struct Actor {
     node: Node,
+    system: SystemId,
     inputs: &'static [QuantityId],
     outputs: &'static [QuantityId],
+    effects: &'static [Effect],
 }
 
 /// Decisions in registry order, then mechanisms in registry order.
@@ -63,14 +68,23 @@ fn actors() -> impl Iterator<Item = Actor> {
         .iter()
         .map(|d| Actor {
             node: Node::Decision(d.id),
+            system: d.system,
             inputs: d.inputs,
             outputs: d.outputs,
+            effects: d.effects,
         })
         .chain(MECHANISMS.iter().map(|m| Actor {
             node: Node::Mechanism(m.id),
+            system: m.system,
             inputs: m.inputs,
             outputs: m.outputs,
+            effects: m.effects,
         }))
+}
+
+/// The declared effects of one decision or mechanism (empty for a quantity).
+pub fn effects_of(n: Node) -> &'static [Effect] {
+    actors().find(|a| a.node == n).map_or(&[], |a| a.effects)
 }
 
 /// Every quantity, then every decision, then every mechanism, in stable order.
@@ -129,6 +143,7 @@ pub fn edges() -> Vec<Edge> {
                 kind: EdgeKind::Reads,
                 via: None,
                 self_loop: a.outputs.contains(q),
+                effect: None,
             });
         }
         for q in a.outputs {
@@ -138,6 +153,7 @@ pub fn edges() -> Vec<Edge> {
                 kind: EdgeKind::Writes,
                 via: None,
                 self_loop: a.inputs.contains(q),
+                effect: None,
             });
         }
     }
@@ -150,6 +166,11 @@ pub fn edges() -> Vec<Edge> {
                     kind: EdgeKind::Drives,
                     via: Some(a.node),
                     self_loop: i == o,
+                    effect: a
+                        .effects
+                        .iter()
+                        .find(|e| e.from == *i && e.to == *o)
+                        .copied(),
                 });
             }
         }
@@ -233,6 +254,160 @@ pub fn causes_of(q: QuantityId, max_depth: usize) -> Causes {
         frontier = next;
     }
     out
+}
+
+// ---- Stage 2: sign and lag ----
+
+/// How many months a change in `input`, written by `writer`, waits before the system `reader` sees
+/// it: 0 when the writer runs earlier in `TICK_ORDER` (its changes are applied before the reader
+/// runs), 1 when the writer runs at or after the reader (the reader sees the old value this tick;
+/// a system reads the state as it was when it started, so the same system waits too).
+pub fn tick_wait(writer: SystemId, reader: SystemId) -> u8 {
+    let pos = |s: SystemId| crate::TICK_ORDER.iter().position(|(id, _)| *id == s);
+    match (pos(writer), pos(reader)) {
+        (Some(w), Some(r)) if w < r => 0,
+        _ => 1,
+    }
+}
+
+/// Months from a change in the input of a `Drives` edge to the change in its output: the spec's own
+/// `lag_months` plus the wait for the input to arrive. The wait is the smallest over the registry
+/// writers of the input (the earliest a change can arrive), 0 for an input nothing writes (a
+/// lever, a setting). `None` for edges that are not `Drives` edges with an effect.
+pub fn edge_lag_months(e: &Edge) -> Option<u32> {
+    let (Node::Quantity(i), Some(via), Some(fx)) = (e.from, e.via, e.effect) else {
+        return None;
+    };
+    let reader = actors().find(|a| a.node == via)?.system;
+    let wait = actors()
+        .filter(|a| a.outputs.contains(&i))
+        .map(|a| tick_wait(a.system, reader))
+        .min()
+        .unwrap_or(0);
+    Some(u32::from(fx.lag_months) + u32::from(wait))
+}
+
+/// The sign of a path or of all paths from a cause to an effect.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NetSign {
+    /// Every path pushes the same way and the product of its edge signs is `+`.
+    Up,
+    Down,
+    /// Some edge on the path (or every path) can go either way depending on the state.
+    Varies,
+    /// Paths of both signs: the cause pushes the effect up through one route and down through another.
+    Mixed,
+    /// No path of signed edges.
+    NoPath,
+}
+
+/// One path of `Drives` edges from a cause to an effect: the quantities visited and the net sign.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignedPath {
+    pub quantities: Vec<QuantityId>,
+    pub via: Vec<Node>,
+    pub sign: NetSign,
+}
+
+/// The sign of a path from the signs of its edges: the product (two `-` make a `+`); any `Varies`
+/// edge makes the path `Varies`; an empty path has no sign (`NoPath`). Edges with `Sign::None`
+/// carry no effect and must not be given to it (`paths` skips them).
+pub fn path_sign(signs: &[Sign]) -> NetSign {
+    if signs.is_empty() {
+        return NetSign::NoPath;
+    }
+    let mut down = false;
+    let mut varies = false;
+    for s in signs {
+        match s {
+            Sign::Up => {}
+            Sign::Down => down = !down,
+            Sign::Varies(_) => varies = true,
+            Sign::None(_) => return NetSign::NoPath,
+        }
+    }
+    if varies {
+        NetSign::Varies
+    } else if down {
+        NetSign::Down
+    } else {
+        NetSign::Up
+    }
+}
+
+/// The sign of one cause on one effect through all the given paths: `Up` or `Down` when they all
+/// agree, `Mixed` when some push up and some down, `Varies` when none disagrees outright but some
+/// can go either way, `NoPath` for none.
+pub fn net_sign(paths: &[SignedPath]) -> NetSign {
+    let up = paths.iter().any(|p| p.sign == NetSign::Up);
+    let down = paths.iter().any(|p| p.sign == NetSign::Down);
+    let varies = paths.iter().any(|p| p.sign == NetSign::Varies);
+    match (up, down, varies) {
+        (true, true, _) => NetSign::Mixed,
+        (true, false, false) => NetSign::Up,
+        (false, true, false) => NetSign::Down,
+        (_, _, true) => NetSign::Varies,
+        (false, false, false) => NetSign::NoPath,
+    }
+}
+
+/// Every simple path (no quantity twice) of at most `max_steps` `Drives` edges from `cause` to
+/// `effect` along effects that are not `Sign::None`, in registry order. A step is one decision or
+/// mechanism crossed, like `causes_of` depth.
+pub fn paths(cause: QuantityId, effect: QuantityId, max_steps: usize) -> Vec<SignedPath> {
+    fn walk(
+        at: QuantityId,
+        goal: QuantityId,
+        left: usize,
+        qs: &mut Vec<QuantityId>,
+        vias: &mut Vec<Node>,
+        signs: &mut Vec<Sign>,
+        out: &mut Vec<SignedPath>,
+    ) {
+        if left == 0 {
+            return;
+        }
+        for a in actors() {
+            for fx in a.effects.iter().filter(|e| e.from == at) {
+                if matches!(fx.sign, Sign::None(_)) || qs.contains(&fx.to) {
+                    continue;
+                }
+                qs.push(fx.to);
+                vias.push(a.node);
+                signs.push(fx.sign);
+                if fx.to == goal {
+                    out.push(SignedPath {
+                        quantities: qs.clone(),
+                        via: vias.clone(),
+                        sign: path_sign(signs),
+                    });
+                } else {
+                    walk(fx.to, goal, left - 1, qs, vias, signs, out);
+                }
+                qs.pop();
+                vias.pop();
+                signs.pop();
+            }
+        }
+    }
+    let mut out = Vec::new();
+    if cause != effect {
+        walk(
+            cause,
+            effect,
+            max_steps,
+            &mut vec![cause],
+            &mut Vec::new(),
+            &mut Vec::new(),
+            &mut out,
+        );
+    }
+    out
+}
+
+/// The net sign of `cause` on `effect` through all paths of at most `max_steps` steps.
+pub fn sign_of(cause: QuantityId, effect: QuantityId, max_steps: usize) -> NetSign {
+    net_sign(&paths(cause, effect, max_steps))
 }
 
 /// Source and sink counts over all quantities: (sources, sinks, derived).
@@ -527,6 +702,185 @@ mod tests {
         assert_eq!(
             writers(Q::GrossEmissions),
             vec![Node::Mechanism(MechanismId::EmissionsAccounting)]
+        );
+    }
+
+    // ---- Stage 2: sign and lag ----
+
+    #[test]
+    fn every_edge_of_every_spec_has_exactly_one_declared_effect() {
+        for a in actors() {
+            for e in a.effects {
+                assert!(
+                    a.inputs.contains(&e.from) && a.outputs.contains(&e.to),
+                    "{:?} declares an effect {} -> {} that is not one of its edges",
+                    a.node,
+                    e.from.as_str(),
+                    e.to.as_str()
+                );
+                match e.sign {
+                    Sign::Varies(w) | Sign::None(w) => {
+                        assert!(w.len() > 20, "{:?}: the reason must be a sentence", a.node)
+                    }
+                    _ => {}
+                }
+                if let sim_types::Basis::DeclaredUnverified(w) = e.basis {
+                    assert!(w.len() > 20, "{:?}: say why it is not measured", a.node);
+                }
+            }
+            for i in a.inputs {
+                for o in a.outputs {
+                    let n = a
+                        .effects
+                        .iter()
+                        .filter(|e| e.from == *i && e.to == *o)
+                        .count();
+                    assert_eq!(
+                        n,
+                        1,
+                        "{:?} must declare exactly one effect for {} -> {} (has {n})",
+                        a.node,
+                        i.as_str(),
+                        o.as_str()
+                    );
+                }
+            }
+        }
+        assert!(edges()
+            .iter()
+            .filter(|e| e.kind == EdgeKind::Drives)
+            .all(|e| e.effect.is_some()));
+        assert!(edges()
+            .iter()
+            .filter(|e| e.kind != EdgeKind::Drives)
+            .all(|e| e.effect.is_none()));
+    }
+
+    #[test]
+    fn path_sign_is_the_product_of_edge_signs() {
+        use Sign::*;
+        assert_eq!(path_sign(&[]), NetSign::NoPath);
+        assert_eq!(path_sign(&[Up, Up]), NetSign::Up);
+        assert_eq!(path_sign(&[Down]), NetSign::Down);
+        assert_eq!(path_sign(&[Down, Down]), NetSign::Up);
+        assert_eq!(path_sign(&[Up, Down, Down, Down]), NetSign::Down);
+        assert_eq!(
+            path_sign(&[Down, Varies("it depends on the state")]),
+            NetSign::Varies
+        );
+        assert_eq!(
+            path_sign(&[None("it has no direct effect")]),
+            NetSign::NoPath
+        );
+    }
+
+    fn sp(sign: NetSign) -> SignedPath {
+        SignedPath {
+            quantities: vec![],
+            via: vec![],
+            sign,
+        }
+    }
+
+    #[test]
+    fn net_sign_flags_mixed_paths() {
+        assert_eq!(net_sign(&[]), NetSign::NoPath);
+        assert_eq!(net_sign(&[sp(NetSign::Up), sp(NetSign::Up)]), NetSign::Up);
+        assert_eq!(net_sign(&[sp(NetSign::Down)]), NetSign::Down);
+        assert_eq!(
+            net_sign(&[sp(NetSign::Up), sp(NetSign::Down)]),
+            NetSign::Mixed
+        );
+        assert_eq!(
+            net_sign(&[sp(NetSign::Up), sp(NetSign::Varies)]),
+            NetSign::Varies
+        );
+        assert_eq!(
+            net_sign(&[sp(NetSign::Up), sp(NetSign::Down), sp(NetSign::Varies)]),
+            NetSign::Mixed
+        );
+    }
+
+    #[test]
+    fn real_paths_have_signs() {
+        // Cost push: wage -> unit cost -> price, all `+`.
+        let ps = paths(Q::Wage, Q::Price, 2);
+        assert!(!ps.is_empty());
+        assert!(ps.iter().all(|p| p.quantities.first() == Some(&Q::Wage)));
+        assert!(ps
+            .iter()
+            .any(|p| p.quantities == [Q::Wage, Q::UnitCost, Q::Price] && p.sign == NetSign::Up));
+        // A cause is not its own effect, and every path is simple.
+        assert!(paths(Q::Wage, Q::Wage, 3).is_empty());
+        for p in paths(Q::CarbonPrice, Q::Output, 4) {
+            let mut q = p.quantities.clone();
+            q.sort();
+            q.dedup();
+            assert_eq!(q.len(), p.quantities.len(), "no quantity twice");
+        }
+        // Emissions reach output through weather (down) and, through other routes, may disagree:
+        // the helper must report one of the defined answers, never panic.
+        let _ = sign_of(Q::CumulativeEmissions, Q::Output, 4);
+        assert_eq!(
+            sign_of(Q::CumulativeEmissions, Q::WeatherFactor, 1),
+            NetSign::Down
+        );
+    }
+
+    #[test]
+    fn tick_order_decides_the_wait() {
+        // Weather runs before production, nature after it, wellbeing last.
+        assert_eq!(tick_wait(SystemId::Weather, SystemId::Production), 0);
+        assert_eq!(tick_wait(SystemId::Nature, SystemId::Production), 1);
+        assert_eq!(tick_wait(SystemId::Production, SystemId::Production), 1);
+        assert_eq!(tick_wait(SystemId::Production, SystemId::Wellbeing), 0);
+        let lag = |via: Node, i: QuantityId, o: QuantityId| {
+            edges()
+                .iter()
+                .find(|e| {
+                    e.kind == EdgeKind::Drives
+                        && e.via == Some(via)
+                        && e.from == Node::Quantity(i)
+                        && e.to == Node::Quantity(o)
+                })
+                .and_then(edge_lag_months)
+                .unwrap()
+        };
+        // Stage by stage: net emissions (nature) reach climate stress (weather) next month;
+        // climate stress reaches drought (same system, one step) next month too; capital reaches
+        // itself next month; a last-month plan adds one more month.
+        assert_eq!(
+            lag(
+                Node::Mechanism(MechanismId::ClimateStressCurve),
+                Q::CumulativeEmissions,
+                Q::ClimateStress
+            ),
+            1
+        );
+        assert_eq!(
+            lag(
+                Node::Mechanism(MechanismId::CapitalAccumulation),
+                Q::Capital,
+                Q::Capital
+            ),
+            1
+        );
+        assert_eq!(
+            lag(
+                Node::Mechanism(MechanismId::CapitalAccumulation),
+                Q::InvestmentPlan,
+                Q::Capital
+            ),
+            2
+        );
+        // A lever (nothing writes it) arrives at once.
+        assert_eq!(
+            lag(
+                Node::Mechanism(MechanismId::TaxCollection),
+                Q::WageTaxRate,
+                Q::TreasuryTaxes
+            ),
+            0
         );
     }
 }

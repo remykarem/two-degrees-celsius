@@ -5,6 +5,7 @@ use crate::util::{apportion, monthly, person_pay, workers_of};
 use sim_params::{IncomeParams, InvestParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -25,6 +26,16 @@ pub const FIRM_PAYOUT: DecisionSpec = DecisionSpec {
         Q::PayoutRatio,
     ],
     outputs: &[Q::Dividends],
+    effects: &[
+        Fx::up(Q::Profit, Q::Dividends),
+        Fx::up(Q::Cash, Q::Dividends),
+        Fx::down(Q::Payroll, Q::Dividends),
+        Fx::down(Q::DebtService, Q::Dividends),
+        Fx::down(Q::GreenPlan, Q::Dividends),
+        Fx::down(Q::Revenue, Q::Dividends),
+        Fx::up(Q::GreenSubsidy, Q::Dividends),
+        Fx::up(Q::PayoutRatio, Q::Dividends),
+    ],
     params: &[
         "income.cash_reserve_months",
         "income.excess_cash_months",
@@ -103,6 +114,14 @@ pub const WAGE_PAYMENT: MechanismSpec = MechanismSpec {
     system: SystemId::Income,
     inputs: &[Q::Wage, Q::Workers, Q::Cash],
     outputs: &[Q::Payroll, Q::Savings],
+    effects: &[
+        Fx::up(Q::Wage, Q::Payroll),
+        Fx::up(Q::Workers, Q::Payroll),
+        Fx::up(Q::Cash, Q::Payroll),
+        Fx::up(Q::Wage, Q::Savings),
+        Fx::up(Q::Workers, Q::Savings),
+        Fx::up(Q::Cash, Q::Savings),
+    ],
     params: &[],
     rule: "pay_up_to_cash",
 };
@@ -113,6 +132,16 @@ pub const HOUSEHOLD_INCOME_FLOWS: MechanismSpec = MechanismSpec {
     system: SystemId::Income,
     inputs: &[Q::Dividends, Q::Rent],
     outputs: &[Q::Savings, Q::CapitalIncome],
+    effects: &[
+        Fx::up(Q::Dividends, Q::Savings),
+        Fx::up(Q::Dividends, Q::CapitalIncome),
+        Fx::varies(
+            Q::Rent,
+            Q::Savings,
+            "renters pay rent out of savings and their landlords receive it",
+        ),
+        Fx::up(Q::Rent, Q::CapitalIncome),
+    ],
     params: &[],
     rule: "dividends_and_rent_received",
 };
@@ -130,6 +159,14 @@ pub const FIRM_PROFIT: MechanismSpec = MechanismSpec {
         Q::ProfitTaxRate,
     ],
     outputs: &[Q::Profit],
+    effects: &[
+        Fx::up(Q::Revenue, Q::Profit),
+        Fx::down(Q::Payroll, Q::Profit),
+        Fx::down(Q::DebtService, Q::Profit),
+        Fx::down(Q::CarbonPrice, Q::Profit),
+        Fx::down(Q::Footprint, Q::Profit),
+        Fx::down(Q::ProfitTaxRate, Q::Profit),
+    ],
     params: &[],
     rule: "revenue_less_costs_and_taxes",
 };

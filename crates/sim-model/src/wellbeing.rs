@@ -3,6 +3,7 @@
 use sim_metrics::household_wealth;
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -23,6 +24,15 @@ pub const WELLBEING_SCORE: MechanismSpec = MechanismSpec {
         Q::Fire,
     ],
     outputs: &[Q::Wellbeing],
+    effects: &[
+        Fx::up(Q::Consumption, Q::Wellbeing),
+        Fx::down(Q::Unemployment, Q::Wellbeing),
+        Fx::up(Q::Occupancy, Q::Wellbeing),
+        Fx::up(Q::ForestStock, Q::Wellbeing),
+        Fx::down(Q::GrossEmissions, Q::Wellbeing),
+        Fx::up(Q::Savings, Q::Wellbeing),
+        Fx::down(Q::Fire, Q::Wellbeing),
+    ],
     params: &[
         "wellbeing.needs_usd_pc",
         "wellbeing.w_consumption",
@@ -51,6 +61,9 @@ pub const INEQUALITY_GINI: MechanismSpec = MechanismSpec {
     system: SystemId::Metrics,
     inputs: &[Q::NetWealth],
     outputs: &[Q::Inequality],
+    effects: &[
+        Fx::varies(Q::NetWealth, Q::Inequality, "the Gini rises if wealth is added to the already rich and falls if it is added to the poor, so total wealth alone does not set its direction"),
+    ],
     params: &[],
     rule: "gini_of_wealth",
 };
@@ -67,6 +80,13 @@ pub const LAST_DISPOSABLE_RECORD: MechanismSpec = MechanismSpec {
         Q::CapitalTaxRate,
     ],
     outputs: &[Q::LastDisposable],
+    effects: &[
+        Fx::up(Q::Wage, Q::LastDisposable),
+        Fx::up(Q::CapitalIncome, Q::LastDisposable),
+        Fx::down(Q::Rent, Q::LastDisposable),
+        Fx::down(Q::WageTaxRate, Q::LastDisposable),
+        Fx::down(Q::CapitalTaxRate, Q::LastDisposable),
+    ],
     params: &[],
     rule: "income_less_taxes_and_rent",
 };

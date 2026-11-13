@@ -6,6 +6,7 @@ use sim_metrics::household_wealth;
 use sim_params::{GovParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -31,6 +32,28 @@ pub const GOVERNMENT_FUND: DecisionSpec = DecisionSpec {
         Q::PublicDebt,
     ],
     outputs: &[Q::Borrowing, Q::Repayment],
+    effects: &[
+        Fx::up(Q::CommittedSpending, Q::Borrowing),
+        Fx::down(Q::CommittedSpending, Q::Repayment),
+        Fx::up(Q::NextMonthPurchases, Q::Borrowing),
+        Fx::down(Q::NextMonthPurchases, Q::Repayment),
+        Fx::down(Q::TreasuryCash, Q::Borrowing),
+        Fx::up(Q::TreasuryCash, Q::Repayment),
+        Fx::down(Q::TreasuryTaxes, Q::Borrowing),
+        Fx::up(Q::TreasuryTaxes, Q::Repayment),
+        Fx::up(Q::CreditHeadroom, Q::Borrowing),
+        Fx::none(
+            Q::CreditHeadroom,
+            Q::Repayment,
+            "headroom only caps how much can be borrowed",
+        ),
+        Fx::none(
+            Q::PublicDebt,
+            Q::Borrowing,
+            "the debt only caps how much can be repaid",
+        ),
+        Fx::up(Q::PublicDebt, Q::Repayment),
+    ],
     params: &["government.repay_share", "government.cash_target_months"],
     rule: "cash_and_taxes_then_borrow",
 };
@@ -99,6 +122,12 @@ pub const GOVERNMENT_CUT: DecisionSpec = DecisionSpec {
         Q::Borrowing,
     ],
     outputs: &[Q::SpendingCutRatio],
+    effects: &[
+        Fx::down(Q::CommittedSpending, Q::SpendingCutRatio),
+        Fx::up(Q::TreasuryCash, Q::SpendingCutRatio),
+        Fx::up(Q::TreasuryTaxes, Q::SpendingCutRatio),
+        Fx::up(Q::Borrowing, Q::SpendingCutRatio),
+    ],
     params: &[],
     rule: "cut_pro_rata",
 };
@@ -145,6 +174,15 @@ pub const GOVERNMENT_LEGITIMACY: DecisionSpec = DecisionSpec {
         Q::TransitionResistance,
     ],
     outputs: &[Q::Legitimacy],
+    effects: &[
+        Fx::up(Q::Legitimacy, Q::Legitimacy),
+        Fx::up(Q::Wellbeing, Q::Legitimacy),
+        Fx::down(Q::Unemployment, Q::Legitimacy),
+        Fx::down(Q::Inequality, Q::Legitimacy),
+        Fx::down(Q::PublicDebtRatio, Q::Legitimacy),
+        Fx::down(Q::Bailout, Q::Legitimacy),
+        Fx::down(Q::TransitionResistance, Q::Legitimacy),
+    ],
     params: &[
         "government.legit_wellbeing",
         "government.legit_wellbeing_neutral",
@@ -247,6 +285,20 @@ pub const TAX_COLLECTION: MechanismSpec = MechanismSpec {
         Q::ProfitTaxRate,
     ],
     outputs: &[Q::TreasuryTaxes],
+    effects: &[
+        Fx::up(Q::Wage, Q::TreasuryTaxes),
+        Fx::up(Q::Workers, Q::TreasuryTaxes),
+        Fx::up(Q::CapitalIncome, Q::TreasuryTaxes),
+        Fx::up(Q::NetWealth, Q::TreasuryTaxes),
+        Fx::up(Q::WageTaxRate, Q::TreasuryTaxes),
+        Fx::up(Q::CapitalTaxRate, Q::TreasuryTaxes),
+        Fx::up(Q::WealthTaxRate, Q::TreasuryTaxes),
+        Fx::down(Q::WealthThreshold, Q::TreasuryTaxes),
+        Fx::up(Q::CarbonPrice, Q::TreasuryTaxes),
+        Fx::up(Q::Footprint, Q::TreasuryTaxes),
+        Fx::up(Q::Profit, Q::TreasuryTaxes),
+        Fx::up(Q::ProfitTaxRate, Q::TreasuryTaxes),
+    ],
     params: &[],
     rule: "taxes_by_base_and_rate",
 };

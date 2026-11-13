@@ -13,6 +13,7 @@ use libm::pow;
 use sim_params::{LabourParams, Params, ProductionParams};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
@@ -42,6 +43,28 @@ pub const FIRM_HIRE: DecisionSpec = DecisionSpec {
         Q::TransitionFactor,
     ],
     outputs: &[Q::WantedWorkers, Q::Vacancies],
+    effects: &[
+        Fx::up(Q::ExpectedSales, Q::WantedWorkers),
+        Fx::up(Q::ExpectedSales, Q::Vacancies),
+        Fx::down(Q::Inventory, Q::WantedWorkers),
+        Fx::down(Q::Inventory, Q::Vacancies),
+        Fx::up(Q::InventoryCover, Q::WantedWorkers),
+        Fx::up(Q::InventoryCover, Q::Vacancies),
+        Fx::none(Q::Workers, Q::WantedWorkers, "the workers a firm wants depend on output needed and productivity, not on how many it has"),
+        Fx::down(Q::Workers, Q::Vacancies),
+        Fx::none(Q::SkilledWorkers, Q::WantedWorkers, "the workers wanted depend on output needed, not on how many are skilled"),
+        Fx::none(Q::SkilledWorkers, Q::Vacancies, "skilled workers change which vacancies are skilled, not how many in all"),
+        Fx::down(Q::EffectiveLabour, Q::WantedWorkers),
+        Fx::down(Q::EffectiveLabour, Q::Vacancies),
+        Fx::down(Q::CapitalOutput, Q::WantedWorkers),
+        Fx::down(Q::CapitalOutput, Q::Vacancies),
+        Fx::down(Q::WeatherFactor, Q::WantedWorkers),
+        Fx::down(Q::WeatherFactor, Q::Vacancies),
+        Fx::down(Q::ResourceFactor, Q::WantedWorkers),
+        Fx::down(Q::ResourceFactor, Q::Vacancies),
+        Fx::down(Q::TransitionFactor, Q::WantedWorkers),
+        Fx::down(Q::TransitionFactor, Q::Vacancies),
+    ],
     params: &[
         "labour.growth_aspiration",
         "labour.inventory_cover",
@@ -147,6 +170,14 @@ pub const FIRM_FIRE: DecisionSpec = DecisionSpec {
     system: SystemId::Labour,
     inputs: &[Q::Workers, Q::WantedWorkers, Q::OverTargetMonths],
     outputs: &[Q::Workers, Q::OverTargetMonths],
+    effects: &[
+        Fx::up(Q::Workers, Q::Workers),
+        Fx::up(Q::Workers, Q::OverTargetMonths),
+        Fx::up(Q::WantedWorkers, Q::Workers),
+        Fx::down(Q::WantedWorkers, Q::OverTargetMonths),
+        Fx::down(Q::OverTargetMonths, Q::Workers),
+        Fx::up(Q::OverTargetMonths, Q::OverTargetMonths),
+    ],
     params: &[
         "labour.min_target_workers",
         "labour.fire_slack",
@@ -207,6 +238,12 @@ pub const FIRM_WAGE: DecisionSpec = DecisionSpec {
     system: SystemId::Labour,
     inputs: &[Q::Wage, Q::MinWage, Q::Unemployment, Q::SectorTfpGrowth],
     outputs: &[Q::Wage],
+    effects: &[
+        Fx::up(Q::Wage, Q::Wage),
+        Fx::up(Q::MinWage, Q::Wage),
+        Fx::down(Q::Unemployment, Q::Wage),
+        Fx::up(Q::SectorTfpGrowth, Q::Wage),
+    ],
     params: &[
         "labour.wage_k",
         "labour.u_ref",
@@ -259,6 +296,7 @@ pub const LABOUR_MATCHING: MechanismSpec = MechanismSpec {
     system: SystemId::Labour,
     inputs: &[Q::Vacancies],
     outputs: &[Q::Workers],
+    effects: &[Fx::up(Q::Vacancies, Q::Workers)],
     params: &[],
     rule: "fill_vacancies_from_jobless",
 };
@@ -269,6 +307,7 @@ pub const UNEMPLOYMENT_RATE: MechanismSpec = MechanismSpec {
     system: SystemId::Metrics,
     inputs: &[Q::Workers],
     outputs: &[Q::Unemployment],
+    effects: &[Fx::down(Q::Workers, Q::Unemployment)],
     params: &[],
     rule: "jobless_share_of_labour_force",
 };

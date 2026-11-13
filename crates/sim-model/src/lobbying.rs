@@ -6,6 +6,7 @@ use sim_metrics::household_wealth;
 use sim_params::{LobbyParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::Effect as Fx;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -27,6 +28,11 @@ pub const HOUSEHOLD_LOBBY: DecisionSpec = DecisionSpec {
     system: SystemId::Lobbying,
     inputs: &[Q::CapitalIncome, Q::Savings, Q::CampaignCap],
     outputs: &[Q::LobbySpend],
+    effects: &[
+        Fx::up(Q::CapitalIncome, Q::LobbySpend),
+        Fx::up(Q::Savings, Q::LobbySpend),
+        Fx::up(Q::CampaignCap, Q::LobbySpend),
+    ],
     params: &["lobby.spend_rate"],
     rule: "share_of_capital_income",
 };
