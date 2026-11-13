@@ -131,6 +131,11 @@ pub fn has_self_loop(q: QuantityId) -> bool {
     actors().any(|a| a.inputs.contains(&q) && a.outputs.contains(&q))
 }
 
+/// The `TICK_ORDER` system a decision or mechanism runs in (`None` for a quantity).
+pub fn system_of(n: Node) -> Option<SystemId> {
+    actors().find(|a| a.node == n).map(|a| a.system)
+}
+
 /// All edges: reads and writes per decision then per mechanism in registry order, then the
 /// derived links in the same order.
 pub fn edges() -> Vec<Edge> {

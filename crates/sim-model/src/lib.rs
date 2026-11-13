@@ -5,6 +5,7 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod causal;
+pub mod causal_loops;
 pub mod class;
 pub mod credit;
 #[cfg(test)]
