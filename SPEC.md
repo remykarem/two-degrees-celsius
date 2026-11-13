@@ -5,7 +5,7 @@
 # Ecological Economics Simulation Game: Spec (v0.1)
 
 Working title: *TBD*
-Status: draft v0.2. Milestone 1 (Rust simulation) is in progress; the demand side of the model is being redesigned (see `docs/causal-model.md` sections 7 to 9). The game is **turn-based** (section 4.1).
+Status: draft v0.2. Milestone 1 (Rust simulation) is in progress; the demand side of the model is being redesigned (see `docs/tuning-log.md` and the code in `crates/sim-model`). The game is **turn-based** (section 4.1).
 
 ---
 
@@ -426,14 +426,14 @@ This one file is used for three things:
 
 **Trace.** Each system records *contributions* as it runs (for example, emissions by source, income by type). That lets the UI answer "why did emissions rise this year?" and generate the end-screen story without guessing.
 
-**Status:** a first draft of the equations is in `docs/causal-model.md` (ten systems, the loop table, calibration targets and invariant tests). Parameters are placeholders to be tuned in milestone 1. That document also lists three modelling decisions (D1 to D3) that need confirming.
+**Status:** the equations are the code in `crates/sim-model` (the original design doc was reduced to `docs/causal-model.md`, the modelling choices and why). Parameters are placeholders to be tuned in milestone 1. That document also lists three modelling decisions (D1 to D3) that need confirming.
 
 ## 14. Milestones
 
 1. **Headless model (no graphics).** A *headless run* executes the simulation with no map, UI or browser: a command (for example `sim --seed 42`) plays 160 turns (480 ticks) driven by a scripted **turn plan** (a JSON file of commands per turn, for example "turn 20: queue a carbon price of 50"), and prints or writes a CSV of the key series (GDP, unemployment, Gini, emissions, remaining budget, bank equity).
-   - **Why first:** it tests whether the economy behaves sensibly before any graphics exist (no collapse in year 3, no money from nowhere), it is where parameters get tuned toward the targets in `docs/causal-model.md` section 5, and it becomes the test suite (invariants, sign tests, golden snapshot).
+   - **Why first:** it tests whether the economy behaves sensibly before any graphics exist (no collapse in year 3, no money from nowhere), it is where parameters get tuned toward the targets in `docs/tuning-log.md`, and it becomes the test suite (invariants, sign tests, golden snapshot).
    - **Contents:** the Rust workspace (`sim-types`, `sim-rng`, `sim-params`, `sim-checks`, `sim-engine`, `sim-model`, `sim-metrics`, `sim-cli`), then the ten systems added one at a time, checking the numbers after each. Command: `cargo run -p sim-cli -- --seed 42`.
-   - **Done when:** a seeded 160-turn run prints a summary, invariant tests pass, and the three baseline runs in `docs/causal-model.md` section 9 behave as specified (no-action run degrades but does not crash; a scripted sensible-play run survives; a scripted neglect run fails). The economy does **not** need to be self-stabilising with no player input, because the player steers every turn. It must be steerable.
+   - **Done when:** a seeded 160-turn run prints a summary, invariant tests pass, and the three baseline runs in `docs/tuning-log.md` behave as specified (no-action run degrades but does not crash; a scripted sensible-play run survives; a scripted neglect run fails). The economy does **not** need to be self-stabilising with no player input, because the player steers every turn. It must be steerable.
 2. **Natural capital and carbon budget:** emissions, sinks, forest, budget depletion.
 3. **Class, mobility and political power.**
 4. **`sim-wasm` glue, tile map and static 3D view** with rotation and entity placement. Includes running the golden snapshot in WASM.
@@ -471,7 +471,7 @@ The main risk is that the model produces boring or degenerate behaviour (everyth
 
 1. Review this spec and mark anything wrong or missing.
 2. Settle the remaining open questions in section 15.
-3. ~~Confirm decisions D1 to D3~~ Confirmed: cohort households, 2 dormant firm slots, closed economy (see `docs/causal-model.md`).
+3. ~~Confirm decisions D1 to D3~~ Confirmed: cohort households, 2 dormant firm slots, closed economy (history: `docs/causal-model.md`).
 4. Start milestone 1: the headless model as a Rust workspace, following the rules in 13.1. Not started; no code has been written yet.
 
 
@@ -480,7 +480,7 @@ The main risk is that the model produces boring or degenerate behaviour (everyth
 ## 17. Town v2 amendment (approved, supersedes earlier sections where they conflict)
 
 Full design: `docs/town-v2.md`. Summary of what changes in this spec:
-- **Agents (sections 2, 5, 6):** 20 **individual people in 8 households** (2 to 4 people), not 6 cohorts and not 1,000 people. The cohort decision D1 in `docs/causal-model.md` is withdrawn. Class is still derived, now per household. Households can move or lose their home; people never leave town; no births or deaths.
+- **Agents (sections 2, 5, 6):** 20 **individual people in 8 households** (2 to 4 people), not 6 cohorts and not 1,000 people. The cohort decision D1 of the original design is withdrawn (`docs/causal-model.md`). Class is still derived, now per household. Households can move or lose their home; people never leave town; no births or deaths.
 - **Firms (section 5):** Factory, Farm and **Shop (services)**, plus one dormant slot. `Sector` gains `Services`.
 - **Space (sections 12, 13.1):** the **simulation owns the 12 x 12 map**. Placement commands carry a tile and position has gameplay effects (commutes, local pollution). This reverses the "map is cosmetic" decision.
 - **Buildables:** public housing, fossil plant, renewable plant and **roads** (roads shorten commutes; cost plus maintenance only).

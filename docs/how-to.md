@@ -38,7 +38,7 @@ Web
 - `web/src/contract/index.ts`: add to the `LeverKey` union (and `LeverInfo` unit if new).
 - `web/src/panels/policy.ts`: put the key in a drawer group.
 
-Tests/commands: add a sign or behaviour test in `tests/scenarios.rs` (see `job_guarantee_employs_people_and_lowers_unemployment`); `web/tests/contract.test.ts`, `fixtures.test.ts` will flag missing pieces. Run section 0 regeneration, then the full checklist. Update `docs/causal-model.md` section 10 (the rule) and `docs/glossary.md` if the lever adds a concept.
+Tests/commands: add a sign or behaviour test in `tests/scenarios.rs` (see `job_guarantee_employs_people_and_lowers_unemployment`); `web/tests/contract.test.ts`, `fixtures.test.ts` will flag missing pieces. Run section 0 regeneration, then the full checklist. Update the registry (`content/decisions.json`, the mechanism specs) and `docs/glossary.md` if the lever adds a concept.
 
 ## 2. Add a buildable kind
 
@@ -66,7 +66,7 @@ Tests: roads tests in `tests/scenarios.rs` (`roads_are_built_on_their_tile_cost_
 
 Overall idea: build in layers from the inside out and check each before the next. Keep the **rule** bespoke and everything else data-driven.
 
-1. **Decide the effect first, in one sentence.** "Part of the whole system" means it must move at least one existing quantity (wellbeing, a nature stock, money, emissions, a hazard). Name that quantity and the direction (add a sign test, `docs/causal-model.md` section 5).
+1. **Decide the effect first, in one sentence.** "Part of the whole system" means it must move at least one existing quantity (wellbeing, a nature stock, money, emissions, a hazard). Name that quantity and the direction (add a sign test: a mechanism spec effect is checked by the perturbation sign test, `tests/mechanism_signs`).
 2. **Content and types:** `content/params.json` (cost, upkeep, lead time, effect size, `turn.levers.place_<kind>` and `remove_<kind>`), `content/entities.json`, `content/levers.json`, `content/ui.json`; `enums.rs`, `sim-params`, `sim-api/src/{keys,entities,industry,meta}.rs`, `sim-engine/src/turn.rs` (section 2 and 21 above). Run `cargo test --workspace`; the registry test tells you what you missed.
 3. **The rule:** one pure function in the right `crates/sim-model/src/<system>.rs`, reading the facility count or coverage from `State` (pattern: `weather.rs::covered` for the fire station). Numbers in `params.json`, a unit test and a sign test. If it emits, add an emission source (section 20); if it costs money each month, add it to the government upkeep sum; if it adds a new kind of money movement, section 12a.
 4. **Explain it:** an assumptions topic (section 15) and, if it feeds a headline metric, a breakdown (section 14), so the player can see why.
@@ -105,7 +105,7 @@ Tests: `web/tests/panels-metrics.test.ts`, `fixtures.test.ts` (pins key sets via
 3. New state: fields in `sim-types/src/state.rs` (and `Deltas` / `Delta` variants in `deltas.rs` plus an arm in `crates/sim-engine/src/apply.rs`), initial values in `sim-engine/src/init.rs`, numbers in `content/params.json` with a struct in `sim-params` (`deny_unknown_fields`).
 4. Invariants: extend `crates/sim-checks/src/lib.rs` if the system adds money or structure that must hold. Money must go through `Delta` money operations so `check_money` stays exact.
 5. State layout changed => bump `SCHEMA_VERSION` (`sim-types/src/lib.rs`), update `persist.rs` structural checks, `web/src/store/save.ts` only if the save wrapper changed.
-6. Tests in `tests/scenarios.rs` (behaviour, sign test, invariants over seeds). Document the rule in `docs/causal-model.md` section 10 and list deviations in `docs/deviations.md` (Town v2 table). Regenerate per section 0.
+6. Tests in `tests/scenarios.rs` (behaviour, sign test, invariants over seeds). Declare the rule in the registry (`content/decisions.json`) and list deviations in `docs/deviations.md` (Town v2 table). Regenerate per section 0.
 
 ## 6. Add a new switchable economic system (like Market/Regulated/Coop)
 
@@ -347,7 +347,7 @@ A mechanism is plain code (physics or accounting) that no decision makes but tha
 ## 29. Loops of the causal graph (causality graph stage 3, contract v2.12)
 
 Loops are **computed, never written**: `crates/sim-model/src/causal_loops.rs` finds the strongly connected components and every simple cycle of at most `MAX_LOOP_LEN` (8) quantities in the signed quantity graph and classifies each from the signs (`docs/features/causality-graph.md` section 14). You do not add a loop; you add or change an effect (sections 27 and 28) and the loops follow.
-1. **After changing a spec or effect**, run `cargo test -p sim-model causal_loops` (every loop is a real cycle, the R/B parity, the component partition, determinism, the known examples, the nine rows of `docs/causal-model.md` section 4) and `cargo test -p sim-api --test decisions loops`. The counts are pinned (`counts_are_pinned`, 203 loops at the time of writing): a change is a change to the model's feedback structure, so read the new loops (print `loops()`), explain them in the as-built note, then update the pins.
+1. **After changing a spec or effect**, run `cargo test -p sim-model causal_loops` (every loop is a real cycle, the R/B parity, the component partition, determinism, the known examples, the teaching loops of `docs/features/causality-graph.md` section 14) and `cargo test -p sim-api --test decisions loops`. The counts are pinned (`counts_are_pinned`, 203 loops at the time of writing): a change is a change to the model's feedback structure, so read the new loops (print `loops()`), explain them in the as-built note, then update the pins.
 2. **A teaching name** for a loop: `content/decisions.json` `causal.loops.names` (`members` are the quantity ids of the loop in any order, `name`, `story`). Loading fails if the members are not a generated loop, so a renamed or removed effect cannot leave a stale name. The loop's id is `loop:` plus the sorted member names joined with `+`.
 3. **A new quantity that plain code also writes** (DP-13): add its id to `causal.loops.gap_quantities` so any loop through it is flagged `incomplete`.
 4. **Words** (kind labels, the sentence template, the incomplete reasons) are in the same block; the sentence is generated from the cycle and its signs, so do not hand-write one.

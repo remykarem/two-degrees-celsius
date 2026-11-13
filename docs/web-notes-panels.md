@@ -20,7 +20,7 @@ Scope: `web/src/panels/**`, `web/src/ui-kit/**`, `web/src/app/App.svelte`, tests
 - Story templates only use `snapshot.history`, the last `TurnResult.trace` and `policyGaps`. The lobbying line therefore describes the final turn, not an average over the run.
 
 ## Placeholders / not done
-- System copy: marked "placeholder" where `docs/causal-model.md` section 3 is silent (who resists a switch back to market, who resists the co-op switch). Transition months and output hits come from that table; the mock uses 12 months for every system.
+- System copy: marked "placeholder" where the economic-systems content (`content/systems/*.json`) is silent (who resists a switch back to market, who resists the co-op switch). Transition months and output hits come from that table; the mock uses 12 months for every system.
 - "Why?" mapping per metric is a judgement call (GDP, GPI, unemployment, Gini, wellbeing -> income trace; emissions, budget, temperature -> emissions trace; legitimacy -> lobbying gap). Metrics with no matching trace have no why link (debt, forest, commons).
 - Only the mock's trace shape is exercised: emissions by source, wages only for income, and policy gaps. With the real sim, income by type will show more kinds without code changes.
 - Dark theme: tokens exist and are used everywhere; not visually reviewed.

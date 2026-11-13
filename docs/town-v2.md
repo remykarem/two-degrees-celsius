@@ -1,6 +1,6 @@
 # Town v2 design (draft for review)
 
-Status: **APPROVED by the user; implementation starting.** Replaces the cohort model (decision D1 in `docs/causal-model.md`) with **individual people living in households**, puts the **map inside the simulation**, and adds **roads**, **plants that emit directly**, a **services firm**, and a much harsher **starting inequality**. Every number is a placeholder to tune. Items marked **[DECIDED]** came from the user; **[PROPOSED]** are my choices for you to confirm or change.
+Status: **APPROVED by the user; implementation starting.** Replaces the cohort model (decision D1 of the original design, `docs/causal-model.md`) with **individual people living in households**, puts the **map inside the simulation**, and adds **roads**, **plants that emit directly**, a **services firm**, and a much harsher **starting inequality**. Every number is a placeholder to tune. Items marked **[DECIDED]** came from the user; **[PROPOSED]** are my choices for you to confirm or change.
 
 ## 1. What changes and why
 
@@ -121,7 +121,7 @@ The Phase 2 balance fixes (green-investment smoothing, wage and price rules, the
 
 ## 11. Delivery plan
 
-1. **You review this doc.** I then update `SPEC.md`, `docs/causal-model.md`, `docs/snapshot-contract.md` (v1.0) and `docs/ui-design.md` to match.
+1. **You review this doc.** I then update `SPEC.md`, `docs/snapshot-contract.md` (v1.0) and `docs/ui-design.md` to match.
 2. **Rust model agent:** people, households, map, roads, plant emissions, services firm; rewrite S1, S3, S4, S9, S10; keep systems pure. Tests: invariants, determinism, multi-seed baselines.
 3. **Wire layer agent (`sim-api`)** after step 2: contract v1.0, fixtures, native-vs-wasm golden.
 4. **Web agent(s):** person and household views, road tool, tile validity from the sim, metrics, green scene. The scene and the panels can run in parallel again.

@@ -1,6 +1,6 @@
 # Web notes: Town v4 (weather: forest fires and drought)
 
-Design: `docs/town-v4.md` (section 6 UI and scene). Rules: `docs/causal-model.md` section 11. Contract: `docs/snapshot-contract.md` section 13 (v1.2). Scope: `web/` only. Works in Relaxed and Pressure; in Pressure every weather card is non-blocking (banners and sidebar cards, no dialogs).
+Design: `docs/town-v4.md` (section 6 UI and scene). Rules: `crates/sim-model/src/weather.rs`. Contract: `docs/snapshot-contract.md` section 13 (v1.2). Scope: `web/` only. Works in Relaxed and Pressure; in Pressure every weather card is non-blocking (banners and sidebar cards, no dialogs).
 
 ## What was built
 - **Contract types** (`contract/index.ts`): `Weather`, `RiskLevel`, `ForestState`, `Tile.state`, `NatureView.*Health`, `HistoryPoint` weather fields, `fire_station`, `resilience_spending`, the seven weather events, trace source `fire_sink_loss`, four new `MetricKey`s. `SchemaVersion` is `2 | 3` (the real sim is 3 since the weather State layout). `sim-port/wasm/index.ts` accepts schema 2 or 3 (it refused 3 before: the real sim fell back to the mock until this was fixed).

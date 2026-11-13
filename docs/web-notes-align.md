@@ -40,7 +40,7 @@ GDP, GPI, unemployment, Gini, wellbeing, legitimacy and prices dynamics; lobbyin
 6. `HistoryPoint.emissions` is unspecified. The real wire sends net monthly tonnes; the mock now does too, and the charts label it "per month (net, end of turn)".
 7. `Snapshot.mock?: boolean` is my addition (drives the "Mock data" badge). The real wire omits it.
 8. Real `schemaVersion` is 1; the mock's is 3 (its own save format). The save file stores whichever the port reports.
-9. Arrows: the real `levers.json` omits tax_wage, tax_profit, tax_capital, wealth_threshold, campaign_cap, emissions_cap, commons_access and bailout. The mock keeps arrows for those that `docs/causal-model.md` states (taxes and threshold -> debt, emissions cap, commons access, bailout -> legitimacy) and none for campaign_cap. Both follow "arrows describe raising the lever"; the UI flips them when the draft goes down and treats `0` as "no cap" (loosest) for `zeroMeansNone` levers.
+9. Arrows: the real `levers.json` omits tax_wage, tax_profit, tax_capital, wealth_threshold, campaign_cap, emissions_cap, commons_access and bailout. The mock keeps arrows for those that the original design states (taxes and threshold -> debt, emissions cap, commons access, bailout -> legitimacy) and none for campaign_cap. Both follow "arrows describe raising the lever"; the UI flips them when the draft goes down and treats `0` as "no cap" (loosest) for `zeroMeansNone` levers.
 10. `flows.purchases` is always empty in the real wire; the scene already skips it.
 11. Section 10.5 says the wire must document when build money is charged. `docs/sim-api-notes.md` says at activation, so the plan tray says "on activation".
 

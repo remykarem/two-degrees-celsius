@@ -1,6 +1,6 @@
 > **Status:** items 1-46 and "Open problems" are HISTORICAL (cohort model; 39-46 superseded). The "Town v2" table (T1-T23) is CURRENT; note T2 is stale (`sim-api` and `sim-wasm` are back in the workspace). Index: `docs/README.md`.
 
-# Deviations from docs/causal-model.md
+# Deviations from the original design (`docs/causal-model.md`, now a short why-doc)
 
 Status: milestone 1 is a WIP. The demand side was redesigned (model doc section 8, items 1-9) and the game is turn-based. The model is steerable but not calibrated (see tuning-log.md). The `Status` column marks what the redesign changed.
 
@@ -102,7 +102,7 @@ Rust model for `docs/town-v2.md` (20 people in 8 households, a 12 x 12 map owned
 | T24 | **Carbon budget horizon (Paris 2030).** `nature.budget_b0` 4,400 to 600 t and `game.startYear` (`content/levers.json`) 2031 to 2026: baseline A has 50% left at turn 9 to 10 and exhausts at turn 18 to 19. Sensible play (B) can no longer win 160 turns; it buys about 6 turns. Entry: `docs/tuning-log.md` Carbon budget horizon. | User request: the budget should reflect the 2030 horizon. |
 
 ## Town v4 (weather: forest fires and drought)
-Rust implementation of `docs/town-v4.md`, `docs/causal-model.md` section 11 and `docs/snapshot-contract.md` section 13. Where the approved docs were silent the simplest reading was taken.
+Rust implementation of `docs/town-v4.md`, `crates/sim-model/src/weather.rs` and `docs/snapshot-contract.md` section 13. Where the approved docs were silent the simplest reading was taken.
 
 | # | Deviation or reading | Reason |
 |---|---|---|

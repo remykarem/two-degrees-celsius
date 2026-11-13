@@ -46,7 +46,7 @@ Dividends from state stakes flow to the treasury (already the `StateFirmDividend
 ## 5. Wire, UI and docs (additive; contract v2.1)
 - Snapshot: `firms[].ownership` (list of stakes with holder and share), `government.stateEquity`, `finance.government.revenue.gst`, `tax` row `gst` with `modelled: true`, `economicSystem` gains `state`, levers `gst_rate` and `gst_food_rate`, commands `buy_stake` and `sell_stake`, ledger kinds `gst`, `nationalisation`, `stake_purchase`, `stake_sale`, a GST breakdown and an ownership breakdown. Save schema bumps (firm state changes).
 - UI: GST in the policy drawer (with the incidence preview in words, arrows only) and in the Taxes table; **ownership control** and split bar per firm in the Industry tab; system switcher gains **State**; stake purchases in the plan tray; explorer topics for GST, ownership, nationalisation, "what state firms leave out".
-- Docs: `docs/causal-model.md` section 12 (GST rules, ownership shares, State system), `docs/snapshot-contract.md` section 17, `docs/architecture.md`, `docs/how-to.md`, `docs/known-issues.md`.
+- Docs: the registry (GST rules, ownership shares, State system), `docs/snapshot-contract.md` section 17, `docs/architecture.md`, `docs/how-to.md`, `docs/known-issues.md`.
 
 ## 6. Delivery plan
 1. You review this doc.

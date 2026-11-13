@@ -115,7 +115,7 @@ Mechanism tags: the commons card is tagged "community rules" or "market" per acc
 
 **Wire (additive, contract v2.6 proposed, next free after the inflation draft v2.5):** a breakdown `commonsHarvest` (and `forestHarvest`) via `make(id, title, formula, inputs, result, unit, parts)` with `result` = months until collapse or the taken-per-regrown ratio (pick one headline: taken per regrown), parts = regrowth, taken, change; plus a monthly series; rows as lists of `{key, label, value, unit}` (labels from `content/ui.json`, the web never names a row). Markets: one new cause word key and a link anchor on the food card. ts-rs generates TS (`cargo test -p sim-api --features ts`, `docs/how-to.md` section 19); edit only `web/src/contract/index.ts` aliases; update `docs/snapshot-contract.md` and regenerate fixtures and golden. Trace: harvest and cap per month as an output-only `TraceRecord` only if the series cannot be rebuilt from the end state (it can: stock, regrowth and harvest are stored: `harvest_commons`); avoid a log change (no schema bump).
 
-**Tests (sign tests, `docs/causal-model.md` style):**
+**Tests (sign tests, mechanism sign-test style):**
 1. Higher harvest effort (`commons_harvest` 2.0 vs 1.0) gives a lower commons stock after N months (same seed).
 2. Stock at zero (commons 0, forest at 1400) gives `Y <= 0` from the commons cap (food output exactly capped).
 3. Cap not binding at default start: output equals pre-feature output for the first 12 ticks (golden prefix).
@@ -124,7 +124,7 @@ Mechanism tags: the commons card is tagged "community rules" or "market" per acc
 6. Drought at low stock lowers next month's cap (sign).
 7. Invariants (`sim-checks`): finite numbers; `Y_cap >= 0`; stocks within `[0, max]`.
 
-**Delivery steps:** (1) measure baselines and stock paths (read-only probe, record); (2) params + `nature.rs`/`production.rs` cap, behaviour test 3 first; (3) `sim-metrics` pure fns; (4) breakdowns and series in `sim-api`; (5) `ui.json` labels, cause word, topics in `assumptions.json`; (6) web Ecology panel and Markets link (render only); (7) regenerate TS, fixtures, golden, recording; (8) re-run baselines, tuning-log section; (9) docs: contract section, glossary (maximum sustainable yield, overshoot), causal-model S7, markets.md Q5 note, README row status.
+**Delivery steps:** (1) measure baselines and stock paths (read-only probe, record); (2) params + `nature.rs`/`production.rs` cap, behaviour test 3 first; (3) `sim-metrics` pure fns; (4) breakdowns and series in `sim-api`; (5) `ui.json` labels, cause word, topics in `assumptions.json`; (6) web Ecology panel and Markets link (render only); (7) regenerate TS, fixtures, golden, recording; (8) re-run baselines, tuning-log section; (9) docs: contract section, glossary (maximum sustainable yield, overshoot), markets.md Q5 note, README row status.
 
 **Out of scope:** scarcity pricing (Markets scope B); a market or price for the commons; a soil stock; new random draws; daily ticks; changing `farm_harvest_*`, growth rates or `commons_max`; the estate or carbon price rules.
 

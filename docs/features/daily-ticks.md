@@ -54,7 +54,7 @@ Also **money is integer cents** and conservation checks are exact, so slicing ne
 - **Feel:** some numbers will still move in small integer steps (one person hired or fired changes unemployment by 10 points with 10 workers). That is the small-population effect of Town v2, not a time-step problem.
 
 ## 8. Delivery plan
-1. You review this doc. I update `docs/causal-model.md` (time-step section), `docs/snapshot-contract.md` (v2.0), `docs/architecture.md`, `docs/how-to.md`.
+1. You review this doc. I update `docs/snapshot-contract.md` (v2.0), `docs/architecture.md`, `docs/how-to.md`.
 2. **Rust agent (staged, one at a time):** (a) clock plumbing and the `ticks_per_month = 1` regression; (b) audit and convert systems; (c) indicators, checks, weather; (d) re-calibration and baselines.
 3. **Wire and web agents:** `advanceDays`, light results, live metrics, day counter, Pressure loop (can start on the mock once the contract exists).
 4. You play; then an independent review.

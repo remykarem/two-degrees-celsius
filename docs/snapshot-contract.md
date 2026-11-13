@@ -283,7 +283,7 @@ interface Snapshot { /* addition */ turnPhase: { open: boolean; monthsDone: 0 | 
 
 ## 13. Contract v1.2: weather (fires and drought) (additive; `schemaVersion` bumps only if the saved State layout changes)
 
-Design: `docs/town-v4.md`; rules: `docs/causal-model.md` section 11.
+Design: `docs/town-v4.md`; rules: `crates/sim-model/src/weather.rs`.
 ```ts
 interface Snapshot { /* additions */
   weather: { stress: number /* 0..1 */; drought: null | { severity: number; monthsLeft: number };
@@ -453,7 +453,7 @@ interface FinanceFlows { householdIncome: { /* ... */ domesticWages: number } } 
 interface Breakdowns { gini: { byHousehold: { /* ... */ parts: { id: 'net_cash'|'homes'|'jet'|'bank'|'firms'; value: number }[] }[] } }   // zero parts omitted
 interface Catalog { /* ... */ tags: Record<string, string>; wealthBands: { min: number | null; id: string; label: string }[] /* richest first; the last has min null */ }
 ```
-- Rules (crates `sim-model` `estate.rs`, `income.rs`, `nature.rs`; see `docs/causal-model.md` section 12): one Bernoulli draw a month while the estate exists (taken even with the pilot gone); a flight needs an employed pilot when the content has one; it adds `flight_tonnes` as `aviation`, and charges `effective.carbon_price x tonnes` from the estate's savings (`Purpose::CarbonTax`, capped by savings). The estate household's direct emissions are `estate.household_emissions_t` (0.5), replacing the per-person 0.12. The pilot is paid `estate.pilot_wage_usd` household to household (`Purpose::DomesticWages`, ledger detail `domestic wages`, kind `wage`); short pay for `pilot_unpaid_months_max` months in a row lets the pilot go (`staff_of` cleared); rehire when the estate's savings cover `pilot_rehire_months_of_wages` months of wages and the pilot has no other job.
+- Rules (crates `sim-model` `estate.rs`, `income.rs`, `nature.rs`): one Bernoulli draw a month while the estate exists (taken even with the pilot gone); a flight needs an employed pilot when the content has one; it adds `flight_tonnes` as `aviation`, and charges `effective.carbon_price x tonnes` from the estate's savings (`Purpose::CarbonTax`, capped by savings). The estate household's direct emissions are `estate.household_emissions_t` (0.5), replacing the per-person 0.12. The pilot is paid `estate.pilot_wage_usd` household to household (`Purpose::DomesticWages`, ledger detail `domestic wages`, kind `wage`); short pay for `pilot_unpaid_months_max` months in a row lets the pilot go (`staff_of` cleared); rehire when the estate's savings cover `pilot_rehire_months_of_wages` months of wages and the pilot has no other job.
 - The pilot is `employed()` (`staff_of`), in the labour force, class Worker. `indicators.labourForce` is 11 and `employed` 10 at the start (unemployment 9.1%).
 - Ledger: a domestic wage is a household to household `wage` entry, so it appears in both ledgers; `finance.households.income.wages` counts it once as income. `ledger_kind` text and the Finance rows are unchanged; the web shows `domesticWages` as its own row.
 - Also in this version: `catalog().text.estate` (group `estate`) holds the wording for the employer line, the three events and the pilot status; `assumptions()` has the topic `private_jet`; `agents()` has the kind `estate` and the draw `estate_flight` (10 draw sites in `sim-model`).

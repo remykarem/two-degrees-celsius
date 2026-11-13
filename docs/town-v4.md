@@ -66,12 +66,12 @@ Seasons and mild variability are **cosmetic only** (scene lighting, clouds); no 
 ## 7. Testing and balance
 - Pure-function tests: stress curve, ignition and spread probabilities, drought effects on regrowth, fire station coverage.
 - Property tests: forest stock never negative, tiles never double-burning, determinism per seed.
-- Sign tests (as in `docs/causal-model.md` section 5): higher stress raises fire frequency; more fire raises net emissions; fire station lowers fire damage.
+- Sign tests (the mechanism sign-test style): higher stress raises fire frequency; more fire raises net emissions; fire station lowers fire damage.
 - **Re-run the baselines over many seeds.** Weather adds a new negative feedback on A and C and will shift outcomes; `budget_b0` and several parameters will need a pass. Weather must hurt, but a good player must still be able to win (baseline B), so adaptation is not optional design.
 - Golden snapshots and fixtures regenerate; the native-vs-wasm golden test must still pass bit for bit.
 
 ## 8. Delivery plan
-1. You review this doc; I update contract, causal-model (a new S11 section), architecture and how-to docs.
+1. You review this doc; I update contract, architecture and how-to docs.
 2. **Rust agent:** weather system, state, events, fire station and resilience lever, baselines and tests.
 3. **Wire agent:** contract v1.2 and fixtures.
 4. **Web agents:** health meters, forecast, scene effects (scene and panels in parallel).
