@@ -23,7 +23,7 @@ export function fmtUnit(v: number, unit: string): string {
   return `${small} ${unit}`.trim();
 }
 
-export interface PopoverRow { label: string; text: string; note?: string; source?: string }
+export interface PopoverRow { label: string; text: string; note?: string; source?: string; /** The graph quantity this input is (contract v2.9): the row gets a "why?" beside it. */ quantityId?: string }
 export interface SumCheck { sum: number; sumText: string; resultText: string; ok: boolean; wireFlag: boolean | null }
 export interface PopoverModel { id: string; title: string; formula: string; inputs: PopoverRow[]; resultText: string; parts: PopoverRow[]; sums: SumCheck | null }
 
@@ -36,7 +36,7 @@ export function sumCheck(b: Pick<Breakdown, 'parts' | 'result' | 'sumsToResult'>
   return { sum, sumText: fmtUnit(sum, b.result.unit), resultText: fmtUnit(b.result.value, b.result.unit), ok, wireFlag: b.sumsToResult ?? null };
 }
 
-const inputRow = (i: BreakdownInput): PopoverRow => ({ label: i.label, text: fmtUnit(i.value, i.unit), ...(i.source ? { source: i.source } : {}) });
+const inputRow = (i: BreakdownInput): PopoverRow => ({ label: i.label, text: fmtUnit(i.value, i.unit), ...(i.source ? { source: i.source } : {}), ...(i.quantityId ? { quantityId: i.quantityId } : {}) });
 
 export function popoverModel(b: Breakdown): PopoverModel {
   return {

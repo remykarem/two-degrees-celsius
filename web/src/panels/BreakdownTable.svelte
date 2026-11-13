@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Breakdown } from '../contract';
   import { popoverModel } from './explain';
+  import CausesButton from './CausesButton.svelte';
   let { b }: { b: Breakdown } = $props();
   const m = $derived(popoverModel(b));
 </script>
@@ -9,7 +10,7 @@
   <p class="formula"><span class="k">Formula</span> {m.formula}</p>
   <table>
     <caption class="k">Inputs (live values)</caption>
-    <tbody>{#each m.inputs as i (i.label)}<tr><th scope="row">{i.label}</th><td class="n">{i.text}</td></tr>{/each}</tbody>
+    <tbody>{#each m.inputs as i (i.label)}<tr><th scope="row">{i.label}{#if i.quantityId} <CausesButton quantity={i.quantityId} label={i.label} />{/if}</th><td class="n">{i.text}</td></tr>{/each}</tbody>
   </table>
   <p class="result"><span class="k">Result</span> <b data-testid="breakdown-result">{m.resultText}</b></p>
   {#if m.parts.length}

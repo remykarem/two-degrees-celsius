@@ -24,3 +24,5 @@ export { default as LedgerModal } from './LedgerModal.svelte';
 export { default as TradesModal } from './TradesModal.svelte';
 export { default as BreakdownModal } from './BreakdownModal.svelte';
 export { default as ExplorerModal } from './ExplorerModal.svelte';
+export { default as CausesModal } from './CausesModal.svelte';
+export { default as CausesButton } from './CausesButton.svelte';

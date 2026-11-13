@@ -84,7 +84,9 @@ export interface CausalLines {
   /** What it writes, marked the same way. */
   outputs: string;
   /** For each written quantity nobody else reads (an outcome): the quantities that can change it, nearest first. */
-  upstream: { label: string; causes: string }[];
+  upstream: { id: string; label: string; causes: string }[];
+  /** The quantities this node reads or writes that the model can explain (they have causes), each opens the Why? view. */
+  quantities: { id: string; label: string }[];
 }
 
 /** The loop mark for a quantity a decision both reads and writes. */
@@ -135,9 +137,16 @@ export function nodeLines(g: CausalGraph, nodeId: string, live?: LiveLookup): Ca
       const v = un && live ? live(un.refId) : null;
       return `${un?.label ?? u}${v ? ` (${v})` : ''}`;
     };
-    return [{ label: n.label, causes: n.upstream.map(cause).join(', ') }];
+    return [{ id: n.id, label: n.label, causes: n.upstream.map(cause).join(', ') }];
   });
-  return { inputs: ins.map((e) => label(e.from, e.selfLoop)).join(', '), outputs: outs.map((e) => label(e.to, e.selfLoop)).join(', '), upstream };
+  const seen = new Set<string>();
+  const quantities = [...ins.map((e) => e.from), ...outs.map((e) => e.to)].flatMap((id) => {
+    const n = byId.get(id);
+    if (!n || n.causes.length === 0 || seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, label: n.label }];
+  });
+  return { inputs: ins.map((e) => label(e.from, e.selfLoop)).join(', '), outputs: outs.map((e) => label(e.to, e.selfLoop)).join(', '), upstream, quantities };
 }
 
 /** Sign glyphs. The ids come from the wire (`CausalEdge.effect.sign`); only their drawing is here. */

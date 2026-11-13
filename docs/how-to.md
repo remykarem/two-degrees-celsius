@@ -353,3 +353,12 @@ Loops are **computed, never written**: `crates/sim-model/src/causal_loops.rs` fi
 4. **Words** (kind labels, the sentence template, the incomplete reasons) are in the same block; the sentence is generated from the cycle and its signs, so do not hand-write one.
 5. Regenerate (section 0): `npm run gen:contract` only if a wire type changed, `cargo run -p sim-api --example fixtures`, `UPDATE_GOLDEN=1 cargo test -p sim-wasm --test golden` (twice), `npm run build:wasm`, `npm run gen:recording`. `statehash` and `baselines` must `cmp` identical: loops read declarations, not the simulation.
 6. **Web**: nothing. The Agents explorer renders `catalog().causal.loops` generically (`loopLines`, `loopSummary`); `web/tests/agents.test.ts` proves a loop added only to the catalogue appears.
+
+## 30. Add a "why?" entry point to the Why? view (causality graph stage 4, contract v2.13)
+
+The Why? view (`web/src/panels/CausesModal.svelte`) shows the causes of one quantity; it is opened with `openCauses(quantityId)` (`panels/ui.ts`). It needs no per-figure code in the web beyond one of these, and no quantity is named in the web:
+1. **A figure with a "how?" button** (`HowButton`): add one entry to `content/decisions.json` `causal.entry_points` (`anchor` = the string the `HowButton` gets, `quantity` = a quantity id; loading fails if the quantity does not exist or an anchor repeats). The "why?" appears beside "how?" by itself.
+2. **A figure with a wire quantity id** (a breakdown input, a Markets price or driver, an Agents line): render `<CausesButton quantity={id} label={...} />` (`panels/CausesButton.svelte`); it hides itself when the catalogue does not know the quantity. A quantity with no causes still opens the view and says it is a starting point.
+3. **A new quantity**: nothing to do; `causes`, net signs and loops follow from the registry (sections 27 to 29). Add words only in `content/ui.json` `text.causes` (a key the code names must exist: `thin-renderer.test.ts`).
+4. Regenerate (section 0): `npm run gen:contract` (only if a wire type changed), fixtures, golden twice, `npm run build:wasm`, `npm run gen:recording`; `statehash` and `baselines` must `cmp` identical. Tests: `web/tests/causes.test.ts` (model, layout, history, entry points, made-up quantity, text alternative, polarity not colour only) and `cargo test -p sim-api --test decisions`.
+

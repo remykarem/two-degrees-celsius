@@ -103,13 +103,13 @@ describe('causal edges (contract v2.8)', () => {
     expect(leg.upstream[0]!.causes.length).toBeGreaterThan(0);
   });
   it('a made-up decision and edges added only in the catalogue appear with no web change', () => {
-    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[], causes: [] as { id: string; depth: number; netSign: string }[] });
     const made = {
       ...g,
       nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
       edges: [...g.edges, { from: 'quantity:qa', to: 'decision:made_up', kind: 'reads', via: null, selfLoop: false }, { from: 'decision:made_up', to: 'quantity:qb', kind: 'writes', via: null, selfLoop: false }],
     };
-    expect(causalLines(made, 'made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
+    expect(causalLines(made, 'made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ id: 'quantity:qb', label: 'Beta', causes: 'Alpha' }], quantities: [] });
   });
 });
 
@@ -143,7 +143,7 @@ describe('mechanisms (contract v2.10)', () => {
     expect(stress.inputs).toContain('Net emissions so far');
   });
   it('a mechanism added only in the catalogue appears with no web change', () => {
-    const node = (id: string, kind: string, role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'weather', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
+    const node = (id: string, kind: string, role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'weather', selfLoop: false, component: 99, upstream, inLoops: [] as string[], causes: [] as { id: string; depth: number; netSign: string }[] });
     const g = c.causal;
     const made = {
       ...g,
@@ -154,7 +154,7 @@ describe('mechanisms (contract v2.10)', () => {
     const all = [...c.mechanisms, m];
     expect(mechanismsOfKind(all, 'weather').map((x) => x.id)).toContain('made_up');
     expect(mechanismLine(m)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
-    expect(nodeLines(made, 'mechanism:made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ label: 'Beta', causes: 'Alpha' }] });
+    expect(nodeLines(made, 'mechanism:made_up')).toEqual({ inputs: 'Alpha (Starting point)', outputs: 'Beta (End point)', upstream: [{ id: 'quantity:qb', label: 'Beta', causes: 'Alpha' }], quantities: [] });
   });
 });
 
@@ -189,7 +189,7 @@ describe('live values on causes (contract v2.9)', () => {
   });
   it('a made-up binding and value added only in the wire shows beside its cause with no web change', () => {
     const g = c.causal;
-    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[] });
+    const node = (id: string, kind: 'quantity' | 'decision', role: string, label: string, upstream: string[] = []) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream, inLoops: [] as string[], causes: [] as { id: string; depth: number; netSign: string }[] });
     const made = {
       ...g,
       nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta', ['quantity:qa']), node('decision:made_up', 'decision', 'decision', 'Made up')],
@@ -198,7 +198,7 @@ describe('live values on causes (contract v2.9)', () => {
     const cat2 = { ...c, quantities: [...c.quantities, { id: 'qa', label: 'Alpha', unit: 'widgets', owner: 'firm', summary: '', live: { bound: true, path: 'x', aggregate: 'town', hasTrend: true } }] };
     const snap2 = { ...snap, quantities: [...snap.quantities, { id: 'qa', value: 3, previous: 2, trend: 'rising' }] };
     const out = causalLines(made, 'made_up', liveLookup(cat2, snap2));
-    expect(out.upstream).toEqual([{ label: 'Beta', causes: `Alpha (3 widgets, ${c.markets.directions.rising})` }]);
+    expect(out.upstream).toEqual([{ id: 'quantity:qb', label: 'Beta', causes: `Alpha (3 widgets, ${c.markets.directions.rising})` }]);
     // No lookup, no value: the old text.
     expect(causalLines(made, 'made_up').upstream[0]!.causes).toBe('Alpha');
   });
@@ -235,7 +235,7 @@ describe('signed edges (contract v2.11)', () => {
     expect(w.sentence).toMatch(/^When base wage goes up, unit cost goes up \(the same month\), because /);
   });
   it('a sign added only in the catalogue renders with no web change', () => {
-    const node = (id: string, kind: string, role: string, label: string) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops: [] as string[] });
+    const node = (id: string, kind: string, role: string, label: string) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops: [] as string[], causes: [] as { id: string; depth: number; netSign: string }[] });
     const fx = (sign: string, lagLabel: string) => ({ sign, lagMonths: 3, basis: 'perturbed', lagLabel, sentence: `When alpha goes up, beta goes ${sign}.`, checked: 'Checked.' });
     const made = {
       ...g,
@@ -267,7 +267,7 @@ describe('feedback loops (contract v2.12)', () => {
     expect(loopSummary(g, 'quantity:nonexistent')).toBe('');
   });
   it('a loop added only in the catalogue renders with no web change', () => {
-    const node = (id: string, label: string, inLoops: string[]) => ({ id, kind: 'quantity', role: 'derived', refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops });
+    const node = (id: string, label: string, inLoops: string[]) => ({ id, kind: 'quantity', role: 'derived', refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[], inLoops, causes: [] as { id: string; depth: number; netSign: string }[] });
     const made = {
       ...g,
       nodes: [...g.nodes, node('quantity:qa', 'Alpha', ['loop:qa+qb']), node('quantity:qb', 'Beta', ['loop:qa+qb']), { ...node('mechanism:made_up', 'Made up', ['loop:qa+qb']), kind: 'mechanism', role: 'mechanism' }],

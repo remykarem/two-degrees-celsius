@@ -29,7 +29,9 @@ export interface MarketCardModel {
   note: string;
   price: { text: string; unit: string; label: string; arrow: string; direction: string; word: string; cause: string } | null;
   series: number[];
-  drivers: { id: string; label: string; value: string }[];
+  drivers: { id: string; label: string; value: string; quantityId?: string | undefined }[];
+  /** The graph quantity the price is (contract v2.9), for the "why?" beside it. */
+  priceQuantity: string | null;
   chips: ShortChip[];
   mechanisms: MechanismTag[];
   how: string;
@@ -69,7 +71,7 @@ export function cardModel(m: MarketView, mechanisms: MechanismDef[]): MarketCard
       text: m.priceText, unit: m.priceUnit, label: m.priceLabel, arrow: DIRECTION_ARROW[m.priceDirection] ?? '', direction: m.priceDirection, word: m.priceDirectionWord,
       cause: m.priceCauseWord,
     },
-    note: m.priceNote,
+    note: m.priceNote, priceQuantity: m.priceQuantity ?? null,
     series: m.priceSeries,
     drivers: m.drivers, chips: m.short.map((s) => ({ id: s.id, label: s.label, selection: selectionOf(s) })),
     mechanisms: tags(m, mechanisms), how: m.howId, link: m.link ?? null, reconciles: m.reconciles,

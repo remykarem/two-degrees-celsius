@@ -2,6 +2,7 @@
   import type { Game } from '../store';
   import type { MarketCardModel } from './markets';
   import HowButton from './HowButton.svelte';
+  import CausesButton from './CausesButton.svelte';
   import Sparkline from './Sparkline.svelte';
   import { text } from '../store/catalog';
   import { openAnchor } from './ui';
@@ -37,6 +38,7 @@
     <div class="price" data-testid="price-{card.id}">
       <span class="pl">{card.price.label}</span>
       <b class="pv">{card.price.text}</b> <span class="pu">{card.price.unit}</span>
+      {#if card.priceQuantity}<CausesButton quantity={card.priceQuantity} label={card.price.label} />{/if}
     </div>
     <div class="trend">
       {#if card.price.direction !== 'none'}
@@ -52,7 +54,7 @@
   <button type="button" class="all" onclick={() => game.openTrades(card.id)} data-testid="trades-open-{card.id}">{text('markets', 'trades_button')}</button>
 
   {#if card.drivers.length > 0}
-    <dl class="drivers">{#each card.drivers as d (d.id)}<dt>{d.label}</dt><dd>{d.value}</dd>{/each}</dl>
+    <dl class="drivers">{#each card.drivers as d (d.id)}<dt>{d.label}{#if d.quantityId} <CausesButton quantity={d.quantityId} label={d.label} />{/if}</dt><dd>{d.value}</dd>{/each}</dl>
   {/if}
 
   {#if card.chips.length > 0}
