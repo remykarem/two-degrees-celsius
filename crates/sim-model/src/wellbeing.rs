@@ -3,7 +3,73 @@
 use sim_metrics::household_wealth;
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::MechanismId as M;
+use sim_types::QuantityId as Q;
 use sim_types::*;
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// Each person's wellbeing moves toward a weighted blend of consumption, a job, housing, a clean environment, savings, a short commute and clean local air (`wellbeing::run`).
+pub const WELLBEING_SCORE: MechanismSpec = MechanismSpec {
+    id: M::WellbeingScore,
+    system: SystemId::Wellbeing,
+    inputs: &[
+        Q::Consumption,
+        Q::Unemployment,
+        Q::Occupancy,
+        Q::ForestStock,
+        Q::GrossEmissions,
+        Q::Savings,
+        Q::Fire,
+    ],
+    outputs: &[Q::Wellbeing],
+    params: &[
+        "wellbeing.needs_usd_pc",
+        "wellbeing.w_consumption",
+        "wellbeing.w_employment",
+        "wellbeing.w_housing",
+        "wellbeing.w_environment",
+        "wellbeing.w_security",
+        "wellbeing.security_months",
+        "wellbeing.smoothing",
+        "wellbeing.pollution_scale",
+        "nature.forest_max",
+        "wellbeing.w_commute",
+        "wellbeing.commute_scale_minutes",
+        "space.free_minutes",
+        "wellbeing.w_local_pollution",
+        "wellbeing.pollution_radius",
+        "weather.smoke_wellbeing",
+        "weather.smoke_radius",
+    ],
+    rule: "weighted_needs_blend",
+};
+
+/// Inequality is the Gini of wealth across people (`sim_metrics::gini`).
+pub const INEQUALITY_GINI: MechanismSpec = MechanismSpec {
+    id: M::InequalityGini,
+    system: SystemId::Metrics,
+    inputs: &[Q::NetWealth],
+    outputs: &[Q::Inequality],
+    params: &[],
+    rule: "gini_of_wealth",
+};
+
+/// The household's disposable income is recorded each month for next month's spending and moving decisions (`wellbeing::run`).
+pub const LAST_DISPOSABLE_RECORD: MechanismSpec = MechanismSpec {
+    id: M::LastDisposableRecord,
+    system: SystemId::Wellbeing,
+    inputs: &[
+        Q::Wage,
+        Q::CapitalIncome,
+        Q::Rent,
+        Q::WageTaxRate,
+        Q::CapitalTaxRate,
+    ],
+    outputs: &[Q::LastDisposable],
+    params: &[],
+    rule: "income_less_taxes_and_rent",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

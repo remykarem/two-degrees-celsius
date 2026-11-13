@@ -41,3 +41,7 @@ path = "../../tests/estate.rs"
 [[test]]
 name = "decision_builders"
 path = "../../tests/decision_builders.rs"
+
+[[test]]
+name = "mechanism_params"
+path = "../../tests/mechanism_params.rs"

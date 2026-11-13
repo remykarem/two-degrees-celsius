@@ -3,6 +3,7 @@
 use sim_params::Params;
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -49,6 +50,89 @@ pub fn decide_enclosure(v: &EnclosureView) -> bool {
 pub fn forest_sink(p: &Params, forest: f64) -> f64 {
     p.nature.sink_sigma * forest
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// Gross emissions are firms, plants, households and any flight, summed (`nature::run`).
+pub const EMISSIONS_ACCOUNTING: MechanismSpec = MechanismSpec {
+    id: M::EmissionsAccounting,
+    system: SystemId::Nature,
+    inputs: &[
+        Q::DirectEmissions,
+        Q::PlantEmissions,
+        Q::HouseholdSize,
+        Q::Flight,
+    ],
+    outputs: &[Q::GrossEmissions],
+    params: &[
+        "nature.household_footprint_base",
+        "estate.household_emissions_t",
+        "estate.flight_tonnes",
+    ],
+    rule: "gross_emissions_sum",
+};
+
+/// Net emissions are gross less the forest sink; they add to the total emitted so far (`nature::run`).
+pub const CARBON_BUDGET: MechanismSpec = MechanismSpec {
+    id: M::CarbonBudget,
+    system: SystemId::Nature,
+    inputs: &[Q::GrossEmissions, Q::ForestSink, Q::CumulativeEmissions],
+    outputs: &[Q::NetEmissions, Q::CumulativeEmissions],
+    params: &[],
+    rule: "net_emissions_accumulate",
+};
+
+/// The forest absorbs carbon in proportion to its stock (`forest_sink`).
+pub const FOREST_SINK_UPTAKE: MechanismSpec = MechanismSpec {
+    id: M::ForestSinkUptake,
+    system: SystemId::Nature,
+    inputs: &[Q::ForestStock],
+    outputs: &[Q::ForestSink],
+    params: &["nature.sink_sigma"],
+    rule: "sink_per_unit_forest",
+};
+
+/// The forest regrows along a logistic curve and the farms harvest some for each unit of food (`nature::run`).
+pub const FOREST_STOCK_CHANGE: MechanismSpec = MechanismSpec {
+    id: M::ForestStockChange,
+    system: SystemId::Nature,
+    inputs: &[Q::ForestStock, Q::Output],
+    outputs: &[Q::ForestStock],
+    params: &[
+        "nature.forest_growth",
+        "nature.forest_max",
+        "nature.farm_harvest_forest",
+    ],
+    rule: "logistic_growth_less_harvest",
+};
+
+/// The commons regrow along a logistic curve, slowed by drought, and the farms take some, limited by who controls access (`nature::run`).
+pub const COMMONS_STOCK_CHANGE: MechanismSpec = MechanismSpec {
+    id: M::CommonsStockChange,
+    system: SystemId::Nature,
+    inputs: &[
+        Q::CommonsStock,
+        Q::Output,
+        Q::CommonsHarvest,
+        Q::Drought,
+        Q::ResilienceSpending,
+        Q::CommonsOpen,
+        Q::CommonsEnclosed,
+        Q::CommonsCommunity,
+    ],
+    outputs: &[Q::CommonsStock],
+    params: &[
+        "nature.commons_growth",
+        "nature.commons_max",
+        "nature.farm_harvest_commons",
+        "nature.enclosure_harvest_multiplier",
+        "weather.a_c",
+        "weather.community_buffer",
+        "weather.resilience_drought_cut_max",
+        "weather.resilience_scale_usd",
+    ],
+    rule: "logistic_growth_less_harvest",
+};
 
 pub fn run(s: &State, p: &Params, r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

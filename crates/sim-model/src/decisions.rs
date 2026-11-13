@@ -5,7 +5,7 @@
 //! here, add its `DecisionId` and any new `QuantityId` in `sim-types`, and its words in
 //! `content/decisions.json` (`docs/how-to.md`, "Add a decision").
 
-use sim_types::{DecisionId, DecisionSpec, QuantityId};
+use sim_types::{DecisionId, DecisionSpec, MechanismId, MechanismSpec, QuantityId};
 
 pub const DECISIONS: &[DecisionSpec] = &[
     crate::labour::FIRM_HIRE,
@@ -34,6 +34,63 @@ pub const DECISIONS: &[DecisionSpec] = &[
     crate::nature::NATURE_ENCLOSURE,
 ];
 
+/// Every mechanism: plain physics and accounting code that links the decisions' quantities (causality
+/// graph stage 1, `docs/features/causality-graph.md` C5 and C7). A mechanism is declared next to
+/// the code it describes and changes no behaviour; add one with `docs/how-to.md` "Add a mechanism".
+pub const MECHANISMS: &[MechanismSpec] = &[
+    // Production and the factors of capacity (DP-2).
+    crate::production::PRODUCTION_TECHNOLOGY,
+    crate::production::TECHNOLOGY_GROWTH,
+    crate::investment::CAPITAL_ACCUMULATION,
+    crate::production::EFFECTIVE_LABOUR_SUPPLY,
+    crate::production::FARM_HEALTH_FACTOR,
+    crate::production::CLIMATE_DAMAGE,
+    crate::production::DROUGHT_LOSS,
+    crate::production::FIRE_SMOKE,
+    crate::production::TRANSITION_LOSS,
+    crate::production::PRODUCTION_OUTPUT,
+    crate::production::FOOD_CAP,
+    crate::production::INVENTORY_STOCK,
+    // Electricity and emissions.
+    crate::production::ELECTRICITY_DEMAND,
+    crate::production::ELECTRICITY_RATIONING,
+    crate::production::GRID_INTENSITY_MIX,
+    crate::production::FIRM_EMISSIONS,
+    crate::production::PLANT_EMISSIONS_OUTPUT,
+    crate::nature::EMISSIONS_ACCOUNTING,
+    crate::nature::CARBON_BUDGET,
+    // Nature's stocks.
+    crate::nature::FOREST_SINK_UPTAKE,
+    crate::nature::FOREST_STOCK_CHANGE,
+    crate::nature::COMMONS_STOCK_CHANGE,
+    // Weather.
+    crate::weather::FIRE_BURNS_FOREST,
+    crate::weather::CLIMATE_STRESS_CURVE,
+    crate::weather::DROUGHT_ONSET,
+    crate::weather::FIRE_IGNITION,
+    // Wellbeing and the household record.
+    crate::wellbeing::WELLBEING_SCORE,
+    crate::wellbeing::INEQUALITY_GINI,
+    crate::wellbeing::LAST_DISPOSABLE_RECORD,
+    // Income, taxes and goods settlement.
+    crate::income::WAGE_PAYMENT,
+    crate::income::HOUSEHOLD_INCOME_FLOWS,
+    crate::income::FIRM_PROFIT,
+    crate::government::TAX_COLLECTION,
+    crate::goods::GOODS_SETTLEMENT,
+    crate::goods::UNIT_COST_BUILDUP,
+    // Housing and labour matching.
+    crate::goods::HOUSING_RENT,
+    crate::goods::HOUSING_MOVES,
+    crate::labour::LABOUR_MATCHING,
+    crate::labour::UNEMPLOYMENT_RATE,
+];
+
+/// The spec of a mechanism.
+pub fn mechanism(id: MechanismId) -> Option<&'static MechanismSpec> {
+    MECHANISMS.iter().find(|m| m.id == id)
+}
+
 /// The spec of a decision.
 pub fn spec(id: DecisionId) -> Option<&'static DecisionSpec> {
     DECISIONS.iter().find(|d| d.id == id)
@@ -45,6 +102,13 @@ pub fn readers_of(q: QuantityId) -> impl Iterator<Item = &'static DecisionSpec> 
 }
 pub fn writers_of(q: QuantityId) -> impl Iterator<Item = &'static DecisionSpec> {
     DECISIONS.iter().filter(move |d| d.outputs.contains(&q))
+}
+/// The mechanisms that read or write a quantity.
+pub fn mechanism_readers_of(q: QuantityId) -> impl Iterator<Item = &'static MechanismSpec> {
+    MECHANISMS.iter().filter(move |m| m.inputs.contains(&q))
+}
+pub fn mechanism_writers_of(q: QuantityId) -> impl Iterator<Item = &'static MechanismSpec> {
+    MECHANISMS.iter().filter(move |m| m.outputs.contains(&q))
 }
 
 #[cfg(test)]

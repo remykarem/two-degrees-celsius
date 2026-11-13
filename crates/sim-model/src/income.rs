@@ -5,6 +5,7 @@ use crate::util::{apportion, monthly, person_pay, workers_of};
 use sim_params::{IncomeParams, InvestParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -93,6 +94,45 @@ pub fn decide_payout(v: &PayoutView, ic: &IncomeParams, ip: &InvestParams) -> Ce
         .scale(ic.excess_payout_rate);
     regular + excess
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// Firms pay workers the wage, scaled down if cash falls short; the pay lands in the workers' households (`income::run`).
+pub const WAGE_PAYMENT: MechanismSpec = MechanismSpec {
+    id: M::WagePayment,
+    system: SystemId::Income,
+    inputs: &[Q::Wage, Q::Workers, Q::Cash],
+    outputs: &[Q::Payroll, Q::Savings],
+    params: &[],
+    rule: "pay_up_to_cash",
+};
+
+/// Dividends and rent are paid to their owners' households (`income::run`).
+pub const HOUSEHOLD_INCOME_FLOWS: MechanismSpec = MechanismSpec {
+    id: M::HouseholdIncomeFlows,
+    system: SystemId::Income,
+    inputs: &[Q::Dividends, Q::Rent],
+    outputs: &[Q::Savings, Q::CapitalIncome],
+    params: &[],
+    rule: "dividends_and_rent_received",
+};
+
+/// Profit is revenue less wages, interest, the carbon charge and profit tax (`income::run`).
+pub const FIRM_PROFIT: MechanismSpec = MechanismSpec {
+    id: M::FirmProfit,
+    system: SystemId::Income,
+    inputs: &[
+        Q::Revenue,
+        Q::Payroll,
+        Q::DebtService,
+        Q::CarbonPrice,
+        Q::Footprint,
+        Q::ProfitTaxRate,
+    ],
+    outputs: &[Q::Profit],
+    params: &[],
+    rule: "revenue_less_costs_and_taxes",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

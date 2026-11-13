@@ -21,6 +21,8 @@ use libm::exp;
 use sim_metrics::{climate_stress, commons_health};
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::MechanismId as M;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 
 /// Share (0..1) of the maximum effect that the current resilience spending buys.
@@ -202,6 +204,82 @@ pub fn forecast(s: &State, p: &Params) -> (RiskLevel, RiskLevel) {
     };
     (fire, drought)
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// Burning tiles lose a share of the forest stock (`weather::run`).
+pub const FIRE_BURNS_FOREST: MechanismSpec = MechanismSpec {
+    id: M::FireBurnsForest,
+    system: SystemId::Weather,
+    inputs: &[Q::Fire, Q::ForestStock],
+    outputs: &[Q::ForestStock],
+    params: &["weather.burn_frac"],
+    rule: "burning_tiles_lose_forest",
+};
+
+/// Climate stress is 0 until the carbon budget runs low and rises to 1 as it runs out (`climate_stress`).
+pub const CLIMATE_STRESS_CURVE: MechanismSpec = MechanismSpec {
+    id: M::ClimateStressCurve,
+    system: SystemId::Weather,
+    inputs: &[Q::CumulativeEmissions],
+    outputs: &[Q::ClimateStress],
+    params: &[
+        "weather.onset",
+        "weather.full",
+        "weather.curve",
+        "nature.budget_b0",
+    ],
+    rule: "stress_from_budget_used",
+};
+
+/// A drought starts by chance, more likely and more severe as stress rises, and ends when its months run out (`weather::run`).
+pub const DROUGHT_ONSET: MechanismSpec = MechanismSpec {
+    id: M::DroughtOnset,
+    system: SystemId::Weather,
+    inputs: &[Q::ClimateStress, Q::Drought],
+    outputs: &[Q::Drought],
+    params: &[
+        "weather.drought_base",
+        "weather.drought_stress_gain",
+        "weather.sev_min",
+        "weather.sev_span_base",
+        "weather.sev_span_stress",
+        "weather.dur_min",
+        "weather.dur_span_base",
+        "weather.dur_span_stress",
+    ],
+    rule: "drought_chance_by_stress",
+};
+
+/// Fires start by chance and spread to neighbouring forest, more in dry conditions, less with fire stations and resilience spending (`weather::run`).
+pub const FIRE_IGNITION: MechanismSpec = MechanismSpec {
+    id: M::FireIgnition,
+    system: SystemId::Weather,
+    inputs: &[
+        Q::ClimateStress,
+        Q::Drought,
+        Q::CommonsStock,
+        Q::ResilienceSpending,
+        Q::Fire,
+    ],
+    outputs: &[Q::Fire],
+    params: &[
+        "weather.fire_base",
+        "weather.fire_stress_gain",
+        "weather.dry_commons",
+        "weather.dry_drought",
+        "weather.resilience_ignition_cut_max",
+        "weather.resilience_scale_usd",
+        "weather.spread_p",
+        "weather.spread_drought",
+        "weather.duration_months",
+        "weather.station_spread_cut",
+        "weather.station_duration_cut",
+        "weather.coverage_radius",
+        "nature.commons_max",
+    ],
+    rule: "fire_chance_by_dryness",
+};
 
 pub fn run(s: &State, p: &Params, _shared: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

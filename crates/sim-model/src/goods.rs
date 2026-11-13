@@ -11,6 +11,7 @@ use sim_metrics::household_wealth;
 use sim_params::{GoodsParams, LabourParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -454,6 +455,54 @@ pub fn decide_expect(v: &ExpectView, lp: &LabourParams) -> Units {
     let lam = lp.expected_smoothing;
     Units(lam * v.demand_units + (1.0 - lam) * v.expected_sales)
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// What households buy moves money from their savings to the firm, takes units out of its stock and counts as consumption (`goods::run`).
+pub const GOODS_SETTLEMENT: MechanismSpec = MechanismSpec {
+    id: M::GoodsSettlement,
+    system: SystemId::Goods,
+    inputs: &[Q::UnitsSold, Q::Price],
+    outputs: &[Q::Revenue, Q::Inventory, Q::Savings, Q::Consumption],
+    params: &[],
+    rule: "units_times_price",
+};
+
+/// A firm's unit cost is its wage bill plus its carbon charge, per unit made (`price_view`).
+pub const UNIT_COST_BUILDUP: MechanismSpec = MechanismSpec {
+    id: M::UnitCostBuildup,
+    system: SystemId::Goods,
+    inputs: &[Q::Wage, Q::Workers, Q::CarbonPrice, Q::Footprint, Q::Output],
+    outputs: &[Q::UnitCost],
+    params: &[],
+    rule: "wages_plus_carbon_per_unit",
+};
+
+/// Rent rises while every home is taken and renters can bear it, and falls otherwise (`goods::housing`).
+pub const HOUSING_RENT: MechanismSpec = MechanismSpec {
+    id: M::HousingRent,
+    system: SystemId::Goods,
+    inputs: &[Q::Occupancy, Q::LastDisposable, Q::Rent],
+    outputs: &[Q::Rent],
+    params: &[
+        "goods.occupancy_trigger",
+        "goods.rent_burden_cap",
+        "goods.rent_up",
+        "goods.rent_down",
+        "goods.min_rent_usd",
+    ],
+    rule: "rent_follows_occupancy_and_burden",
+};
+
+/// Households move to a home they can afford; unpaid rent for too long loses the home (`goods::housing`).
+pub const HOUSING_MOVES: MechanismSpec = MechanismSpec {
+    id: M::HousingMoves,
+    system: SystemId::Goods,
+    inputs: &[Q::Rent, Q::LastDisposable, Q::Savings],
+    outputs: &[Q::Occupancy],
+    params: &["goods.move_rent_share", "goods.evict_after_months"],
+    rule: "move_evict_by_affordability",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

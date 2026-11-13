@@ -9,6 +9,7 @@ use libm::pow;
 use sim_params::{InvestParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -231,6 +232,23 @@ pub fn decide_capex(v: &CapexView, ip: &InvestParams) -> CapexChoice {
         request,
     }
 }
+
+// ---- Mechanism (causality graph stage 1): declaration of the plain code below; it changes no behaviour. ----
+
+/// Capital wears out each month and what the firm planned to invest last month is added; building
+/// clears a little forest (`run`).
+pub const CAPITAL_ACCUMULATION: MechanismSpec = MechanismSpec {
+    id: M::CapitalAccumulation,
+    system: SystemId::Investment,
+    inputs: &[Q::Capital, Q::InvestmentPlan],
+    outputs: &[Q::Capital, Q::ForestStock],
+    params: &[
+        "invest.depreciation",
+        "invest.capital_price_usd",
+        "nature.forest_clear_per_build",
+    ],
+    rule: "depreciate_then_add_investment",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

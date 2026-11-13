@@ -6,6 +6,7 @@ use sim_metrics::household_wealth;
 use sim_params::{GovParams, Params};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 
@@ -224,6 +225,31 @@ pub fn decide_legitimacy(v: &LegitView, gp: &GovParams) -> LegitStep {
         after: l.clamp(0.0, 1.0),
     }
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// The treasury collects taxes on wages, capital income and wealth, and the carbon charge and profit tax firms pay (`government::run`).
+pub const TAX_COLLECTION: MechanismSpec = MechanismSpec {
+    id: M::TaxCollection,
+    system: SystemId::Government,
+    inputs: &[
+        Q::Wage,
+        Q::Workers,
+        Q::CapitalIncome,
+        Q::NetWealth,
+        Q::WageTaxRate,
+        Q::CapitalTaxRate,
+        Q::WealthTaxRate,
+        Q::WealthThreshold,
+        Q::CarbonPrice,
+        Q::Footprint,
+        Q::Profit,
+        Q::ProfitTaxRate,
+    ],
+    outputs: &[Q::TreasuryTaxes],
+    params: &[],
+    rule: "taxes_by_base_and_rate",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

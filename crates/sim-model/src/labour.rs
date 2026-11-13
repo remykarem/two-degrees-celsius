@@ -13,6 +13,7 @@ use libm::pow;
 use sim_params::{LabourParams, Params, ProductionParams};
 use sim_rng::Rng;
 use sim_types::DecisionId as D;
+use sim_types::MechanismId as M;
 use sim_types::QuantityId as Q;
 use sim_types::*;
 use std::cmp::Ordering;
@@ -249,6 +250,28 @@ pub fn decide_wage(v: &WageView, lp: &LabourParams) -> Cents {
     let step = wage_step(lp, trend, v.unemployment);
     Cents::from_f64(v.wage.as_f64() * (1.0 + step)).max(v.min_wage)
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// Posted vacancies are filled from the jobless in order of reservation wage (`labour::run`).
+pub const LABOUR_MATCHING: MechanismSpec = MechanismSpec {
+    id: M::LabourMatching,
+    system: SystemId::Labour,
+    inputs: &[Q::Vacancies],
+    outputs: &[Q::Workers],
+    params: &[],
+    rule: "fill_vacancies_from_jobless",
+};
+
+/// Unemployment is the share of the labour force without a job (`sim_metrics`).
+pub const UNEMPLOYMENT_RATE: MechanismSpec = MechanismSpec {
+    id: M::UnemploymentRate,
+    system: SystemId::Metrics,
+    inputs: &[Q::Workers],
+    outputs: &[Q::Unemployment],
+    params: &[],
+    rule: "jobless_share_of_labour_force",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();

@@ -5,6 +5,8 @@
 use libm::pow;
 use sim_params::Params;
 use sim_rng::Rng;
+use sim_types::MechanismId as M;
+use sim_types::QuantityId as Q;
 use sim_types::*;
 
 /// Resource health of the farm: average of forest and commons relative to capacity.
@@ -168,6 +170,222 @@ pub fn plant_emissions(p: &Params, kind: PlantKind, delivered: f64) -> f64 {
         PlantKind::Renewable => 0.0,
     }
 }
+
+// ---- Mechanisms (causality graph stage 1): declarations of the plain code below; they change no behaviour. ----
+
+/// The share of electricity delivered is supply over demand, at most 1 (`production::run`).
+pub const ELECTRICITY_RATIONING: MechanismSpec = MechanismSpec {
+    id: M::ElectricityRationing,
+    system: SystemId::Production,
+    inputs: &[Q::EnergyDemand, Q::PlantCapacity],
+    outputs: &[Q::ElectricityServed],
+    params: &[],
+    rule: "served_share",
+};
+
+/// Tonnes of CO2 per energy unit: the fossil share of capacity times the fossil factor (`grid_intensity`).
+pub const GRID_INTENSITY_MIX: MechanismSpec = MechanismSpec {
+    id: M::GridIntensityMix,
+    system: SystemId::Production,
+    inputs: &[Q::RenewableShare],
+    outputs: &[Q::GridIntensity],
+    params: &["energy.factor_fossil"],
+    rule: "fossil_share_times_factor",
+};
+
+/// Only fossil plants emit, per energy unit delivered (`plant_emissions`).
+pub const PLANT_EMISSIONS_OUTPUT: MechanismSpec = MechanismSpec {
+    id: M::PlantEmissionsOutput,
+    system: SystemId::Production,
+    inputs: &[Q::EnergyDemand, Q::ElectricityServed, Q::RenewableShare],
+    outputs: &[Q::PlantEmissions],
+    params: &["energy.factor_fossil"],
+    rule: "fossil_plants_emit",
+};
+
+/// Output before the factors below: technology x capital^alpha x labour^beta (`cobb_douglas`).
+pub const PRODUCTION_TECHNOLOGY: MechanismSpec = MechanismSpec {
+    id: M::ProductionTechnology,
+    system: SystemId::Production,
+    inputs: &[Q::Capital, Q::EffectiveLabour, Q::Technology],
+    outputs: &[Q::CapitalOutput],
+    params: &["production.alpha_k", "production.beta_n"],
+    rule: "cobb_douglas",
+};
+
+/// Technology grows a little each month at a rate that depends on the firm's sector (`run`).
+pub const TECHNOLOGY_GROWTH: MechanismSpec = MechanismSpec {
+    id: M::TechnologyGrowth,
+    system: SystemId::Production,
+    inputs: &[Q::Technology],
+    outputs: &[Q::Technology],
+    params: &[
+        "production.tfp_growth_goods",
+        "production.tfp_growth_food",
+        "production.tfp_growth_services",
+    ],
+    rule: "technology_drift",
+};
+
+/// A firm's labour is the sum over its workers of skill x effective hours (`effective_labour`).
+pub const EFFECTIVE_LABOUR_SUPPLY: MechanismSpec = MechanismSpec {
+    id: M::EffectiveLabourSupply,
+    system: SystemId::Production,
+    inputs: &[Q::Workers, Q::SkilledWorkers],
+    outputs: &[Q::EffectiveLabour],
+    params: &[],
+    rule: "skill_times_hours",
+};
+
+/// The farm's output is scaled by the health of the forest and commons, and by a coordination cost under community management (`capacity_factors`).
+pub const FARM_HEALTH_FACTOR: MechanismSpec = MechanismSpec {
+    id: M::FarmHealthFactor,
+    system: SystemId::Production,
+    inputs: &[Q::ForestStock, Q::CommonsStock, Q::CommonsCommunity],
+    outputs: &[Q::ResourceFactor],
+    params: &[
+        "production.farm_health_exp",
+        "nature.community_coord_cost",
+        "nature.forest_max",
+        "nature.commons_max",
+    ],
+    rule: "farm_health_power",
+};
+
+/// Share of the farm's output lost to climate damage, from emissions so far over the carbon budget (`climate_factor`).
+pub const CLIMATE_DAMAGE: MechanismSpec = MechanismSpec {
+    id: M::ClimateDamage,
+    system: SystemId::Production,
+    inputs: &[Q::CumulativeEmissions],
+    outputs: &[Q::WeatherFactor],
+    params: &[
+        "production.climate_damage",
+        "production.climate_ratio_cap",
+        "nature.budget_b0",
+    ],
+    rule: "climate_damage_share",
+};
+
+/// The farm loses output while a drought lasts, less where resilience spending cuts its effect (`effective_drought`).
+pub const DROUGHT_LOSS: MechanismSpec = MechanismSpec {
+    id: M::DroughtLoss,
+    system: SystemId::Production,
+    inputs: &[Q::Drought, Q::ResilienceSpending],
+    outputs: &[Q::WeatherFactor],
+    params: &[
+        "weather.a_f",
+        "weather.resilience_drought_cut_max",
+        "weather.resilience_scale_usd",
+    ],
+    rule: "drought_output_loss",
+};
+
+/// Every firm near a fire loses a little output to smoke (`capacity_factors`).
+pub const FIRE_SMOKE: MechanismSpec = MechanismSpec {
+    id: M::FireSmoke,
+    system: SystemId::Production,
+    inputs: &[Q::Fire],
+    outputs: &[Q::WeatherFactor],
+    params: &["weather.smoke_productivity", "weather.smoke_radius"],
+    rule: "smoke_output_loss",
+};
+
+/// Output is lower while the economic system changes; its size is in the system file (`capacity_factors`, `policy::run`).
+pub const TRANSITION_LOSS: MechanismSpec = MechanismSpec {
+    id: M::TransitionLoss,
+    system: SystemId::Policy,
+    inputs: &[Q::SystemChange],
+    outputs: &[Q::TransitionFactor],
+    params: &[],
+    rule: "transition_output_penalty",
+};
+
+/// Output is capacity (the factors multiplied), cut by electricity rationing and by the emissions cap (`production::run`).
+pub const PRODUCTION_OUTPUT: MechanismSpec = MechanismSpec {
+    id: M::ProductionOutput,
+    system: SystemId::Production,
+    inputs: &[
+        Q::CapitalOutput,
+        Q::ResourceFactor,
+        Q::WeatherFactor,
+        Q::TransitionFactor,
+        Q::ElectricityServed,
+        Q::EmissionsCap,
+        Q::GridIntensity,
+    ],
+    outputs: &[Q::Output],
+    params: &[],
+    rule: "capacity_rationed_capped",
+};
+
+/// The food the farms can grow is capped by what the forest and the commons can supply (`sim_metrics::food_cap`).
+pub const FOOD_CAP: MechanismSpec = MechanismSpec {
+    id: M::FoodCap,
+    system: SystemId::Production,
+    inputs: &[
+        Q::ForestStock,
+        Q::CommonsStock,
+        Q::CommonsOpen,
+        Q::CommonsEnclosed,
+        Q::CommonsCommunity,
+        Q::CommonsHarvest,
+    ],
+    outputs: &[Q::Output],
+    params: &[
+        "nature.farm_cap_share_commons",
+        "nature.farm_cap_share_forest",
+        "nature.farm_harvest_commons",
+        "nature.farm_harvest_forest",
+        "nature.enclosure_harvest_multiplier",
+        "nature.commons_growth",
+        "nature.commons_max",
+    ],
+    rule: "food_limited_by_stocks",
+};
+
+/// Stock carried over loses a share each month and this month's output is added (`production::run`).
+pub const INVENTORY_STOCK: MechanismSpec = MechanismSpec {
+    id: M::InventoryStock,
+    system: SystemId::Production,
+    inputs: &[Q::Inventory, Q::Output],
+    outputs: &[Q::Inventory],
+    params: &["goods.holding_cost", "goods.services_holding_cost"],
+    rule: "stock_decay_plus_output",
+};
+
+/// Firms need electricity per unit made, households per person and per dollar spent; a drought raises both (`production::run`).
+pub const ELECTRICITY_DEMAND: MechanismSpec = MechanismSpec {
+    id: M::ElectricityDemand,
+    system: SystemId::Production,
+    inputs: &[
+        Q::CapitalOutput,
+        Q::ResourceFactor,
+        Q::WeatherFactor,
+        Q::TransitionFactor,
+        Q::GreenTech,
+        Q::HouseholdSize,
+        Q::Consumption,
+        Q::Drought,
+    ],
+    outputs: &[Q::EnergyDemand],
+    params: &[
+        "energy.hh_energy_base_pc",
+        "energy.hh_energy_consumption_pc",
+        "energy.hh_ref_consumption_usd",
+        "weather.a_e",
+    ],
+    rule: "electricity_per_unit",
+};
+
+/// A firm's direct emissions are its output times its intensity, cut by green technology; its footprint adds the electricity it uses (`firm_direct_emissions`).
+pub const FIRM_EMISSIONS: MechanismSpec = MechanismSpec {
+    id: M::FirmEmissions,
+    system: SystemId::Production,
+    inputs: &[Q::Output, Q::GreenTech, Q::Drought, Q::GridIntensity],
+    outputs: &[Q::DirectEmissions, Q::Footprint],
+    params: &[],
+    rule: "intensity_times_output",
+};
 
 pub fn run(s: &State, p: &Params, _r: &mut Rng) -> Deltas {
     let mut d = Deltas::new();
