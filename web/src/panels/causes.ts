@@ -1,4 +1,5 @@
-import type { CausalEdge, CausalGraph, CausalNode, Catalog, LeverInfo, Snapshot } from '../contract';
+import type { CausalEdge, CausalGraph, CausalNode, CauseRef, Catalog, EdgeEffect, LeverInfo, Snapshot } from '../contract';
+import { fill, text } from '../store/catalog';
 import { fmtUnit } from './explain';
 import { DIRECTION_ARROW } from './markets';
 import { loopLines, SIGN_GLYPH, type LoopLine } from './explorer';
@@ -13,6 +14,17 @@ import { leadText } from './format';
 
 /** Presentation constants (pixels). Layout is the web's job; nothing here is a model number. */
 export const LAYOUT = { nodeW: 176, nodeH: 78, focusH: 92, gapX: 64, gapY: 10, pad: 10, lane: 7, chipW: 50, chipH: 18 } as const;
+
+/** Line widths in pixels (presentation). The wire's 0 to 1 weight maps linearly between `min` and `max`; the scale that makes it a weight (the log range, the words) is content. `hover` is added while a link is active, so thickness never collides with the hover state. */
+export const STROKE = { base: 1.8, min: 1.2, max: 4.4, hover: 1.4 } as const;
+/** The stroke width of a link: its weight on the wire, or the plain width when it has none (depends, yes or no, not measured). */
+export const strokeWidth = (weight: number | null, active = false): number =>
+  (weight === null ? STROKE.base : STROKE.min + Math.min(1, Math.max(0, weight)) * (STROKE.max - STROKE.min)) + (active ? STROKE.hover : 0);
+
+/** The dash pattern of a minus link scaled to its width, so a thick dashed line still reads as dashed (the style channel stays the sign's). */
+export const strokeDash = (sign: string, width: number): string | undefined => (sign === 'down' ? `${Math.max(7, width * 3)} ${Math.max(4, width * 1.8)}` : undefined);
+
+const tt = (k: string, vars: Record<string, string | number> = {}): string => fill(text('causes', k), vars);
 
 export interface LoopMark { kind: string; badge: string; label: string; count: number }
 export interface LeverRef { key: string; label: string; leadText: string }
@@ -38,6 +50,10 @@ export interface CauseNodeModel {
   lever: LeverRef | null;
   /** Set when the Why? panel has a graph for this quantity (it has causes). */
   hasCauses: boolean;
+  /** The overall size of this cause on the focus (the wire's `netStrength`): the short line, the full sentence and the 0 to 1 weight; null for the focus and for causes with no sized route. */
+  strengthLine: string | null;
+  strengthText: string | null;
+  strengthLabel: string | null;
 }
 export interface CauseEdgeModel {
   key: string;
@@ -51,6 +67,11 @@ export interface CauseEdgeModel {
   lagLabel: string;
   sentence: string;
   checked: string;
+  /** The wire's thickness weight (0 to 1), or null when the link has none: it depends on the state, is a yes or no, was not measured, or has no effect. */
+  weight: number | null;
+  /** The list line ("Strength 0.42 (Moderate)", "Strength: depends", ...), empty when there is nothing to say; and the full sentence with its caveats. */
+  strengthLine: string;
+  strengthText: string;
   selfLoop: boolean;
   /** 0-based index among edges joining the same pair, and how many there are (two writers of one quantity are separate edges). */
   lane: number;
@@ -84,7 +105,7 @@ export function inGraph(g: CausalGraph, quantity: string): boolean {
 
 interface Ctx { g: CausalGraph; c: Catalog; snap: Snapshot | null; levers: LeverInfo[] }
 
-function nodeModel(x: Ctx, n: CausalNode, depth: number, netSign: string | null, selfLoop: boolean): CauseNodeModel {
+function nodeModel(x: Ctx, n: CausalNode, depth: number, netSign: string | null, selfLoop: boolean, ref: CauseRef | null): CauseNodeModel {
   const { g, c, snap, levers } = x;
   const info = c.quantities.find((q) => q.id === n.refId);
   const live = snap?.quantities.find((l) => l.id === n.refId);
@@ -110,6 +131,32 @@ function nodeModel(x: Ctx, n: CausalNode, depth: number, netSign: string | null,
     startLabel: n.role === 'source' ? role?.label ?? null : null,
     selfLoop, loops: [...marks.values()], hasCauses: n.causes.length > 0,
     lever: lever ? { key: lever.key, label: lever.label, leadText: leadText(lever.leadTime) } : null,
+    ...netStrength(g, ref),
+  };
+}
+
+/** The overall size of a cause from the wire's `netStrength` and the templates in the catalogue (filled here, so the sentence is not repeated per cause on the wire). */
+function netStrength(g: CausalGraph, ref: CauseRef | null): Pick<CauseNodeModel, 'strengthLine' | 'strengthText' | 'strengthLabel'> {
+  const ns = ref?.netStrength;
+  if (!ns) return { strengthLine: null, strengthText: null, strengthLabel: null };
+  const word = g.strength.words.find((w) => w.id === ns.word)?.label ?? ns.word;
+  const sentence = fill(ns.cancels ? g.strength.netCancel : g.strength.net, { value: ns.label, word, gross: ns.grossLabel }) + (ns.partial ? g.strength.netPartial : '');
+  return { strengthLine: tt('net_strength_line', { value: ns.label, word }), strengthText: sentence, strengthLabel: ns.label };
+}
+
+/** What a link says about its size, all from the wire: a weight and numbers for a measured link; "depends", "not measured" or the kind (yes or no, not sized) otherwise. */
+function edgeStrength(g: CausalGraph, fx: EdgeEffect): Pick<CauseEdgeModel, 'weight' | 'strengthLine' | 'strengthText'> {
+  const none = { weight: null, strengthLine: '', strengthText: '' };
+  if (fx.sign === 'varies') return { weight: null, strengthLine: tt('strength_depends'), strengthText: g.strength.depends };
+  if (fx.sign === 'none') return none;
+  const s = fx.strength;
+  if (!s) return fx.basis === 'declared_unverified' ? { weight: null, strengthLine: tt('strength_unverified'), strengthText: g.strength.unverified } : none;
+  const kind = g.strength.kinds.find((k) => k.id === s.kind)?.label ?? s.kind;
+  const word = s.word ? g.strength.words.find((w) => w.id === s.word)?.label ?? s.word : kind;
+  return {
+    weight: s.weight ?? null,
+    strengthLine: s.label ? tt('strength_line', { value: s.label, word }) : tt('strength_kind_line', { kind }),
+    strengthText: s.text,
   };
 }
 
@@ -117,7 +164,7 @@ const edgeModel = (g: CausalGraph, e: CausalEdge): CauseEdgeModel => {
   const fx = e.effect!;
   return {
     key: `${e.via}|${e.from}|${e.to}`, from: e.from, to: e.to, via: e.via ?? '', viaLabel: g.nodes.find((n) => n.id === e.via)?.label ?? '',
-    sign: fx.sign, glyph: SIGN_GLYPH[fx.sign] ?? fx.sign, lagMonths: fx.lagMonths, lagLabel: fx.lagLabel, sentence: fx.sentence, checked: fx.checked,
+    sign: fx.sign, glyph: SIGN_GLYPH[fx.sign] ?? fx.sign, lagMonths: fx.lagMonths, lagLabel: fx.lagLabel, sentence: fx.sentence, checked: fx.checked, ...edgeStrength(g, fx),
     selfLoop: e.from === e.to, lane: 0, lanes: 1,
   };
 };
@@ -156,7 +203,7 @@ export function causeModel(g: CausalGraph, c: Catalog, snap: Snapshot | null, le
   const selfModels = selfEdges.filter((e) => keptSet(e.from) && (showNone || e.effect!.sign !== 'none')).map((e) => edgeModel(g, e));
   const selfSet = new Set(selfModels.map((m) => m.from));
   const nodes = [...keep]
-    .map((id) => nodeModel(x, byId.get(id)!, depthOf.get(id)!, id === focusNode.id ? null : netOf.get(id) ?? 'none', selfSet.has(id) || byId.get(id)!.selfLoop))
+    .map((id) => nodeModel(x, byId.get(id)!, depthOf.get(id)!, id === focusNode.id ? null : netOf.get(id) ?? 'none', selfSet.has(id) || byId.get(id)!.selfLoop, within.find((k) => k.id === id) ?? null))
     .sort((a, b) => b.depth - a.depth || order(focusNode, a.id) - order(focusNode, b.id));
   const focus = nodes.find((n) => n.focus)!;
   const reach = nodes.filter((n) => !n.focus);

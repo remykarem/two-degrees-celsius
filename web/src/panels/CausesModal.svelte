@@ -4,7 +4,7 @@
   import { Button, Modal } from '../ui-kit';
   import { catalog, fill, text } from '../store/catalog';
   import { PRESSURE_NOTE } from './explain';
-  import { back, causeModel, layoutCauses, LAYOUT, NARROW_PX, placeChips, recentre, route, startDepth, type CauseEdgeModel, type CauseNodeModel } from './causes';
+  import { back, causeModel, layoutCauses, LAYOUT, NARROW_PX, placeChips, recentre, route, startDepth, strokeDash, strokeWidth, type CauseEdgeModel, type CauseNodeModel } from './causes';
   import { setUi, ui } from './ui';
 
   let { game }: { game: Game } = $props();
@@ -102,8 +102,14 @@
         {#each ['up', 'down', 'varies', 'none'] as s (s)}
           <li><svg width="30" height="10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" class="ln {s}" /></svg><span class="glyph {s}" aria-hidden="true">{s === 'up' ? '+' : s === 'down' ? '-' : s === 'varies' ? '+/-' : '0'}</span> {t(`legend_${s}`)}</li>
         {/each}
+        <li class="thick" data-testid="causes-legend-thickness" title={t('strength_note')}>
+          {#each g.strength.words as w (w.id)}<span class="tk" title={w.text}><svg width="30" height="10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" class="ln thick-sample" style="stroke-width:{strokeWidth(w.weight)}px" /></svg> {w.label}</span>{/each}
+          <span class="dim">{t('legend_thickness')}</span>
+        </li>
         {#each g.loopKinds as k (k.id)}<li title={k.text}><span class="lpb {k.id}" aria-hidden="true">{k.badge}</span> {k.label}</li>{/each}
       </ul>
+
+      <p class="dim small" data-testid="causes-strength-note">{t('strength_note')}</p>
 
       <div class="live" aria-live="polite" class:sr-only={true} data-testid="causes-announce">{announce}</div>
 
@@ -114,11 +120,11 @@
           <div class="canvas" style="width:{layout.width}px;height:{layout.height}px">
             <svg width={layout.width} height={layout.height} aria-hidden="true">
               <defs>
-                {#each ['up', 'down', 'varies', 'none'] as s (s)}<marker id="ah-{s}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="ah {s}" /></marker>{/each}
+                {#each ['up', 'down', 'varies', 'none'] as s (s)}<marker id="ah-{s}" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="ah {s}" /></marker>{/each}
               </defs>
               {#each model.edges.filter((e) => !e.selfLoop) as e (e.key)}
                 {@const r = route(layout, e)}
-                {#if r}<path d={r.d} class="ln {e.sign}" class:act={active === e.key} marker-end="url(#ah-{e.sign})" data-testid="cause-line" data-key={e.key} />{/if}
+                {#if r}<path d={r.d} class="ln {e.sign}" class:act={active === e.key && e.weight === null} style={e.weight === null ? undefined : `stroke-width:${strokeWidth(e.weight, active === e.key)}px;${strokeDash(e.sign, strokeWidth(e.weight)) ? `stroke-dasharray:${strokeDash(e.sign, strokeWidth(e.weight))}` : ''}`} data-weight={e.weight ?? undefined} marker-end="url(#ah-{e.sign})" data-testid="cause-line" data-key={e.key} />{/if}
               {/each}
             </svg>
             {#each model.nodes as n (n.id)}
@@ -132,6 +138,7 @@
                 <span class="nv">{#if n.value}{n.value}{#if n.trendArrow} <span class="ta" aria-hidden="true">{n.trendArrow}</span><span class="sr-only"> {n.trendWord}</span>{/if}{:else}<span class="dim">{t('not_published', { reason: n.unpublished ?? '' })}</span>{/if}</span>
                 <span class="nb">
                   {#if n.netLabel}<span class="net {n.netSign}" title={t('net_on', { quantity: model.focus.label, sign: n.netLabel })}>{n.netLabel}</span>{/if}
+                  {#if n.strengthLabel}<span class="net sz" title={n.strengthText ?? undefined} data-testid="cause-node-strength">{n.strengthLabel}</span>{/if}
                   {#each n.loops as l (l.kind)}<span class="lpb {l.kind}" title={t('loop_badge_in', { kind: l.label.toLowerCase() })}>{l.badge}</span>{/each}
                   {#if n.selfLoop}<span class="self" title={t('feeds_itself')} aria-hidden="true">&#8635;</span>{/if}
                   {#if n.lever}<span class="lev" title={t('lever_lead', { when: n.lever.leadText })}>{n.lever.label}</span>{:else if n.startLabel && !n.focus}<span class="st" title={t('start_point')}>{n.startLabel}</span>{/if}
@@ -141,7 +148,7 @@
                 {@const r = chips.get(e.key)}
                 {#if r}
                   <button type="button" class="chip {e.sign}" style="left:{r.x}px;top:{r.y}px" data-testid="cause-edge" data-key={e.key} data-sign={e.sign}
-                    aria-label={`${e.sentence} ${e.lagLabel}`} title={e.sentence}
+                    aria-label={`${e.sentence} ${e.lagLabel}${e.strengthLine ? `. ${e.strengthLine}` : ''}`} title={e.strengthLine ? `${e.sentence} ${e.strengthLine}` : e.sentence}
                     onmouseenter={() => (active = e.key)} onmouseleave={() => (active = null)} onfocus={() => (active = e.key)} onblur={() => (active = null)}>
                     <span class="gl">{e.glyph}</span>{#if e.lagMonths > 0}<span class="lg">{lagChip(e)}</span>{/if}
                   </button>
@@ -153,6 +160,7 @@
         <div class="detail" data-testid="causes-detail" aria-live="polite">
           {#if activeEdge}
             <b class="glyph {activeEdge.sign}">{activeEdge.glyph}</b> {activeEdge.sentence} <span class="dim">({activeEdge.lagLabel}; {t('via', { via: activeEdge.viaLabel })}). {activeEdge.checked}</span>
+            {#if activeEdge.strengthText}<span class="str" data-testid="causes-detail-strength"> {activeEdge.strengthText}</span>{/if}
           {:else}<span class="dim">{t('how_to')}</span>{/if}
         </div>
       {:else}
@@ -162,13 +170,14 @@
               {#if n.hasCauses && !n.focus}<button type="button" class="lk" onclick={() => centreOn(n)}>{n.label}</button>{:else}<b>{n.label}</b>{/if}
               <span class="dim">{n.value ?? t('not_published', { reason: n.unpublished ?? '' })}{#if n.trendWord}, {n.trendWord}{/if}.</span>
               {#if n.netLabel}<span class="net {n.netSign}">{t('net_on', { quantity: model.focus.label, sign: n.netLabel })}.</span>{/if}
+              {#if n.strengthLine}<span class="str" title={n.strengthText ?? undefined} data-testid="cause-item-strength">{n.strengthLine}.</span>{/if}
               {#each n.loops as l (l.kind)}<span class="lpb {l.kind}" aria-hidden="true">{l.badge}</span><span class="sr-only">{t('loop_badge_in', { kind: l.label.toLowerCase() })}</span>{/each}
               {#if n.startLabel && !n.focus}<span class="dim">{n.startLabel}.</span>{/if}
               {#if n.lever}<span class="lev">{t('lever_lead', { when: n.lever.leadText })}</span>{/if}
               {#if n.selfLoop}<span class="dim">{t('feeds_itself')}.</span>{/if}
               {#if model.edges.some((e) => e.from === n.id && !e.selfLoop)}
                 <ul>{#each model.edges.filter((e) => e.from === n.id && !e.selfLoop) as e (e.key)}
-                  <li data-testid="cause-line-item" data-key={e.key}><span class="glyph {e.sign}">{e.glyph}</span> <b>{label(e.from)}</b> &rarr; <b>{label(e.to)}</b>: {e.sentence} <span class="dim">({e.lagLabel}; {t('via', { via: e.viaLabel })})</span></li>
+                  <li data-testid="cause-line-item" data-key={e.key}><span class="glyph {e.sign}">{e.glyph}</span> <b>{label(e.from)}</b> &rarr; <b>{label(e.to)}</b>: {e.sentence} <span class="dim">({e.lagLabel}; {t('via', { via: e.viaLabel })})</span>{#if e.strengthLine} <span class="str" title={e.strengthText} data-testid="cause-line-strength">{e.strengthLine}.</span>{/if}</li>
                 {/each}</ul>
               {/if}
             </li>
@@ -182,7 +191,7 @@
           {#if model.undrawn.length}<p class="dim small">{t('hidden_links', { n: model.undrawn.length })}</p>{/if}
           <ul>
             {#each [...model.undrawn, ...model.edges.filter((e) => e.selfLoop)] as e (e.key)}
-              <li data-testid="cause-other" data-key={e.key}><span class="glyph {e.sign}">{e.glyph}</span> <b>{label(e.from)}</b> &rarr; <b>{label(e.to)}</b>: {e.sentence} <span class="dim">({e.lagLabel}; {t('via', { via: e.viaLabel })})</span></li>
+              <li data-testid="cause-other" data-key={e.key}><span class="glyph {e.sign}">{e.glyph}</span> <b>{label(e.from)}</b> &rarr; <b>{label(e.to)}</b>: {e.sentence} <span class="dim">({e.lagLabel}; {t('via', { via: e.viaLabel })})</span>{#if e.strengthLine} <span class="str" title={e.strengthText}>{e.strengthLine}.</span>{/if}</li>
             {/each}
           </ul>
         </details>
@@ -248,7 +257,12 @@
   .ln.none { stroke: var(--muted-bar); stroke-width: 1; stroke-dasharray: 1 5; stroke-linecap: round; opacity: 0.8; }
   .ln.act { stroke-width: 3.4; }
   .ah { fill: var(--series-1); } .ah.down { fill: var(--series-2); } .ah.varies { fill: var(--warn); } .ah.none { fill: var(--muted-bar); }
+  .legend svg { position: static; flex: none; }
   .legend .ln { stroke-width: 2; }
+  .legend .ln.thick-sample { stroke: var(--muted-bar); stroke-dasharray: none; }
+  .legend .thick { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; } .tk { display: inline-flex; align-items: center; gap: 4px; }
+  .str { font-size: 11.5px; color: var(--text-dim); border-left: 2px solid var(--border); padding-left: 5px; }
+  .net.sz { border-style: solid; font-family: var(--font-mono); }
 
   .node { position: absolute; box-sizing: border-box; text-align: left; font: inherit; font-size: 12px; background: var(--surface); color: var(--text); border: 1.5px solid var(--border); border-radius: var(--radius);
     padding: 4px 6px; display: flex; flex-direction: column; gap: 1px; overflow: hidden; cursor: pointer; z-index: 1; }

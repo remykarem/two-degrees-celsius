@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import type { Component } from 'svelte';
 import type { CausalGraph, Catalog, LeverInfo, Snapshot } from '../src/contract';
-import { back, causeModel, entryQuantity, inGraph, layoutCauses, overlaps, placeChips, recentre, route, startDepth, type CauseModel } from '../src/panels/causes';
-import { catalog, setCatalog } from '../src/store/catalog';
+import { back, causeModel, entryQuantity, inGraph, layoutCauses, overlaps, placeChips, recentre, route, startDepth, STROKE, strokeDash, strokeWidth, type CauseModel } from '../src/panels/causes';
+import { catalog, setCatalog, text } from '../src/store/catalog';
 import CausesModal from '../src/panels/CausesModal.svelte';
 import CausesButton from '../src/panels/CausesButton.svelte';
 import { setUi } from '../src/panels/ui';
@@ -292,6 +292,103 @@ describe('the modal (server render)', () => {
     const src = quantities.find((n) => n.causes.length === 0)!;
     setUi({ causes: { quantity: src.id, trail: [] } });
     expect(html()).toContain('data-testid="causes-empty"');
+  });
+});
+
+// Stage 5: strength. The numbers, words, weights and thresholds are the wire's; the web maps a weight to a width.
+describe('strength (line thickness and the numbers)', () => {
+  const sized = g.edges.filter((e) => e.kind === 'drives' && e.effect?.strength?.weight !== undefined);
+  it('maps a weight from the wire linearly to a width between the presentation limits, and a missing one to the plain width', () => {
+    expect(strokeWidth(0)).toBe(STROKE.min);
+    expect(strokeWidth(1)).toBe(STROKE.max);
+    expect(strokeWidth(null)).toBe(STROKE.base);
+    expect(strokeWidth(2)).toBe(STROKE.max);
+    expect(strokeWidth(0.5)).toBeCloseTo((STROKE.min + STROKE.max) / 2, 9);
+    // Hovering adds to the width, so thickness never collides with the hover state.
+    expect(strokeWidth(0.3, true)).toBeCloseTo(strokeWidth(0.3) + STROKE.hover, 9);
+    expect(strokeDash('down', 6)).toBeDefined();
+    expect(strokeDash('up', 6)).toBeUndefined();
+  });
+  it('every drawn link carries the wire weight and prints its number and word; depends and unmeasured links say so', () => {
+    expect(sized.length).toBeGreaterThan(100);
+    let withNumber = 0, depends = 0, unverified = 0;
+    for (const q of quantities) {
+      const m = model(q.id, 3, true);
+      for (const e of [...m.edges, ...m.undrawn]) {
+        const wire = g.edges.find((x) => x.kind === 'drives' && `${x.via}|${x.from}|${x.to}` === e.key)!.effect!;
+        expect(e.weight).toBe(wire.strength?.weight ?? null);
+        if (wire.strength?.label) {
+          withNumber++;
+          expect(e.strengthLine).toContain(wire.strength.label);
+          expect(e.strengthLine).toContain(g.strength.words.find((w) => w.id === wire.strength!.word)!.label);
+          expect(e.strengthText).toBe(wire.strength.text);
+        }
+        if (wire.sign === 'varies') { depends++; expect(e.weight).toBeNull(); expect(e.strengthLine).toBe(text('causes', 'strength_depends')); expect(e.strengthText).toBe(g.strength.depends); }
+        if (wire.basis === 'declared_unverified' && (wire.sign === 'up' || wire.sign === 'down')) { unverified++; expect(e.weight).toBeNull(); expect(e.strengthLine).toBe(text('causes', 'strength_unverified')); }
+        if (wire.sign === 'none') expect(e.strengthLine).toBe('');
+      }
+    }
+    expect(withNumber).toBeGreaterThan(100);
+    expect(depends).toBeGreaterThan(0);
+    expect(unverified).toBeGreaterThan(0);
+  });
+  it('a cause carries its overall size from the wire, filled into the wire templates', () => {
+    const u = quantities.find((n) => n.refId === 'unemployment')!;
+    const m = model(u.id, 3);
+    const withNet = m.nodes.filter((n) => n.strengthLine);
+    expect(withNet.length).toBeGreaterThan(0);
+    for (const n of withNet) {
+      const ref = u.causes.find((c) => c.id === n.id)!.netStrength!;
+      expect(n.strengthLabel).toBe(ref.label);
+      expect(n.strengthText).toContain(ref.label);
+      expect(n.strengthText).not.toContain('{');
+    }
+    expect(m.focus.strengthLine).toBeNull();
+  });
+  it('a made-up edge with a strength added only in the catalogue is thick, numbered and listed with no web change', () => {
+    const { c, s } = madeUp();
+    const strength = { kind: 'elasticity', value: 0.42, low: 0.3, high: 0.55, samples: 5, live: 5, total: 6, label: '0.42', word: 'moderate', weight: 0.6, text: 'Strength: moderate. Made up.' };
+    const edges = c.causal.edges.map((e) => (e.via === 'mechanism:made_a' ? { ...e, effect: { ...e.effect!, strength } } : e)) as CausalGraph['edges'];
+    const c2 = { ...c, causal: { ...c.causal, edges } } as Catalog;
+    const m = causeModel(c2.causal, c2, s, levers, 'zeta', 1)!;
+    const a = m.edges.find((e) => e.via === 'mechanism:made_a')!;
+    expect(a.weight).toBe(0.6);
+    expect(a.strengthLine).toBe(`Strength 0.42 (${g.strength.words.find((w) => w.id === 'moderate')!.label})`);
+    expect(m.edges.find((e) => e.via === 'mechanism:made_b')!.weight).toBeNull();
+  });
+});
+
+describe('strength in the modal (server render)', () => {
+  const game = () => { const gm = createGame(createReplayPort(RECORDING)); gm.newGame(7); return gm; };
+  const html = (): string => render(CausesModal as unknown as Component<Record<string, unknown>>, { props: { game: game() } }).body;
+  afterEach(() => { setUi({ causes: null }); delete (globalThis as { window?: unknown }).window; });
+  it('draws weighted links with a stroke width, shows the thickness legend with the wire words, and the caveat', () => {
+    setUi({ causes: { quantity: 'quantity:unemployment', trail: [], depth: 3, view: 'graph' } });
+    const h = html();
+    const lines = [...h.matchAll(/data-testid="cause-line"[^>]*/g)].map((m) => m[0]);
+    const weighted = [...h.matchAll(/<path[^>]*style="stroke-width:([\d.]+)px[^"]*"[^>]*data-weight="([\d.]+)"/g)];
+    expect(lines.length).toBeGreaterThan(0);
+    expect(weighted.length).toBeGreaterThan(0);
+    for (const w of weighted) {
+      const weight = Number(w[2]);
+      expect(Number(w[1])).toBeCloseTo(strokeWidth(weight), 5);
+    }
+    // Thicker lines for larger weights (more than one distinct width on a real graph).
+    expect(new Set(weighted.map((w) => w[1])).size).toBeGreaterThan(1);
+    expect(h).toContain('data-testid="causes-legend-thickness"');
+    for (const w of g.strength.words) expect(h).toContain(w.label);
+    expect(h).toContain('data-testid="causes-strength-note"');
+    expect(h).toContain('not a forecast');
+  });
+  it('the list prints the number and the word for each sized link, and does not rely on thickness', () => {
+    setUi({ causes: { quantity: 'quantity:unemployment', trail: [], depth: 3, view: 'list' } });
+    const h = html();
+    const items = [...h.matchAll(/data-testid="cause-line-strength"[^>]*>([^<]*)</g)].map((m) => m[1]!);
+    expect(items.length).toBeGreaterThan(0);
+    const word = new RegExp(`Strength [0-9.]+ \\((${g.strength.words.map((w) => w.label).join('|')})\\)|Strength: `);
+    for (const i of items) expect(i).toMatch(word);
+    expect(h).toContain('data-testid="cause-item-strength"');
+    expect(h).not.toMatch(/\d(\.\d+)?\s?%/); // no bare percentages
   });
 });
 
