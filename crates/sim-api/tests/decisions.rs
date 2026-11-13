@@ -632,3 +632,100 @@ fn loops_are_served_with_sentences_that_agree_with_their_kind() {
         .all(|l| l.name.is_some() == l.story.is_some()));
     assert!(named.contains(&"Reserve army"));
 }
+
+/// Contract v2.13 (causality graph stage 4): the causes, net signs, short loop ids and entry points.
+#[test]
+fn loop_ids_are_short_unique_and_stable() {
+    let a = Api::init(1).unwrap().catalog().unwrap();
+    let b = Api::init(2).unwrap().catalog().unwrap();
+    let ids: Vec<&str> = a.causal.loops.iter().map(|l| l.id.as_str()).collect();
+    let set: BTreeSet<&str> = ids.iter().copied().collect();
+    assert_eq!(set.len(), ids.len());
+    assert!(
+        ids.iter().all(|i| i.len() <= 5 && i.starts_with('l')),
+        "{ids:?}"
+    );
+    // The same loops in the same order, and the id is the position: deterministic across runs.
+    let again: Vec<&str> = b.causal.loops.iter().map(|l| l.id.as_str()).collect();
+    assert_eq!(ids, again);
+    for (i, l) in a.causal.loops.iter().enumerate() {
+        assert_eq!(l.id, format!("l{i}"));
+    }
+    // No dangling id: every inLoops entry names a loop.
+    for n in &a.causal.nodes {
+        assert!(
+            n.in_loops.iter().all(|l| set.contains(l.as_str())),
+            "{}",
+            n.id
+        );
+    }
+}
+
+#[test]
+fn causes_match_causes_of_and_net_signs_match_the_paths() {
+    use sim_model::causal::{self, NetSign};
+    let g = Api::init(1).unwrap().catalog().unwrap().causal;
+    let depth = g.upstream_depth;
+    let words: BTreeSet<&str> = g.net_signs.iter().map(|w| w.id.as_str()).collect();
+    assert_eq!(
+        words,
+        BTreeSet::from(["up", "down", "varies", "mixed", "none"])
+    );
+    let nodes: BTreeSet<&str> = g.nodes.iter().map(|n| n.id.as_str()).collect();
+    let mut mixed = 0;
+    for n in g.nodes.iter().filter(|n| n.kind == "quantity") {
+        let q = *QuantityId::ALL
+            .iter()
+            .find(|q| q.as_str() == n.ref_id)
+            .unwrap();
+        let want = causal::causes_of(q, depth).quantities;
+        assert_eq!(n.causes.len(), want.len(), "{}", n.id);
+        // The same set and order as `upstream`.
+        assert_eq!(
+            n.causes.iter().map(|c| c.id.clone()).collect::<Vec<_>>(),
+            n.upstream
+        );
+        let mut last = 0;
+        for (c, (u, d)) in n.causes.iter().zip(&want) {
+            assert_eq!(c.id, format!("quantity:{}", u.as_str()));
+            assert!(nodes.contains(c.id.as_str()));
+            assert_eq!(c.depth, *d);
+            assert!(c.depth >= last && (1..=depth).contains(&c.depth));
+            last = c.depth;
+            // Net sign is the one `sign_of` gives, and Mixed means paths of both signs.
+            let paths = causal::paths(*u, q, depth);
+            let expect = match causal::sign_of(*u, q, depth) {
+                NetSign::Up => "up",
+                NetSign::Down => "down",
+                NetSign::Varies => "varies",
+                NetSign::Mixed => "mixed",
+                NetSign::NoPath => "none",
+            };
+            assert_eq!(c.net_sign, expect, "{} -> {}", c.id, n.id);
+            if c.net_sign == "mixed" {
+                mixed += 1;
+                assert!(paths.iter().any(|p| p.sign == NetSign::Up));
+                assert!(paths.iter().any(|p| p.sign == NetSign::Down));
+            }
+            assert!(words.contains(c.net_sign.as_str()));
+        }
+        assert!(n.causes.iter().all(|c| c.id != n.id));
+    }
+    assert!(mixed > 0, "expected some mixed net signs in the registry");
+    for n in g.nodes.iter().filter(|n| n.kind != "quantity") {
+        assert!(n.causes.is_empty());
+    }
+}
+
+#[test]
+fn entry_points_name_real_quantities_once_each() {
+    let g = Api::init(1).unwrap().catalog().unwrap().causal;
+    assert!(!g.entry_points.is_empty());
+    let nodes: BTreeSet<&str> = g.nodes.iter().map(|n| n.id.as_str()).collect();
+    let anchors: BTreeSet<&str> = g.entry_points.iter().map(|e| e.anchor.as_str()).collect();
+    assert_eq!(anchors.len(), g.entry_points.len());
+    assert!(g
+        .entry_points
+        .iter()
+        .all(|e| nodes.contains(e.quantity.as_str())));
+}

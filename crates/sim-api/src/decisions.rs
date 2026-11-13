@@ -9,12 +9,12 @@ use crate::assumptions::{param_value, AgentKindInfo, AssumptionParam};
 use crate::error::{code, ApiError, ApiResult};
 use crate::live;
 use serde::{Deserialize, Serialize};
-use sim_model::causal::{self, EdgeKind, Node, Role};
+use sim_model::causal::{self, EdgeKind, NetSign, Node, Role};
 use sim_model::causal_loops as loops;
 use sim_model::decisions::{DECISIONS, MECHANISMS};
 use sim_params::Params;
 use sim_types::{DecisionId, MechanismId, OwnerKind, QuantityId};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const DECISIONS_JSON: &str = include_str!("../../../content/decisions.json");
 
@@ -89,6 +89,17 @@ struct CausalDef {
     effects: EffectWords,
     /// Contract v2.12: the words of the feedback loops (stage 3).
     loops: LoopWords,
+    /// Contract v2.13: the words of a net sign (`up`, `down`, `varies`, `mixed`, `none`).
+    net_signs: Vec<RoleDef>,
+    /// Contract v2.13: which UI anchor (a metric, a lever or a market id) opens "Why?" for which quantity.
+    entry_points: Vec<EntryPointDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EntryPointDef {
+    anchor: String,
+    quantity: String,
 }
 
 /// The words of the loop sentences and the teaching names, from `content/decisions.json`.
@@ -351,6 +362,33 @@ pub struct CausalNode {
     /// Contract v2.12: ids of the feedback loops (`causal.loops`) this node is in: a quantity that
     /// is a member, a decision or mechanism that carries one of the loop's edges.
     pub in_loops: Vec<String>,
+    /// Contract v2.13: the causes of this quantity for the "Why?" view, nearest first (the order of
+    /// `upstream`), each with its depth and its net sign on this quantity. Empty for non-quantities.
+    pub causes: Vec<CauseRef>,
+}
+
+/// Contract v2.13: one cause of a quantity: the quantity node id, the steps back (decisions or
+/// mechanisms crossed, as `causal.upstreamDepth` counts them), and what it does to the focus overall.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CauseRef {
+    pub id: String,
+    pub depth: usize,
+    /// `up`, `down`, `varies` (a link on every route can go either way), `mixed` (routes of opposite
+    /// sign: it pushes both ways, never reduced to one) or `none` (no route of signed links). One of
+    /// `causal.netSigns`. Taken over every route of at most `causal.upstreamDepth` steps.
+    pub net_sign: String,
+}
+
+/// Contract v2.13: a UI anchor that opens "Why?" for a quantity.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EntryPoint {
+    pub anchor: String,
+    /// The quantity node id (`quantity:<id>`).
+    pub quantity: String,
 }
 
 /// An edge: `reads` (quantity -> decision), `writes` (decision -> quantity) or `drives`
@@ -477,6 +515,10 @@ pub struct CausalGraph {
     pub loop_incomplete: Vec<CausalRole>,
     /// Contract v2.12: the longest loop searched, in quantities.
     pub loop_max_len: usize,
+    /// Contract v2.13: the words of a net sign.
+    pub net_signs: Vec<CausalRole>,
+    /// Contract v2.13: the UI anchors that open "Why?" and the quantity each one is about.
+    pub entry_points: Vec<EntryPoint>,
     /// Contract v2.12: the components that hold a cycle.
     pub sccs: Vec<CausalScc>,
     /// Contract v2.12: the feedback loops, shortest first (`docs/features/causality-graph.md` section 14).
@@ -645,6 +687,7 @@ fn build_causal(
                     component: comp[&n],
                     upstream,
                     in_loops: in_loops(&node_id(n)),
+                    causes: causes_of(q, c.upstream_depth),
                 }
             }
             Node::Mechanism(m) => {
@@ -663,6 +706,7 @@ fn build_causal(
                     component: comp[&n],
                     upstream: Vec::new(),
                     in_loops: in_loops(&node_id(n)),
+                    causes: Vec::new(),
                 }
             }
             Node::Decision(d) => {
@@ -681,9 +725,36 @@ fn build_causal(
                     component: comp[&n],
                     upstream: Vec::new(),
                     in_loops: in_loops(&node_id(n)),
+                    causes: Vec::new(),
                 }
             }
         });
+    }
+    let net_signs = build_net_signs(&c.net_signs)?;
+    let entry_points = c
+        .entry_points
+        .iter()
+        .map(|e| {
+            if !quantities.iter().any(|q| q.id == e.quantity) {
+                return Err(bad(format!(
+                    "causal.entry_points: {} is not a quantity",
+                    e.quantity
+                )));
+            }
+            Ok(EntryPoint {
+                anchor: e.anchor.clone(),
+                quantity: format!("quantity:{}", e.quantity),
+            })
+        })
+        .collect::<ApiResult<Vec<_>>>()?;
+    let mut seen_anchor = BTreeSet::new();
+    for e in &entry_points {
+        if !seen_anchor.insert(&e.anchor) {
+            return Err(bad(format!(
+                "causal.entry_points: {} appears twice",
+                e.anchor
+            )));
+        }
     }
     let edges = causal::edges()
         .into_iter()
@@ -753,9 +824,48 @@ fn build_causal(
             })
             .collect(),
         loop_max_len: loops::MAX_LOOP_LEN,
+        net_signs,
+        entry_points,
         sccs,
         loops,
     })
+}
+
+/// The causes of `q` for the "Why?" view: the quantities of `causal::causes_of` (nearest first) with
+/// their depth and their net sign on `q` over every route of at most `max_depth` steps (`sign_of`).
+fn causes_of(q: QuantityId, max_depth: usize) -> Vec<CauseRef> {
+    causal::causes_of(q, max_depth)
+        .quantities
+        .into_iter()
+        .map(|(u, depth)| CauseRef {
+            id: node_id(Node::Quantity(u)),
+            depth,
+            net_sign: match causal::sign_of(u, q, max_depth) {
+                NetSign::Up => "up",
+                NetSign::Down => "down",
+                NetSign::Varies => "varies",
+                NetSign::Mixed => "mixed",
+                NetSign::NoPath => "none",
+            }
+            .into(),
+        })
+        .collect()
+}
+
+fn build_net_signs(words: &[RoleDef]) -> ApiResult<Vec<CausalRole>> {
+    for id in ["up", "down", "varies", "mixed", "none"] {
+        if !words.iter().any(|r| r.id == id) {
+            return Err(bad(format!("causal.net_signs has no {id}")));
+        }
+    }
+    Ok(words
+        .iter()
+        .map(|r| CausalRole {
+            id: r.id.clone(),
+            label: r.label.clone(),
+            text: r.text.clone(),
+        })
+        .collect())
 }
 
 /// Why a loop is only part of the story: it passes through a quantity that is a policy setting
@@ -844,7 +954,7 @@ fn build_loops(
         _ => &w.directions.either,
     };
     let mut out = Vec::new();
-    for (l, id) in found.loops.iter().zip(&ids) {
+    for (index, (l, id)) in found.loops.iter().zip(&ids).enumerate() {
         let kind = match l.kind {
             loops::LoopKind::R => "R",
             loops::LoopKind::B => "B",
@@ -897,7 +1007,7 @@ fn build_loops(
         );
         let nm = named.get(id);
         out.push(CausalLoop {
-            id: id.clone(),
+            id: format!("l{index}"),
             kind: kind.into(),
             members: l
                 .quantities

@@ -66,6 +66,29 @@
   ],
   "causal": {
     "upstream_depth": 3,
+    "net_signs": [
+      { "id": "up", "label": "Pushes it up", "text": "When this goes up, the quantity goes up, along every route of at most three steps." },
+      { "id": "down", "label": "Pushes it down", "text": "When this goes up, the quantity goes down, along every route of at most three steps." },
+      { "id": "varies", "label": "Depends", "text": "Some link on the way can push either way depending on the state of the town, so the overall push is not fixed." },
+      { "id": "mixed", "label": "Both ways", "text": "Different routes push in opposite directions: it raises the quantity along one route and lowers it along another, so no single sign is given." },
+      { "id": "none", "label": "No direct push", "text": "The quantity reads this, but no route of signed links carries a change of it to the quantity." }
+    ],
+    "entry_points": [
+      { "anchor": "unemployment", "quantity": "unemployment" },
+      { "anchor": "emissions", "quantity": "net_emissions" },
+      { "anchor": "budget", "quantity": "cumulative_emissions" },
+      { "anchor": "climate_stress", "quantity": "climate_stress" },
+      { "anchor": "stress", "quantity": "climate_stress" },
+      { "anchor": "gdp", "quantity": "output" },
+      { "anchor": "debt", "quantity": "public_debt_ratio" },
+      { "anchor": "gini", "quantity": "inequality" },
+      { "anchor": "legitimacy", "quantity": "legitimacy" },
+      { "anchor": "wellbeing", "quantity": "wellbeing" },
+      { "anchor": "forest", "quantity": "forest_stock" },
+      { "anchor": "forest_health", "quantity": "forest_stock" },
+      { "anchor": "commons", "quantity": "commons_stock" },
+      { "anchor": "commons_health", "quantity": "commons_stock" }
+    ],
     "roles": [
       {
         "id": "source",

@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.12.0";
+export const CONTRACT_VERSION = "2.13.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -180,6 +180,14 @@ loopIncomplete: Array<CausalRole>,
  */
 loopMaxLen: number, 
 /**
+ * Contract v2.13: the words of a net sign.
+ */
+netSigns: Array<CausalRole>, 
+/**
+ * Contract v2.13: the UI anchors that open "Why?" and the quantity each one is about.
+ */
+entryPoints: Array<EntryPoint>, 
+/**
  * Contract v2.12: the components that hold a cycle.
  */
 sccs: Array<CausalScc>, 
@@ -288,11 +296,24 @@ upstream: Array<string>,
  * Contract v2.12: ids of the feedback loops (`causal.loops`) this node is in: a quantity that
  * is a member, a decision or mechanism that carries one of the loop's edges.
  */
-inLoops: Array<string>, };
+inLoops: Array<string>, 
+/**
+ * Contract v2.13: the causes of this quantity for the "Why?" view, nearest first (the order of
+ * `upstream`), each with its depth and its net sign on this quantity. Empty for non-quantities.
+ */
+causes: Array<CauseRef>, };
 
 export type CausalRole = { id: string, label: string, text: string, };
 
 export type CausalScc = { id: number, members: Array<string>, };
+
+export type CauseRef = { id: string, depth: number, 
+/**
+ * `up`, `down`, `varies` (a link on every route can go either way), `mixed` (routes of opposite
+ * sign: it pushes both ways, never reduced to one) or `none` (no route of signed links). One of
+ * `causal.netSigns`. Taken over every route of at most `causal.upstreamDepth` steps.
+ */
+netSign: string, };
 
 export type ClassKey = "capitalist" | "rentier" | "manager" | "worker" | "dependent";
 
@@ -506,6 +527,12 @@ labels: { [key in string]: string },
  * Inspector sections, in order.
  */
 inspector: Array<InspectorSection>, };
+
+export type EntryPoint = { anchor: string, 
+/**
+ * The quantity node id (`quantity:<id>`).
+ */
+quantity: string, };
 
 export type EstateFinance = { month: EstateMoney, last12: EstateMoney, months: number, 
 /**
