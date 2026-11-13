@@ -426,3 +426,129 @@ fn the_emissions_to_hiring_chain_is_connected_on_the_wire() {
         );
     }
 }
+
+/// Contract v2.11: every `drives` edge carries the declared effect, and its sentence is generated
+/// from the sign and lag, so it cannot disagree with them.
+#[test]
+fn every_drives_edge_has_a_sign_a_lag_and_a_sentence_that_agrees() {
+    let api = Api::init(1).unwrap();
+    let c = api.catalog().unwrap();
+    let g = &c.causal;
+    let mut by_sign = std::collections::BTreeMap::new();
+    for e in &g.edges {
+        if e.kind != "drives" {
+            assert!(
+                e.effect.is_none(),
+                "{} -> {} is not a drives edge",
+                e.from,
+                e.to
+            );
+            continue;
+        }
+        let fx = e.effect.as_ref().expect("every drives edge has an effect");
+        *by_sign.entry(fx.sign.as_str()).or_insert(0) += 1;
+        let from = g.nodes.iter().find(|n| n.id == e.from).unwrap();
+        let to = g.nodes.iter().find(|n| n.id == e.to).unwrap();
+        let lower = |s: &str| {
+            let mut cs = s.chars();
+            match cs.next() {
+                Some(a) if cs.next().is_some_and(|b| !b.is_uppercase()) => {
+                    a.to_lowercase().collect::<String>() + &s[a.len_utf8()..]
+                }
+                _ => s.to_string(),
+            }
+        };
+        let s = fx.sentence.to_lowercase();
+        match fx.sign.as_str() {
+            "up" => assert!(
+                s.contains(&format!("{} goes up", lower(&to.label).to_lowercase())),
+                "{}",
+                fx.sentence
+            ),
+            "down" => assert!(
+                s.contains(&format!("{} goes down", lower(&to.label).to_lowercase())),
+                "{}",
+                fx.sentence
+            ),
+            "varies" => assert!(
+                s.contains("up or down") && fx.reason.is_some(),
+                "{}",
+                fx.sentence
+            ),
+            "none" => assert!(
+                s.contains("does not directly change") && fx.reason.is_some(),
+                "{}",
+                fx.sentence
+            ),
+            other => panic!("unknown sign {other}"),
+        }
+        assert!(
+            s.contains(&lower(&from.label).to_lowercase()),
+            "{}",
+            fx.sentence
+        );
+        if fx.sign != "none" {
+            assert!(s.contains(&fx.lag_label.to_lowercase()), "{}", fx.sentence);
+        }
+        assert!(matches!(
+            fx.basis.as_str(),
+            "perturbed" | "system" | "declared_unverified"
+        ));
+    }
+    // The wire carries exactly the registry's effects.
+    let drives = g.edges.iter().filter(|e| e.kind == "drives").count();
+    let declared: usize = DECISIONS.iter().map(|d| d.effects.len()).sum::<usize>()
+        + MECHANISMS.iter().map(|m| m.effects.len()).sum::<usize>();
+    assert_eq!(drives, declared);
+    assert!(
+        by_sign["up"] > 0 && by_sign["down"] > 0 && by_sign["varies"] > 0 && by_sign["none"] > 0
+    );
+    // Lags: a stock reaches itself next month; a lever arrives at once.
+    let lag_of = |via: &str, from: &str, to: &str| {
+        g.edges
+            .iter()
+            .find(|e| {
+                e.kind == "drives" && e.via.as_deref() == Some(via) && e.from == from && e.to == to
+            })
+            .and_then(|e| e.effect.as_ref())
+            .map(|f| f.lag_months)
+    };
+    assert_eq!(
+        lag_of(
+            "mechanism:capital_accumulation",
+            "quantity:capital",
+            "quantity:capital"
+        ),
+        Some(1)
+    );
+    assert_eq!(
+        lag_of(
+            "mechanism:tax_collection",
+            "quantity:wage_tax_rate",
+            "quantity:treasury_taxes"
+        ),
+        Some(0)
+    );
+}
+
+/// A hand-written reason names a real signed effect (a typo would fail at load).
+#[test]
+fn because_overrides_are_used_in_sentences() {
+    let api = Api::init(1).unwrap();
+    let c = api.catalog().unwrap();
+    let e = c
+        .causal
+        .edges
+        .iter()
+        .find(|e| {
+            e.via.as_deref() == Some("mechanism:food_cap") && e.from == "quantity:commons_harvest"
+        })
+        .unwrap();
+    let fx = e.effect.as_ref().unwrap();
+    assert_eq!(fx.sign, "down");
+    assert!(
+        fx.sentence.contains("commons run out sooner"),
+        "{}",
+        fx.sentence
+    );
+}

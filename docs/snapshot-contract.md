@@ -607,3 +607,11 @@ Review finding F8 (thin renderer). The state hash is unchanged.
 - `Catalog.causal.nodes[]` gains `kind: "mechanism"` (id `mechanism:<MechanismId>`, `role: "mechanism"`, `refId`, `label` = the title, `owner`); `causal.roles` has a fifth word, `mechanism`, and the words for `source`, `derived` and `sink` now say "decision or plain code". `CausalEdge.via` may be a `mechanism:` node id. Node order: quantities, decisions, mechanisms. `upstream` counts steps (decisions or mechanisms crossed), still `causal.upstreamDepth` = 3.
 - 30 new `QuantityId`s (129 in all), each with a `live` binding; `MarketView.priceQuantity` of the housing card is `rent`.
 - `CONTRACT_VERSION` is "2.10.0". Fixtures `catalog.json`, `agents.json` (unchanged text), the snapshot and turn-result fixtures (`quantities`, the housing card), the golden's snapshot-based and catalog hashes and the recording changed; the state hashes did not.
+
+
+## 32. Contract v2.11: signed edges (feature `docs/features/causality-graph.md` stage 2; ADDITIVE, `SCHEMA_VERSION` stays 8)
+
+- `CausalEdge.effect?: EdgeEffect` on every `drives` edge (absent on `reads` and `writes`): `{sign, lagMonths, lagLabel, basis, reason?, sentence, checked}` (`crates/sim-api/src/decisions.rs`; the declaration is `sim_types::Effect` on each `DecisionSpec` and `MechanismSpec`). `sign` is `up`, `down`, `varies` or `none`; `lagMonths` is the spec's own lag plus the tick-order wait (`sim_model::causal::edge_lag_months`), 0 = the same month; `lagLabel` is the lag in words; `basis` is `perturbed`, `system` or `declared_unverified` and `checked` says in words how it was checked; `reason` is present for `varies`, `none` and `declared_unverified`. `sentence` is generated from `content/decisions.json` `causal.effects` (templates, the lag words and `because_overrides`) and the declared sign, so it cannot disagree with it.
+- The effect belongs to the (via, from, to) triple: two `drives` edges between the same quantities through different decisions or mechanisms carry their own sign (`Edge.via` is a node).
+- `CONTRACT_VERSION` is "2.11.0". Fixtures `catalog.json` (every drives edge), the golden's `catalog` hash and the recording's catalog changed; the snapshot, the agents text and every state hash did not.
+

@@ -139,3 +139,31 @@ export function nodeLines(g: CausalGraph, nodeId: string, live?: LiveLookup): Ca
   });
   return { inputs: ins.map((e) => label(e.from, e.selfLoop)).join(', '), outputs: outs.map((e) => label(e.to, e.selfLoop)).join(', '), upstream };
 }
+
+/** Sign glyphs. The ids come from the wire (`CausalEdge.effect.sign`); only their drawing is here. */
+export const SIGN_GLYPH: Record<string, string> = { up: '+', down: '-', varies: '+/-', none: '0' };
+
+export interface EffectLine {
+  /** `wage (+) -> unit cost, the same month` */
+  text: string;
+  sign: string;
+  /** The wire's sentence ("When wage goes up, ..."), shown on hover and on expand. */
+  sentence: string;
+  /** How the sign was checked, in words (wire). */
+  checked: string;
+  basis: string;
+}
+
+/** One line per input -> output pair of a decision or mechanism node (contract v2.11): the sign, the lag and the sentence all come from the wire, so a made-up effect added only to the catalogue renders with no change here. */
+export function effectLines(g: CausalGraph, nodeId: string): EffectLine[] {
+  const byId = new Map(g.nodes.map((n) => [n.id, n]));
+  const label = (id: string): string => byId.get(id)?.label ?? id;
+  return g.edges
+    .filter((e) => e.kind === 'drives' && e.via === nodeId && e.effect)
+    .map((e) => {
+      const fx = e.effect!;
+      const glyph = SIGN_GLYPH[fx.sign] ?? fx.sign;
+      const tail = fx.sign === 'none' ? 'no direct effect' : fx.lagLabel;
+      return { text: `${label(e.from)} (${glyph}) -> ${label(e.to)}, ${tail}`, sign: fx.sign, sentence: fx.sentence, checked: fx.checked, basis: fx.basis };
+    });
+}

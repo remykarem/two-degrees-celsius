@@ -407,7 +407,11 @@ fn randomness_table_matches_the_draw_sites_in_the_model() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut sites = 0;
     for f in std::fs::read_dir(root.join("crates/sim-model/src")).unwrap() {
-        let src = std::fs::read_to_string(f.unwrap().path()).unwrap();
+        let path = f.unwrap().path();
+        if path.is_dir() {
+            continue; // `sign_tests/` holds test probes, not the model
+        }
+        let src = std::fs::read_to_string(path).unwrap();
         for line in src.lines().filter(|l| !l.trim_start().starts_with("//")) {
             for pat in ["r.chance(", "r.next_f64(", "r.below("] {
                 sites += line.matches(pat).count();

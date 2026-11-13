@@ -95,18 +95,168 @@
     ],
     "live": {
       "aggregates": [
-        {"id": "town", "label": "Town figure", "text": "One number for the whole town."},
-        {"id": "sum", "label": "Total", "text": "Added up over the active firms or over all households."},
-        {"id": "mean", "label": "Average", "text": "The average over the active firms."},
-        {"id": "lever", "label": "Setting", "text": "The setting of a policy lever now (the effective one where lobbying can change it)."},
-        {"id": "flag", "label": "Yes or no", "text": "Shown as 1 for yes and 0 for no."}
+        {
+          "id": "town",
+          "label": "Town figure",
+          "text": "One number for the whole town."
+        },
+        {
+          "id": "sum",
+          "label": "Total",
+          "text": "Added up over the active firms or over all households."
+        },
+        {
+          "id": "mean",
+          "label": "Average",
+          "text": "The average over the active firms."
+        },
+        {
+          "id": "lever",
+          "label": "Setting",
+          "text": "The setting of a policy lever now (the effective one where lobbying can change it)."
+        },
+        {
+          "id": "flag",
+          "label": "Yes or no",
+          "text": "Shown as 1 for yes and 0 for no."
+        }
       ],
       "unbound": [
-        {"id": "private", "label": "Inside one agent", "text": "A working variable of a single firm, household or bank. The town has no one number for it."},
-        {"id": "computed", "label": "Worked out each month", "text": "A rule computes it fresh every month and does not keep it, so there is no stored value to show."},
-        {"id": "not_published", "label": "Not shown yet", "text": "It exists in the simulation, but the game does not publish a town figure for it yet."},
-        {"id": "fixed", "label": "A fixed setting", "text": "A fixed setting of the model's rules rather than a number that moves."},
-        {"id": "random", "label": "Chance", "text": "A random draw, different every time, with no value to track."}
+        {
+          "id": "private",
+          "label": "Inside one agent",
+          "text": "A working variable of a single firm, household or bank. The town has no one number for it."
+        },
+        {
+          "id": "computed",
+          "label": "Worked out each month",
+          "text": "A rule computes it fresh every month and does not keep it, so there is no stored value to show."
+        },
+        {
+          "id": "not_published",
+          "label": "Not shown yet",
+          "text": "It exists in the simulation, but the game does not publish a town figure for it yet."
+        },
+        {
+          "id": "fixed",
+          "label": "A fixed setting",
+          "text": "A fixed setting of the model's rules rather than a number that moves."
+        },
+        {
+          "id": "random",
+          "label": "Chance",
+          "text": "A random draw, different every time, with no value to track."
+        }
+      ]
+    },
+    "effects": {
+      "up": "when {input} goes up, {output} goes up",
+      "down": "when {input} goes up, {output} goes down",
+      "varies": "when {input} goes up, {output} can go up or down: {reason}",
+      "none": "{input} is read here but does not directly change {output}: {reason}.",
+      "sentence": "{effect} ({lag}), {because}.",
+      "sentence_plain": "{effect} ({lag}).",
+      "lag_now": "the same month",
+      "lag_next": "the next month",
+      "lag_months": "{n} months later",
+      "because": "because {why}",
+      "by_rule": "following the rule \"{rule}\"",
+      "basis": {
+        "perturbed": "Checked by raising the input in the real code and measuring the output.",
+        "system": "Checked by raising the input in a real game state, running the real system and measuring the output.",
+        "declared_unverified": "Declared from the code and economics, not measured: {reason}"
+      },
+      "because_overrides": [
+        {
+          "spec": "unit_cost_buildup",
+          "from": "wage",
+          "to": "unit_cost",
+          "because": "wages are most of what it costs to make a unit"
+        },
+        {
+          "spec": "unit_cost_buildup",
+          "from": "carbon_price",
+          "to": "unit_cost",
+          "because": "the carbon charge is part of the cost of every unit"
+        },
+        {
+          "spec": "unit_cost_buildup",
+          "from": "output",
+          "to": "unit_cost",
+          "because": "the same wage bill is spread over more units"
+        },
+        {
+          "spec": "firm_hire",
+          "from": "weather_factor",
+          "to": "wanted_workers",
+          "because": "better weather lets each worker make more, so fewer are needed for the same output"
+        },
+        {
+          "spec": "firm_hire",
+          "from": "expected_sales",
+          "to": "wanted_workers",
+          "because": "more expected sales need more output, so more workers"
+        },
+        {
+          "spec": "firm_wage",
+          "from": "unemployment",
+          "to": "wage",
+          "because": "when many people are jobless, firms can hold wages down"
+        },
+        {
+          "spec": "food_cap",
+          "from": "commons_harvest",
+          "to": "output",
+          "because": "a higher harvest lever makes each unit of food take more of the commons, so the commons run out sooner"
+        },
+        {
+          "spec": "electricity_rationing",
+          "from": "energy_demand",
+          "to": "electricity_served",
+          "because": "served is the share of demand the plants can meet, and a bigger demand spreads the same supply thinner"
+        },
+        {
+          "spec": "climate_stress_curve",
+          "from": "cumulative_emissions",
+          "to": "climate_stress",
+          "because": "stress grows as the carbon budget is used up"
+        },
+        {
+          "spec": "tax_collection",
+          "from": "wage_tax_rate",
+          "to": "treasury_taxes",
+          "because": "the tax is the rate times the wages paid"
+        },
+        {
+          "spec": "bank_spread",
+          "from": "debt",
+          "to": "loan_rate",
+          "because": "a firm with more debt for its assets is riskier, so the bank charges more"
+        },
+        {
+          "spec": "government_legitimacy",
+          "from": "unemployment",
+          "to": "legitimacy",
+          "because": "people blame the government for joblessness"
+        },
+        {
+          "spec": "household_spend",
+          "from": "savings",
+          "to": "consumption_budget",
+          "because": "a household cannot spend more than it has saved"
+        },
+        {
+          "spec": "housing_rent",
+          "from": "occupancy",
+          "to": "rent",
+          "because": "when every home is taken, landlords can raise the rent"
+        },
+        {
+          "spec": "firm_green",
+          "from": "carbon_price",
+          "to": "green_tech",
+          "because": "a higher carbon price makes cutting emissions pay back sooner"
+        }
       ]
     }
   },

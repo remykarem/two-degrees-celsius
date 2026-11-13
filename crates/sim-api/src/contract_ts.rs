@@ -123,6 +123,10 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ),
         (
             "decisions",
+            <crate::decisions::EdgeEffect as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
             <crate::decisions::DecisionInfo as TS>::decl(&cfg),
         ),
         (

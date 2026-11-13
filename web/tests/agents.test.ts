@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { AgentsCatalog, DecisionInfo, MechanismInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, causalLines, decisionLine, mechanismLine, mechanismsOfKind, nodeLines, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, causalLines, decisionLine, effectLines, mechanismLine, mechanismsOfKind, nodeLines, LOOP_MARK, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, liveLookup, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -214,5 +214,35 @@ describe.skipIf(!fixture)('agents catalogue (real fixture docs/fixtures/agents.j
     expect(JSON.parse(JSON.stringify(cat.kinds))).toEqual(fx.kinds);
     expect(JSON.parse(JSON.stringify(cat.randomness))).toEqual(fx.randomness);
     expect(cat.deterministic).toEqual(fx.deterministic);
+  });
+});
+
+describe('signed edges (contract v2.11)', () => {
+  const c = ok(sim.catalog());
+  const g = c.causal;
+  it('every drives edge carries a sign, a lag and a sentence, and reads off as a line', () => {
+    const drives = g.edges.filter((e) => e.kind === 'drives');
+    expect(drives.length).toBe(331);
+    for (const e of drives) {
+      expect(e.effect, `${e.from} -> ${e.to} via ${e.via}`).toBeTruthy();
+      expect(['up', 'down', 'varies', 'none']).toContain(e.effect!.sign);
+      expect(e.effect!.sentence.length).toBeGreaterThan(20);
+    }
+    expect(g.edges.filter((e) => e.kind !== 'drives').every((e) => !e.effect)).toBe(true);
+    const lines = effectLines(g, 'mechanism:unit_cost_buildup');
+    expect(lines.map((l) => l.text)).toContain('Base wage (+) -> Unit cost, the same month');
+    const w = lines.find((l) => l.text.startsWith('Base wage'))!;
+    expect(w.sentence).toMatch(/^When base wage goes up, unit cost goes up \(the same month\), because /);
+  });
+  it('a sign added only in the catalogue renders with no web change', () => {
+    const node = (id: string, kind: string, role: string, label: string) => ({ id, kind, role, refId: id.split(':')[1]!, label, owner: 'firm', selfLoop: false, component: 99, upstream: [] as string[] });
+    const fx = (sign: string, lagLabel: string) => ({ sign, lagMonths: 3, basis: 'perturbed', lagLabel, sentence: `When alpha goes up, beta goes ${sign}.`, checked: 'Checked.' });
+    const made = {
+      ...g,
+      nodes: [...g.nodes, node('quantity:qa', 'quantity', 'source', 'Alpha'), node('quantity:qb', 'quantity', 'sink', 'Beta'), node('mechanism:made_up', 'mechanism', 'mechanism', 'Made up')],
+      edges: [...g.edges, { from: 'quantity:qa', to: 'quantity:qb', kind: 'drives', via: 'mechanism:made_up', selfLoop: false, effect: fx('down', '3 months later') }],
+    };
+    const [line] = effectLines(made, 'mechanism:made_up');
+    expect(line).toMatchObject({ text: 'Alpha (-) -> Beta, 3 months later', sign: 'down', sentence: 'When alpha goes up, beta goes down.' });
   });
 });

@@ -883,4 +883,34 @@ mod tests {
             0
         );
     }
+
+    #[test]
+    fn mixed_sign_pairs_are_counted_and_flagged() {
+        let mut counts = [0usize; 5];
+        let mut example = None;
+        for c in QuantityId::ALL {
+            for e in QuantityId::ALL {
+                let n = sign_of(*c, *e, 3);
+                let k = match n {
+                    NetSign::Up => 0,
+                    NetSign::Down => 1,
+                    NetSign::Varies => 2,
+                    NetSign::Mixed => 3,
+                    NetSign::NoPath => 4,
+                };
+                counts[k] += 1;
+                if n == NetSign::Mixed && example.is_none() {
+                    example = Some((c.as_str(), e.as_str()));
+                }
+            }
+        }
+        println!(
+            "pairs within 3 steps: up {} down {} varies {} mixed {} nopath {}; first mixed {:?}",
+            counts[0], counts[1], counts[2], counts[3], counts[4], example
+        );
+        assert!(
+            counts[3] > 0,
+            "the model has cause/effect pairs whose routes disagree"
+        );
+    }
 }

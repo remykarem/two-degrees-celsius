@@ -84,6 +84,46 @@ struct CausalDef {
     upstream_depth: usize,
     roles: Vec<RoleDef>,
     live: LiveDef,
+    /// Contract v2.11: the words of the edge sentences (`docs/features/causality-graph.md` stage 2).
+    effects: EffectWords,
+}
+
+/// Templates of the plain-English sentence of an edge, filled from the declared sign and lag so the
+/// sentence cannot disagree with the sign: `{effect} ({lag}), {because}`.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EffectWords {
+    up: String,
+    down: String,
+    varies: String,
+    none: String,
+    sentence: String,
+    sentence_plain: String,
+    lag_now: String,
+    lag_next: String,
+    lag_months: String,
+    because: String,
+    by_rule: String,
+    basis: BasisWords,
+    /// A hand-written reason for one effect, keyed by spec and quantity ids; the rest say which rule the spec follows.
+    because_overrides: Vec<BecauseDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BasisWords {
+    perturbed: String,
+    system: String,
+    declared_unverified: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BecauseDef {
+    spec: String,
+    from: String,
+    to: String,
+    because: String,
 }
 
 /// Words for the live-value binding: aggregates and reasons a quantity has no value.
@@ -272,6 +312,33 @@ pub struct CausalEdge {
     /// The decision or mechanism node id a `drives` edge goes through.
     pub via: Option<String>,
     pub self_loop: bool,
+    /// Contract v2.11: the declared effect of a `drives` edge (sign, lag, how it was checked, and
+    /// its plain-English sentence). Absent on `reads` and `writes` edges.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effect: Option<EdgeEffect>,
+}
+
+/// Contract v2.11: what one input does to one output of a decision or mechanism.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeEffect {
+    /// `up` (more input, more output), `down`, `varies` (depends on the state) or `none` (read, but no direct effect).
+    pub sign: String,
+    /// Months from a change in the input to the change in the output: the spec's own lag plus the wait
+    /// the tick order imposes (0 = the same month).
+    pub lag_months: u32,
+    /// `perturbed` (measured on pure code or a decision), `system` (measured on a whole system on a real state) or `declared_unverified`.
+    pub basis: String,
+    /// The reason for `varies`, `none` and `declared_unverified`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// The lag in words (`the same month`, `the next month`, `3 months later`), from `content/decisions.json`.
+    pub lag_label: String,
+    /// The sentence, from the templates in `content/decisions.json` and the declared sign.
+    pub sentence: String,
+    /// How it was checked, in words.
+    pub checked: String,
 }
 
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
@@ -381,6 +448,35 @@ fn build_causal(
             "causal.roles must be source, derived, sink, decision, mechanism".into(),
         ));
     }
+    // Hand-written reasons name real, signed effects, once each.
+    let mut seen_b: Vec<(&str, &str, &str)> = Vec::new();
+    for b in &c.effects.because_overrides {
+        let real = causal::edges().into_iter().any(|e| {
+            matches!((e.effect, e.via, e.from, e.to),
+            (Some(fx), Some(v), Node::Quantity(i), Node::Quantity(o))
+            if !matches!(fx.sign, sim_types::Sign::None(_))
+                && i.as_str() == b.from
+                && o.as_str() == b.to
+                && match v {
+                    Node::Decision(d) => d.as_str() == b.spec,
+                    Node::Mechanism(m) => m.as_str() == b.spec,
+                    Node::Quantity(_) => false,
+                })
+        });
+        if !real {
+            return Err(bad(format!(
+                "causal.effects.because_overrides: {} {} -> {} is not a signed effect of the registry",
+                b.spec, b.from, b.to
+            )));
+        }
+        if seen_b.contains(&(&b.spec[..], &b.from[..], &b.to[..])) {
+            return Err(bad(format!(
+                "causal.effects.because_overrides: {} {} -> {} appears twice",
+                b.spec, b.from, b.to
+            )));
+        }
+        seen_b.push((&b.spec, &b.from, &b.to));
+    }
     let comp: BTreeMap<Node, usize> = causal::components().into_iter().collect();
     let mut nodes = Vec::new();
     for n in causal::nodes() {
@@ -450,19 +546,36 @@ fn build_causal(
     }
     let edges = causal::edges()
         .into_iter()
-        .map(|e| CausalEdge {
-            from: node_id(e.from),
-            to: node_id(e.to),
-            kind: match e.kind {
-                EdgeKind::Reads => "reads",
-                EdgeKind::Writes => "writes",
-                EdgeKind::Drives => "drives",
-            }
-            .into(),
-            via: e.via.map(node_id),
-            self_loop: e.self_loop,
+        .map(|e| {
+            let effect = match (e.effect, e.via, e.from, e.to) {
+                (Some(fx), Some(via), Node::Quantity(i), Node::Quantity(o)) => Some(edge_effect(
+                    &c.effects,
+                    quantities,
+                    decisions,
+                    mechanisms,
+                    via,
+                    i,
+                    o,
+                    fx,
+                    causal::edge_lag_months(&e).unwrap_or(0),
+                )?),
+                _ => None,
+            };
+            Ok(CausalEdge {
+                from: node_id(e.from),
+                to: node_id(e.to),
+                kind: match e.kind {
+                    EdgeKind::Reads => "reads",
+                    EdgeKind::Writes => "writes",
+                    EdgeKind::Drives => "drives",
+                }
+                .into(),
+                via: e.via.map(node_id),
+                self_loop: e.self_loop,
+                effect,
+            })
         })
-        .collect();
+        .collect::<ApiResult<Vec<_>>>()?;
     Ok(CausalGraph {
         upstream_depth: c.upstream_depth,
         roles: c
@@ -478,6 +591,133 @@ fn build_causal(
         nodes,
         edges,
     })
+}
+
+/// Lower-case the first letter of a label for the middle of a sentence ("Unit cost" -> "unit cost"),
+/// keeping acronyms ("GDP").
+fn mid_sentence(label: &str) -> String {
+    let mut cs = label.chars();
+    match (cs.next(), cs.next()) {
+        (Some(a), Some(b)) if a.is_uppercase() && !b.is_uppercase() => {
+            a.to_lowercase().collect::<String>() + &label[a.len_utf8()..]
+        }
+        _ => label.to_string(),
+    }
+}
+
+/// The sign, lag, basis and sentence of one `drives` edge, from the declared `Effect` and the words.
+#[allow(clippy::too_many_arguments)]
+fn edge_effect(
+    w: &EffectWords,
+    quantities: &[QuantityInfo],
+    decisions: &[DecisionInfo],
+    mechanisms: &[MechanismInfo],
+    via: Node,
+    from: QuantityId,
+    to: QuantityId,
+    fx: sim_types::Effect,
+    lag: u32,
+) -> ApiResult<EdgeEffect> {
+    let label = |q: QuantityId| {
+        quantities
+            .iter()
+            .find(|x| x.id == q.as_str())
+            .map(|x| mid_sentence(&x.label))
+            .ok_or_else(|| bad(format!("quantity {} has no entry", q.as_str())))
+    };
+    let (spec_id, rule_label) = match via {
+        Node::Decision(d) => (
+            d.as_str(),
+            decisions
+                .iter()
+                .find(|x| x.id == d.as_str())
+                .map(|x| x.rule.label.clone()),
+        ),
+        Node::Mechanism(m) => (
+            m.as_str(),
+            mechanisms
+                .iter()
+                .find(|x| x.id == m.as_str())
+                .map(|x| x.rule.label.clone()),
+        ),
+        Node::Quantity(_) => {
+            return Err(bad("an edge goes through a decision or mechanism".into()))
+        }
+    };
+    let rule_label = rule_label.ok_or_else(|| bad(format!("{spec_id} has no entry")))?;
+    let (sign, reason) = match fx.sign {
+        sim_types::Sign::Up => ("up", None),
+        sim_types::Sign::Down => ("down", None),
+        sim_types::Sign::Varies(r) => ("varies", Some(r.to_string())),
+        sim_types::Sign::None(r) => ("none", Some(r.to_string())),
+    };
+    let template = match sign {
+        "up" => &w.up,
+        "down" => &w.down,
+        "varies" => &w.varies,
+        _ => &w.none,
+    };
+    let effect = template
+        .replace("{input}", &label(from)?)
+        .replace("{output}", &label(to)?)
+        .replace("{reason}", reason.as_deref().unwrap_or(""));
+    let lag_words = match lag {
+        0 => w.lag_now.clone(),
+        1 => w.lag_next.clone(),
+        n => w.lag_months.replace("{n}", &n.to_string()),
+    };
+    let because = match w
+        .because_overrides
+        .iter()
+        .find(|b| b.spec == spec_id && b.from == from.as_str() && b.to == to.as_str())
+    {
+        Some(b) => w.because.replace("{why}", &b.because),
+        None => w.by_rule.replace("{rule}", &rule_label),
+    };
+    // "none" has no lag to speak of and "varies" gives its reason in the sentence: neither has a "because".
+    let sentence = if sign == "none" {
+        capitalise(&effect)
+    } else {
+        let t = if sign == "varies" {
+            &w.sentence_plain
+        } else {
+            &w.sentence
+        };
+        capitalise(
+            &t.replace("{effect}", &effect)
+                .replace("{lag}", &lag_words)
+                .replace("{because}", &because),
+        )
+    };
+    let (basis, checked) = match fx.basis {
+        sim_types::Basis::Perturbed => ("perturbed", w.basis.perturbed.clone()),
+        sim_types::Basis::PerturbedSystem => ("system", w.basis.system.clone()),
+        sim_types::Basis::DeclaredUnverified(r) => (
+            "declared_unverified",
+            w.basis.declared_unverified.replace("{reason}", r),
+        ),
+    };
+    let reason = match fx.basis {
+        sim_types::Basis::DeclaredUnverified(r) if reason.is_none() => Some(r.to_string()),
+        _ => reason,
+    };
+    Ok(EdgeEffect {
+        sign: sign.into(),
+        lag_months: lag,
+        basis: basis.into(),
+        reason,
+        lag_label: lag_words,
+        sentence,
+        checked,
+    })
+}
+
+fn capitalise(s: &str) -> String {
+    let mut cs = s.chars();
+    match cs.next() {
+        Some(a) => a.to_uppercase().collect::<String>() + cs.as_str(),
+        None => String::new(),
+    }
 }
 
 fn bad(m: String) -> ApiError {

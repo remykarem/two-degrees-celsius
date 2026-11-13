@@ -3,7 +3,7 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, mechanismLine, mechanismsOfKind, nodeLines, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, causalLines, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, liveLookup, mechanismLine, effectLines, mechanismsOfKind, nodeLines, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
   import { catalog, hasCatalog } from '../store/catalog';
@@ -81,8 +81,10 @@
                     {#each kindDecisions as d (d.id)}
                       {@const l = decisionLine(d)}
                       {@const cl = causalLines(catalog().causal, d.id, liveLookup(catalog(), $gs.snapshot))}
+                      {@const fl = effectLines(catalog().causal, `decision:${d.id}`)}
                       <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        {#if fl.length}<details data-testid="agent-effects"><summary class="dim">How each input pushes each output ({fl.length})</summary><ul class="lo">{#each fl as f (f.text)}<li class="fx {f.sign}" title={f.sentence} data-testid="agent-effect"><span class="fxl">{f.text}</span><details><summary class="dim">why</summary><p>{f.sentence}</p><p class="dim">{f.checked}</p></details></li>{/each}</ul></details>{/if}
                         {#each cl.upstream as u (u.label)}<p class="dim edge" data-testid="agent-upstream">Causes of {u.label} (up to {catalog().causal.upstreamDepth} steps back): {u.causes}.</p>{/each}
                         <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}.{d.params.length ? ` Parameters: ${d.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
@@ -94,8 +96,10 @@
                     {#each kindMechanisms as m (m.id)}
                       {@const l = mechanismLine(m)}
                       {@const cl = nodeLines(catalog().causal, `mechanism:${m.id}`, liveLookup(catalog(), $gs.snapshot))}
+                      {@const fl = effectLines(catalog().causal, `mechanism:${m.id}`)}
                       <li data-testid="agent-mechanism" data-id={m.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
                         <p class="dim edge" data-testid="agent-mechanism-edges">Reads: {cl.inputs}. Writes: {cl.outputs}.</p>
+                        {#if fl.length}<details data-testid="agent-effects"><summary class="dim">How each input pushes each output ({fl.length})</summary><ul class="lo">{#each fl as f (f.text)}<li class="fx {f.sign}" title={f.sentence} data-testid="agent-effect"><span class="fxl">{f.text}</span><details><summary class="dim">why</summary><p>{f.sentence}</p><p class="dim">{f.checked}</p></details></li>{/each}</ul></details>{/if}
                         <details><summary class="dim">{m.rule.label}</summary><p>{m.explains}</p><p>{m.rule.text}</p><p class="dim">Runs in {m.system}.{m.params.length ? ` Parameters: ${m.params.map((p) => p.label).join('; ')}.` : ''}</p></details></li>
                     {/each}
                   </ul>
@@ -169,6 +173,7 @@
   .formula { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); padding: 6px 8px; border-radius: var(--radius); } .dim { color: var(--text-dim); font-size: 12px; }
   .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px solid var(--border); border-radius: 8px; padding: 1px 6px; vertical-align: middle; } .badge.placeholder { color: var(--warn); border-color: var(--warn); } .badge.tuned { color: var(--good); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; } th[scope='row'] { text-align: left; font-weight: 400; } .path { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); } .n { text-align: right; font-family: var(--font-mono); } tr { border-top: 1px dotted var(--border); }
+  .fx.none { opacity: 0.6; } .fx details { display: inline; } .fx details > p { margin: 2px 0; }
   .exm { margin: 3px 0; } .lo { margin: 0; padding-left: 18px; } .edge { margin: 2px 0; } .rel { border: 1px solid var(--border); background: var(--surface); color: var(--accent); border-radius: 10px; padding: 1px 8px; margin-right: 4px; cursor: pointer; font: inherit; font-size: 12px; }
   @media (max-width: 900px) { .ex { grid-template-columns: 1fr; } nav { max-height: 24vh; } }
 </style>

@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.10.0";
+export const CONTRACT_VERSION = "2.11.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -155,7 +155,12 @@ export type CausalEdge = { from: string, to: string, kind: string,
 /**
  * The decision or mechanism node id a `drives` edge goes through.
  */
-via: string | null, selfLoop: boolean, };
+via: string | null, selfLoop: boolean, 
+/**
+ * Contract v2.11: the declared effect of a `drives` edge (sign, lag, how it was checked, and
+ * its plain-English sentence). Absent on `reads` and `writes` edges.
+ */
+effect?: EdgeEffect | null, };
 
 export type CausalGraph = { upstreamDepth: number, roles: Array<CausalRole>, 
 /**
@@ -281,6 +286,37 @@ export type Direction = "up" | "down";
 export type Distribution = "bernoulli" | "uniform" | "uniform_index";
 
 export type DroughtView = { severity: number, monthsLeft: number, };
+
+export type EdgeEffect = { 
+/**
+ * `up` (more input, more output), `down`, `varies` (depends on the state) or `none` (read, but no direct effect).
+ */
+sign: string, 
+/**
+ * Months from a change in the input to the change in the output: the spec's own lag plus the wait
+ * the tick order imposes (0 = the same month).
+ */
+lagMonths: number, 
+/**
+ * `perturbed` (measured on pure code or a decision), `system` (measured on a whole system on a real state) or `declared_unverified`.
+ */
+basis: string, 
+/**
+ * The reason for `varies`, `none` and `declared_unverified`.
+ */
+reason?: string | null, 
+/**
+ * The lag in words (`the same month`, `the next month`, `3 months later`), from `content/decisions.json`.
+ */
+lagLabel: string, 
+/**
+ * The sentence, from the templates in `content/decisions.json` and the declared sign.
+ */
+sentence: string, 
+/**
+ * How it was checked, in words.
+ */
+checked: string, };
 
 export type EmissionCategory = "industry" | "homes" | "energy" | "aviation" | "waste";
 
