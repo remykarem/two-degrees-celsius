@@ -3,9 +3,9 @@
 // Needs: rustup target add wasm32-unknown-unknown, and wasm-bindgen-cli at the version pinned in Cargo.lock.
 // wasm-opt (binaryen) is used when installed; its absence only makes the file bigger.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -48,12 +48,30 @@ console.log(`> wasm-bindgen --target web`);
 if (!run('wasm-bindgen', ['--target', 'web', '--out-dir', out, '--out-name', 'sim_wasm', raw])) fail('wasm-bindgen failed.');
 
 const bin = resolve(out, 'sim_wasm_bg.wasm');
+async function smokeTest(file) {
+  try {
+    const mod = await import(`${pathToFileURL(resolve(out, 'sim_wasm.js')).href}?smoke=${Date.now()}`);
+    mod.initSync({ module: readFileSync(file) });
+    return true;
+  } catch (e) {
+    console.warn(`smoke test failed: ${e?.message ?? e}`);
+    return false;
+  }
+}
 const size = (p) => statSync(p).size;
 const before = size(bin);
 const opt = have('wasm-opt', ['--version']);
 if (opt.status === 0) {
   console.log('> wasm-opt -Oz');
-  if (!run('wasm-opt', ['-Oz', '--enable-bulk-memory', '--enable-nontrapping-float-to-int', '--enable-sign-ext', '--enable-mutable-globals', bin, '-o', bin])) console.warn('wasm-opt failed; keeping the unoptimised file.');
+  const plain = readFileSync(bin);
+  const optimised = run('wasm-opt', ['-Oz', '--enable-bulk-memory', '--enable-nontrapping-float-to-int', '--enable-sign-ext', '--enable-mutable-globals', '--enable-reference-types', '--enable-multivalue', bin, '-o', bin]);
+  // An old wasm-opt can emit a module that instantiates but breaks at run time (it rewrote the externref table as funcref).
+  // Smoke-test the optimised file in Node and fall back to the plain one if it does not start.
+  const healthy = optimised && (await smokeTest(bin));
+  if (!healthy) {
+    writeFileSync(bin, plain);
+    console.warn('wasm-opt failed or produced a module that does not start (is binaryen old? use version 133 or newer); keeping the unoptimised file.');
+  }
 } else {
   console.warn('WARNING: wasm-opt (binaryen) is not installed, so the wasm is larger than it needs to be (the build still works). Install it: brew install binaryen, or apt-get install binaryen.');
 }

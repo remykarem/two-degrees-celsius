@@ -29,8 +29,12 @@ jobs:
           VERSION=$(grep -A1 'name = "wasm-bindgen"$' Cargo.lock | grep version | cut -d'"' -f2)
           cargo install wasm-bindgen-cli --version "$VERSION" --locked
 
-      - name: Install wasm-opt (binaryen; build:wasm only warns when it is missing)
-        run: sudo apt-get update && sudo apt-get install -y binaryen
+      - name: Install wasm-opt (pinned binaryen release; build:wasm only warns when it is missing)
+        run: |
+          # Not apt: Ubuntu's binaryen is old and, without reference-types support, rewrote wasm-bindgen's
+          # externref table as funcref, which broke every wasm test ("WebAssembly.Table.set(): function-typed object").
+          curl -fsSL https://github.com/WebAssembly/binaryen/releases/download/version_133/binaryen-version_133-x86_64-linux.tar.gz | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/binaryen-version_133/bin" >> "$GITHUB_PATH"
 
       - name: Use Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
