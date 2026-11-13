@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **DRAFT for review. Not approved, not implemented.** Docs only. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stage 1 (labour pilot) in progress.** Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
