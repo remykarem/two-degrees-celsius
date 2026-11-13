@@ -200,3 +200,35 @@ pub fn after(id: SystemId, s: &State, p: &Params) -> State {
 pub fn try_after(id: SystemId, s: &State, p: &Params) -> Option<State> {
     catch_unwind(AssertUnwindSafe(|| after(id, s, p))).ok()
 }
+
+/// How to read the level of an input where the nudge does not change a number the state prints
+/// (the elasticity of the response needs a level; `sim_model::sign_probe`). The probe uses the
+/// entry of the input it nudges, if there is one.
+pub fn levels() -> Vec<sim_model::sign_probe::Read<State>> {
+    // `Workers`: the people who have a job (the probes give a jobless person a job).
+    let w: fn(&State) -> f64 = |s| s.persons.iter().filter(|x| x.job.is_some()).count() as f64;
+    // `Unemployment`: the share of the labour force without a job (a person loses a job).
+    let u: fn(&State) -> f64 = |s| {
+        let lf = s
+            .persons
+            .iter()
+            .filter(|x| x.in_labour_force)
+            .count()
+            .max(1) as f64;
+        s.persons
+            .iter()
+            .filter(|x| x.in_labour_force && !x.employed())
+            .count() as f64
+            / lf
+    };
+    // `Occupancy`: the share of households that have a home (a homeless one takes a vacant home).
+    let o: fn(&State) -> f64 = |s| {
+        s.households.iter().filter(|h| h.home.is_some()).count() as f64
+            / s.households.len().max(1) as f64
+    };
+    vec![
+        (QuantityId::Workers, w),
+        (QuantityId::Unemployment, u),
+        (QuantityId::Occupancy, o),
+    ]
+}

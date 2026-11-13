@@ -92,6 +92,7 @@ fn probe_fire_burns_forest(r: &mut Report) {
                 s.nature.forest = Units(s.nature.forest.0 * 1.1 + 1.0)
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             QuantityId::ForestStock,
             forest_after_weather as fn(&State) -> f64,
@@ -127,6 +128,7 @@ fn probe_drought_onset(r: &mut Report) {
         node: mech(MechanismId::DroughtOnset),
         bases,
         nudges: vec![(QuantityId::Drought, more_severe as fn(&mut State))],
+        levels: crate::common::levels(),
         reads: vec![(QuantityId::Drought, drought_after as fn(&State) -> f64)],
     };
     r.check(&probe);
@@ -198,6 +200,7 @@ fn probe_fire_ignition(r: &mut Report) {
             // One more burning tile.
             (QuantityId::Fire, more_fire_loneliest),
         ],
+        levels: crate::common::levels(),
         reads: vec![(QuantityId::Fire, fire_reach as fn(&State) -> f64)],
     };
     r.check(&probe);
@@ -286,6 +289,7 @@ fn probe_wellbeing(r: &mut Report) {
             (QuantityId::Savings, nudge_savings),
             (QuantityId::Fire, fire_beside_home),
         ],
+        levels: crate::common::levels(),
         reads: vec![(QuantityId::Wellbeing, wellbeing_sum as fn(&State) -> f64)],
     };
     r.check(&probe);
@@ -330,6 +334,7 @@ fn probe_last_disposable(r: &mut Report) {
                 }
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             QuantityId::LastDisposable,
             last_disposable_sum as fn(&State) -> f64,
@@ -362,6 +367,7 @@ fn probe_unemployment_rate(r: &mut Report) {
         node: mech(MechanismId::UnemploymentRate),
         bases: pick(&[0, 1, 2, 3]),
         nudges: vec![(QuantityId::Workers, take_a_job as fn(&mut State))],
+        levels: crate::common::levels(),
         reads: vec![(
             QuantityId::Unemployment,
             unemployment_rate as fn(&State) -> f64,
@@ -391,6 +397,7 @@ fn probe_labour_matching(r: &mut Report) {
         node: mech(MechanismId::LabourMatching),
         bases: pick(&[0, 1, 2, 3, 4]),
         nudges: vec![(QuantityId::Vacancies, more_expected_sales as fn(&mut State))],
+        levels: crate::common::levels(),
         reads: vec![(
             QuantityId::Workers,
             employed_after_labour as fn(&State) -> f64,
@@ -500,6 +507,7 @@ fn probe_housing_rent(r: &mut Report) {
                 s.housing.rent_private = Cents(s.housing.rent_private.0 * 1001 / 1000)
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(QuantityId::Rent, rent_after as fn(&State) -> f64)],
     };
     r.check(&probe);
@@ -542,6 +550,7 @@ fn probe_housing_moves(r: &mut Report) {
                 }
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(QuantityId::Occupancy, occupancy_after as fn(&State) -> f64)],
     };
     r.check(&probe);

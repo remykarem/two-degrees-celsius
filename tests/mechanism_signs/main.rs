@@ -61,3 +61,45 @@ fn declared_system_signs_agree_with_the_real_systems() {
     );
     println!("system effects verified: {}", r.probed.len());
 }
+
+/// `content/strengths.json` is generated from these probes (`UPDATE_STRENGTHS=1`); without the
+/// variable the file must equal what the probes measure now (a staleness test).
+fn reconcile_strengths(basis: &str, fresh: Vec<sim_params::strengths::StrengthEntry>) {
+    use sim_params::strengths as st;
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/strengths.json");
+    let current = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|t| st::parse(&t).ok())
+        .unwrap_or(st::StrengthFile {
+            note: st::NOTE.into(),
+            entries: Vec::new(),
+        });
+    if std::env::var_os("UPDATE_STRENGTHS").is_some() {
+        let merged = st::merge(current, basis, fresh);
+        std::fs::write(path, st::render(&merged)).unwrap();
+        return;
+    }
+    let mut mine: Vec<_> = current
+        .entries
+        .into_iter()
+        .filter(|e| e.basis == basis)
+        .collect();
+    let mut fresh = fresh;
+    let key = |e: &st::StrengthEntry| (e.via.clone(), e.from.clone(), e.to.clone());
+    mine.sort_by_key(key);
+    fresh.sort_by_key(key);
+    assert!(
+        mine == fresh,
+        "content/strengths.json is stale for basis {basis}: regenerate with UPDATE_STRENGTHS=1 (docs/how-to.md section 31)"
+    );
+}
+
+#[test]
+fn system_strengths_file_is_current() {
+    let mut r = Report::new(Basis::PerturbedSystem);
+    group_a::probe_all(&mut r);
+    group_b::probe_all(&mut r);
+    group_c::probe_all(&mut r);
+    group_d::probe_all(&mut r);
+    reconcile_strengths("system", r.strengths);
+}

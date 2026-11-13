@@ -16,6 +16,7 @@ fn mech(m: M, nudges: Nudges, reads: Reads, bases: Vec<State>, r: &mut Report) {
         node: Node::Mechanism(m),
         bases,
         nudges,
+        levels: crate::common::levels(),
         reads,
     });
 }

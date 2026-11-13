@@ -5,6 +5,8 @@
 //! money is in dollars (`*_usd`), converted to `Cents` by the engine at init.
 #![forbid(unsafe_code)]
 
+pub mod strengths;
+
 use serde::{Deserialize, Serialize};
 use sim_types::{AgeBand, Class, EconomicSystem, PlantKind, Sector};
 

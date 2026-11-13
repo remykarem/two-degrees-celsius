@@ -126,6 +126,7 @@ fn go(rep: &mut Report, m: M, bases: Vec<State>, nudges: Vec<N>, reads: Vec<R>) 
         node: Node::Mechanism(m),
         bases,
         nudges,
+        levels: crate::common::levels(),
         reads,
     });
 }

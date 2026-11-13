@@ -86,3 +86,40 @@ fn declared_signs_agree_with_the_real_code() {
         "effects {all}, verified on pure code {perturbed}, on whole systems {system}, declared_unverified {unverified}"
     );
 }
+
+/// `content/strengths.json` is generated from these probes (`UPDATE_STRENGTHS=1`); without the
+/// variable the file must equal what the probes measure now (a staleness test).
+fn reconcile_strengths(basis: &str, fresh: Vec<sim_params::strengths::StrengthEntry>) {
+    use sim_params::strengths as st;
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/strengths.json");
+    let current = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|t| st::parse(&t).ok())
+        .unwrap_or(st::StrengthFile {
+            note: st::NOTE.into(),
+            entries: Vec::new(),
+        });
+    if std::env::var_os("UPDATE_STRENGTHS").is_some() {
+        let merged = st::merge(current, basis, fresh);
+        std::fs::write(path, st::render(&merged)).unwrap();
+        return;
+    }
+    let mut mine: Vec<_> = current
+        .entries
+        .into_iter()
+        .filter(|e| e.basis == basis)
+        .collect();
+    let mut fresh = fresh;
+    let key = |e: &st::StrengthEntry| (e.via.clone(), e.from.clone(), e.to.clone());
+    mine.sort_by_key(key);
+    fresh.sort_by_key(key);
+    assert!(
+        mine == fresh,
+        "content/strengths.json is stale for basis {basis}: regenerate with UPDATE_STRENGTHS=1 (docs/how-to.md section 31)"
+    );
+}
+
+#[test]
+fn strengths_file_is_current() {
+    reconcile_strengths("perturbed", run_all().strengths);
+}

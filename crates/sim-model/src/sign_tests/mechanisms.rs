@@ -56,6 +56,7 @@ fn production_technology(r: &mut Report) {
             (Q::Capital, |v| v[1] *= 1.1),
             (Q::EffectiveLabour, |v| v[2] *= 1.1),
         ],
+        levels: vec![],
         reads: vec![(Q::CapitalOutput, |v| cobb_douglas(p(), v[0], v[1], v[2]))],
     });
 }
@@ -71,12 +72,14 @@ fn climate(r: &mut Report) {
         node: m(M::ClimateStressCurve),
         bases: cums.clone(),
         nudges: vec![(Q::CumulativeEmissions, |v| v[0] = v[0] * 1.05 + 1.0)],
+        levels: vec![],
         reads: vec![(Q::ClimateStress, |v| climate_stress(Tonnes(v[0]), p()))],
     });
     r.check(&Probe::<[f64; 1]> {
         node: m(M::ClimateDamage),
         bases: cums,
         nudges: vec![(Q::CumulativeEmissions, |v| v[0] = v[0] * 1.05 + 1.0)],
+        levels: vec![],
         reads: vec![(Q::WeatherFactor, |v| climate_factor_of(p(), v[0]))],
     });
     // The monthly chance of a drought (the outcome is random and not probed).
@@ -84,6 +87,7 @@ fn climate(r: &mut Report) {
         node: m(M::DroughtOnset),
         bases: vec![[0.0], [0.1], [0.4], [0.8]],
         nudges: vec![(Q::ClimateStress, |v| v[0] = (v[0] + 0.1).min(1.0))],
+        levels: vec![],
         reads: vec![(Q::Drought, |v| drought_p(p(), v[0]))],
     });
 }
@@ -94,6 +98,7 @@ fn energy(r: &mut Report) {
         node: m(M::GridIntensityMix),
         bases: vec![[0.0, 100.0], [0.3, 100.0], [0.6, 250.0], [0.9, 40.0]],
         nudges: vec![(Q::RenewableShare, |v| v[0] = (v[0] + 0.05).min(1.0))],
+        levels: vec![],
         reads: vec![(Q::GridIntensity, |v| {
             grid_intensity_of(p(), (1.0 - v[0]) * v[1], v[1])
         })],
@@ -103,6 +108,7 @@ fn energy(r: &mut Report) {
         node: m(M::PlantEmissionsOutput),
         bases: vec![[0.0], [10.0], [500.0]],
         nudges: vec![(Q::ElectricityServed, |v| v[0] = v[0] * 1.1 + 1.0)],
+        levels: vec![],
         reads: vec![(Q::PlantEmissions, |v| {
             plant_emissions(p(), PlantKind::Fossil, v[0])
         })],
@@ -115,6 +121,7 @@ fn energy(r: &mut Report) {
             (Q::Output, |v| v[0] *= 1.1),
             (Q::GreenTech, |v| v[2] = (v[2] + 0.05).min(1.0)),
         ],
+        levels: vec![],
         reads: vec![(Q::DirectEmissions, |v| {
             firm_direct_emissions(v[0], v[1], v[2])
         })],
@@ -134,6 +141,7 @@ fn energy(r: &mut Report) {
             (Q::Consumption, |v| v[2] = v[2] * 1.2 + 10.0),
             (Q::GreenTech, |v| v[3] = (v[3] + 0.05).min(1.0)),
         ],
+        levels: vec![],
         reads: vec![(Q::EnergyDemand, |v| {
             household_energy_use(p(), v[0], v[1], v[2])
                 + v[4] * firm_energy_per_unit(0.8, v[3], v[0])
@@ -147,6 +155,7 @@ fn nature(r: &mut Report) {
         node: m(M::ForestSinkUptake),
         bases: vec![[0.0], [50.0], [n.forest_max]],
         nudges: vec![(Q::ForestStock, |v| v[0] = v[0] * 1.1 + 1.0)],
+        levels: vec![],
         reads: vec![(Q::ForestSink, |v| crate::nature::forest_sink(p(), v[0]))],
     });
     // The output is next month's stock level (stock plus regrowth), not the net change.
@@ -158,6 +167,7 @@ fn nature(r: &mut Report) {
             [0.9 * n.forest_max],
         ],
         nudges: vec![(Q::ForestStock, |v| v[0] *= 1.05)],
+        levels: vec![],
         reads: vec![(Q::ForestStock, |v| v[0] + forest_regrowth(p(), v[0]))],
     });
     // v = [commons stock, drought severity, 1 when a community manages the commons]
@@ -174,6 +184,7 @@ fn nature(r: &mut Report) {
             (Q::Drought, |v| v[1] = (v[1] + 0.1).min(1.0)),
             (Q::CommonsCommunity, |v| v[2] = 1.0),
         ],
+        levels: vec![],
         reads: vec![(Q::CommonsStock, |v| {
             let access = if v[2] > 0.5 {
                 CommonsAccess::Community { cap: Rate(1.0) }
@@ -205,6 +216,7 @@ fn food_cap(r: &mut Report) {
             (Q::CommonsCommunity, |v| v[2] = 2.0),
             (Q::CommonsHarvest, |v| v[3] *= 1.2),
         ],
+        levels: vec![],
         reads: vec![(Q::Output, |v| {
             let access = match v[2] as u8 {
                 0 => CommonsAccess::Open,
@@ -283,6 +295,7 @@ fn taxes(r: &mut Report) {
             (Q::Profit, |v| v[9] *= 1.2),
             (Q::ProfitTaxRate, |v| v[10] += 0.05),
         ],
+        levels: vec![],
         reads: vec![(Q::TreasuryTaxes, |v| {
             (tax_on(Cents::from_f64(v[0]), v[3])
                 + tax_on(Cents::from_f64(v[1]), v[4])
@@ -306,6 +319,7 @@ fn inequality(r: &mut Report) {
             vec![1000.0, 10.0, 10.0, 10.0],
         ],
         nudges: vec![(Q::NetWealth, |v| v[0] = v[0] * 1.5 + 1.0)],
+        levels: vec![],
         reads: vec![(Q::Inequality, |v| gini(v))],
     });
 }

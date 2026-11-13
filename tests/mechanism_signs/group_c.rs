@@ -113,6 +113,11 @@ fn merge(r: &mut Report, a: Report, pairs: &[(Q, Q)]) {
             .into_iter()
             .filter(|(_, f, t, _)| pairs.contains(&(*f, *t))),
     );
+    r.strengths.extend(a.strengths.into_iter().filter(|e| {
+        pairs
+            .iter()
+            .any(|(f, t)| e.from == f.as_str() && e.to == t.as_str())
+    }));
 }
 
 pub fn probe_all(r: &mut Report) {
@@ -140,6 +145,7 @@ fn goods_settlement(r: &mut Report) {
         node: Node::Mechanism(M::GoodsSettlement),
         bases: bases(),
         nudges: vec![(Q::UnitsSold, units as fn(&mut State)), (Q::Price, price)],
+        levels: crate::common::levels(),
         reads: vec![
             (
                 Q::Revenue,
@@ -194,6 +200,7 @@ fn unit_cost(r: &mut Report) {
                 act(s, |f| f.output = Units(f.output.0 * 1.2 + 1.0))
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             Q::UnitCost,
             (|s| q(firm_sum(&goods(s), |f| f.price.as_f64()))) as fn(&State) -> f64,
@@ -216,6 +223,7 @@ fn wage_payment(r: &mut Report) {
             (Q::Workers, give_job),
             (Q::Cash, cash),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             Q::Payroll,
             (|s| q(income(s).persons.iter().map(|x| x.wage.as_f64()).sum())) as fn(&State) -> f64,
@@ -247,6 +255,7 @@ fn wage_payment(r: &mut Report) {
             (Q::Workers, give_job),
             (Q::Cash, cash),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             Q::Savings,
             (|s| q(hh_savings(&income(s)))) as fn(&State) -> f64,
@@ -287,6 +296,7 @@ fn income_flows(r: &mut Report) {
             ),
             (Q::Rent, rent),
         ],
+        levels: crate::common::levels(),
         reads: vec![
             (
                 Q::CapitalIncome,
@@ -317,6 +327,7 @@ fn income_flows(r: &mut Report) {
         node: Node::Mechanism(M::HouseholdIncomeFlows),
         bases: Vec::new(),
         nudges: vec![(Q::Rent, (|b| rent(&mut b.0)) as fn(&mut B))],
+        levels: vec![],
         reads: vec![(
             Q::Savings,
             (|b| q(income(&b.0).households[b.1].savings.as_f64())) as fn(&B) -> f64,
@@ -366,6 +377,7 @@ fn profit(r: &mut Report) {
                 s.effective.tax_profit = Rate(s.effective.tax_profit.0 + 0.1)
             }),
         ],
+        levels: crate::common::levels(),
         reads: vec![(
             Q::Profit,
             (|s| q(firm_sum(&income(s), |f| f.profit.as_f64()))) as fn(&State) -> f64,

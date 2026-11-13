@@ -130,6 +130,7 @@ fn hire(rep: &mut Report) {
                 v.capacity.transition *= 1.5
             }),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::WantedWorkers, |v: &HireView| {
                 decide_hire(v, &p().labour, &p().production).workers_wanted
@@ -173,6 +174,7 @@ fn fire(rep: &mut Report) {
                 v.over_target_months += 1
             }),
         ],
+        levels: vec![],
         reads: vec![
             // Workers after the decision: headcount less the people fired.
             r(Q::Workers, |v: &FireView| {
@@ -216,6 +218,7 @@ fn wage(rep: &mut Report) {
                 v.sector_tfp_growth += 0.0005
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::Wage, |v: &WageView| {
             decide_wage(v, &p().labour).0 as f64
         })],
@@ -251,6 +254,7 @@ fn price(rep: &mut Report) {
                 v.unit_cost = v.unit_cost * 2.0 + 100.0
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::Price, |v: &PriceView| {
             decide_price(v, &p().goods).0 as f64
         })],
@@ -297,6 +301,7 @@ fn spend(rep: &mut Report) {
                 v.wealth_spending_rate += 0.01
             }),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::FoodNeed, |v: &SpendView| {
                 decide_spend(v, &p().goods).food_need_units
@@ -312,7 +317,7 @@ fn spend(rep: &mut Report) {
 }
 
 /// An owned shop view: firm 0 is the one whose stock and price are nudged and whose sales are read.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct ShopState {
     budget: f64,
     stock: Vec<f64>,
@@ -353,6 +358,7 @@ fn shop(rep: &mut Report) {
             }),
             n(Q::Price, |v: &mut ShopState| v.price[0] *= 1.5),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::UnitsSold, |v: &ShopState| shop_choice(v).sold[0]),
             r(Q::DemandUnits, |v: &ShopState| {
@@ -382,6 +388,7 @@ fn expect(rep: &mut Report) {
                 v.expected_sales += 20.0
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::ExpectedSales, |v: &ExpectView| {
             decide_expect(v, &p().labour).0
         })],
@@ -476,6 +483,7 @@ fn green(rep: &mut Report) {
             }),
             n(Q::GreenTech, |v: &mut GreenView| v.green_tech += 0.05),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::GreenTech, |v: &GreenView| {
                 decide_green(v, &p().invest).green_tech
@@ -561,6 +569,7 @@ fn capex(rep: &mut Report) {
                 v.green_cash_share += 0.2
             }),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::InvestmentPlan, |v: &CapexView| {
                 decide_capex(v, &p().invest).plan.0 as f64
@@ -619,6 +628,7 @@ fn payout(rep: &mut Report) {
             n(Q::GreenSubsidy, |v: &mut PayoutView| v.green_subsidy += 0.3),
             n(Q::PayoutRatio, |v: &mut PayoutView| v.payout_ratio += 0.3),
         ],
+        levels: vec![],
         reads: vec![r(Q::Dividends, |v: &PayoutView| {
             decide_payout(v, &p().income, &p().invest).0 as f64
         })],
@@ -656,6 +666,7 @@ fn exit(rep: &mut Report) {
                 v.debt = Cents(v.debt.0 + 100_000)
             }),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::DistressMonths, |v: &ExitView| {
                 f64::from(decide_exit(v, &p().credit).distress_months)
@@ -700,6 +711,7 @@ fn headroom(rep: &mut Report) {
                 v.capital_ratio += 0.05
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::CreditHeadroom, |v: &HeadroomView| {
             decide_headroom(v).0 as f64
         })],
@@ -722,6 +734,7 @@ fn dividend(rep: &mut Report) {
                 v.capital_ratio += 0.05
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::BankDividend, |v: &HeadroomView| {
             decide_bank_dividend(v, &p().credit).0 as f64
         })],
@@ -761,6 +774,7 @@ fn lend(rep: &mut Report) {
                 v.debt = Cents(v.debt.0 * 2 + 100_000)
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::LoanApproved, |v: &LendView| {
             decide_lend(v, &p().credit).0 as f64
         })],
@@ -795,6 +809,7 @@ fn spread(rep: &mut Report) {
                 v.credit_spread_add += 0.01
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::LoanRate, |v: &SpreadView| {
             decide_spread(v, &p().credit).0
         })],
@@ -833,6 +848,7 @@ fn rescue(rep: &mut Report) {
                 v.bailout_policy = true
             }),
         ],
+        levels: vec![],
         reads: vec![
             // BankEquity: the cash the treasury injects (0 unless a bailout).
             r(Q::BankEquity, |v: &RescueView| {
@@ -905,6 +921,7 @@ fn fund(rep: &mut Report) {
                 v.public_debt = Cents(v.public_debt.0 + 1_000_000)
             }),
         ],
+        levels: vec![],
         reads: vec![
             r(Q::Borrowing, |v: &FundView| {
                 match decide_fund(v, &p().government) {
@@ -952,6 +969,7 @@ fn cut(rep: &mut Report) {
                 v.borrowing = Cents(v.borrowing.0 + 1_000_000)
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::SpendingCutRatio, |v: &CutView| decide_cut(v))],
     };
     rep.check(&probe);
@@ -992,6 +1010,7 @@ fn legitimacy(rep: &mut Report) {
         ],
         // The new legitimacy before the 0..1 clamp is `raw`; `after` is clamped, and a clamped
         // sample reads as flat, so the clamped value is the one read.
+        levels: vec![],
         reads: vec![r(Q::Legitimacy, |v: &LegitView| {
             decide_legitimacy(v, &p().government).after
         })],
@@ -1030,6 +1049,7 @@ fn found(rep: &mut Report) {
                 v.random_draw = v.random_draw * 2.0 + 1e-6
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::NewFirm, |v: &FoundView| {
             b(decide_found(v, &p().class))
         })],
@@ -1062,6 +1082,7 @@ fn lobby(rep: &mut Report) {
             }),
             n(Q::CampaignCap, |v: &mut LobbyView| v.campaign_cap += 0.05),
         ],
+        levels: vec![],
         reads: vec![r(Q::LobbySpend, |v: &LobbyView| {
             decide_lobby(v, &p().lobby).0 as f64
         })],
@@ -1103,6 +1124,7 @@ fn pilot(rep: &mut Report) {
             }),
         ],
         // PilotEmployed after the decision: Hire -> 1, LetGo -> 0, Keep -> unchanged.
+        levels: vec![],
         reads: vec![r(Q::PilotEmployed, |v: &PilotView| {
             match decide_pilot(v, &p().estate) {
                 PilotChoice::Hire => 1.0,
@@ -1137,6 +1159,7 @@ fn flight(rep: &mut Report) {
                 v.pilot_employed = true
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::Flight, |v: &FlightView| {
             b(decide_flight(v, &p().estate))
         })],
@@ -1171,6 +1194,7 @@ fn enclosure(rep: &mut Report) {
                 v.commons_open = true
             }),
         ],
+        levels: vec![],
         reads: vec![r(Q::CommonsEnclosed, |v: &EnclosureView| {
             b(decide_enclosure(v))
         })],
