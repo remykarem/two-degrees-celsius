@@ -229,7 +229,7 @@ Cohorts replaced by people and households; the map moved into the sim; roads; pl
 | ID | Issue | Status | Where |
 |---|---|---|---|
 | DP-1 | The view-only test proves each declared input changes the choice and every view field is declared; it cannot prove a `decide_*` body reads nothing else (types keep `State` and `Rng` out). The view builders read `State` and are not covered by it, so a builder reading an undeclared field is caught by review only | by design, review | `crates/sim-model/src/labour.rs` `decision_tests` |
-| DP-2 | `output_capacity` is one quantity for capital, technology, weather and climate (it is `production::capacity`), so the future graph shows no edge from weather to hiring except through it | open, for the graph stage | `content/decisions.json` |
+| DP-2 | `output_capacity` is one quantity for capital, technology, weather and climate (it is `production::capacity`), so the future graph shows no edge from weather to hiring except through it | decided, built in stage 2a (see `docs/features/decision-points.md` section 11) | `content/decisions.json` |
 | DP-3 | The Agents "Observes" list for firms is now one line per input quantity (about 14 lines), longer than the hand-written four; includes internal quantities such as "Workers wanted" | open, cosmetic | `crates/sim-api/src/decisions.rs` `merge_into_kind` |
 | DP-4 | Only the firm owner has an Agents kind mapping (`content/decisions.json` `owners`); the other owner kinds exist in the enum without decisions | by design until stages 2-4 | `crates/sim-types/src/decisions.rs` |
 

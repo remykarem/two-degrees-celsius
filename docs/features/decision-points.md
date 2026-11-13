@@ -1,6 +1,6 @@
 # Feature: explicit decision points (refactor, queryable, causal-graph ready)
 
-Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) IMPLEMENTED; stages 2-5 not started.** See section 10, "As built (stage 1)". Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
+Status: **APPROVED (all section 8 defaults). Stage 1 (the labour pilot) IMPLEMENTED; stages 2-5 under way, amended by section 11 (the pilot's lessons).** See section 10, "As built (stage 1)" and section 11. Written from `crates/sim-model/src/*.rs` at HEAD (`7107499`). Where this page and code disagree, code wins. Claims not checked in code are marked **(unverified)**. First step toward `docs/features/firm-agency.md`.
 
 ## 1. Why
 
@@ -173,3 +173,34 @@ Written from the code after stage 1. Where this and the code disagree, the code 
 **Gate results.** State hash (`statehash`, 3 seeds x plans) byte-identical before and after; baselines A-F identical (`cargo run --release -p sim-cli --example baselines`); insta snapshot and the golden's per-turn hashes unchanged; the golden changes only in the `agents` and `catalog` wire hashes. Recording, fixtures and generated contract regenerated.
 
 **Known limits (see `docs/known-issues.md`, DP-1 to DP-3).** The perturbation test proves a declared input matters, not that no other input is read inside `decide_*`; the view builders read `State` and are not covered by it; the Agents "observes" list now has one line per input quantity (long).
+
+## 11. Lessons from the pilot: the amended plan (stages 2-5)
+
+Written after stage 1, before stage 2. These rules replace the matching lines of sections 6 and 8 where they differ.
+
+**Stage 5 shrinks.** The wire (`catalog().decisions`, `quantities`, contract 2.7.0) and the generated Agents "Who decides" text already exist for firms. Stage 5 is now only: generate the text for every kind from the registry and delete the remaining hand-written `decides`/`observes` lines (with a test that none are left), an additive causal-edges list on the catalog (decision inputs -> decision -> outputs, and quantity links from `writers_of`/`readers_of`), and the usual regeneration and a contract bump.
+
+**Each stage lists its new `QuantityId`s and `content/decisions.json` entries up front** (below); the as-built section then records any difference. Every new owner kind needs a row in `content/decisions.json` `owners` (DP-4); `catalog()` already fails without it.
+
+| Stage | New decisions (ids) | New quantities (`QuantityId`) | New content entries |
+|---|---|---|---|
+| 2a (granularity) | none | remove `output_capacity`; add `capital_output`, `weather_factor`, `resource_factor`, `transition_factor` | 4 quantity entries (1 removed) |
+| 2 goods | `firm_price`, `firm_expect`, `household_spend`, `household_shop` | `price`, `markup`, `unit_cost`, `demand_units`, `units_sold`, `savings`, `last_disposable`, `net_wealth`, `food_price`, `food_need`, `spending_propensity`, `wealth_spending_rate`, `consumption_budget`, `expectation_smoothing` is a parameter, not a quantity | quantities, 4 decisions, params, owner `household` |
+| 3 firm money and bank | `firm_green`, `firm_capex`, `firm_payout`, `bank_lend`, `bank_spread`, `bank_default` | `footprint`, `carbon_price`, `revenue`, `emissions_cap`, `green_subsidy`, `treasury_cash`, `cash`, `cash_reserve`, `green_tech`, `green_plan`, `profit`, `capital`, `capital_per_sale`, `loan_rate`, `distressed`, `investment_plan`, `loan_request`, `payroll`, `debt_service`, `dividends`, `credit_headroom`, `debt`, `firm_assets`, `loan_approved`, `base_rate`, `distress_months`, `firm_open` | quantities, 6 decisions, params, owner `bank` |
+| 4 households, state, estate, nature | `household_found_firm`, `household_lobby`, `government_fund`, `government_legitimacy`, `estate_pilot`, `estate_flight`, `nature_enclosure` | `sector_return`, `random_draw`, `capital_income`, `campaign_cap`, `lobby_spend`, `treasury_taxes`, `committed_spending`, `next_month_purchases`, `borrowing`, `repayment`, `spending_cut_ratio`, `legitimacy`, `wellbeing`, `inequality`, `public_debt_ratio`, `transition_resistance`, `bailout`, `pilot_unpaid_months`, `pilot_employed`, `estate_savings`, `flight`, `enclosure_chance`, `commons_open`, `commons_enclosed` | quantities, 7 decisions, params, owners `government`, `estate`, `nature` |
+| 5 wire | none | none | none; `catalog().edges` (additive, contract 2.8.0) |
+
+The lists are the plan; the as-built section of each stage records the final names. A decision that turns out not to be separable without changing behaviour stays in the system and is recorded in `docs/known-issues.md` with the reason.
+
+**Quantity granularity (decided now; DP-2).** `output_capacity` hid weather, climate and technology in one node. It is split along the factors `production::capacity` multiplies: `capital_output` (technology x capital^alpha at one unit of labour), `weather_factor` (climate damage, drought, smoke), `resource_factor` (farm health, community-managed commons) and `transition_factor` (output lost while the economic system changes). The hire view carries the factors as separate fields and `decide_hire` multiplies them in the same order as `capacity` does (a factor that does not apply is exactly 1.0, so the product is bit-identical). Chosen for simplicity: four quantities, no per-source split of the weather factor (drought and smoke share one node), and `capacity` itself stays plain code used by production. Result: the future graph shows weather -> hire.
+
+**The perturbation test is the gate for every `decide_*` and its view builder** (DP-1):
+1. Per decision (existing `check_view_only`): every view field is a declared input, every declared input is a field, perturbing each field changes the choice for some base.
+2. Per builder (new, `crates/sim-engine/tests/decision_builders.rs`): build the views from a real mid-run `State` and `Params`; serialise both to JSON; perturb each numeric or boolean leaf in turn (rebuild, rebuild the views); record which leaves change which decision's choice. Each decision lists the State and Params paths its builder is declared to read (array indices written `[]`). The test fails if a leaf outside the declared list changes the choice (an undeclared read), and if a declared path never changes any choice in any sampled state (a dead declaration, or one that needs a new sampled state).
+3. What this can prove: for the sampled states and owners, no undeclared leaf of State or Params changes the choice, and each declared leaf can. What it cannot prove: absence of a read in states where the branch is not taken (a read behind a condition the sample never meets), leaves of other array elements (indices are collapsed), and RNG (draws are passed in as plain data, so the decision cannot draw). Reads inside the `decide_*` body are still limited by types, not tests.
+
+**Firm pricing reads `Firm.markup` (state).** The price rule is `price + price_adjust x ((1 + markup) x unit_cost - price)`; `markup` is a per-firm state variable (set at start from content and copied to a new firm), not a parameter. It is a declared input quantity of `firm_price`; the spec's parameters are `goods.price_adjust` and `goods.min_price_usd`.
+
+**RNG.** Draws stay in the system, in the same order, and enter the decision as plain data (`random_draw`, or the Bernoulli outcome as a boolean): `class::run` draws once always before use, `estate::run` first, `nature::run` the enclosure draw last.
+
+**Not decisions (stay plain code):** production and capacity, emissions, weather, wellbeing, rent and eviction, the matching of hires and loans, who is fired, and the apportioning of money among households.
