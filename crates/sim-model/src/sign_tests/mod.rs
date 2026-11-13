@@ -21,14 +21,19 @@ use sim_types::{Basis, Effect, QuantityId, Sign};
 mod decisions;
 mod mechanisms;
 
+/// An input and how to raise it in a state.
+pub(crate) type Nudge<V> = (QuantityId, fn(&mut V));
+/// An output and how to read it from a state.
+pub(crate) type Read<V> = (QuantityId, fn(&V) -> f64);
+
 /// What one probe needs: the states, how to raise each input, how to read each output.
 pub(crate) struct Probe<V> {
     pub node: Node,
     pub bases: Vec<V>,
     /// Each raises the named input in place (a relative or absolute step the probe author chose).
-    pub nudges: Vec<(QuantityId, fn(&mut V))>,
+    pub nudges: Vec<Nudge<V>>,
     /// Each reads the named output from the real code's result for a state.
-    pub reads: Vec<(QuantityId, fn(&V) -> f64)>,
+    pub reads: Vec<Read<V>>,
 }
 
 /// The count of unclamped samples by direction, for one effect.

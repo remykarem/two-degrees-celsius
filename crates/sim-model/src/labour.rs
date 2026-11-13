@@ -296,7 +296,7 @@ pub const LABOUR_MATCHING: MechanismSpec = MechanismSpec {
     system: SystemId::Labour,
     inputs: &[Q::Vacancies],
     outputs: &[Q::Workers],
-    effects: &[Fx::up(Q::Vacancies, Q::Workers)],
+    effects: &[Fx::up(Q::Vacancies, Q::Workers).unverified("the arithmetic is inline in labour::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (matching the jobless to vacancies)")],
     params: &[],
     rule: "fill_vacancies_from_jobless",
 };
@@ -307,7 +307,9 @@ pub const UNEMPLOYMENT_RATE: MechanismSpec = MechanismSpec {
     system: SystemId::Metrics,
     inputs: &[Q::Workers],
     outputs: &[Q::Unemployment],
-    effects: &[Fx::down(Q::Workers, Q::Unemployment)],
+    effects: &[Fx::down(Q::Workers, Q::Unemployment).unverified(
+        "sim_metrics::unemployment reads the people on a State, which sim-model tests cannot build",
+    )],
     params: &[],
     rule: "jobless_share_of_labour_force",
 };

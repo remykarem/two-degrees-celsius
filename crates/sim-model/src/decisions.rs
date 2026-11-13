@@ -152,6 +152,10 @@ mod tests {
         let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
         for e in std::fs::read_dir(dir).unwrap() {
             let path = e.unwrap().path();
+            // `sign_tests/` is test-only code (probes keep their params in a `static`); the rules are the files.
+            if path.is_dir() {
+                continue;
+            }
             let src = std::fs::read_to_string(&path).unwrap();
             for (n, line) in src.lines().enumerate() {
                 let l = line.trim_start();

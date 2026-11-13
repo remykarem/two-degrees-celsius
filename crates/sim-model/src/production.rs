@@ -18,8 +18,12 @@ pub fn resource_health(s: &State, p: &Params) -> f64 {
 /// Share of farm output lost to climate damage: `climate_damage` * (CE/B0)^2, where the ratio
 /// CE/B0 is capped at `climate_ratio_cap`.
 pub fn climate_factor(s: &State, p: &Params) -> f64 {
-    let ratio =
-        (s.nature.cumulative.0 / p.nature.budget_b0).clamp(0.0, p.production.climate_ratio_cap);
+    climate_factor_of(p, s.nature.cumulative.0)
+}
+
+/// `climate_factor` for a cumulative emissions total in tonnes (the same arithmetic, so the sign test can call it without a `State`).
+pub fn climate_factor_of(p: &Params, cumulative: f64) -> f64 {
+    let ratio = (cumulative / p.nature.budget_b0).clamp(0.0, p.production.climate_ratio_cap);
     1.0 - p.production.climate_damage * ratio * ratio
 }
 
@@ -181,8 +185,8 @@ pub const ELECTRICITY_RATIONING: MechanismSpec = MechanismSpec {
     inputs: &[Q::EnergyDemand, Q::PlantCapacity],
     outputs: &[Q::ElectricityServed],
     effects: &[
-        Fx::up(Q::EnergyDemand, Q::ElectricityServed),
-        Fx::up(Q::PlantCapacity, Q::ElectricityServed),
+        Fx::up(Q::EnergyDemand, Q::ElectricityServed).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (plant capacity against demand)"),
+        Fx::up(Q::PlantCapacity, Q::ElectricityServed).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (plant capacity against demand)"),
     ],
     params: &[],
     rule: "served_share",
@@ -206,9 +210,9 @@ pub const PLANT_EMISSIONS_OUTPUT: MechanismSpec = MechanismSpec {
     inputs: &[Q::EnergyDemand, Q::ElectricityServed, Q::RenewableShare],
     outputs: &[Q::PlantEmissions],
     effects: &[
-        Fx::up(Q::EnergyDemand, Q::PlantEmissions),
+        Fx::up(Q::EnergyDemand, Q::PlantEmissions).unverified("how demand and the renewable share become the energy a fossil plant delivers is inline in production::run; only plant_emissions(delivered) is pure"),
         Fx::up(Q::ElectricityServed, Q::PlantEmissions),
-        Fx::down(Q::RenewableShare, Q::PlantEmissions),
+        Fx::down(Q::RenewableShare, Q::PlantEmissions).unverified("how demand and the renewable share become the energy a fossil plant delivers is inline in production::run; only plant_emissions(delivered) is pure"),
     ],
     params: &["energy.factor_fossil"],
     rule: "fossil_plants_emit",
@@ -235,7 +239,7 @@ pub const TECHNOLOGY_GROWTH: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Technology],
     outputs: &[Q::Technology],
-    effects: &[Fx::up(Q::Technology, Q::Technology)],
+    effects: &[Fx::up(Q::Technology, Q::Technology).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (per-firm technology step)")],
     params: &[
         "production.tfp_growth_goods",
         "production.tfp_growth_food",
@@ -251,8 +255,8 @@ pub const EFFECTIVE_LABOUR_SUPPLY: MechanismSpec = MechanismSpec {
     inputs: &[Q::Workers, Q::SkilledWorkers],
     outputs: &[Q::EffectiveLabour],
     effects: &[
-        Fx::up(Q::Workers, Q::EffectiveLabour),
-        Fx::up(Q::SkilledWorkers, Q::EffectiveLabour),
+        Fx::up(Q::Workers, Q::EffectiveLabour).unverified("effective_labour reads a Firm and its Person records; sim-model tests cannot build a State"),
+        Fx::up(Q::SkilledWorkers, Q::EffectiveLabour).unverified("effective_labour reads a Firm and its Person records; sim-model tests cannot build a State"),
     ],
     params: &[],
     rule: "skill_times_hours",
@@ -265,9 +269,9 @@ pub const FARM_HEALTH_FACTOR: MechanismSpec = MechanismSpec {
     inputs: &[Q::ForestStock, Q::CommonsStock, Q::CommonsCommunity],
     outputs: &[Q::ResourceFactor],
     effects: &[
-        Fx::up(Q::ForestStock, Q::ResourceFactor),
-        Fx::up(Q::CommonsStock, Q::ResourceFactor),
-        Fx::none(Q::CommonsCommunity, Q::ResourceFactor, "the farm's health reads the forest and commons stocks; who controls access changes how they are used, not the health factor"),
+        Fx::up(Q::ForestStock, Q::ResourceFactor).unverified("farm_health reads s.nature on a State, which sim-model tests cannot build"),
+        Fx::up(Q::CommonsStock, Q::ResourceFactor).unverified("farm_health reads s.nature on a State, which sim-model tests cannot build"),
+        Fx::none(Q::CommonsCommunity, Q::ResourceFactor, "the farm's health reads the forest and commons stocks; who controls access changes how they are used, not the health factor").unverified("farm_health reads s.nature on a State, which sim-model tests cannot build"),
     ],
     params: &[
         "production.farm_health_exp",
@@ -300,8 +304,8 @@ pub const DROUGHT_LOSS: MechanismSpec = MechanismSpec {
     inputs: &[Q::Drought, Q::ResilienceSpending],
     outputs: &[Q::WeatherFactor],
     effects: &[
-        Fx::down(Q::Drought, Q::WeatherFactor),
-        Fx::up(Q::ResilienceSpending, Q::WeatherFactor),
+        Fx::down(Q::Drought, Q::WeatherFactor).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity_factors)"),
+        Fx::up(Q::ResilienceSpending, Q::WeatherFactor).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity_factors)"),
     ],
     params: &[
         "weather.a_f",
@@ -317,7 +321,7 @@ pub const FIRE_SMOKE: MechanismSpec = MechanismSpec {
     system: SystemId::Production,
     inputs: &[Q::Fire],
     outputs: &[Q::WeatherFactor],
-    effects: &[Fx::down(Q::Fire, Q::WeatherFactor)],
+    effects: &[Fx::down(Q::Fire, Q::WeatherFactor).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity_factors)")],
     params: &["weather.smoke_productivity", "weather.smoke_radius"],
     rule: "smoke_output_loss",
 };
@@ -328,7 +332,7 @@ pub const TRANSITION_LOSS: MechanismSpec = MechanismSpec {
     system: SystemId::Policy,
     inputs: &[Q::SystemChange],
     outputs: &[Q::TransitionFactor],
-    effects: &[Fx::down(Q::SystemChange, Q::TransitionFactor)],
+    effects: &[Fx::down(Q::SystemChange, Q::TransitionFactor).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity_factors)")],
     params: &[],
     rule: "transition_output_penalty",
 };
@@ -348,13 +352,13 @@ pub const PRODUCTION_OUTPUT: MechanismSpec = MechanismSpec {
     ],
     outputs: &[Q::Output],
     effects: &[
-        Fx::up(Q::CapitalOutput, Q::Output),
-        Fx::up(Q::ResourceFactor, Q::Output),
-        Fx::up(Q::WeatherFactor, Q::Output),
-        Fx::up(Q::TransitionFactor, Q::Output),
-        Fx::up(Q::ElectricityServed, Q::Output),
-        Fx::varies(Q::EmissionsCap, Q::Output, "a cap of 0 means no cap, so the first tonne of cap tightens; above that a higher cap lets firms make more"),
-        Fx::down(Q::GridIntensity, Q::Output),
+        Fx::up(Q::CapitalOutput, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::up(Q::ResourceFactor, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::up(Q::WeatherFactor, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::up(Q::TransitionFactor, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::up(Q::ElectricityServed, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::varies(Q::EmissionsCap, Q::Output, "a cap of 0 means no cap, so the first tonne of cap tightens; above that a higher cap lets firms make more").unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
+        Fx::down(Q::GridIntensity, Q::Output).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (capacity, rationing, emissions cap)"),
     ],
     params: &[],
     rule: "capacity_rationed_capped",
@@ -380,10 +384,11 @@ pub const FOOD_CAP: MechanismSpec = MechanismSpec {
             Q::CommonsOpen,
             Q::Output,
             "open access is the baseline the other two rules are measured against",
-        ),
+        )
+        .unverified("open access is a category, not a quantity: there is nothing to nudge up"),
         Fx::up(Q::CommonsEnclosed, Q::Output),
         Fx::down(Q::CommonsCommunity, Q::Output),
-        Fx::up(Q::CommonsHarvest, Q::Output),
+        Fx::down(Q::CommonsHarvest, Q::Output),
     ],
     params: &[
         "nature.farm_cap_share_commons",
@@ -404,8 +409,8 @@ pub const INVENTORY_STOCK: MechanismSpec = MechanismSpec {
     inputs: &[Q::Inventory, Q::Output],
     outputs: &[Q::Inventory],
     effects: &[
-        Fx::up(Q::Inventory, Q::Inventory),
-        Fx::up(Q::Output, Q::Inventory),
+        Fx::up(Q::Inventory, Q::Inventory).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        Fx::up(Q::Output, Q::Inventory).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
     ],
     params: &["goods.holding_cost", "goods.services_holding_cost"],
     rule: "stock_decay_plus_output",
@@ -427,10 +432,10 @@ pub const ELECTRICITY_DEMAND: MechanismSpec = MechanismSpec {
     ],
     outputs: &[Q::EnergyDemand],
     effects: &[
-        Fx::up(Q::CapitalOutput, Q::EnergyDemand),
-        Fx::up(Q::ResourceFactor, Q::EnergyDemand),
-        Fx::up(Q::WeatherFactor, Q::EnergyDemand),
-        Fx::up(Q::TransitionFactor, Q::EnergyDemand),
+        Fx::up(Q::CapitalOutput, Q::EnergyDemand).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (a firm's capacity factors set the energy it needs)"),
+        Fx::up(Q::ResourceFactor, Q::EnergyDemand).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (a firm's capacity factors set the energy it needs)"),
+        Fx::up(Q::WeatherFactor, Q::EnergyDemand).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (a firm's capacity factors set the energy it needs)"),
+        Fx::up(Q::TransitionFactor, Q::EnergyDemand).unverified("the arithmetic is inline in production::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (a firm's capacity factors set the energy it needs)"),
         Fx::down(Q::GreenTech, Q::EnergyDemand),
         Fx::up(Q::HouseholdSize, Q::EnergyDemand),
         Fx::up(Q::Consumption, Q::EnergyDemand),
@@ -453,13 +458,13 @@ pub const FIRM_EMISSIONS: MechanismSpec = MechanismSpec {
     outputs: &[Q::DirectEmissions, Q::Footprint],
     effects: &[
         Fx::up(Q::Output, Q::DirectEmissions),
-        Fx::up(Q::Output, Q::Footprint),
+        Fx::up(Q::Output, Q::Footprint).unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
         Fx::down(Q::GreenTech, Q::DirectEmissions),
-        Fx::down(Q::GreenTech, Q::Footprint),
-        Fx::none(Q::Drought, Q::DirectEmissions, "a drought raises the electricity a firm needs, not its direct emissions"),
-        Fx::up(Q::Drought, Q::Footprint),
-        Fx::none(Q::GridIntensity, Q::DirectEmissions, "the grid's emissions are the plants' and are counted in the footprint, not in a firm's direct emissions"),
-        Fx::up(Q::GridIntensity, Q::Footprint),
+        Fx::down(Q::GreenTech, Q::Footprint).unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
+        Fx::none(Q::Drought, Q::DirectEmissions, "a drought raises the electricity a firm needs, not its direct emissions").unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
+        Fx::up(Q::Drought, Q::Footprint).unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
+        Fx::none(Q::GridIntensity, Q::DirectEmissions, "the grid's emissions are the plants' and are counted in the footprint, not in a firm's direct emissions").unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
+        Fx::up(Q::GridIntensity, Q::Footprint).unverified("the footprint adds the firm's electricity times the grid intensity inline in production::run, and direct emissions have no heat or grid argument to nudge"),
     ],
     params: &[],
     rule: "intensity_times_output",
