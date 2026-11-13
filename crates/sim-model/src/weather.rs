@@ -215,8 +215,8 @@ pub const FIRE_BURNS_FOREST: MechanismSpec = MechanismSpec {
     inputs: &[Q::Fire, Q::ForestStock],
     outputs: &[Q::ForestStock],
     effects: &[
-        Fx::down(Q::Fire, Q::ForestStock),
-        Fx::up(Q::ForestStock, Q::ForestStock),
+        Fx::down(Q::Fire, Q::ForestStock).unverified("the arithmetic is inline in weather::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (burning tiles on the map)"),
+        Fx::up(Q::ForestStock, Q::ForestStock).unverified("the arithmetic is inline in weather::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge (burning tiles on the map)"),
     ],
     params: &["weather.burn_frac"],
     rule: "burning_tiles_lose_forest",
@@ -246,7 +246,7 @@ pub const DROUGHT_ONSET: MechanismSpec = MechanismSpec {
     outputs: &[Q::Drought],
     effects: &[
         Fx::up(Q::ClimateStress, Q::Drought),
-        Fx::up(Q::Drought, Q::Drought),
+        Fx::up(Q::Drought, Q::Drought).unverified("needs a whole State (map, firms, households) which sim-model tests cannot build; no system-level probe was written (a drought in progress is weather state)"),
     ],
     params: &[
         "weather.drought_base",
@@ -274,11 +274,11 @@ pub const FIRE_IGNITION: MechanismSpec = MechanismSpec {
     ],
     outputs: &[Q::Fire],
     effects: &[
-        Fx::up(Q::ClimateStress, Q::Fire),
-        Fx::up(Q::Drought, Q::Fire),
-        Fx::down(Q::CommonsStock, Q::Fire),
-        Fx::down(Q::ResilienceSpending, Q::Fire),
-        Fx::varies(Q::Fire, Q::Fire, "burning tiles cannot ignite again (fewer new fires) but they spread to their neighbours (more fire)"),
+        Fx::up(Q::ClimateStress, Q::Fire).unverified("ignition_p reads the map, the weather and the commons on a State, which sim-model tests cannot build; no system-level probe was written"),
+        Fx::up(Q::Drought, Q::Fire).unverified("ignition_p reads the map, the weather and the commons on a State, which sim-model tests cannot build; no system-level probe was written"),
+        Fx::down(Q::CommonsStock, Q::Fire).unverified("ignition_p reads the map, the weather and the commons on a State, which sim-model tests cannot build; no system-level probe was written"),
+        Fx::down(Q::ResilienceSpending, Q::Fire).unverified("ignition_p reads the map, the weather and the commons on a State, which sim-model tests cannot build; no system-level probe was written"),
+        Fx::varies(Q::Fire, Q::Fire, "burning tiles cannot ignite again (fewer new fires) but they spread to their neighbours (more fire)").unverified("ignition_p reads the map, the weather and the commons on a State, which sim-model tests cannot build; no system-level probe was written"),
     ],
     params: &[
         "weather.fire_base",
