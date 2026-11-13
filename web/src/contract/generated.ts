@@ -3,7 +3,7 @@
 
 export const SCHEMA_VERSION = 8;
 
-export const CONTRACT_VERSION = "2.14.0";
+export const CONTRACT_VERSION = "2.15.0";
 
 export type AccountRef = { "kind": "household", id: number, } | { "kind": "firm", id: number, } | { "kind": "government" } | { "kind": "bank" } | { "kind": "external", label: string, };
 
@@ -192,6 +192,10 @@ entryPoints: Array<EntryPoint>,
  */
 strength: StrengthInfo, 
 /**
+ * Contract v2.15: templates for the per-edge and per-loop words.
+ */
+words: CausalWords, 
+/**
  * Contract v2.12: the components that hold a cycle.
  */
 sccs: Array<CausalScc>, 
@@ -231,10 +235,6 @@ edges: Array<LoopEdge>,
  * Months to go once round, from the tick order and the specs' lags (never 0).
  */
 delayMonths: number, 
-/**
- * The delay in words, from `content/decisions.json`.
- */
-delayLabel: string, 
 /**
  * The plain-English sentence, generated from the cycle and its signs.
  */
@@ -310,6 +310,16 @@ causes: Array<CauseRef>, };
 export type CausalRole = { id: string, label: string, text: string, };
 
 export type CausalScc = { id: number, members: Array<string>, };
+
+export type CausalWords = { 
+/**
+ * How an effect was checked, by `EdgeEffect.basis`; `{reason}` is `EdgeEffect.reason`.
+ */
+checkedPerturbed: string, checkedSystem: string, checkedDeclaredUnverified: string, 
+/**
+ * The delay round a loop: `delayOne` for 1 month, otherwise `delayMany` with `{n}` = `delayMonths`.
+ */
+delayOne: string, delayMany: string, };
 
 export type CauseRef = { id: string, depth: number, 
 /**
@@ -421,10 +431,6 @@ lagLabel: string,
  */
 sentence: string, 
 /**
- * How it was checked, in words.
- */
-checked: string, 
-/**
  * Contract v2.14: how big it is. Absent for `varies` and `none` effects and for those
  * `declared_unverified` (the web says "depends" or "not measured" from `causal.strength`).
  */
@@ -461,9 +467,12 @@ word?: string | null,
  */
 weight?: number | null, 
 /**
- * The sentence, from `content/decisions.json`.
+ * Contract v2.15: the parts of the sentence the web fills into the `causal.strength.edge*`
+ * template for this `kind` (so the sentence is not repeated on every edge): the change in the
+ * output, in per cent, for a 10 per cent rise in the input (elasticity only), and the
+ * quartiles as shown. Empty when there is no value.
  */
-text: string, };
+pct?: string, lowLabel?: string, highLabel?: string, };
 
 export type EmissionCategory = "industry" | "homes" | "energy" | "aviation" | "waste";
 
@@ -1475,7 +1484,13 @@ depends: string,
 /**
  * Said of a link that could not be tested.
  */
-unverified: string, };
+unverified: string, 
+/**
+ * Contract v2.15: the templates of the sentence of one link's size, by `EdgeStrength.kind`.
+ * Placeholders: `{word}` (lower case), `{pct}`, `{value}` (`EdgeStrength.label`), `{low}`,
+ * `{high}`, `{n}` (`samples`), `{of}` (`total`).
+ */
+edgeElasticity: string, edgeSlope: string, edgeSwitch: string, edgeUnmeasured: string, };
 
 export type StrengthKind = "elasticity" | "slope" | "switch" | "unmeasured";
 

@@ -747,7 +747,9 @@ fn every_verified_signed_effect_has_a_strength_and_the_others_have_none() {
                     .unwrap_or_else(|| panic!("{label}: no strength"));
                 *kinds.entry(format!("{:?}", s.kind)).or_insert(0) += 1;
                 assert!(s.live <= s.total && s.samples <= s.live, "{label}");
-                assert!(!s.text.is_empty(), "{label}");
+                // The sentence is the template for the kind filled with these parts (the web does it).
+                assert_eq!(s.pct.is_some(), s.word.is_some(), "{label}");
+                assert_eq!(s.low_label.is_some(), s.value.is_some(), "{label}");
                 if let Some(v) = s.value {
                     assert!(v.is_finite(), "{label}");
                     // The measured slope has the declared sign (the sign test's rule, reused).

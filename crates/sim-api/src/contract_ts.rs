@@ -183,6 +183,10 @@ pub fn decls() -> Vec<(&'static str, String)> {
         ),
         (
             "decisions",
+            <crate::decisions::CausalWords as TS>::decl(&cfg),
+        ),
+        (
+            "decisions",
             <crate::decisions::EntryPoint as TS>::decl(&cfg),
         ),
         (

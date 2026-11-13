@@ -2,7 +2,7 @@ import type { CausalEdge, CausalGraph, CausalNode, CauseRef, Catalog, EdgeEffect
 import { fill, text } from '../store/catalog';
 import { fmtUnit } from './explain';
 import { DIRECTION_ARROW } from './markets';
-import { loopLines, SIGN_GLYPH, type LoopLine } from './explorer';
+import { checkedText, edgeSizeText, loopLines, SIGN_GLYPH, type LoopLine } from './explorer';
 import { leadText } from './format';
 
 /**
@@ -156,7 +156,7 @@ function edgeStrength(g: CausalGraph, fx: EdgeEffect): Pick<CauseEdgeModel, 'wei
   return {
     weight: s.weight ?? null,
     strengthLine: s.label ? tt('strength_line', { value: s.label, word }) : tt('strength_kind_line', { kind }),
-    strengthText: s.text,
+    strengthText: edgeSizeText(g, s),
   };
 }
 
@@ -164,7 +164,7 @@ const edgeModel = (g: CausalGraph, e: CausalEdge): CauseEdgeModel => {
   const fx = e.effect!;
   return {
     key: `${e.via}|${e.from}|${e.to}`, from: e.from, to: e.to, via: e.via ?? '', viaLabel: g.nodes.find((n) => n.id === e.via)?.label ?? '',
-    sign: fx.sign, glyph: SIGN_GLYPH[fx.sign] ?? fx.sign, lagMonths: fx.lagMonths, lagLabel: fx.lagLabel, sentence: fx.sentence, checked: fx.checked, ...edgeStrength(g, fx),
+    sign: fx.sign, glyph: SIGN_GLYPH[fx.sign] ?? fx.sign, lagMonths: fx.lagMonths, lagLabel: fx.lagLabel, sentence: fx.sentence, checked: checkedText(g, fx), ...edgeStrength(g, fx),
     selfLoop: e.from === e.to, lane: 0, lanes: 1,
   };
 };

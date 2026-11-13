@@ -76,7 +76,7 @@ Enforced by ESLint (`web/eslint.config.js`, `no-restricted-imports` plus a local
 Rust (repo root):
 
 ```
-cargo test --workspace                          # all simulation, wire and golden tests (238 tests at last count)
+cargo test --workspace                          # all simulation, wire and golden tests (about 70 s warm, 4 min before the sim crates were optimised in debug; the whole suite always runs, there is no slow tier)
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p sim-cli -- --seed 42 --turns 40    # headless run; --plan <json>, --csv <file>, --set a.b=v, --quiet

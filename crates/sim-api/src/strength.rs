@@ -163,23 +163,6 @@ impl StrengthDef {
         };
         let sized = matches!(kind, StrengthKind::Elasticity | StrengthKind::Slope);
         let word = (kind == StrengthKind::Elasticity).then(|| self.word_for(e.median.abs()));
-        let template = match kind {
-            StrengthKind::Elasticity => &self.edge_elasticity,
-            StrengthKind::Slope => &self.edge_slope,
-            StrengthKind::Switch => &self.edge_switch,
-            StrengthKind::Unmeasured => &self.edge_unmeasured,
-        };
-        let text = template
-            .replace(
-                "{word}",
-                &word.map(|w| w.label.to_lowercase()).unwrap_or_default(),
-            )
-            .replace("{value}", &fmt_num(e.median))
-            .replace("{pct}", &fmt_num(e.median * 10.0))
-            .replace("{low}", &fmt_num(e.low))
-            .replace("{high}", &fmt_num(e.high))
-            .replace("{n}", &e.samples.to_string())
-            .replace("{of}", &e.total.to_string());
         EdgeStrength {
             kind,
             value: sized.then_some(e.median),
@@ -195,7 +178,9 @@ impl StrengthDef {
             },
             word: word.map(|w| w.id.clone()),
             weight: (kind == StrengthKind::Elasticity).then(|| self.weight(e.median.abs())),
-            text,
+            pct: (kind == StrengthKind::Elasticity).then(|| fmt_num(e.median * 10.0)),
+            low_label: sized.then(|| fmt_num(e.low)),
+            high_label: sized.then(|| fmt_num(e.high)),
         }
     }
 

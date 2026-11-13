@@ -46,3 +46,23 @@ inherits = "release"
 opt-level = "s"
 lto = true
 codegen-units = 1
+
+# Debug builds of the simulation crates are optimised so the scenario suites run fast
+# (`cargo test --workspace` was ~4 min at opt-level 0). Overflow checks and debug assertions stay on,
+# and the model uses no fast-math, so results are unchanged (the statehash example and goldens guard that).
+[profile.dev.package.sim-types]
+opt-level = 2
+[profile.dev.package.sim-rng]
+opt-level = 2
+[profile.dev.package.sim-params]
+opt-level = 2
+[profile.dev.package.sim-metrics]
+opt-level = 2
+[profile.dev.package.sim-model]
+opt-level = 2
+[profile.dev.package.sim-engine]
+opt-level = 2
+[profile.dev.package.sim-checks]
+opt-level = 2
+[profile.dev.package.libm]
+opt-level = 2

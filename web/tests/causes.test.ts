@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import type { Component } from 'svelte';
 import type { CausalGraph, Catalog, LeverInfo, Snapshot } from '../src/contract';
+import { edgeSizeText } from '../src/panels/explorer';
 import { back, causeModel, entryQuantity, inGraph, layoutCauses, overlaps, placeChips, recentre, route, startDepth, STROKE, strokeDash, strokeWidth, type CauseModel } from '../src/panels/causes';
 import { catalog, setCatalog, text } from '../src/store/catalog';
 import CausesModal from '../src/panels/CausesModal.svelte';
@@ -321,7 +322,8 @@ describe('strength (line thickness and the numbers)', () => {
           withNumber++;
           expect(e.strengthLine).toContain(wire.strength.label);
           expect(e.strengthLine).toContain(g.strength.words.find((w) => w.id === wire.strength!.word)!.label);
-          expect(e.strengthText).toBe(wire.strength.text);
+          expect(e.strengthText).toBe(edgeSizeText(g, wire.strength));
+          expect(e.strengthText).not.toContain('{');
         }
         if (wire.sign === 'varies') { depends++; expect(e.weight).toBeNull(); expect(e.strengthLine).toBe(text('causes', 'strength_depends')); expect(e.strengthText).toBe(g.strength.depends); }
         if (wire.basis === 'declared_unverified' && (wire.sign === 'up' || wire.sign === 'down')) { unverified++; expect(e.weight).toBeNull(); expect(e.strengthLine).toBe(text('causes', 'strength_unverified')); }

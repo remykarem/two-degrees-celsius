@@ -456,8 +456,19 @@ pub struct EdgeStrength {
     /// 0 to 1: line thickness on the log scale in `causal.strength`; elasticity only.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<f64>,
-    /// The sentence, from `content/decisions.json`.
-    pub text: String,
+    /// Contract v2.15: the parts of the sentence the web fills into the `causal.strength.edge*`
+    /// template for this `kind` (so the sentence is not repeated on every edge): the change in the
+    /// output, in per cent, for a 10 per cent rise in the input (elasticity only), and the
+    /// quartiles as shown. Empty when there is no value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub pct: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub low_label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
+    pub high_label: Option<String>,
 }
 
 /// Contract v2.14: a strength word with the elasticity it starts at.
@@ -494,6 +505,27 @@ pub struct StrengthInfo {
     pub depends: String,
     /// Said of a link that could not be tested.
     pub unverified: String,
+    /// Contract v2.15: the templates of the sentence of one link's size, by `EdgeStrength.kind`.
+    /// Placeholders: `{word}` (lower case), `{pct}`, `{value}` (`EdgeStrength.label`), `{low}`,
+    /// `{high}`, `{n}` (`samples`), `{of}` (`total`).
+    pub edge_elasticity: String,
+    pub edge_slope: String,
+    pub edge_switch: String,
+    pub edge_unmeasured: String,
+}
+
+/// Contract v2.15: words the web fills in per edge and per loop instead of receiving them repeated.
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CausalWords {
+    /// How an effect was checked, by `EdgeEffect.basis`; `{reason}` is `EdgeEffect.reason`.
+    pub checked_perturbed: String,
+    pub checked_system: String,
+    pub checked_declared_unverified: String,
+    /// The delay round a loop: `delayOne` for 1 month, otherwise `delayMany` with `{n}` = `delayMonths`.
+    pub delay_one: String,
+    pub delay_many: String,
 }
 
 /// Contract v2.13: a UI anchor that opens "Why?" for a quantity.
@@ -543,8 +575,6 @@ pub struct EdgeEffect {
     pub lag_label: String,
     /// The sentence, from the templates in `content/decisions.json` and the declared sign.
     pub sentence: String,
-    /// How it was checked, in words.
-    pub checked: String,
     /// Contract v2.14: how big it is. Absent for `varies` and `none` effects and for those
     /// `declared_unverified` (the web says "depends" or "not measured" from `causal.strength`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -566,8 +596,6 @@ pub struct CausalLoop {
     pub edges: Vec<LoopEdge>,
     /// Months to go once round, from the tick order and the specs' lags (never 0).
     pub delay_months: u32,
-    /// The delay in words, from `content/decisions.json`.
-    pub delay_label: String,
     /// The plain-English sentence, generated from the cycle and its signs.
     pub sentence: String,
     /// An authored teaching name (`Growth`, `Reserve army`), when the content has one.
@@ -640,6 +668,8 @@ pub struct CausalGraph {
     pub entry_points: Vec<EntryPoint>,
     /// Contract v2.14: the words and thickness scale of link strength.
     pub strength: StrengthInfo,
+    /// Contract v2.15: templates for the per-edge and per-loop words.
+    pub words: CausalWords,
     /// Contract v2.12: the components that hold a cycle.
     pub sccs: Vec<CausalScc>,
     /// Contract v2.12: the feedback loops, shortest first (`docs/features/causality-graph.md` section 14).
@@ -970,6 +1000,17 @@ fn build_causal(
             net_partial: c.strength.net_partial.clone(),
             depends: c.strength.depends.clone(),
             unverified: c.strength.unverified.clone(),
+            edge_elasticity: c.strength.edge_elasticity.clone(),
+            edge_slope: c.strength.edge_slope.clone(),
+            edge_switch: c.strength.edge_switch.clone(),
+            edge_unmeasured: c.strength.edge_unmeasured.clone(),
+        },
+        words: CausalWords {
+            checked_perturbed: c.effects.basis.perturbed.clone(),
+            checked_system: c.effects.basis.system.clone(),
+            checked_declared_unverified: c.effects.basis.declared_unverified.clone(),
+            delay_one: c.loops.delay_one.clone(),
+            delay_many: c.loops.delay_many.clone(),
         },
         sccs,
         loops,
@@ -1189,10 +1230,6 @@ fn build_loops(
                 })
                 .collect(),
             delay_months: l.delay_months,
-            delay_label: match l.delay_months {
-                1 => w.delay_one.clone(),
-                n => w.delay_many.replace("{n}", &n.to_string()),
-            },
             sentence,
             name: nm.map(|n| n.name.clone()),
             story: nm.map(|n| n.story.clone()),
@@ -1311,13 +1348,10 @@ fn edge_effect(
                 .replace("{because}", &because),
         )
     };
-    let (basis, checked) = match fx.basis {
-        sim_types::Basis::Perturbed => ("perturbed", w.basis.perturbed.clone()),
-        sim_types::Basis::PerturbedSystem => ("system", w.basis.system.clone()),
-        sim_types::Basis::DeclaredUnverified(r) => (
-            "declared_unverified",
-            w.basis.declared_unverified.replace("{reason}", r),
-        ),
+    let basis = match fx.basis {
+        sim_types::Basis::Perturbed => "perturbed",
+        sim_types::Basis::PerturbedSystem => "system",
+        sim_types::Basis::DeclaredUnverified(_) => "declared_unverified",
     };
     let reason = match fx.basis {
         sim_types::Basis::DeclaredUnverified(r) if reason.is_none() => Some(r.to_string()),
@@ -1339,7 +1373,6 @@ fn edge_effect(
         reason,
         lag_label: lag_words,
         sentence,
-        checked,
     })
 }
 

@@ -1,4 +1,5 @@
-import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, Catalog, DecisionInfo, Distribution, MechanismInfo, Snapshot } from '../contract';
+import type { AgentKindInfo, EdgeEffect, EdgeStrength, CausalLoop, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, CausalGraph, CausalNode, Catalog, DecisionInfo, Distribution, MechanismInfo, Snapshot } from '../contract';
+import { fill } from '../store/catalog';
 import { compact } from './format';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
@@ -163,6 +164,25 @@ export interface EffectLine {
   basis: string;
 }
 
+/** How an effect was checked, in words: the template for its basis from the catalogue (`causal.words`), with the reason filled in. */
+export function checkedText(g: CausalGraph, fx: EdgeEffect): string {
+  const t = fx.basis === 'system' ? g.words.checkedSystem : fx.basis === 'declared_unverified' ? g.words.checkedDeclaredUnverified : g.words.checkedPerturbed;
+  return fill(t, { reason: fx.reason ?? '' });
+}
+
+/** The sentence of one link's size: the template for its kind (`causal.strength.edge*`) filled from the wire's numbers. */
+export function edgeSizeText(g: CausalGraph, s: EdgeStrength): string {
+  const t = g.strength;
+  const template = s.kind === 'elasticity' ? t.edgeElasticity : s.kind === 'slope' ? t.edgeSlope : s.kind === 'switch' ? t.edgeSwitch : t.edgeUnmeasured;
+  const word = (t.words.find((w) => w.id === s.word)?.label ?? '').toLowerCase();
+  return fill(template, { word, pct: s.pct ?? '', value: s.label, low: s.lowLabel ?? '', high: s.highLabel ?? '', n: s.samples, of: s.total });
+}
+
+/** The delay round a loop in words, from the catalogue templates. */
+export function loopDelayText(g: CausalGraph, l: CausalLoop): string {
+  return l.delayMonths === 1 ? g.words.delayOne : fill(g.words.delayMany, { n: l.delayMonths });
+}
+
 /** One line per input -> output pair of a decision or mechanism node (contract v2.11): the sign, the lag and the sentence all come from the wire, so a made-up effect added only to the catalogue renders with no change here. */
 export function effectLines(g: CausalGraph, nodeId: string): EffectLine[] {
   const byId = new Map(g.nodes.map((n) => [n.id, n]));
@@ -173,7 +193,7 @@ export function effectLines(g: CausalGraph, nodeId: string): EffectLine[] {
       const fx = e.effect!;
       const glyph = SIGN_GLYPH[fx.sign] ?? fx.sign;
       const tail = fx.sign === 'none' ? 'no direct effect' : fx.lagLabel;
-      return { text: `${label(e.from)} (${glyph}) -> ${label(e.to)}, ${tail}`, sign: fx.sign, sentence: fx.sentence, checked: fx.checked, basis: fx.basis };
+      return { text: `${label(e.from)} (${glyph}) -> ${label(e.to)}, ${tail}`, sign: fx.sign, sentence: fx.sentence, checked: checkedText(g, fx), basis: fx.basis };
     });
 }
 
@@ -219,7 +239,7 @@ export function loopLines(g: CausalGraph, nodeIds: string[]): LoopLine[] {
         title: l.name ?? chain,
         chain,
         sentence: l.sentence,
-        delay: l.delayLabel,
+        delay: loopDelayText(g, l),
         story: l.story ?? null,
         incomplete: l.incompleteReasons.map((r) => g.loopIncomplete.find((x) => x.id === r)?.label ?? r),
       };
