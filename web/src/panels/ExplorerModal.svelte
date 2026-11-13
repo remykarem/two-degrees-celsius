@@ -3,9 +3,10 @@
   import type { Game } from '../store';
   import { Modal } from '../ui-kit';
   import { fmtUnit } from './explain';
-  import { ACTOR_WORD, DISTRIBUTION_WORD, groupTopics, isAgentsAnchor, kindForAnchor, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
+  import { ACTOR_WORD, DISTRIBUTION_WORD, decisionLine, decisionsOfKind, groupTopics, isAgentsAnchor, kindForAnchor, relatedOf, searchAgents, searchTopics, STATUS_WORD, topicFor } from './explorer';
   import { PRESSURE_NOTE } from './explain';
   import { setUi, ui } from './ui';
+  import { catalog, hasCatalog } from '../store/catalog';
 
   let { game }: { game: Game } = $props();
   // svelte-ignore state_referenced_locally
@@ -22,6 +23,7 @@
   const agents = $derived<AgentsCatalog | null>(ares && ares.ok ? ares.value : null);
   const found = $derived(agents ? searchAgents(agents, query) : { kinds: [], draws: [] });
   const kind = $derived(found.kinds.find((k) => k.id === chosenKind) ?? found.kinds[0] ?? null);
+  const kindDecisions = $derived(kind && open && hasCatalog() ? decisionsOfKind(catalog().decisions, kind.id) : []);
   // A link names an anchor or a topic id: resolve it when the explorer opens.
   $effect(() => {
     const want = $ui.explorer?.topic;
@@ -72,6 +74,16 @@
                 <p>{kind.summary}</p>
                 <h4>Decides</h4><ul class="lo">{#each kind.decides as d (d)}<li>{d}</li>{/each}</ul>
                 <h4>Observes</h4><ul class="lo">{#each kind.observes as d (d)}<li>{d}</li>{/each}</ul>
+                {#if kindDecisions.length}
+                  <h4>Decisions (generated from the code)</h4>
+                  <ul class="lo" data-testid="agent-decisions">
+                    {#each kindDecisions as d (d.id)}
+                      {@const l = decisionLine(d)}
+                      <li data-testid="agent-decision" data-id={d.id}><span class="dim">{l.inputs}</span> &rarr; <b>{l.title}</b> &rarr; <span class="dim">{l.outputs}</span>
+                        <details><summary class="dim">{d.rule.label}</summary><p>{d.rule.text}</p><p class="dim">Runs in {d.system}. Parameters: {d.params.map((p) => p.label).join('; ')}.</p></details></li>
+                    {/each}
+                  </ul>
+                {/if}
                 <h4>Rule</h4><p class="formula" data-testid="agent-rule">{kind.rule}</p>
                 {#if kind.variants.length}
                   <h4>Classes (worked out from what a household owns and earns, never chosen)</h4>

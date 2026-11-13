@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentsCatalog } from '../src/contract';
+import type { AgentsCatalog, DecisionInfo } from '../src/contract';
 import { isBarePercent } from '../src/panels/backing';
 import { fmtUnit } from '../src/panels/explain';
-import { agentsAnchorFor, decisionTag, isAgentsAnchor, kindForAnchor, searchAgents } from '../src/panels/explorer';
+import { agentsAnchorFor, decisionLine, decisionsOfKind, decisionTag, isAgentsAnchor, kindForAnchor, searchAgents } from '../src/panels/explorer';
 import { createSimPort } from './port';
 import { ok } from './helpers';
 
@@ -47,6 +47,42 @@ describe('agents catalogue (the real simulation)', () => {
     expect(tag!.variant.decision.length).toBeGreaterThan(10);
     expect(decisionTag(null, snap, 0)).toBeNull();
     expect(decisionTag(cat, snap, 9999)).toBeNull();
+  });
+});
+
+// Contract v2.7: decisions come from the registry in the Rust model and are rendered generically.
+describe('decisions (generated from the registry)', () => {
+  const catalog = ok(sim.catalog());
+  it('the firm labour decisions are on the wire with labelled inputs, outputs and live parameters', () => {
+    expect(catalog.decisions.map((d) => d.id)).toEqual(['firm_hire', 'firm_fire', 'firm_wage']);
+    for (const d of catalog.decisions) {
+      expect(d.agentKind).toBe('firms');
+      expect(d.inputs.length).toBeGreaterThan(0);
+      expect(d.params.every((p) => typeof p.value === 'number')).toBe(true);
+    }
+    expect(catalog.quantities.length).toBeGreaterThanOrEqual(10);
+  });
+  it('Who decides for firms is generated: every decision is a decides line and its parameters are listed', () => {
+    const firms = cat.kinds.find((k) => k.id === 'firms')!;
+    for (const d of catalog.decisions) {
+      expect(firms.decides).toContain(d.decides);
+      for (const p of d.params) expect(firms.params.map((x) => x.path)).toContain(p.path);
+    }
+  });
+  it('groups decisions by agent kind and draws the inputs -> decision -> outputs line from wire labels', () => {
+    const mine = decisionsOfKind(catalog.decisions, 'firms');
+    expect(mine).toHaveLength(3);
+    expect(decisionsOfKind(catalog.decisions, 'bank')).toEqual([]);
+    const l = decisionLine(mine.find((d) => d.id === 'firm_wage')!);
+    expect(l.title).toBe('Wage');
+    expect(l.inputs).toContain('Unemployment');
+    expect(l.outputs).toBe('Base wage');
+  });
+  it('a decision added only in the catalogue appears with no web change', () => {
+    const made: DecisionInfo = { ...catalog.decisions[0]!, id: 'bank_made_up', title: 'Made up', agentKind: 'bank', inputs: [{ id: 'q1', label: 'Alpha', unit: 'x' }], outputs: [{ id: 'q2', label: 'Beta', unit: 'y' }] };
+    const all = [...catalog.decisions, made];
+    expect(decisionsOfKind(all, 'bank').map((d) => d.id)).toEqual(['bank_made_up']);
+    expect(decisionLine(decisionsOfKind(all, 'bank')[0]!)).toEqual({ inputs: 'Alpha', title: 'Made up', outputs: 'Beta' });
   });
 });
 

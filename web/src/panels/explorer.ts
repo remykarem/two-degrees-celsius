@@ -1,4 +1,4 @@
-import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, Distribution, Snapshot } from '../contract';
+import type { AgentKindInfo, AgentsCatalog, AgentVariant, AssumptionGroup, AssumptionTopic, DecisionInfo, Distribution, Snapshot } from '../contract';
 
 /** Pure logic of the "How it works" explorer. The catalogue (text, parameters, examples) comes from the model through SimPort.assumptions(). */
 export const GROUP_LABEL: Record<AssumptionGroup, string> = {
@@ -54,3 +54,14 @@ export function decisionTag(c: AgentsCatalog | null, snap: Snapshot | null, pers
   const v = h && c.kinds.find((k) => k.id === 'households')?.variants.find((x) => x.id === h.class);
   return h && v ? { cls: h.class, variant: v } : null;
 }
+
+// ---- Decisions (contract v2.7): generated from the registry, rendered generically ----
+
+/** The registered decisions that belong to an Agents kind (`catalog.decisions[].agentKind`). Nothing here names a decision: a new one in the catalogue appears. */
+export const decisionsOfKind = (decisions: DecisionInfo[], kindId: string): DecisionInfo[] => decisions.filter((d) => d.agentKind === kindId);
+/** One text line per decision: what it reads, the decision, what it writes. Labels come from the wire. */
+export const decisionLine = (d: DecisionInfo): { inputs: string; title: string; outputs: string } => ({
+  inputs: d.inputs.map((q) => q.label).join(', '),
+  title: d.title,
+  outputs: d.outputs.map((q) => q.label).join(', '),
+});
