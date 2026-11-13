@@ -1,0 +1,1 @@
+var e=`/two-degrees-celsius/assets/sim_wasm_bg-D3z-uVun.wasm`;export{e as default};
