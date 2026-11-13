@@ -3,13 +3,13 @@
 //! a system's `run` over a whole `State` are marked `declared_unverified` in their spec (sim-model
 //! cannot build a `State`). A probe that assembles several real helpers (taxes, energy demand)
 //! says so. Params come from `content/params.json`.
-use super::{Probe, Report};
 use crate::causal::Node;
 use crate::decision_tests::params;
 use crate::production::{
     climate_factor_of, cobb_douglas, firm_direct_emissions, firm_energy_per_unit,
     grid_intensity_of, household_energy_use, plant_emissions,
 };
+use crate::sign_probe::{Probe, Report};
 use crate::util::{carbon_cost, profit_tax_due, tax_on, wealth_tax_monthly};
 use crate::weather::drought_p;
 use sim_metrics::{

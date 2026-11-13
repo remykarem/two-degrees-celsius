@@ -342,7 +342,7 @@ pub enum Sign {
     None(&'static str),
 }
 
-/// How an effect's declared sign is checked. `Perturbed`: the sign test measures it on the real code
+/// How an effect's declared sign is checked. `Perturbed`: the sign test measures it on a pure function or decision of the real code
 /// (`crates/sim-model/src/sign_tests`), failing when the measured sign disagrees. `DeclaredUnverified`:
 /// no pure function or isolable system exists to perturb it; the declaration stands on the reading of
 /// the code and economic reasoning, the reason says why it was not measured, and it is listed in
@@ -350,6 +350,9 @@ pub enum Sign {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Basis {
     Perturbed,
+    /// Measured on a whole system run on a real state (`tests/mechanism_signs`), because the
+    /// mechanism is inline in a `run` that needs a `State`.
+    PerturbedSystem,
     DeclaredUnverified(&'static str),
 }
 
@@ -406,6 +409,11 @@ impl Effect {
     /// Months the spec adds before the output shows the change.
     pub const fn lag(mut self, months: u8) -> Self {
         self.lag_months = months;
+        self
+    }
+    /// The sign is measured by running the whole system on real states (`tests/mechanism_signs`).
+    pub const fn system(mut self) -> Self {
+        self.basis = Basis::PerturbedSystem;
         self
     }
     /// The sign cannot be measured on the real code; `why` says why.

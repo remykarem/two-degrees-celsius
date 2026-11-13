@@ -1,6 +1,5 @@
 //! Probes of the 24 decisions: states are views, nudges raise a view field, reads call the real
 //! `decide_*` and map its choice to the registry quantity (each mapping is commented below).
-use super::{Probe, Report};
 use crate::causal::Node;
 use crate::class::*;
 use crate::credit::*;
@@ -13,6 +12,7 @@ use crate::labour::*;
 use crate::lobbying::*;
 use crate::nature::*;
 use crate::production::CapacityFactors;
+use crate::sign_probe::{Probe, Report};
 use sim_params::Params;
 use sim_types::DecisionId as D;
 use sim_types::QuantityId as Q;

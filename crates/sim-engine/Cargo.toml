@@ -45,3 +45,7 @@ path = "../../tests/decision_builders.rs"
 [[test]]
 name = "mechanism_params"
 path = "../../tests/mechanism_params.rs"
+
+[[test]]
+name = "mechanism_signs"
+path = "../../tests/mechanism_signs/main.rs"
