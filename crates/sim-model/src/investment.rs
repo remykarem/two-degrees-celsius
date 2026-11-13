@@ -302,14 +302,15 @@ pub const CAPITAL_ACCUMULATION: MechanismSpec = MechanismSpec {
     inputs: &[Q::Capital, Q::InvestmentPlan],
     outputs: &[Q::Capital, Q::ForestStock],
     effects: &[
-        Fx::up(Q::Capital, Q::Capital).unverified("the arithmetic is inline in investment::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        Fx::up(Q::Capital, Q::Capital).system(),
         Fx::none(
             Q::Capital,
             Q::ForestStock,
             "building clears forest in proportion to what is built, not to the stock of capital",
-        ).unverified("the arithmetic is inline in investment::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::InvestmentPlan, Q::Capital).lag(1).unverified("the arithmetic is inline in investment::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::down(Q::InvestmentPlan, Q::ForestStock).unverified("the arithmetic is inline in investment::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        )
+        .system(),
+        Fx::up(Q::InvestmentPlan, Q::Capital).lag(1).system(),
+        Fx::down(Q::InvestmentPlan, Q::ForestStock).system(),
     ],
     params: &[
         "invest.depreciation",

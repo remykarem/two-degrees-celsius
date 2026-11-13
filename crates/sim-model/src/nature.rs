@@ -71,10 +71,10 @@ pub const EMISSIONS_ACCOUNTING: MechanismSpec = MechanismSpec {
     ],
     outputs: &[Q::GrossEmissions],
     effects: &[
-        Fx::up(Q::DirectEmissions, Q::GrossEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::PlantEmissions, Q::GrossEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::HouseholdSize, Q::GrossEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::Flight, Q::GrossEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        Fx::up(Q::DirectEmissions, Q::GrossEmissions).system(),
+        Fx::up(Q::PlantEmissions, Q::GrossEmissions).system(),
+        Fx::up(Q::HouseholdSize, Q::GrossEmissions).system(),
+        Fx::up(Q::Flight, Q::GrossEmissions).system(),
     ],
     params: &[
         "nature.household_footprint_base",
@@ -91,16 +91,17 @@ pub const CARBON_BUDGET: MechanismSpec = MechanismSpec {
     inputs: &[Q::GrossEmissions, Q::ForestSink, Q::CumulativeEmissions],
     outputs: &[Q::NetEmissions, Q::CumulativeEmissions],
     effects: &[
-        Fx::up(Q::GrossEmissions, Q::NetEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::GrossEmissions, Q::CumulativeEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::down(Q::ForestSink, Q::NetEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::down(Q::ForestSink, Q::CumulativeEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        Fx::up(Q::GrossEmissions, Q::NetEmissions).system(),
+        Fx::up(Q::GrossEmissions, Q::CumulativeEmissions).system(),
+        Fx::down(Q::ForestSink, Q::NetEmissions).system(),
+        Fx::down(Q::ForestSink, Q::CumulativeEmissions).system(),
         Fx::none(
             Q::CumulativeEmissions,
             Q::NetEmissions,
             "this month's net emissions do not depend on the total so far",
-        ).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
-        Fx::up(Q::CumulativeEmissions, Q::CumulativeEmissions).unverified("the arithmetic is inline in nature::run over per-firm or per-household state and sim-model tests cannot build a State; no pure function to nudge"),
+        )
+        .system(),
+        Fx::up(Q::CumulativeEmissions, Q::CumulativeEmissions).system(),
     ],
     params: &[],
     rule: "net_emissions_accumulate",
@@ -125,9 +126,7 @@ pub const FOREST_STOCK_CHANGE: MechanismSpec = MechanismSpec {
     outputs: &[Q::ForestStock],
     effects: &[
         Fx::up(Q::ForestStock, Q::ForestStock),
-        Fx::down(Q::Output, Q::ForestStock).unverified(
-            "farm harvest of forest is inline in nature::run (output times a parameter)",
-        ),
+        Fx::down(Q::Output, Q::ForestStock).system(),
     ],
     params: &[
         "nature.forest_growth",
@@ -154,12 +153,12 @@ pub const COMMONS_STOCK_CHANGE: MechanismSpec = MechanismSpec {
     outputs: &[Q::CommonsStock],
     effects: &[
         Fx::up(Q::CommonsStock, Q::CommonsStock),
-        Fx::down(Q::Output, Q::CommonsStock).unverified("the harvest, the access rule's multiplier and the resilience cut to drought are inline in nature::run or read a State (effective_drought)"),
-        Fx::down(Q::CommonsHarvest, Q::CommonsStock).unverified("the harvest, the access rule's multiplier and the resilience cut to drought are inline in nature::run or read a State (effective_drought)"),
+        Fx::down(Q::Output, Q::CommonsStock).system(),
+        Fx::down(Q::CommonsHarvest, Q::CommonsStock).system(),
         Fx::down(Q::Drought, Q::CommonsStock),
-        Fx::up(Q::ResilienceSpending, Q::CommonsStock).unverified("the harvest, the access rule's multiplier and the resilience cut to drought are inline in nature::run or read a State (effective_drought)"),
-        Fx::none(Q::CommonsOpen, Q::CommonsStock, "open access is the baseline the other two rules are measured against; enclosure and the community cap carry the change").unverified("the harvest, the access rule's multiplier and the resilience cut to drought are inline in nature::run or read a State (effective_drought)"),
-        Fx::down(Q::CommonsEnclosed, Q::CommonsStock).unverified("the harvest, the access rule's multiplier and the resilience cut to drought are inline in nature::run or read a State (effective_drought)"),
+        Fx::up(Q::ResilienceSpending, Q::CommonsStock).system(),
+        Fx::none(Q::CommonsOpen, Q::CommonsStock, "open access is the baseline the other two rules are measured against; enclosure and the community cap carry the change").unverified("open access is a category with no upward nudge: the other two rules are measured against it, so there is nothing to raise and read"),
+        Fx::down(Q::CommonsEnclosed, Q::CommonsStock).system(),
         Fx::up(Q::CommonsCommunity, Q::CommonsStock),
     ],
     params: &[
